@@ -8,8 +8,10 @@ use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Repeater;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater\TableColumn;
 
 class ProductForm
 {
@@ -68,6 +70,12 @@ class ProductForm
                 Repeater::make('recipes')
                     ->label('Komposisi Bahan')
                     ->relationship()
+                    ->compact()
+                    ->table([
+                        TableColumn::make('Bahan'),
+                        TableColumn::make('Jumlah'),
+                        TableColumn::make('Satuan'),
+                    ])
                     ->schema([
                         Select::make('ingredient_id')
                             ->label('Bahan')

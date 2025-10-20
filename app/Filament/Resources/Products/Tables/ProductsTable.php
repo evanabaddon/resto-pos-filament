@@ -37,8 +37,6 @@ class ProductsTable
                     ])
                     ->formatStateUsing(fn($state) => $state === 'raw' ? 'Bahan Baku' : 'Produk Jadi'),
 
-                // TextColumn::make('unit.name')->label('Satuan'),
-
                 TextColumn::make('stock_display')
                     ->label('Stok')
                     ->getStateUsing(function ($record) {
@@ -66,13 +64,6 @@ class ProductsTable
                         return "{$stock} {$unitSymbol}";
                     })
                     ->html()
-                    ->sortable(),
-
-
-
-                TextColumn::make('stock')
-                    ->label('Stok')
-                    ->numeric(2)
                     ->sortable(),
 
                 TextColumn::make('base_price')

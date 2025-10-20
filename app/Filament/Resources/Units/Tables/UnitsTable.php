@@ -17,7 +17,7 @@ class UnitsTable
                 TextColumn::make('name'),
                 TextColumn::make('symbol'),
                 TextColumn::make('baseUnit.name')->label('Base Unit'),
-                TextColumn::make('conversion_rate')->label('Rate'),
+                TextColumn::make('conversion_rate')->label('Rate')->formatStateUsing(fn ($state) => number_format($state, 0, '.', ',')),
             ])
             ->filters([
                 //

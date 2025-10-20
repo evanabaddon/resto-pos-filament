@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Purchases\Tables;
 
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -15,13 +16,13 @@ class PurchasesTable
     {
         return $table
             ->columns([
+                TextColumn::make('date')->label('Tanggal')->formatStateUsing(fn ($state) => Carbon::parse($state)->isoFormat('D MMMM Y')),
                 TextColumn::make('invoice_number'),
                 TextColumn::make('supplier_name'),
                 TextColumn::make('status')
                     ->badge()
                     ->colors(['warning' => 'draft', 'success' => 'received']),
                 TextColumn::make('total')->money('IDR')->summarize(Sum::make()->money('IDR')->label('Total Pembelian')),
-                TextColumn::make('date')->date(),
             ])
             ->filters([
                 //

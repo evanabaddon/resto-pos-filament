@@ -34,6 +34,10 @@
         </div>
 
         <div class="flex items-center space-x-4">
+            {{-- Tombol Cash Summary --}}
+            <livewire:cash-summary-button />
+            
+            {{-- Tombol Close Shift --}}
             <livewire:close-shift-button />
 
             <a href="{{ route('filament.admin.pages.dashboard') }}"
@@ -49,14 +53,27 @@
     <main class="flex-1 overflow-hidden">
         {{ $slot }}
     </main>
+    {{-- Cash Summary Modal --}}
+    <livewire:cash-summary-modal />
 
     @livewireScripts
     <script>
         document.addEventListener('livewire:load', function () {
-            const btn = document.getElementById('close-shift-btn');
-            btn.addEventListener('click', function() {
-                Livewire.emit('closeShiftFromLayout');
-            });
+            // Close Shift Button
+            const closeShiftBtn = document.getElementById('close-shift-btn');
+            if (closeShiftBtn) {
+                closeShiftBtn.addEventListener('click', function() {
+                    Livewire.emit('closeShiftFromLayout');
+                });
+            }
+
+            // Cash Summary Button
+            const cashSummaryBtn = document.getElementById('cash-summary-btn');
+            if (cashSummaryBtn) {
+                cashSummaryBtn.addEventListener('click', function() {
+                    Livewire.emit('openCashSummaryModal');
+                });
+            }
         });
     </script>
 </body>

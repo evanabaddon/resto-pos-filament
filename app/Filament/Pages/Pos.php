@@ -45,7 +45,7 @@ class Pos extends Page
     public $total = 0;
     public $tax = 0;
     public $discount = 0;
-    public $orderType = 'dine_in';
+    public $orderType = 'Dine In';
     public $orderNumber = '';
     public $customerName = '';
     public $selectedCategory = 'All';
@@ -177,8 +177,8 @@ class Pos extends Page
 
     public function closeCashSession()
     {
-        // dd('closeCashSession dipanggil');
         $session = CashSession::find(session('cash_session_id'));
+        
         if (!$session) {
             Notification::make()
                 ->title('Tidak ada sesi aktif')
@@ -188,8 +188,14 @@ class Pos extends Page
             return;
         }
 
+        // Hitung TOTAL penjualan CASH yang status COMPLETED
+        $totalCashSales = $session->sales()
+            ->where('status', 'completed')
+            ->where('payment_method', 'cash')
+            ->sum('final_total');
+
         $session->update([
-            'cash_out' => $this->finalTotal,
+            'cash_out' => $session->cash_in_hand + $totalCashSales, // ✅ BENAR
             'closed_at' => now(),
             'status' => 'closed',
         ]);
@@ -198,12 +204,9 @@ class Pos extends Page
 
         Notification::make()
             ->title('Shift Ditutup')
-            ->body('Shift kasir telah ditutup dan kas keluar dicatat.')
+            ->body('Shift kasir telah ditutup. Total penjualan cash: Rp ' . number_format($totalCashSales, 0, ',', '.'))
             ->success()
             ->send();
-
-        $this->showCashInModal = true;
-        $this->cashInHand = 0;
 
         redirect()->route('filament.admin.pages.dashboard');
     }
