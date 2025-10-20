@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Filament\Resources\CashSessions;
+
+use App\Filament\Resources\CashSessions\Pages\CreateCashSession;
+use App\Filament\Resources\CashSessions\Pages\EditCashSession;
+use App\Filament\Resources\CashSessions\Pages\ListCashSessions;
+use App\Filament\Resources\CashSessions\Schemas\CashSessionForm;
+use App\Filament\Resources\CashSessions\Tables\CashSessionsTable;
+use App\Models\CashSession;
+use BackedEnum;
+use UnitEnum;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Table;
+
+class CashSessionResource extends Resource
+{
+    protected static ?string $model = CashSession::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
+
+    protected static string | UnitEnum | null $navigationGroup = 'Transaksi';
+
+    protected static ?string $navigationLabel = 'Kasir Harian';
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return CashSessionForm::configure($schema);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return CashSessionsTable::configure($table);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => ListCashSessions::route('/'),
+            // 'create' => CreateCashSession::route('/create'),
+            // 'edit' => EditCashSession::route('/{record}/edit'),
+        ];
+    }
+}
