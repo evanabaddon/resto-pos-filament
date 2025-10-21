@@ -4,12 +4,15 @@ namespace App\Filament\Resources\Products\Schemas;
 
 use App\Models\Unit;
 use App\Models\Product;
+use App\Models\PurchaseItem;
+use Filament\Actions\Action;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater\TableColumn;
 
@@ -158,6 +161,49 @@ class ProductForm
                     ->reactive()
                     ->readOnly(fn($get) => $get('type') === 'produced') // hanya readonly untuk produk produced
                     ->dehydrated(true)
+                    ->suffixAction(
+                        Action::make('updateFromPurchase')
+                            ->icon('heroicon-o-arrow-path')
+                            ->tooltip('Update HPP dari pembelian terakhir')
+                            ->action(function ($livewire, $get, $set) {
+                                $productId = $get('id');
+                                
+                                if ($productId) {
+                                    $product = Product::find($productId);
+                                    
+                                    // Hapus debug dd() dan ganti dengan logic yang benar
+                                    $lastPurchaseItem = PurchaseItem::where('product_id', $productId)
+                                        ->whereHas('purchase', function ($query) {
+                                            $query->where('status', 'received'); // Ganti menjadi 'received'
+                                        })
+                                        ->latest()
+                                        ->first();
+
+                                    if ($lastPurchaseItem) {
+                                        $product->update([
+                                            'base_price' => $lastPurchaseItem->price // Ganti menjadi 'price'
+                                        ]);
+                                        $product->refresh();
+                                        
+                                        $set('base_price', $product->base_price);
+                                        $set('sell_price', $product->base_price);
+                                        
+                                        Notification::make()
+                                            ->title('HPP Updated')
+                                            ->body('HPP berhasil diupdate: Rp ' . number_format($product->base_price, 0, ',', '.'))
+                                            ->success()
+                                            ->send();
+                                    } else {
+                                        Notification::make()
+                                            ->title('Data tidak ditemukan')
+                                            ->body('Tidak ada pembelian dengan status received untuk produk ini.')
+                                            ->warning()
+                                            ->send();
+                                    }
+                                }
+                            })
+                            ->visible(fn($get) => !empty($get('id')))
+                    )
                     ->afterStateUpdated(function ($state, callable $get, callable $set) {
                         if (blank($get('sell_price')) || $get('sell_price') == 0) {
                             $set('sell_price', $state);
@@ -169,12 +215,23 @@ class ProductForm
                     ->numeric()
                     ->prefix('Rp')
                     ->label('Harga Jual')
-                    ->nullable()
+                    ->required()
                     ->reactive()
                     ->live(onBlur: true)
+                    ->minValue(function ($get) {
+                        $basePrice = $get('base_price') ?? 0;
+                        return $basePrice; // Minimal base_price
+                    })
+                    ->helperText(function ($get) {
+                        $basePrice = $get('base_price') ?? 0;
+                        return "Harga jual harus lebih besar dari HPP: Rp " . number_format($basePrice, 0, ',', '.');
+                    })
                     ->afterStateHydrated(function ($set, $get, $state) {
                         if (blank($state)) {
-                            $set('sell_price', $get('base_price'));
+                            $basePrice = $get('base_price') ?? 0;
+                            // Auto-set ke base_price * 1.3 (30% markup) atau minimal base_price
+                            $defaultPrice = max($basePrice * 1.3, $basePrice + 1);
+                            $set('sell_price', $defaultPrice);
                         }
                     }),
 

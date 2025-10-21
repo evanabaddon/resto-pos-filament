@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\PurchaseItem;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -73,4 +74,25 @@ class Product extends Model
         return $recipeCost + ($this->additional_cost ?? 0);
     }
 
+    // Di Model Product
+    public function updateHppFromLastPurchase(): void
+    {
+        // Gunakan status 'received' dan kolom 'price'
+        $lastPurchaseItem = PurchaseItem::where('product_id', $this->id)
+            ->whereHas('purchase', function ($query) {
+                $query->where('status', 'received'); // Ganti menjadi 'received'
+            })
+            ->latest()
+            ->first();
+
+        if ($lastPurchaseItem) {
+            $this->update([
+                'base_price' => $lastPurchaseItem->price // Ganti menjadi 'price'
+            ]);
+            
+            \Log::info("HPP updated for product {$this->name} to {$lastPurchaseItem->price}");
+        } else {
+            \Log::warning("No received purchase found for product {$this->name}");
+        }
+    }
 }
