@@ -19,6 +19,7 @@ class Sale extends Model
         'final_total',
         'total',
         'payment_method',
+        'payment_method_id', // new
         'cash_session_id',
         'status',
         'note',
@@ -38,5 +39,10 @@ class Sale extends Model
     public function session(): BelongsTo
     {
         return $this->belongsTo(CashSession::class, 'cash_session_id');
+    }
+
+    public function paymentMethod(): BelongsTo
+    {
+        return $this->belongsTo(PaymentMethod::class);
     }
 }

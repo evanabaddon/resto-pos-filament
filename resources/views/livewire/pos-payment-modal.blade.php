@@ -96,17 +96,17 @@
                         {{-- Pilihan Metode --}}
                         <div class="flex justify-between items-center text-sm mb-3">
                             <span class="text-gray-600 font-medium">Metode:</span>
-                            <select wire:model="payment_method" 
+                            <select wire:model.live="payment_method" 
                                     class="border border-gray-300 rounded px-2 py-1 text-sm font-medium focus:ring-1 focus:ring-green-500 focus:border-green-500 cursor-pointer bg-white">
-                                <option value="cash">CASH</option>
-                                <option value="transfer">TRANSFER</option>
-                                <option value="qris">QRIS</option>
-                                <option value="card">KARTU</option>
+                                <option value="">Pilih Metode</option>
+                                @foreach($paymentMethods as $method)
+                                    <option value="{{ $method['id'] }}">{{ $method['name'] }}</option>
+                                @endforeach
                             </select>
                         </div>
 
                         {{-- Input Cash --}}
-                        @if($payment_method === 'cash')
+                        @if($isCashPayment)
                             <div class="space-y-2.5 bg-gray-50 p-3 rounded border border-gray-200">
                                 <div class="flex justify-between items-center text-sm">
                                     <span class="text-gray-600 font-medium">Bayar:</span>
@@ -137,14 +137,25 @@
                             </div>
                         @else
                             {{-- Non-cash payment --}}
-                            <div class="text-center bg-blue-50 border border-blue-200 rounded py-3">
-                                <div class="font-semibold text-blue-800 text-sm mb-1">
-                                    {{ strtoupper($payment_method) }}
+                            @if($selectedPaymentMethod)
+                                <div class="text-center bg-blue-50 border border-blue-200 rounded py-3">
+                                    <div class="font-semibold text-blue-800 text-sm mb-1">
+                                        {{ strtoupper($selectedPaymentMethod['name']) }}
+                                    </div>
+                                    <div class="text-xs text-blue-600 font-medium">
+                                        Rp{{ number_format($finalTotal, 0, ',', '.') }}
+                                    </div>
+                                    <div class="text-xs text-blue-500 mt-1">
+                                        Jumlah bayar otomatis disesuaikan
+                                    </div>
                                 </div>
-                                <div class="text-xs text-blue-600">
-                                    Rp{{ number_format($finalTotal, 0, ',', '.') }}
+                            @else
+                                <div class="text-center bg-yellow-50 border border-yellow-200 rounded py-3">
+                                    <div class="text-xs text-yellow-700">
+                                        Pilih metode pembayaran terlebih dahulu
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                         @endif
                     </div>
 
@@ -162,9 +173,11 @@
                         BATAL
                     </button>
                     <button wire:click="processPayment"
+                            wire:loading.attr="disabled"
                             class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 font-semibold text-sm cursor-pointer transition-colors rounded shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                            {{ $payment_method === 'cash' && $amount_paid < $finalTotal ? 'disabled' : '' }}>
-                        BAYAR
+                            {{ (!$payment_method || ($isCashPayment && $amount_paid < $finalTotal)) ? 'disabled' : '' }}>
+                        <span wire:loading.remove>BAYAR</span>
+                        <span wire:loading>MEMPROSES...</span>
                     </button>
                 </div>
             </div>

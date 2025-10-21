@@ -21,7 +21,7 @@ class CashSessionResource extends Resource
 {
     protected static ?string $model = CashSession::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-presentation-chart-line';
 
     protected static string | UnitEnum | null $navigationGroup = 'Transaksi';
 

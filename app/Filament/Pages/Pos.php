@@ -125,24 +125,65 @@ class Pos extends Page
     }
 
     // Handler untuk payment processed
-    public function handlePaymentProcessed($saleId, $paymentMethod, $amountPaid)
+    public function handlePaymentProcessed($saleId, $paymentMethodId, $amountPaid)
     {
-        $sale = Sale::findOrFail($saleId);
+        // DEBUG: Cek nilai yang diterima
+        // dd([
+        //     'saleId' => $saleId,
+        //     'paymentMethodId' => $paymentMethodId,
+        //     'amountPaid' => $amountPaid
+        // ]);
 
-        $sale->update([
-            'is_paid' => true,
-            'payment_method' => $paymentMethod,
-            'amount_paid' => $amountPaid,
-            'paid_at' => now(),
-            'status' => 'completed',
-        ]);
+        try {
+            $sale = Sale::findOrFail($saleId);
 
-        $this->dispatch('showNotification', 'Pembayaran berhasil diproses.', 'success');
-        $this->showPaymentModal = false;
-        $this->showLoadModal = false;
+            $updateData = [
+                'is_paid' => true,
+                'payment_method_id' => $paymentMethodId, // Pastikan menggunakan payment_method_id
+                'amount_paid' => $amountPaid,
+                'paid_at' => now(),
+                'status' => 'completed',
+            ];
 
-        $this->resetPos();
+            // DEBUG: Cek data sebelum update
+            // dd($updateData);
+
+            $sale->update($updateData);
+
+            $this->dispatch('showNotification', 'Pembayaran berhasil diproses.', 'success');
+            $this->showPaymentModal = false;
+            $this->showLoadModal = false;
+
+            $this->resetPos();
+
+        } catch (\Exception $e) {
+            // DEBUG: Tampilkan error
+            // dd($e->getMessage());
+            
+            $this->dispatch('showNotification', 'Error: ' . $e->getMessage(), 'error');
+        }
     }
+
+    // Handler untuk payment processed
+    // public function handlePaymentProcessed($saleId, $paymentMethod, $paymentMethodId, $amountPaid)
+    // {
+    //     $sale = Sale::findOrFail($saleId);
+
+    //     $sale->update([
+    //         'is_paid' => true,
+    //         'payment_method_id' => $paymentMethodId,
+    //         // 'payment_method' => $paymentMethod,
+    //         'amount_paid' => $amountPaid,
+    //         'paid_at' => now(),
+    //         'status' => 'completed',
+    //     ]);
+
+    //     $this->dispatch('showNotification', 'Pembayaran berhasil diproses.', 'success');
+    //     $this->showPaymentModal = false;
+    //     $this->showLoadModal = false;
+
+    //     $this->resetPos();
+    // }
 
     public function confirmCashIn()
     {
