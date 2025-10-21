@@ -7,6 +7,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Repeater\TableColumn;
 
 class PurchaseForm
@@ -46,13 +47,19 @@ class PurchaseForm
                     ])
                     ->schema([
                         Select::make('product_id')
-                            ->relationship('product', 'name')
+                            ->relationship(
+                                    name: 'product',
+                                    titleAttribute: 'name',
+                                    modifyQueryUsing: fn (Builder $query) => $query->whereIn('type', ['raw', 'retail'])
+                                )
                             ->searchable()
+                            ->preload()
                             ->required(),
 
                         Select::make('unit_id')
                             ->relationship('unit', 'name')
                             ->searchable()
+                            ->preload()
                             ->required(),
 
                         TextInput::make('quantity')
