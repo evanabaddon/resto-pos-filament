@@ -164,27 +164,6 @@ class Pos extends Page
         }
     }
 
-    // Handler untuk payment processed
-    // public function handlePaymentProcessed($saleId, $paymentMethod, $paymentMethodId, $amountPaid)
-    // {
-    //     $sale = Sale::findOrFail($saleId);
-
-    //     $sale->update([
-    //         'is_paid' => true,
-    //         'payment_method_id' => $paymentMethodId,
-    //         // 'payment_method' => $paymentMethod,
-    //         'amount_paid' => $amountPaid,
-    //         'paid_at' => now(),
-    //         'status' => 'completed',
-    //     ]);
-
-    //     $this->dispatch('showNotification', 'Pembayaran berhasil diproses.', 'success');
-    //     $this->showPaymentModal = false;
-    //     $this->showLoadModal = false;
-
-    //     $this->resetPos();
-    // }
-
     public function confirmCashIn()
     {
         if ($this->cashInHand <= 0) {
