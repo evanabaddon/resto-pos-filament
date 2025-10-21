@@ -256,13 +256,32 @@ class Pos extends Page
         return $categories;
     }
 
+    // public function getProductsProperty()
+    // {
+    //     $query = Product::where('is_sellable', true)
+    //         ->where(function($q) {
+    //             $q->where('stock', '>', 0)
+    //               ->orWhere('type', 'produced')
+    //               ->orWhereNull('stock');
+    //         });
+
+    //     if ($this->selectedCategory !== 'All') {
+    //         // Cari category_id berdasarkan nama kategori yang dipilih
+    //         $category = Category::where('name', $this->selectedCategory)->first();
+    //         if ($category) {
+    //             $query->where('category_id', $category->id);
+    //         }
+    //     }
+
+    //     return $query->get();
+    // }
     public function getProductsProperty()
     {
         $query = Product::where('is_sellable', true)
             ->where(function($q) {
                 $q->where('stock', '>', 0)
-                  ->orWhere('type', 'produced')
-                  ->orWhereNull('stock');
+                ->orWhere('type', 'produced')
+                ->orWhereNull('stock');
             });
 
         if ($this->selectedCategory !== 'All') {
@@ -273,7 +292,40 @@ class Pos extends Page
             }
         }
 
-        return $query->get();
+        $products = $query->get();
+
+        // Filter produk yang type 'produced' - hanya tampilkan jika bahan baku tersedia
+        return $products->filter(function ($product) {
+            if ($product->type !== 'produced') {
+                return true; // Untuk produk non-produced, selalu tampilkan
+            }
+
+            return $this->isProducedProductAvailable($product);
+        });
+    }
+
+    /**
+     * Cek apakah produk produced bisa dibuat berdasarkan ketersediaan bahan baku
+     */
+    private function isProducedProductAvailable(Product $product): bool
+    {
+        // Jika produk tidak memiliki resep, tidak bisa diproduksi
+        if (!$product->recipes || $product->recipes->isEmpty()) {
+            return false;
+        }
+
+        // Cek setiap bahan dalam resep
+        foreach ($product->recipes as $recipe) {
+            $material = $recipe->material; // Bahan baku
+            $requiredQuantity = $recipe->quantity; // Jumlah yang dibutuhkan
+            
+            // Jika bahan baku tidak ada atau stok kurang dari yang dibutuhkan
+            if (!$material || $material->stock < $requiredQuantity) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function getImageUrlAttribute(): string
