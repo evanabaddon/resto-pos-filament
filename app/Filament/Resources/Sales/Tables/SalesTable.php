@@ -23,7 +23,10 @@ class SalesTable
                 TextColumn::make('customer_name')->label('Customer Name')->searchable()->sortable(),
                 TextColumn::make('order_type')->label('Order Type')->searchable()->sortable(),
                 TextColumn::make('payment_method')->label('Payment Method')->searchable()->sortable(),
-                TextColumn::make('status')->label('Status')->sortable(),
+                TextColumn::make('status')->label('Status')->sortable()->badge()->colors([
+                    'success' => 'completed',
+                    'warning' => 'draft',
+                ]),
                 TextColumn::make('final_total')->label('Total Amount')->sortable()->money('IDR')->summarize(Sum::make()->money('IDR')->label('Total Penjualan')),
             ])
             ->defaultSort('created_at', 'desc')

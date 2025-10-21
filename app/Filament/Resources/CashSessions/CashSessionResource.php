@@ -11,6 +11,7 @@ use App\Filament\Resources\CashSessions\Schemas\CashSessionInfolist;
 use App\Filament\Resources\CashSessions\Tables\CashSessionsTable;
 use App\Models\CashSession;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -20,7 +21,11 @@ class CashSessionResource extends Resource
 {
     protected static ?string $model = CashSession::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
+
+    protected static string | UnitEnum | null $navigationGroup = 'Transaksi';
+
+    protected static ?string $navigationLabel = 'Kas Harian';
 
     public static function form(Schema $schema): Schema
     {

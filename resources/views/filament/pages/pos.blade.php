@@ -40,14 +40,15 @@
                     <div wire:click="addProduct({{ $product->id }})"
                         class="cursor-pointer group bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200 p-3 flex flex-col items-center relative overflow-hidden">
                         {{-- Stock Badge --}}
-                        <div class="absolute top-2 right-2 z-10">
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium 
-                                {{ $product->stock > 10 ? 'bg-green-100 text-green-800' : 
-                                   ($product->stock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                {{ $product->stock }} stok
-                            </span>
-                        </div>
-
+                        @if($product->type !== 'produced')
+                            <div class="absolute top-2 right-2 z-10">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium 
+                                    {{ $product->stock > 10 ? 'bg-green-100 text-green-800' : 
+                                        ($product->stock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                    {{ intval($product->stock) }} stok
+                                </span>
+                            </div>
+                        @endif
                         {{-- Product Image --}}
                         <div class="w-20 h-20 mb-3 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center z-1">
                             <img src="{{ $product->image_url }}"

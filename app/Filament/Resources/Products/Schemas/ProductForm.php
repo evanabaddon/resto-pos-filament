@@ -63,6 +63,7 @@ class ProductForm
                 TextInput::make('stock')
                     ->numeric()
                     ->label('Stok Saat Ini')
+                    ->hidden(fn(callable $get) => $get('type') === 'produced')
                     ->disabled(fn($record) => $record !== null)
                     ->default(0),
 

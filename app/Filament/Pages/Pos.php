@@ -58,6 +58,7 @@ class Pos extends Page
     public $payment_method = 'cash';
     public $finalTotal = 0;
     public $amount_paid = 0;
+    public $outOfStock = 0;
 
     public function mount()
     {
@@ -67,7 +68,7 @@ class Pos extends Page
                 'type' => 'style',
             ],
         ]);
-        
+        $this->outOfStock = 0;
         $this->items = [];
         $this->total = 0;
         $this->tax = 0;
@@ -237,7 +238,12 @@ class Pos extends Page
 
     public function getProductsProperty()
     {
-        $query = Product::where('is_sellable', true);
+        $query = Product::where('is_sellable', true)
+            ->where(function($q) {
+                $q->where('stock', '>', 0)
+                  ->orWhere('type', 'produced')
+                  ->orWhereNull('stock');
+            });
 
         if ($this->selectedCategory !== 'All') {
             // Cari category_id berdasarkan nama kategori yang dipilih
