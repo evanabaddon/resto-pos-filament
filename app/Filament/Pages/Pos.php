@@ -763,6 +763,7 @@ class Pos extends Page
         // Dispatch event ke modal payment
         $this->dispatch('openPaymentModal', saleId: $targetSaleId);
     }
+    
     public function processPayment()
     {
         $sale = Sale::findOrFail($this->saleId);
