@@ -2,13 +2,15 @@
 
 namespace App\Filament\Resources\Sales\Tables;
 
+use App\Models\Sale;
 use Filament\Tables\Table;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Illuminate\Support\Facades\Date;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Summarizers\Sum;
-use Illuminate\Support\Facades\Date;
 
 class SalesTable
 {
@@ -35,11 +37,193 @@ class SalesTable
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('printReceipt')
+                    ->label('Cetak Struk')
+                    ->icon('heroicon-o-printer')
+                    ->color('success')
+                    ->action(function (Sale $record) {
+                        return self::printReceipt($record);
+                    })
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function printReceipt(Sale $sale)
+    {
+        $receiptContent = self::generateReceiptContent($sale);
+        
+        // Return script untuk print
+        return <<<HTML
+        <script>
+            function printReceipt() {
+                const content = `{$receiptContent}`;
+                
+                const printWindow = window.open('', '_blank', 'width=350,height=600');
+                const printStyle = `
+                    <style>
+                        @media print {
+                            body { 
+                                margin: 0; 
+                                padding: 10px; 
+                                font-family: 'Courier New', monospace;
+                                font-size: 12px;
+                                width: 80mm;
+                            }
+                            .text-center { text-align: center; }
+                            .font-bold { font-weight: bold; }
+                            .text-lg { font-size: 14px; }
+                            .text-sm { font-size: 11px; }
+                            .text-xs { font-size: 10px; }
+                            .uppercase { text-transform: uppercase; }
+                            .flex { display: flex; }
+                            .justify-between { justify-content: space-between; }
+                            .items-start { align-items: flex-start; }
+                            .flex-1 { flex: 1; }
+                            .border-t { border-top: 1px solid #000; }
+                            .border-dashed { border-style: dashed; }
+                            .my-2 { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+                            .font-semibold { font-weight: 600; }
+                            .space-y-1 > * + * { margin-top: 0.25rem; }
+                            .space-y-2 > * + * { margin-top: 0.5rem; }
+                            .pt-1 { padding-top: 0.25rem; }
+                        }
+                        @media screen {
+                            body { 
+                                margin: 20px; 
+                                font-family: 'Courier New', monospace;
+                                font-size: 14px;
+                                max-width: 300px;
+                            }
+                            .print-btn {
+                                background: #10b981;
+                                color: white;
+                                border: none;
+                                padding: 10px 20px;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                font-size: 14px;
+                                margin-top: 15px;
+                                width: 100%;
+                            }
+                        }
+                    </style>
+                `;
+
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Struk #{$sale->invoice_number}</title>
+                        \${printStyle}
+                    </head>
+                    <body>
+                        <div class="receipt-content">
+                            \${content}
+                        </div>
+                        <button class="print-btn" onclick="window.print()">🖨️ CETAK STRUK</button>
+                        <button class="print-btn" onclick="window.close()" style="background: #6b7280; margin-top: 10px;">TUTUP</button>
+                    </body>
+                    </html>
+                `);
+                
+                printWindow.document.close();
+            }
+            
+            printReceipt();
+        </script>
+        HTML;
+    }
+
+    protected static function generateReceiptContent(Sale $sale): string
+    {
+        $content = "";
+        
+        // Header
+        $content .= "<div class='text-center'>";
+        $content .= "<h1 class='font-bold text-lg uppercase'>STRUK PEMBAYARAN</h1>";
+        $content .= "<p class='text-sm'>" . config('app.name') . "</p>";
+        $content .= "<p class='text-xs'>" . $sale->created_at->format('d/m/Y H:i') . "</p>";
+        $content .= "</div>";
+        
+        $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
+        
+        // Info Transaksi
+        $content .= "<div class='space-y-1 text-sm'>";
+        $content .= "<div class='flex justify-between'><span>No. Transaksi:</span><span class='font-semibold'>" . $sale->invoice_number . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>Kasir:</span><span>" . ($sale->user->name ?? 'System') . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>Customer:</span><span>" . ($sale->customer_name ?? 'Umum') . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>Status:</span><span class='font-semibold'>" . strtoupper($sale->status) . "</span></div>";
+        $content .= "</div>";
+        
+        $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
+        
+        // Items
+        $content .= "<div class='space-y-2'>";
+        foreach ($sale->items as $item) {
+            $content .= "<div class='flex justify-between items-start'>";
+            $content .= "<div class='flex-1'>";
+            $content .= "<div class='font-semibold'>" . ($item->product->name ?? 'Produk') . "</div>";
+            $content .= "<div class='text-xs text-gray-600'>" . $item->quantity . " × Rp" . number_format($item->unit_price, 0, ',', '.') . "</div>";
+            $content .= "</div>";
+            $content .= "<div class='font-semibold'>Rp" . number_format($item->subtotal, 0, ',', '.') . "</div>";
+            $content .= "</div>";
+        }
+        $content .= "</div>";
+        
+        $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
+        
+        // Summary
+        $content .= "<div class='space-y-1 text-sm'>";
+        $content .= "<div class='flex justify-between'><span>Subtotal:</span><span>Rp" . number_format($sale->subtotal, 0, ',', '.') . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>Pajak (10%):</span><span>Rp" . number_format($sale->tax, 0, ',', '.') . "</span></div>";
+        if ($sale->discount > 0) {
+            $content .= "<div class='flex justify-between text-green-600'><span>Diskon:</span><span>- Rp" . number_format($sale->discount, 0, ',', '.') . "</span></div>";
+        }
+        $content .= "<div class='border-t border-gray-300 pt-1'>";
+        $content .= "<div class='flex justify-between font-bold'><span>TOTAL:</span><span>Rp" . number_format($sale->final_total, 0, ',', '.') . "</span></div>";
+        $content .= "</div>";
+        $content .= "</div>";
+        
+        $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
+        
+        // Payment Info - UNTUK SEMUA METODE PEMBAYARAN
+        $content .= "<div class='space-y-1 text-sm'>";
+        $content .= "<div class='flex justify-between'><span>Metode Bayar:</span><span class='font-semibold'>" . ($sale->paymentMethod->name ?? 'Cash') . "</span></div>";
+        
+        // Tampilkan amount_paid untuk semua metode
+        $content .= "<div class='flex justify-between'><span>Dibayar:</span><span>Rp" . number_format($sale->amount_paid, 0, ',', '.') . "</span></div>";
+        
+        // Hanya tampilkan kembalian untuk cash
+        if (($sale->paymentMethod->code ?? 'cash') === 'cash') {
+            $change = $sale->amount_paid - $sale->final_total;
+            if ($change > 0) {
+                $content .= "<div class='flex justify-between'><span>Kembali:</span><span class='font-semibold'>Rp" . number_format($change, 0, ',', '.') . "</span></div>";
+            }
+        }
+        
+        // Tampilkan status pembayaran
+        $paymentStatus = $sale->is_paid ? 'LUNAS' : 'BELUM LUNAS';
+        $statusColor = $sale->is_paid ? 'text-green-600' : 'text-red-600';
+        $content .= "<div class='flex justify-between {$statusColor}'><span>Status Bayar:</span><span class='font-semibold'>{$paymentStatus}</span></div>";
+        
+        $content .= "</div>";
+        
+        $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
+        
+        // Footer
+        $content .= "<div class='text-center text-xs'>";
+        $content .= "<p>Terima kasih atas kunjungan Anda</p>";
+        if (!$sale->is_paid) {
+            $content .= "<p class='text-red-600 font-semibold'>*** MENUNGGU PEMBAYARAN ***</p>";
+        } else {
+            $content .= "<p class='font-semibold'>*** SELAMAT MENIKMATI ***</p>";
+        }
+        $content .= "</div>";
+        
+        return $content;
     }
 }
