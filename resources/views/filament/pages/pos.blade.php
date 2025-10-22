@@ -40,7 +40,7 @@
                     <div wire:click="addProduct({{ $product->id }})"
                         class="cursor-pointer group bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200 p-3 flex flex-col items-center relative overflow-hidden">
                         {{-- Stock Badge --}}
-                        @if($product->type !== 'produced')
+                        @if($product->type !== 'produced' && $product->type !== 'bar')
                             <div class="absolute top-2 right-2 z-10">
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium 
                                     {{ $product->stock > 10 ? 'bg-green-100 text-green-800' : 

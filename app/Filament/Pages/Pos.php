@@ -264,7 +264,7 @@ class Pos extends Page
             ->with(['recipes.ingredient', 'recipes.unit']) // Eager loading
             ->where(function($q) {
                 $q->where('stock', '>', 0)
-                ->orWhere('type', 'produced')
+                ->orWhereIn('type', ['produced', 'bar']) // Tambahkan 'bar' di sini
                 ->orWhereNull('stock');
             });
 
@@ -278,8 +278,17 @@ class Pos extends Page
         $products = $query->get();
         
         return $products->filter(function ($product) {
-            if ($product->type !== 'produced') return true;
-            return $this->isProducedProductAvailable($product);
+            // Untuk produk raw dan retail, cek stok biasa
+            if (in_array($product->type, ['raw', 'retail'])) {
+                return $product->stock > 0;
+            }
+            
+            // Untuk produk produced dan bar, cek ketersediaan bahan
+            if (in_array($product->type, ['produced', 'bar'])) {
+                return $this->isProducedProductAvailable($product);
+            }
+            
+            return true;
         });
     }
     
