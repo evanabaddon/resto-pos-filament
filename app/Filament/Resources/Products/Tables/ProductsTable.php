@@ -33,14 +33,16 @@ class ProductsTable
                     ->badge()
                     ->colors([
                         'info' => 'raw',
-                        'success' => 'finished', 
+                        'success' => 'retail', 
                         'warning' => 'produced',
+                        'danger' => 'bar',
                     ])
                     ->formatStateUsing(function ($state) {
                         return match($state) {
                             'raw' => 'Bahan Baku',
                             'retail' => 'Produk Jadi',
                             'produced' => 'Produk Kitchen',
+                            'bar' => 'Produk Bar',
                             default => $state,
                         };
                     }),
