@@ -161,7 +161,7 @@ class ProductForm
                     ->reactive()
                     ->readOnly(fn($get) => $get('type') === 'produced') // hanya readonly untuk produk produced
                     ->dehydrated(true)
-                    ->suffixAction(
+                    ->suffixActions([
                         Action::make('updateFromPurchase')
                             ->icon('heroicon-o-arrow-path')
                             ->tooltip('Update HPP dari pembelian terakhir')
@@ -202,8 +202,22 @@ class ProductForm
                                     }
                                 }
                             })
-                            ->visible(fn($get) => !empty($get('id')))
-                    )
+                            ->visible(fn($get) => !empty($get('id'))),
+
+                        Action::make('recalculateHpp')
+                            ->icon('heroicon-o-calculator')
+                            ->tooltip('Hitung ulang HPP dari resep')
+                            ->action(function ($livewire, $get, $set) {
+                                self::updateHpp($set, $get);
+                                
+                                Notification::make()
+                                    ->title('HPP Dihitung Ulang')
+                                    ->body('HPP berhasil dihitung dari komposisi resep')
+                                    ->success()
+                                    ->send();
+                            })
+                            ->visible(fn($get) => $get('type') === 'produced')
+                    ])
                     ->afterStateUpdated(function ($state, callable $get, callable $set) {
                         if (blank($get('sell_price')) || $get('sell_price') == 0) {
                             $set('sell_price', $state);
@@ -251,30 +265,126 @@ class ProductForm
     /**
      * Hitung ulang HPP hanya untuk produk produced
      */
+    // protected static function updateHpp(callable $set, callable $get): void
+    // {
+    //     if ($get('type') !== 'produced') {
+    //         return; // raw dan retail HPP diisi manual
+    //     }
+
+    //     $recipes = $get('recipes') ?? [];
+    //     $totalHpp = collect($recipes)->sum(function ($item) {
+    //         $ingredient = Product::find($item['ingredient_id'] ?? null);
+    //         $recipeUnit = Unit::find($item['unit_id'] ?? null);
+
+    //         if (!$ingredient || !$ingredient->unit) {
+    //             return 0;
+    //         }
+
+    //         $ingredientConv = $ingredient->unit->conversion_rate ?? 1;
+    //         $recipeConv = $recipeUnit->conversion_rate ?? 1;
+
+    //         $qtyInIngredientUnit = ($item['quantity'] ?? 0) * ($ingredientConv / $recipeConv);
+    //         $hargaPerBaseUnit = $ingredient->base_price ?? 0;
+
+    //         return $hargaPerBaseUnit * $qtyInIngredientUnit;
+    //     });
+
+    //     $set('base_price', $totalHpp + ($get('additional_cost') ?? 0));
+    // }
+
+    /**
+     * Hitung ulang HPP untuk produk produced
+     */
     protected static function updateHpp(callable $set, callable $get): void
     {
         if ($get('type') !== 'produced') {
-            return; // raw dan retail HPP diisi manual
+            return;
         }
 
         $recipes = $get('recipes') ?? [];
-        $totalHpp = collect($recipes)->sum(function ($item) {
-            $ingredient = Product::find($item['ingredient_id'] ?? null);
-            $recipeUnit = Unit::find($item['unit_id'] ?? null);
+        $totalHpp = 0;
 
-            if (!$ingredient || !$ingredient->unit) {
-                return 0;
+        foreach ($recipes as $recipe) {
+            $ingredientId = $recipe['ingredient_id'] ?? null;
+            $quantity = $recipe['quantity'] ?? 0;
+            $unitId = $recipe['unit_id'] ?? null;
+
+            if (!$ingredientId || $quantity <= 0) {
+                continue;
             }
 
-            $ingredientConv = $ingredient->unit->conversion_rate ?? 1;
-            $recipeConv = $recipeUnit->conversion_rate ?? 1;
+            $ingredient = Product::find($ingredientId);
+            if (!$ingredient) {
+                continue;
+            }
 
-            $qtyInIngredientUnit = ($item['quantity'] ?? 0) * ($ingredientConv / $recipeConv);
-            $hargaPerBaseUnit = $ingredient->base_price ?? 0;
+            // Konversi quantity ke unit dasar bahan baku
+            $convertedQuantity = self::convertQuantityToBaseUnit(
+                $quantity, 
+                $unitId, 
+                $ingredient->unit_id
+            );
 
-            return $hargaPerBaseUnit * $qtyInIngredientUnit;
-        });
+            $totalHpp += ($ingredient->base_price ?? 0) * $convertedQuantity;
+        }
 
-        $set('base_price', $totalHpp + ($get('additional_cost') ?? 0));
+        $additionalCost = $get('additional_cost') ?? 0;
+        $finalHpp = $totalHpp + $additionalCost;
+
+        $set('base_price', $finalHpp);
+        
+        // Auto-update sell_price jika kosong atau perlu adjustment
+        $currentSellPrice = $get('sell_price') ?? 0;
+        if ($currentSellPrice <= $finalHpp || $currentSellPrice == 0) {
+            $recommendedPrice = $finalHpp * 1.3; // 30% markup
+            $set('sell_price', $recommendedPrice);
+        }
+    }
+
+    /**
+     * Konversi quantity ke unit dasar bahan baku - FIXED VERSION
+     */
+    protected static function convertQuantityToBaseUnit($quantity, $fromUnitId, $ingredientBaseUnitId): float
+    {
+        \Log::info("=== CONVERSION DEBUG ===");
+        \Log::info("Quantity: {$quantity}, From Unit: {$fromUnitId}, To Unit: {$ingredientBaseUnitId}");
+
+        // Jika unit sama, tidak perlu konversi
+        if ($fromUnitId == $ingredientBaseUnitId) {
+            \Log::info("Same unit, no conversion needed");
+            return $quantity;
+        }
+        
+        $fromUnit = Unit::find($fromUnitId);
+        $ingredientBaseUnit = Unit::find($ingredientBaseUnitId);
+        
+        if (!$fromUnit || !$ingredientBaseUnit) {
+            \Log::warning("Unit not found");
+            return $quantity;
+        }
+        
+        \Log::info("From Unit: {$fromUnit->name} (Base: {$fromUnit->base_unit_id}), To Unit: {$ingredientBaseUnit->name}");
+        
+        // Cari base unit dari unit resep
+        $fromBaseUnitId = $fromUnit->base_unit_id ?: $fromUnit->id;
+        
+        // Jika base unit berbeda, tidak bisa konversi
+        if ($fromBaseUnitId != $ingredientBaseUnitId) {
+            \Log::warning("Different base units: {$fromBaseUnitId} vs {$ingredientBaseUnitId}");
+            return $quantity;
+        }
+        
+        // Konversi: quantity dalam unit resep → quantity dalam base unit
+        if ($fromUnit->base_unit_id) {
+            // Ini unit turunan: conversion_rate = "1 base = x unit ini"
+            // Jadi: quantity (base) = quantity (unit ini) / conversion_rate
+            $converted = $quantity / $fromUnit->conversion_rate;
+            \Log::info("Conversion: {$quantity} {$fromUnit->name} / {$fromUnit->conversion_rate} = {$converted} {$ingredientBaseUnit->name}");
+            return $converted;
+        } else {
+            // Ini sudah base unit
+            \Log::info("Already base unit, no conversion");
+            return $quantity;
+        }
     }
 }
