@@ -29,7 +29,10 @@ class PosPaymentModal extends Component
         'payment_method' => 'required|string',
     ];
 
-    protected $listeners = ['openPaymentModal'];
+    protected $listeners = [
+        'openPaymentModal', 
+        'openReceiptModal' 
+    ];
 
     public function mount()
     {
@@ -101,83 +104,6 @@ class PosPaymentModal extends Component
         return $this->selectedPaymentMethod;
     }
 
-    // public function processPayment()
-    // {
-    //     $this->validate();
-
-    //     // Validasi untuk cash
-    //     // if ($this->payment_method === 'cash' && $this->amount_paid < $this->finalTotal) {
-    //     //     Notification::make()
-    //     //         ->title('Pembayaran Gagal')
-    //     //         ->body('Jumlah bayar tidak boleh kurang dari total tagihan.')
-    //     //         ->danger()
-    //     //         ->send();
-    //     //     return;
-    //     // }
-    //     // Validasi untuk cash payment
-    //     if ($this->isCashPayment && $this->amount_paid < $this->finalTotal) {
-    //         Notification::make()
-    //             ->title('Pembayaran Gagal')
-    //             ->body('Jumlah bayar tidak boleh kurang dari total tagihan untuk pembayaran tunai.')
-    //             ->danger()
-    //             ->send();
-    //         return;
-    //     }
-
-
-    //     // Untuk non-cash payment, set amount_paid sama dengan final_total
-    //     if (!$this->isCashPayment) {
-    //         $this->amount_paid = $this->finalTotal;
-    //     }
-
-    //     $this->dispatch('paymentProcessed', 
-    //         saleId: $this->saleId,
-    //         paymentMethodId: $this->payment_method,
-    //         paymentMethod: $this->payment_method,
-    //         amountPaid: $this->amount_paid
-    //     );
-
-    //     $this->show = false;
-    //     $this->resetExcept(['paymentMethods']);
-    //     // $this->reset();
-    // }
-
-    // public function processPayment()
-    // {
-    //     $this->validate();
-
-    //     // Validasi untuk cash payment
-    //     if ($this->isCashPayment && $this->amount_paid < $this->finalTotal) {
-    //         Notification::make()
-    //             ->title('Pembayaran Gagal')
-    //             ->body('Jumlah bayar tidak boleh kurang dari total tagihan untuk pembayaran tunai.')
-    //             ->danger()
-    //             ->send();
-    //         return;
-    //     }
-
-    //     // Untuk non-cash payment, set amount_paid sama dengan final_total
-    //     if (!$this->isCashPayment) {
-    //         $this->amount_paid = $this->finalTotal;
-    //     }
-
-    //     // DEBUG: Cek nilai sebelum dikirim
-    //     // dd([
-    //     //     'saleId' => $this->saleId,
-    //     //     'paymentMethodId' => $this->payment_method,
-    //     //     'amountPaid' => $this->amount_paid
-    //     // ]);
-
-    //     $this->dispatch('paymentProcessed', 
-    //         saleId: $this->saleId,
-    //         paymentMethodId: $this->payment_method, // Ganti nama parameter menjadi paymentMethodId
-    //         amountPaid: $this->amount_paid
-    //     );
-
-    //     $this->show = false;
-    //     $this->resetExcept(['paymentMethods']);
-    // }
-
     public function processPayment()
     {
         $this->validate();
@@ -217,9 +143,11 @@ class PosPaymentModal extends Component
         $this->showReceiptPreview = true;
     }
 
-    protected function generateReceiptPreview()
+    protected function generateReceiptPreview(Sale $sale = null)
     {
-        $sale = Sale::with(['items.product', 'paymentMethod', 'user'])->find($this->saleId);
+        if (!$sale) {
+            $sale = Sale::with(['items.product', 'paymentMethod', 'user'])->find($this->saleId);
+        }
         
         if (!$sale) {
             return;
@@ -292,6 +220,17 @@ class PosPaymentModal extends Component
         $this->receiptContent = $content;
     }
 
+    public function openReceiptModal($saleId)
+    {
+        $sale = Sale::with(['items.product', 'paymentMethod', 'user'])->findOrFail($saleId);
+        
+        // Generate receipt content
+        $this->generateReceiptPreview($sale);
+        
+        // Show receipt preview modal
+        $this->showReceiptPreview = true;
+    }
+
     public function closeReceiptPreview()
     {
         $this->showReceiptPreview = false;
@@ -321,4 +260,6 @@ class PosPaymentModal extends Component
             'selectedPaymentMethod' => $this->selectedPaymentMethod,
         ]);
     }
+
+    
 }

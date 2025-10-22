@@ -42,7 +42,7 @@ class SalesTable
                         // Load relationships
                         $sale = $record->load(['items.product', 'paymentMethod', 'user']);
                         
-                        return view('livewire.receipt-preview', [
+                        return view('filament.components.receipt-preview-content', [
                             'sale' => $sale
                         ]);
                     })

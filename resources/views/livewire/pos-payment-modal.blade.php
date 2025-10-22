@@ -203,8 +203,8 @@
     
     {{-- Modal Preview Struk --}}
     @if ($showReceiptPreview)
-        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black bg-opacity-50">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-auto">
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-md bg-opacity-50">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-xl mx-auto">
                 {{-- Header --}}
                 <div class="flex justify-between items-center p-4 border-b">
                     <h3 class="text-lg font-bold">Preview Struk</h3>
@@ -214,7 +214,7 @@
                 </div>
 
                 {{-- Content Struk --}}
-                <div class="p-4 max-h-96 overflow-y-auto">
+                <div class="p-4 max-h-150 overflow-y-auto">
                     <div class="receipt-preview text-sm">
                         {!! $receiptContent !!}
                     </div>
@@ -223,11 +223,11 @@
                 {{-- Actions --}}
                 <div class="flex space-x-2 p-4 border-t">
                     <button wire:click="closeReceiptPreview" 
-                            class="flex-1 bg-gray-500 text-white py-2 rounded font-medium">
+                            class="cursor-pointer flex-1 bg-gray-500 text-white py-2 rounded font-medium">
                         TUTUP
                     </button>
                     <button onclick="printReceipt()" 
-                            class="flex-1 bg-green-600 text-white py-2 rounded font-medium">
+                            class="cursor-pointer flex-1 bg-green-600 text-white py-2 rounded font-medium">
                         🖨️ CETAK
                     </button>
                 </div>
