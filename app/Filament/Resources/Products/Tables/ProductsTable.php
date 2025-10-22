@@ -33,9 +33,17 @@ class ProductsTable
                     ->badge()
                     ->colors([
                         'info' => 'raw',
-                        'success' => 'finished',
+                        'success' => 'finished', 
+                        'warning' => 'produced',
                     ])
-                    ->formatStateUsing(fn($state) => $state === 'raw' ? 'Bahan Baku' : 'Produk Jadi'),
+                    ->formatStateUsing(function ($state) {
+                        return match($state) {
+                            'raw' => 'Bahan Baku',
+                            'retail' => 'Produk Jadi',
+                            'produced' => 'Produk Kitchen',
+                            default => $state,
+                        };
+                    }),
 
                 TextColumn::make('stock_display')
                     ->label('Stok')
