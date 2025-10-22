@@ -24,12 +24,20 @@ class ListSales extends ListRecords
     {
         $tabs = [
             'Semua Penjualan' => Tab::make()->label('Semua Penjualan'),
-            'Lunas' => Tab::make()->label('Lunas')->modifyQueryUsing(function ($query) {
-                $query->where('status', 'completed');
-            }),
-            'Belum Lunas' => Tab::make()->label('Belum Lunas')->modifyQueryUsing(function ($query) {
-                $query->where('status', 'draft');
-            }),
+            'Lunas' => Tab::make()
+                ->label('Lunas')
+                ->modifyQueryUsing(function ($query) {
+                    $query->where('status', 'completed');
+                })->badge(function () {
+                    return Sale::where('status', 'completed')->count();
+                })->badgeColor('success'),
+            'Belum Lunas' => Tab::make()
+                ->label('Belum Lunas')
+                ->modifyQueryUsing(function ($query) {
+                    $query->where('status', 'draft');
+                })->badge(function () {
+                    return Sale::where('status', 'draft')->count();
+                })->badgeColor('warning'),
         ];
 
         // Ambil semua payment method yang aktif

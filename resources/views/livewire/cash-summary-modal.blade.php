@@ -57,27 +57,23 @@
                                     <span class="text-lg font-bold text-blue-900">{{ $this->formatCurrency($summary['cash_in_hand']) }}</span>
                                 </div>
 
-                                <!-- Sales Breakdown -->
+                                <!-- Sales Breakdown by Payment Method -->
                                 <div class="space-y-2">
-                                    <h4 class="font-semibold text-gray-900 text-sm uppercase tracking-wide">Penjualan</h4>
+                                    <h4 class="font-semibold text-gray-900 text-sm uppercase tracking-wide">Penjualan per Metode</h4>
                                     
                                     <div class="grid grid-cols-2 gap-2">
-                                        <div class="flex justify-between items-center p-2 bg-green-50 rounded border border-green-200">
-                                            <span class="text-sm text-green-800">Cash</span>
-                                            <span class="font-semibold text-green-800">{{ $this->formatCurrency($summary['cash_sales']) }}</span>
-                                        </div>
-                                        <div class="flex justify-between items-center p-2 bg-purple-50 rounded border border-purple-200">
-                                            <span class="text-sm text-purple-800">Transfer</span>
-                                            <span class="font-semibold text-purple-800">{{ $this->formatCurrency($summary['transfer_sales']) }}</span>
-                                        </div>
-                                        <div class="flex justify-between items-center p-2 bg-orange-50 rounded border border-orange-200">
-                                            <span class="text-sm text-orange-800">QRIS</span>
-                                            <span class="font-semibold text-orange-800">{{ $this->formatCurrency($summary['qris_sales']) }}</span>
-                                        </div>
-                                        <div class="flex justify-between items-center p-2 bg-indigo-50 rounded border border-indigo-200">
-                                            <span class="text-sm text-indigo-800">Kartu</span>
-                                            <span class="font-semibold text-indigo-800">{{ $this->formatCurrency($summary['card_sales']) }}</span>
-                                        </div>
+                                        @foreach($summary['payment_method_sales'] as $methodCode => $amount)
+                                            @if($amount > 0)
+                                                @php
+                                                    $color = $this->getPaymentMethodColor($methodCode);
+                                                    $methodName = $this->getPaymentMethodName($methodCode);
+                                                @endphp
+                                                <div class="flex justify-between items-center p-2 bg-{{ $color }}-50 rounded border border-{{ $color }}-200">
+                                                    <span class="text-sm text-{{ $color }}-800">{{ $methodName }}</span>
+                                                    <span class="font-semibold text-{{ $color }}-800">{{ $this->formatCurrency($amount) }}</span>
+                                                </div>
+                                            @endif
+                                        @endforeach
                                     </div>
                                 </div>
 
@@ -88,10 +84,13 @@
                                         <span class="text-lg font-bold text-gray-900">{{ $this->formatCurrency($summary['total_sales']) }}</span>
                                     </div>
                                     
-                                    <div class="flex justify-between items-center p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-lg text-white">
-                                        <span class="font-semibold">Uang di Laci (Expected)</span>
-                                        <span class="text-xl font-bold">{{ $this->formatCurrency($summary['expected_cash']) }}</span>
-                                    </div>
+                                    <!-- Expected Cash (hanya untuk metode cash) -->
+                                    @if(isset($summary['payment_method_sales']['cash']) && $summary['payment_method_sales']['cash'] > 0)
+                                        <div class="flex justify-between items-center p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-lg text-white">
+                                            <span class="font-semibold">Uang di Laci (Expected)</span>
+                                            <span class="text-xl font-bold">{{ $this->formatCurrency($summary['expected_cash']) }}</span>
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <!-- Statistics -->
