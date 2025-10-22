@@ -24,11 +24,6 @@ class SalesTable
                 TextColumn::make('invoice_number')->label('Invoice Number')->searchable()->sortable(),
                 TextColumn::make('customer_name')->label('Customer Name')->searchable()->sortable(),
                 TextColumn::make('order_type')->label('Order Type')->searchable()->sortable(),
-                TextColumn::make('paymentMethod.name')->label('Payment Method')->searchable()->sortable(),
-                TextColumn::make('status')->label('Status')->sortable()->badge()->colors([
-                    'success' => 'completed',
-                    'warning' => 'draft',
-                ]),
                 TextColumn::make('final_total')->label('Total Amount')->sortable()->money('IDR')->summarize(Sum::make()->money('IDR')->label('Total Penjualan')),
             ])
             ->defaultSort('created_at', 'desc')
