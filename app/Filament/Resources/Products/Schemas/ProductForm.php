@@ -166,7 +166,7 @@ class ProductForm
                     ->prefix('Rp')
                     ->label('Biaya Tambahan Produksi (Opsional)')
                     ->default(0)
-                    ->visible(fn($get) => in_array($get('type'), ['produced', 'bar', 'retail']))
+                    ->visible(fn($get) => in_array($get('type'), ['produced', 'bar']))
                     ->reactive()
                     ->live(onBlur: true)
                     ->afterStateUpdated(fn($state, callable $set, callable $get) => self::updateHpp($set, $get)),
@@ -266,16 +266,47 @@ class ProductForm
                         }
                     }),
 
+                // 💰 Keuntungan (hanya tampilan, tidak disimpan)
+                TextInput::make('profit_display')
+                    ->label('Keuntungan')
+                    ->prefix('Rp')
+                    ->readOnly()
+                    ->reactive()
+                    ->dehydrated(false) // Pastikan tidak disimpan ke database
+                    ->formatStateUsing(function ($state, callable $get) {
+                        $basePrice = $get('base_price') ?? 0;
+                        $sellPrice = $get('sell_price') ?? 0;
+                        $profit = $sellPrice - $basePrice;
+                        
+                        return number_format($profit, 0, ',', '.');
+                    })
+                    ->afterStateHydrated(function ($set, $get) {
+                        // Update initial state
+                        $basePrice = $get('base_price') ?? 0;
+                        $sellPrice = $get('sell_price') ?? 0;
+                        $profit = $sellPrice - $basePrice;
+                        $set('profit_display', number_format($profit, 0, ',', '.'));
+                    })
+                    ->helperText(function ($get) {
+                        $basePrice = $get('base_price') ?? 0;
+                        $sellPrice = $get('sell_price') ?? 0;
+                        $profit = $sellPrice - $basePrice;
+                        
+                        if ($basePrice > 0) {
+                            $margin = ($profit / $basePrice) * 100;
+                            return "Margin: " . number_format($margin, 1) . "%" . 
+                                ($margin < 0 ? " ⚠️ Rugi" : ($margin < 10 ? " ⚠️ Margin rendah" : " ✅"));
+                        }
+                        
+                        return "Margin: 0%";
+                    })
+                    ->disabled(),
+                
                 // 🔘 Bisa dijual di POS
                 Toggle::make('is_sellable')
+                    ->inline()
                     ->label('Bisa Dijual di POS?')
                     ->default(fn(callable $get) => in_array($get('type'), ['produced', 'bar', 'retail'])),
-
-                // 🔧 Manual override untuk produk produced dan bar
-                Toggle::make('is_manual')
-                    ->label('Manual Override HPP')
-                    ->visible(fn($get) => in_array($get('type'), ['produced', 'bar']))
-                    ->default(false),
             ]);
     }
 

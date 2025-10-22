@@ -200,4 +200,133 @@
             }
         </style>
     @endif
+    
+    {{-- Modal Preview Struk --}}
+    @if ($showReceiptPreview)
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black bg-opacity-50">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-auto">
+                {{-- Header --}}
+                <div class="flex justify-between items-center p-4 border-b">
+                    <h3 class="text-lg font-bold">Preview Struk</h3>
+                    <button wire:click="closeReceiptPreview" class="text-gray-500 hover:text-gray-700">
+                        ✕
+                    </button>
+                </div>
+
+                {{-- Content Struk --}}
+                <div class="p-4 max-h-96 overflow-y-auto">
+                    <div class="receipt-preview text-sm">
+                        {!! $receiptContent !!}
+                    </div>
+                </div>
+
+                {{-- Actions --}}
+                <div class="flex space-x-2 p-4 border-t">
+                    <button wire:click="closeReceiptPreview" 
+                            class="flex-1 bg-gray-500 text-white py-2 rounded font-medium">
+                        TUTUP
+                    </button>
+                    <button onclick="printReceipt()" 
+                            class="flex-1 bg-green-600 text-white py-2 rounded font-medium">
+                        🖨️ CETAK
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
+
+<script>
+function printReceipt() {
+    const receiptContent = document.querySelector('.receipt-preview').innerHTML;
+    
+    const printWindow = window.open('', '_blank', 'width=350,height=600');
+    
+    const printStyle = `
+        <style>
+            @media print {
+                body { 
+                    margin: 0; 
+                    padding: 10px; 
+                    font-family: 'Courier New', monospace;
+                    font-size: 12px;
+                }
+                .text-center { text-align: center; }
+                .font-bold { font-weight: bold; }
+                .text-lg { font-size: 14px; }
+                .text-sm { font-size: 11px; }
+                .text-xs { font-size: 10px; }
+                .uppercase { text-transform: uppercase; }
+                .flex { display: flex; }
+                .justify-between { justify-content: space-between; }
+                .items-start { align-items: flex-start; }
+                .flex-1 { flex: 1; }
+                .border-t { border-top: 1px solid #000; }
+                .border-dashed { border-style: dashed; }
+                .my-2 { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+                .font-semibold { font-weight: 600; }
+                .space-y-1 > * + * { margin-top: 0.25rem; }
+                .space-y-2 > * + * { margin-top: 0.5rem; }
+            }
+        </style>
+    `;
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Struk Pembayaran</title>
+            ${printStyle}
+        </head>
+        <body>
+            ${receiptContent}
+            <script>
+                window.onload = function() {
+                    window.print();
+                    setTimeout(() => window.close(), 1000);
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+}
+
+// Event listener untuk Livewire
+document.addEventListener('livewire:initialized', () => {
+    Livewire.on('printReceiptDirect', (event) => {
+        printReceiptDirect(event.content);
+    });
+});
+
+// Fungsi untuk print langsung (opsional)
+function printReceiptDirect(content) {
+    const printWindow = window.open('', '_blank', 'width=1,height=1');
+    
+    const printStyle = `
+        <style>
+            @media print {
+                body { margin: 0; padding: 10px; font-family: 'Courier New', monospace; font-size: 12px; }
+                .text-center { text-align: center; }
+                .font-bold { font-weight: bold; }
+                .text-sm { font-size: 11px; }
+                .flex { display: flex; }
+                .justify-between { justify-content: space-between; }
+            }
+        </style>
+    `;
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Struk</title>${printStyle}</head>
+        <body onload="window.print(); setTimeout(() => window.close(), 500);">
+            ${content}
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+}
+</script>

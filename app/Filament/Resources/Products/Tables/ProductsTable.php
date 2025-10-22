@@ -7,6 +7,7 @@ use Filament\Tables\Table;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 
@@ -83,6 +84,36 @@ class ProductsTable
                 TextColumn::make('sell_price')
                     ->label('Harga Jual')
                     ->money('IDR'),
+
+                TextColumn::make('profit')
+                    ->label('Keuntungan')
+                    ->money('IDR')
+                    ->sortable()
+                    ->getStateUsing(function ($record) {
+                        $basePrice = $record->base_price ?? 0;
+                        $sellPrice = $record->sell_price ?? 0;
+                        
+                        return $sellPrice - $basePrice;
+                    })
+                    ->color(function ($record) {
+                        $basePrice = $record->base_price ?? 0;
+                        $sellPrice = $record->sell_price ?? 0;
+                        $profit = $sellPrice - $basePrice;
+                        
+                        return $profit >= 0 ? 'success' : 'danger';
+                    })
+                    ->description(function ($record) {
+                        $basePrice = $record->base_price ?? 0;
+                        $sellPrice = $record->sell_price ?? 0;
+                        
+                        if ($basePrice > 0) {
+                            $profit = $sellPrice - $basePrice;
+                            $margin = ($profit / $basePrice) * 100;
+                            return number_format($margin, 1) . '%';
+                        }
+                        
+                        return '0%';
+                    }),
             ])
             ->filters([
                 //
