@@ -44,12 +44,6 @@ class PosPaymentModal extends Component
                 ];
             })
             ->toArray();
-
-        // Set default payment method (cash)
-        if (!empty($this->paymentMethods)) {
-            $cashMethod = collect($this->paymentMethods)->firstWhere('code', 'cash');
-            $this->payment_method = $cashMethod ? $cashMethod['id'] : $this->paymentMethods[0]['id'];
-        }
     }
 
     public function openPaymentModal($saleId)
