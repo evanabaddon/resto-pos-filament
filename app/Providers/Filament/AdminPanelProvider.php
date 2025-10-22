@@ -3,9 +3,11 @@
 namespace App\Providers\Filament;
 
 use Filament\Panel;
+use Livewire\Livewire;
 use Filament\PanelProvider;
 use Filament\Pages\Dashboard;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Support\Facades\Request;
 use Filament\Widgets\FilamentInfoWidget;
@@ -58,6 +60,10 @@ class AdminPanelProvider extends PanelProvider
             ->resourceEditPageRedirect('index')
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => Livewire::mount('receipt-preview'),
+            );
     }
 }

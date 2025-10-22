@@ -6,10 +6,9 @@ use App\Models\Sale;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
-use Illuminate\Support\Facades\Date;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Summarizers\Sum;
 
 class SalesTable
@@ -32,13 +31,45 @@ class SalesTable
             ])
             ->recordActions([
                 EditAction::make(),
+                
+                // Action untuk preview struk dengan modal
+                Action::make('previewReceipt')
+                    ->label('Preview Struk')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->modalHeading('Preview Struk')
+                    ->modalContent(function (Sale $record) {
+                        // Load relationships
+                        $sale = $record->load(['items.product', 'paymentMethod', 'user']);
+                        
+                        return view('livewire.receipt-preview', [
+                            'sale' => $sale
+                        ]);
+                    })
+                    ->modalFooterActions([
+                        Action::make('print')
+                            ->label('Cetak Struk')
+                            ->icon('heroicon-o-printer')
+                            ->color('success')
+                            ->action(function (Sale $record) {
+                                return self::printReceiptDirect($record);
+                            }),
+                        Action::make('close')
+                            ->label('Tutup')
+                            ->color('gray')
+                            ->close(), // Gunakan close() bukan cancel()
+                    ])
+                    ->modalWidth('sm'),
+
+                // Action untuk print langsung
                 Action::make('printReceipt')
-                    ->label('Cetak Struk')
+                    ->label('Print Struk')
                     ->icon('heroicon-o-printer')
                     ->color('success')
                     ->action(function (Sale $record) {
-                        return self::printReceipt($record);
+                        return self::printReceiptDirect($record);
                     })
+                    ->requiresConfirmation() 
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -47,11 +78,12 @@ class SalesTable
             ]);
     }
 
-    public static function printReceipt(Sale $sale)
+    // Method untuk print langsung
+    public static function printReceiptDirect(Sale $sale)
     {
         $receiptContent = self::generateReceiptContent($sale);
         
-        // Return script untuk print
+        // Return JavaScript untuk print
         return <<<HTML
         <script>
             function printReceipt() {
@@ -86,25 +118,6 @@ class SalesTable
                             .space-y-2 > * + * { margin-top: 0.5rem; }
                             .pt-1 { padding-top: 0.25rem; }
                         }
-                        @media screen {
-                            body { 
-                                margin: 20px; 
-                                font-family: 'Courier New', monospace;
-                                font-size: 14px;
-                                max-width: 300px;
-                            }
-                            .print-btn {
-                                background: #10b981;
-                                color: white;
-                                border: none;
-                                padding: 10px 20px;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                font-size: 14px;
-                                margin-top: 15px;
-                                width: 100%;
-                            }
-                        }
                     </style>
                 `;
 
@@ -115,12 +128,8 @@ class SalesTable
                         <title>Struk #{$sale->invoice_number}</title>
                         \${printStyle}
                     </head>
-                    <body>
-                        <div class="receipt-content">
-                            \${content}
-                        </div>
-                        <button class="print-btn" onclick="window.print()">🖨️ CETAK STRUK</button>
-                        <button class="print-btn" onclick="window.close()" style="background: #6b7280; margin-top: 10px;">TUTUP</button>
+                    <body onload="window.print(); setTimeout(() => window.close(), 500);">
+                        \${content}
                     </body>
                     </html>
                 `);
@@ -185,14 +194,11 @@ class SalesTable
         
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
         
-        // Payment Info - UNTUK SEMUA METODE PEMBAYARAN
+        // Payment Info
         $content .= "<div class='space-y-1 text-sm'>";
         $content .= "<div class='flex justify-between'><span>Metode Bayar:</span><span class='font-semibold'>" . ($sale->paymentMethod->name ?? 'Cash') . "</span></div>";
-        
-        // Tampilkan amount_paid untuk semua metode
         $content .= "<div class='flex justify-between'><span>Dibayar:</span><span>Rp" . number_format($sale->amount_paid, 0, ',', '.') . "</span></div>";
         
-        // Hanya tampilkan kembalian untuk cash
         if (($sale->paymentMethod->code ?? 'cash') === 'cash') {
             $change = $sale->amount_paid - $sale->final_total;
             if ($change > 0) {
@@ -200,7 +206,6 @@ class SalesTable
             }
         }
         
-        // Tampilkan status pembayaran
         $paymentStatus = $sale->is_paid ? 'LUNAS' : 'BELUM LUNAS';
         $statusColor = $sale->is_paid ? 'text-green-600' : 'text-red-600';
         $content .= "<div class='flex justify-between {$statusColor}'><span>Status Bayar:</span><span class='font-semibold'>{$paymentStatus}</span></div>";
