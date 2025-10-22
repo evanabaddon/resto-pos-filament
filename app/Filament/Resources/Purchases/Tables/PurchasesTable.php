@@ -17,7 +17,12 @@ class PurchasesTable
         return $table
             ->columns([
                 TextColumn::make('date')->label('Tanggal')->formatStateUsing(fn ($state) => Carbon::parse($state)->isoFormat('D MMMM Y')),
-                TextColumn::make('invoice_number'),
+                TextColumn::make('invoice_number')
+                    ->label('Nomor Nota')
+                    ->searchable()
+                    ->sortable()
+                    ->copyable()
+                    ->copyMessage('Referensi disalin!'),
                 TextColumn::make('supplier_name'),
                 TextColumn::make('status')
                     ->badge()

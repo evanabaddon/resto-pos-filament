@@ -719,7 +719,7 @@ class Pos extends Page
         $this->saleId = $sale->id;
         $this->orderNumber = $sale->invoice_number;
         $this->customerName = $sale->customer_name ?? '';
-        $this->orderType = $sale->order_type ?? 'dine_in';
+        $this->orderType = $sale->order_type ?? 'Dine In';
         $this->discount = $sale->discount ?? 0; // set discount dulu
 
         // Map ulang items
@@ -783,7 +783,7 @@ class Pos extends Page
         $this->tax = 0;
         $this->discount = 0;
         $this->finalTotal = 0;
-        $this->orderType = 'dine_in';
+        $this->orderType = 'Dine In';
         $this->generateOrderNumber();
         $this->customerName = '';
         $this->discountCodeInput = '';

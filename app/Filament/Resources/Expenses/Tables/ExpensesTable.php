@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Expenses\Tables;
 
 use Dom\Text;
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
 use Filament\Actions\EditAction;
 use Filament\Tables\Filters\Filter;
 use Filament\Actions\BulkActionGroup;
@@ -21,17 +22,17 @@ class ExpensesTable
     {
         return $table
             ->columns([
+                TextColumn::make('date')
+                    ->label('Tanggal')
+                    ->formatStateUsing(fn ($state) => Carbon::parse($state)->isoFormat('D MMMM Y'))
+                    ->sortable(),
+
                 TextColumn::make('reference')
                     ->label('Referensi')
                     ->searchable()
                     ->sortable()
                     ->copyable()
                     ->copyMessage('Referensi disalin!'),
-                
-                TextColumn::make('date')
-                    ->label('Tanggal')
-                    ->date('d/m/Y')
-                    ->sortable(),
                 
                 TextColumn::make('category.name')
                     ->label('Kategori')

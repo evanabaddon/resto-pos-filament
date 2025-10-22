@@ -34,10 +34,10 @@
                                                 {{ $sale->invoice_number }}
                                             </span>
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                                @if($sale->order_type === 'dine_in') bg-green-100 text-green-800
+                                                @if($sale->order_type === 'Dine In') bg-green-100 text-green-800
                                                 @elseif($sale->order_type === 'take_away') bg-orange-100 text-orange-800
                                                 @else bg-gray-100 text-gray-800 @endif">
-                                                {{ $sale->order_type === 'dine_in' ? 'Makan di Tempat' : 
+                                                {{ $sale->order_type === 'Dine In' ? 'Makan di Tempat' : 
                                                    ($sale->order_type === 'take_away' ? 'Bawa Pulang' : 'Delivery') }}
                                             </span>
                                         </div>

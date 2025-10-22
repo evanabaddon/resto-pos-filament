@@ -24,10 +24,10 @@ class ProductForm
             ->components([
                 FileUpload::make('image')
                     ->label('Gambar Produk')
-                    ->directory('products') // folder di storage/app/public/products
+                    ->directory('products')
                     ->disk('public')
                     ->image()
-                    ->imageEditor() // aktifkan crop/resize editor bawaan Filament
+                    ->imageEditor()
                     ->maxSize(2048)
                     ->columnSpanFull(),
 
@@ -41,7 +41,8 @@ class ProductForm
                     ->label('Tipe Produk')
                     ->options([
                         'raw' => 'Bahan Baku',
-                        'produced' => 'Produk Kitchen / Produksi (dengan resep)',
+                        'produced' => 'Produk Kitchen (dengan resep)',
+                        'bar' => 'Produk Bar (dengan resep)',
                         'retail' => 'Produk Jadi Siap Jual (tanpa resep)',
                     ])
                     ->required()
@@ -66,11 +67,11 @@ class ProductForm
                 TextInput::make('stock')
                     ->numeric()
                     ->label('Stok Saat Ini')
-                    ->hidden(fn(callable $get) => $get('type') === 'produced')
+                    ->hidden(fn(callable $get) => in_array($get('type'), ['produced', 'bar']))
                     ->disabled(fn($record) => $record !== null)
                     ->default(0),
 
-                // 🍳 Komposisi bahan hanya untuk produk produced
+                // 🍳 Komposisi bahan untuk produk produced DAN bar
                 Repeater::make('recipes')
                     ->label('Komposisi Bahan')
                     ->relationship()
@@ -79,21 +80,25 @@ class ProductForm
                         TableColumn::make('Bahan'),
                         TableColumn::make('Jumlah'),
                         TableColumn::make('Satuan'),
+                        TableColumn::make('Harga Bahan'),
                     ])
                     ->schema([
                         Select::make('ingredient_id')
                             ->label('Bahan')
-                             ->relationship(
+                            ->relationship(
                                 name: 'ingredient',
                                 titleAttribute: 'name',
-                                modifyQueryUsing: fn ($query) => $query->where('type', 'raw')
+                                modifyQueryUsing: fn ($query, callable $get) => $query->whereIn('type', self::getAllowedIngredientTypes($get))
                             )
                             ->searchable()
                             ->required()
                             ->reactive()
                             ->preload()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn($state, callable $set, callable $get) => self::updateHpp($set, $get)),
+                            ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
+                                self::updateMaterialPrice($set, $get, $component);
+                                self::updateHpp($set, $get);
+                            }),
 
                         TextInput::make('quantity')
                             ->label('Jumlah')
@@ -102,7 +107,10 @@ class ProductForm
                             ->default(1)
                             ->reactive()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn($state, callable $set, callable $get) => self::updateHpp($set, $get)),
+                            ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
+                                self::updateMaterialPrice($set, $get, $component);
+                                self::updateHpp($set, $get);
+                            }),
 
                         Select::make('unit_id')
                             ->label('Satuan')
@@ -111,12 +119,11 @@ class ProductForm
                             ->required()
                             ->options(function (callable $get) {
                                 $ingredientId = $get('ingredient_id');
-                                if (! $ingredientId) return [];
+                                if (!$ingredientId) return [];
 
                                 $ingredient = Product::with('unit.baseUnit')->find($ingredientId);
-                                if (! $ingredient || ! $ingredient->unit) return [];
+                                if (!$ingredient || !$ingredient->unit) return [];
 
-                                // Ambil unit dasar dan unit terkait
                                 $baseUnitId = $ingredient->unit->base_unit_id ?: $ingredient->unit->id;
 
                                 $units = Unit::query()
@@ -128,16 +135,28 @@ class ProductForm
                                     $label = $unit->name;
                                     if ($unit->conversion_rate && $unit->base_unit_id) {
                                         $label;
-                                        // $label .= " (1 base = {$unit->conversion_rate} {$unit->symbol})";
                                     }
                                     return [$unit->id => $label];
                                 });
                             })
-                            ->reactive(),
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
+                                self::updateMaterialPrice($set, $get, $component);
+                                self::updateHpp($set, $get);
+                            }),
 
+                        TextInput::make('material_price')
+                            ->label('Harga Bahan')
+                            ->numeric()
+                            ->readOnly()
+                            ->prefix('Rp')
+                            ->default(0)
+                            ->formatStateUsing(function ($state, callable $get, $component) {
+                                return self::calculateMaterialPrice($get, $component);
+                            })
                     ])
-                    ->columns(3)
-                    ->visible(fn(callable $get) => $get('type') === 'produced')
+                    ->columns(4) // Diubah dari 3 menjadi 4 karena ada kolom baru
+                    ->visible(fn(callable $get) => in_array($get('type'), ['produced', 'bar']))
                     ->afterStateUpdated(fn($state, callable $set, callable $get) => self::updateHpp($set, $get))
                     ->columnSpanFull(),
 
@@ -147,7 +166,7 @@ class ProductForm
                     ->prefix('Rp')
                     ->label('Biaya Tambahan Produksi (Opsional)')
                     ->default(0)
-                    ->visible(fn($get) => in_array($get('type'), ['produced', 'retail']))
+                    ->visible(fn($get) => in_array($get('type'), ['produced', 'bar', 'retail']))
                     ->reactive()
                     ->live(onBlur: true)
                     ->afterStateUpdated(fn($state, callable $set, callable $get) => self::updateHpp($set, $get)),
@@ -159,7 +178,7 @@ class ProductForm
                     ->label('Harga Pokok (HPP)')
                     ->nullable()
                     ->reactive()
-                    ->readOnly(fn($get) => $get('type') === 'produced') // hanya readonly untuk produk produced
+                    ->readOnly(fn($get) => in_array($get('type'), ['produced', 'bar']))
                     ->dehydrated(true)
                     ->suffixActions([
                         Action::make('updateFromPurchase')
@@ -171,17 +190,16 @@ class ProductForm
                                 if ($productId) {
                                     $product = Product::find($productId);
                                     
-                                    // Hapus debug dd() dan ganti dengan logic yang benar
                                     $lastPurchaseItem = PurchaseItem::where('product_id', $productId)
                                         ->whereHas('purchase', function ($query) {
-                                            $query->where('status', 'received'); // Ganti menjadi 'received'
+                                            $query->where('status', 'received');
                                         })
                                         ->latest()
                                         ->first();
 
                                     if ($lastPurchaseItem) {
                                         $product->update([
-                                            'base_price' => $lastPurchaseItem->price // Ganti menjadi 'price'
+                                            'base_price' => $lastPurchaseItem->price
                                         ]);
                                         $product->refresh();
                                         
@@ -202,7 +220,7 @@ class ProductForm
                                     }
                                 }
                             })
-                            ->visible(fn($get) => !empty($get('id'))),
+                            ->visible(fn($get) => !empty($get('id')) && in_array($get('type'), ['raw', 'retail'])),
 
                         Action::make('recalculateHpp')
                             ->icon('heroicon-o-calculator')
@@ -216,7 +234,7 @@ class ProductForm
                                     ->success()
                                     ->send();
                             })
-                            ->visible(fn($get) => $get('type') === 'produced')
+                            ->visible(fn($get) => in_array($get('type'), ['produced', 'bar']))
                     ])
                     ->afterStateUpdated(function ($state, callable $get, callable $set) {
                         if (blank($get('sell_price')) || $get('sell_price') == 0) {
@@ -234,7 +252,7 @@ class ProductForm
                     ->live(onBlur: true)
                     ->minValue(function ($get) {
                         $basePrice = $get('base_price') ?? 0;
-                        return $basePrice; // Minimal base_price
+                        return $basePrice;
                     })
                     ->helperText(function ($get) {
                         $basePrice = $get('base_price') ?? 0;
@@ -243,7 +261,6 @@ class ProductForm
                     ->afterStateHydrated(function ($set, $get, $state) {
                         if (blank($state)) {
                             $basePrice = $get('base_price') ?? 0;
-                            // Auto-set ke base_price * 1.3 (30% markup) atau minimal base_price
                             $defaultPrice = max($basePrice * 1.3, $basePrice + 1);
                             $set('sell_price', $defaultPrice);
                         }
@@ -252,52 +269,77 @@ class ProductForm
                 // 🔘 Bisa dijual di POS
                 Toggle::make('is_sellable')
                     ->label('Bisa Dijual di POS?')
-                    ->default(fn(callable $get) => in_array($get('type'), ['produced', 'retail'])),
+                    ->default(fn(callable $get) => in_array($get('type'), ['produced', 'bar', 'retail'])),
 
-                // 🔧 Manual override untuk produk produced
+                // 🔧 Manual override untuk produk produced dan bar
                 Toggle::make('is_manual')
                     ->label('Manual Override HPP')
-                    ->visible(fn($get) => $get('type') === 'produced')
+                    ->visible(fn($get) => in_array($get('type'), ['produced', 'bar']))
                     ->default(false),
             ]);
     }
 
     /**
-     * Hitung ulang HPP hanya untuk produk produced
+     * Tentukan jenis bahan yang boleh digunakan berdasarkan tipe produk
      */
-    // protected static function updateHpp(callable $set, callable $get): void
-    // {
-    //     if ($get('type') !== 'produced') {
-    //         return; // raw dan retail HPP diisi manual
-    //     }
-
-    //     $recipes = $get('recipes') ?? [];
-    //     $totalHpp = collect($recipes)->sum(function ($item) {
-    //         $ingredient = Product::find($item['ingredient_id'] ?? null);
-    //         $recipeUnit = Unit::find($item['unit_id'] ?? null);
-
-    //         if (!$ingredient || !$ingredient->unit) {
-    //             return 0;
-    //         }
-
-    //         $ingredientConv = $ingredient->unit->conversion_rate ?? 1;
-    //         $recipeConv = $recipeUnit->conversion_rate ?? 1;
-
-    //         $qtyInIngredientUnit = ($item['quantity'] ?? 0) * ($ingredientConv / $recipeConv);
-    //         $hargaPerBaseUnit = $ingredient->base_price ?? 0;
-
-    //         return $hargaPerBaseUnit * $qtyInIngredientUnit;
-    //     });
-
-    //     $set('base_price', $totalHpp + ($get('additional_cost') ?? 0));
-    // }
+    protected static function getAllowedIngredientTypes(callable $get): array
+    {
+        $productType = $get('type');
+        
+        return match($productType) {
+            'produced' => ['raw'], // Kitchen hanya bisa pakai bahan baku
+            'bar' => ['raw', 'produced'], // Bar bisa pakai bahan baku dan produk kitchen
+            default => ['raw']
+        };
+    }
 
     /**
-     * Hitung ulang HPP untuk produk produced
+     * Hitung harga bahan berdasarkan quantity dan harga beli
+     */
+    protected static function calculateMaterialPrice(callable $get, $component): float
+    {
+        $ingredientId = $get('ingredient_id');
+        $quantity = $get('quantity') ?? 0;
+        $unitId = $get('unit_id');
+
+        if (!$ingredientId || $quantity <= 0 || !$unitId) {
+            return 0;
+        }
+
+        $ingredient = Product::find($ingredientId);
+        if (!$ingredient) {
+            return 0;
+        }
+
+        // Konversi quantity ke unit dasar bahan baku
+        $convertedQuantity = self::convertQuantityToBaseUnit(
+            $quantity, 
+            $unitId, 
+            $ingredient->unit_id
+        );
+
+        $materialPrice = ($ingredient->base_price ?? 0) * $convertedQuantity;
+
+        return $materialPrice;
+    }
+
+    /**
+     * Update harga bahan ketika ada perubahan
+     */
+    protected static function updateMaterialPrice(callable $set, callable $get, $component): void
+    {
+        $materialPrice = self::calculateMaterialPrice($get, $component);
+        $set('material_price', $materialPrice);
+    }
+
+    /**
+     * Hitung ulang HPP untuk produk produced dan bar
      */
     protected static function updateHpp(callable $set, callable $get): void
     {
-        if ($get('type') !== 'produced') {
+        $productType = $get('type');
+        
+        if (!in_array($productType, ['produced', 'bar'])) {
             return;
         }
 
@@ -342,16 +384,11 @@ class ProductForm
     }
 
     /**
-     * Konversi quantity ke unit dasar bahan baku - FIXED VERSION
+     * Konversi quantity ke unit dasar bahan baku
      */
     protected static function convertQuantityToBaseUnit($quantity, $fromUnitId, $ingredientBaseUnitId): float
     {
-        \Log::info("=== CONVERSION DEBUG ===");
-        \Log::info("Quantity: {$quantity}, From Unit: {$fromUnitId}, To Unit: {$ingredientBaseUnitId}");
-
-        // Jika unit sama, tidak perlu konversi
         if ($fromUnitId == $ingredientBaseUnitId) {
-            \Log::info("Same unit, no conversion needed");
             return $quantity;
         }
         
@@ -359,31 +396,18 @@ class ProductForm
         $ingredientBaseUnit = Unit::find($ingredientBaseUnitId);
         
         if (!$fromUnit || !$ingredientBaseUnit) {
-            \Log::warning("Unit not found");
             return $quantity;
         }
         
-        \Log::info("From Unit: {$fromUnit->name} (Base: {$fromUnit->base_unit_id}), To Unit: {$ingredientBaseUnit->name}");
-        
-        // Cari base unit dari unit resep
         $fromBaseUnitId = $fromUnit->base_unit_id ?: $fromUnit->id;
         
-        // Jika base unit berbeda, tidak bisa konversi
         if ($fromBaseUnitId != $ingredientBaseUnitId) {
-            \Log::warning("Different base units: {$fromBaseUnitId} vs {$ingredientBaseUnitId}");
             return $quantity;
         }
         
-        // Konversi: quantity dalam unit resep → quantity dalam base unit
         if ($fromUnit->base_unit_id) {
-            // Ini unit turunan: conversion_rate = "1 base = x unit ini"
-            // Jadi: quantity (base) = quantity (unit ini) / conversion_rate
-            $converted = $quantity / $fromUnit->conversion_rate;
-            \Log::info("Conversion: {$quantity} {$fromUnit->name} / {$fromUnit->conversion_rate} = {$converted} {$ingredientBaseUnit->name}");
-            return $converted;
+            return $quantity / $fromUnit->conversion_rate;
         } else {
-            // Ini sudah base unit
-            \Log::info("Already base unit, no conversion");
             return $quantity;
         }
     }

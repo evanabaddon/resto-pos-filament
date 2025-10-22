@@ -25,6 +25,7 @@ class ListProducts extends ListRecords
             'Semua Produk' => Tab::make()->label('Semua Produk'),
             'Produk Jadi' => Tab::make()->label('Produk Jadi')->modifyQueryUsing(fn (Builder $query) => $query->where('type', 'retail')),
             'Product Kitchen' => Tab::make()->label('Product Kitchen')->modifyQueryUsing(fn (Builder $query) => $query->where('type', 'produced')),
+            'Produk Bar' => Tab::make()->label('Produk Bar')->modifyQueryUsing(fn (Builder $query) => $query->where('type', 'bar')),
             'Bahan Baku' => Tab::make()->label('Bahan Baku')->modifyQueryUsing(fn (Builder $query) => $query->where('type', 'raw')),
         ];
     }
