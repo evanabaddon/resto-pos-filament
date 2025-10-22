@@ -60,10 +60,6 @@ class AdminPanelProvider extends PanelProvider
             ->resourceEditPageRedirect('index')
             ->authMiddleware([
                 Authenticate::class,
-            ])
-            ->renderHook(
-                PanelsRenderHook::BODY_END,
-                fn (): string => Livewire::mount('receipt-preview'),
-            );
+            ]);
     }
 }
