@@ -763,26 +763,6 @@ class Pos extends Page
         // Dispatch event ke modal payment
         $this->dispatch('openPaymentModal', saleId: $targetSaleId);
     }
-    
-    // public function processPayment()
-    // {
-    //     $sale = Sale::findOrFail($this->saleId);
-
-    //     $sale->update([
-    //         'is_paid' => true,
-    //         'payment_method' => $this->payment_method,
-    //         'amount_paid' => $this->amount_paid,
-    //         'status' => 'paid',
-    //         'paid_at' => now(),
-    //     ]);
-
-    //     $this->showPaymentModal = false;
-
-    //     $this->dispatch('showNotification', 'Pembayaran berhasil diproses.', 'success');
-    //     $this->showPaymentModal = false;
-    //     $this->showLoadModal = false;
-    //     $this->resetPos();
-    // }
 
     public function processPayment()
     {
