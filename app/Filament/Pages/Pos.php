@@ -31,8 +31,6 @@ class Pos extends Page
     protected static ?string $navigationLabel = 'POS';
 
     protected $listeners = [
-        'enteredFullScreen' => 'onEnteredFullScreen',
-        'exitedFullScreen' => 'onExitedFullScreen',
         'closeCashSessionFromLayout' => 'closeCashSession',
         'cashInConfirmed' => 'handleCashInConfirmed',
         'cashInCancelled' => 'handleCashInCancelled',
@@ -63,18 +61,6 @@ class Pos extends Page
     public $finalTotal = 0;
     public $amount_paid = 0;
     public $outOfStock = 0;
-
-    public function onEnteredFullScreen()
-    {
-        // Optional: Lakukan sesuatu ketika masuk full screen
-        session()->flash('message', 'Full screen mode activated');
-    }
-
-    public function onExitedFullScreen()
-    {
-        // Optional: Lakukan sesuatu ketika keluar full screen
-        session()->flash('message', 'Exited full screen mode');
-    }
 
     public function mount()
     {
