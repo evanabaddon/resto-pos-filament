@@ -11,14 +11,26 @@
             height: 100%;
             overflow: hidden; /* hilangkan scroll browser */
         }
-    </style>
-    <style>
+
         @keyframes fade-in {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in {
             animation: fade-in 0.25s ease-out;
+        }
+        
+        @media (max-width: 1024px) {
+            /* Adjust header for tablet */
+            header {
+                padding: 0.75rem 1rem;
+            }
+            
+            /* Make buttons more touch-friendly */
+            button, [role="button"] {
+                min-height: 44px;
+                min-width: 44px;
+            }
         }
     </style>
 </head>
