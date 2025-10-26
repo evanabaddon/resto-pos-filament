@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Sale;
 use Livewire\Component;
 use App\Models\PaymentMethod;
+use App\Services\ReceiptPrintService;
 use Filament\Notifications\Notification;
 
 class PosPaymentModal extends Component
@@ -23,6 +24,8 @@ class PosPaymentModal extends Component
     public $invoiceNumber = '';
     public $showReceiptPreview = false;
     public $receiptContent = '';
+    public $isPrinting = false;
+     public $currentSaleIdForPrint = null; 
 
     protected $rules = [
         'amount_paid' => 'required|numeric|min:0',
@@ -31,7 +34,9 @@ class PosPaymentModal extends Component
 
     protected $listeners = [
         'openPaymentModal', 
-        'openReceiptModal' 
+        'openReceiptModal',
+        'printCompleted' => 'handlePrintCompleted',
+        'printFailed' => 'handlePrintFailed',
     ];
 
     public function mount()
@@ -54,6 +59,7 @@ class PosPaymentModal extends Component
         $sale = Sale::with('items')->findOrFail($saleId);
         
         $this->saleId = $sale->id;
+        $this->currentSaleIdForPrint = $sale->id;
         $this->finalTotal = (float) ($sale->final_total ?? 0);
         $this->subtotal = (float) ($sale->subtotal ?? 0);
         $this->tax = (float) ($sale->tax ?? 0);
@@ -123,24 +129,39 @@ class PosPaymentModal extends Component
             $this->amount_paid = $this->finalTotal;
         }
 
-        logger('Process Payment Called', [
-            'saleId' => $this->saleId,
-            'paymentMethod' => $this->payment_method,
-            'amountPaid' => $this->amount_paid
-        ]);
+        // Simpan saleId untuk print ulang
+        $saleIdToPrint = $this->saleId;
+        $this->currentSaleIdForPrint = $this->saleId;
+
+        logger('Process Payment - Sale ID:', ['saleId' => $saleIdToPrint]);
+        
+        if (!$saleIdToPrint) {
+            Notification::make()
+                ->title('Error')
+                ->body('Sale ID tidak valid.')
+                ->danger()
+                ->send();
+            return;
+        }
 
         // Process payment
         $this->dispatch('paymentProcessed', 
-            saleId: $this->saleId,
+            saleId: $saleIdToPrint,
             paymentMethodId: $this->payment_method,
             amountPaid: $this->amount_paid
         );
 
         // Generate dan show receipt preview
         $this->generateReceiptPreview();
+        
 
         $this->show = false;
         $this->showReceiptPreview = true;
+
+        // Auto print setelah pembayaran berhasil
+        // Auto print setelah pembayaran berhasil - kirim event ke Pos.php
+        $this->dispatch('printReceipt', saleId: $saleIdToPrint);
+        // $this->printReceiptDirect();
     }
 
     protected function generateReceiptPreview(Sale $sale = null)
@@ -220,10 +241,97 @@ class PosPaymentModal extends Component
         $this->receiptContent = $content;
     }
 
+    // Method untuk manual print dari tombol di modal preview
+    public function manualPrintReceipt()
+    {
+        // Gunakan currentSaleIdForPrint jika available, fallback ke saleId
+        $saleIdToPrint = $this->currentSaleIdForPrint ?? $this->saleId;
+        
+        logger('Manual Print Receipt - Sale ID:', [
+            'currentSaleIdForPrint' => $this->currentSaleIdForPrint,
+            'saleId' => $this->saleId,
+            'saleIdToPrint' => $saleIdToPrint
+        ]);
+        
+        if (!$saleIdToPrint) {
+            Notification::make()
+                ->title('Error')
+                ->body('Tidak ada transaksi yang dipilih untuk dicetak.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $this->isPrinting = true;
+        
+        // Kirim event print ke Pos.php dengan saleId yang valid
+        $this->dispatch('printReceipt', saleId: $saleIdToPrint);
+    }
+
+    // Handler ketika print selesai
+    public function handlePrintCompleted()
+    {
+        logger('Print completed received in PosPaymentModal');
+        $this->isPrinting = false;
+        
+        Notification::make()
+            ->title('Print Selesai')
+            ->body('Struk berhasil dicetak.')
+            ->success()
+            ->send();
+    }
+
+    // Handler ketika print gagal
+    public function handlePrintFailed()
+    {
+        logger('Print failed received in PosPaymentModal');
+        $this->isPrinting = false;
+        
+        Notification::make()
+            ->title('Print Gagal')
+            ->body('Gagal mencetak struk. Periksa koneksi printer.')
+            ->danger()
+            ->send();
+    }
+
+    // Method untuk print langsung ke printer thermal
+    public function printReceiptDirect()
+    {
+        try {
+            $this->isPrinting = true;
+            
+            $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->findOrFail($this->saleId);
+            
+            $printService = new ReceiptPrintService($sale);
+            $printService->printReceipt();
+            
+            Notification::make()
+                ->title('Struk Berhasil Dicetak')
+                ->body('Struk telah dikirim ke printer thermal.')
+                ->success()
+                ->send();
+                
+        } catch (\Exception $e) {
+            logger('Print receipt failed: ' . $e->getMessage());
+            
+            Notification::make()
+                ->title('Gagal Mencetak Struk')
+                ->body('Printer thermal tidak tersedia. Silakan cetak manual atau cek koneksi printer.')
+                ->warning()
+                ->send();
+        } finally {
+            $this->isPrinting = false;
+        }
+    }
+
     public function openReceiptModal($saleId)
     {
         $sale = Sale::with(['items.product', 'paymentMethod', 'user'])->findOrFail($saleId);
         
+        // Set saleId untuk print ulang
+        $this->currentSaleIdForPrint = $saleId;
+        $this->saleId = $saleId;
+
         // Generate receipt content
         $this->generateReceiptPreview($sale);
         
@@ -235,7 +343,8 @@ class PosPaymentModal extends Component
     {
         $this->showReceiptPreview = false;
         $this->receiptContent = '';
-        $this->resetExcept(['paymentMethods']);
+        // Jangan reset currentSaleIdForPrint agar bisa print ulang
+        $this->reset(['saleId', 'finalTotal', 'amount_paid', 'payment_method', 'saleItems', 'subtotal', 'tax', 'discount', 'customerName', 'invoiceNumber', 'isPrinting']);
     }
 
     public function closeModal()

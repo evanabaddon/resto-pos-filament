@@ -14,6 +14,7 @@ use App\Models\CashSession;
 use App\Models\DiscountCode;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\Log;
+use App\Services\ReceiptPrintService;
 use Filament\Notifications\Notification;
 use Filament\Support\Facades\FilamentAsset;
 
@@ -37,6 +38,8 @@ class Pos extends Page
         'saleLoaded' => 'handleSaleLoaded',
         'paymentRequested' => 'handlePaymentRequested',
         'paymentProcessed' => 'handlePaymentProcessed',
+        'printReceipt' => 'handlePrintReceipt',
+        'printCompleted' => 'handlePrintCompleted',
     ];
 
     public $showCashInModal = true;
@@ -151,6 +154,9 @@ class Pos extends Page
             // dd($updateData);
 
             $sale->update($updateData);
+
+            // Auto print receipt setelah pembayaran berhasil
+            $this->printReceipt($saleId);
 
             $this->dispatch('showNotification', 'Pembayaran berhasil diproses.', 'success');
             $this->showPaymentModal = false;
@@ -783,15 +789,57 @@ class Pos extends Page
         $this->resetPos();
     }
 
-    // Tambahkan method untuk print receipt
+    // Handler untuk print receipt
+    public function handlePrintReceipt($saleId)
+    {
+        logger('Handle Print Receipt - Sale ID:', ['saleId' => $saleId]);
+        $this->printReceipt($saleId);
+    }
+
+    // Method untuk print receipt
     public function printReceipt($saleId)
     {
-        $sale = Sale::with(['items.product', 'paymentMethod'])->findOrFail($saleId);
-        
-        $receiptContent = $this->generateReceiptContent($sale);
-        
-        // Dispatch event untuk print
-        $this->dispatch('printReceiptContent', content: $receiptContent);
+        try {
+            // Validasi saleId
+            if (!$saleId) {
+                $this->dispatch('showNotification', 'Sale ID tidak valid untuk print.', 'error');
+                return;
+            }
+
+            logger('Print Receipt - Searching Sale:', ['saleId' => $saleId]);
+            
+            $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->find($saleId);
+            
+            if (!$sale) {
+                logger('Sale not found:', ['saleId' => $saleId]);
+                $this->dispatch('showNotification', 'Transaksi tidak ditemukan untuk dicetak.', 'error');
+                return;
+            }
+
+            logger('Sale found, proceeding to print:', ['invoice' => $sale->invoice_number]);
+            
+            $printService = new ReceiptPrintService($sale);
+            $printService->printReceipt();
+            
+            $this->dispatch('showNotification', 'Struk berhasil dicetak!', 'success');
+            
+            // Kirim event ke PosPaymentModal bahwa print sudah selesai
+            $this->dispatch('printCompleted');
+            
+        } catch (\Exception $e) {
+            Log::error('Print receipt failed: ' . $e->getMessage());
+            $this->dispatch('showNotification', 'Gagal mencetak struk: ' . $e->getMessage(), 'error');
+            
+            // Kirim event error ke PosPaymentModal
+            $this->dispatch('printFailed');
+        }
+    }
+
+    // Handler untuk print completed
+    public function handlePrintCompleted()
+    {
+        // Tidak perlu melakukan apa-apa di sini, ini hanya untuk menerima event
+        logger('Print completed event received in POS');
     }
 
     protected function generateReceiptContent(Sale $sale): string

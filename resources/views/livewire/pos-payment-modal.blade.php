@@ -226,11 +226,36 @@
                             class="cursor-pointer flex-1 bg-gray-500 text-white py-2 rounded font-medium">
                         TUTUP
                     </button>
-                    <button onclick="printReceipt()" 
-                            class="cursor-pointer flex-1 bg-green-600 text-white py-2 rounded font-medium">
-                        🖨️ CETAK
+                    
+                    {{-- Tombol Cetak dengan Printer Thermal --}}
+                    <button wire:click="manualPrintReceipt" 
+                            wire:loading.attr="disabled"
+                            class="cursor-pointer flex-1 bg-green-600 text-white py-2 rounded font-medium flex items-center justify-center gap-2 disabled:opacity-50">
+                        <span wire:loading.remove>🖨️ CETAK STRUK</span>
+                        <span wire:loading>
+                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            MENCETAK...
+                        </span>
                     </button>
                 </div>
+
+                {{-- Status Printing --}}
+                @if ($isPrinting)
+                <div class="px-4 pb-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded p-3 text-center">
+                        <div class="flex items-center justify-center gap-2 text-blue-700">
+                            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="text-sm font-medium">Mengirim ke printer thermal...</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     @endif
