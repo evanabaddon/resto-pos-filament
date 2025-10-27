@@ -23,6 +23,9 @@ class Sale extends Model
         'cash_session_id',
         'status',
         'note',
+        'split_from',
+        'split_number', 
+        'split_into',
     ];
 
 
@@ -45,4 +48,17 @@ class Sale extends Model
     {
         return $this->belongsTo(PaymentMethod::class);
     }
+
+    // Relationship ke parent sale (jika ini adalah split)
+    public function splitFrom(): BelongsTo
+    {
+        return $this->belongsTo(Sale::class, 'split_from');
+    }
+
+    // Relationship ke child splits (jika ini di-split)
+    public function splits(): HasMany
+    {
+        return $this->hasMany(Sale::class, 'split_from');
+    }
+
 }
