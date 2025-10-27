@@ -38,7 +38,7 @@ class Pos extends Page
         'saleLoaded' => 'handleSaleLoaded',
         'paymentRequested' => 'handlePaymentRequested',
         'paymentProcessed' => 'handlePaymentProcessed',
-        'printReceipt' => 'handlePrintReceipt',
+        // 'printReceipt' => 'handlePrintReceipt',
         'printCompleted' => 'handlePrintCompleted',
     ];
 
@@ -64,6 +64,8 @@ class Pos extends Page
     public $finalTotal = 0;
     public $amount_paid = 0;
     public $outOfStock = 0;
+    public $isPrinting = false;
+    public $previousItems = [];
 
     public function mount()
     {
@@ -572,6 +574,143 @@ class Pos extends Page
         $this->calculateTotals();
     }
 
+    // public function saveSale()
+    // {
+    //     // 🔹 Cek keranjang kosong
+    //     if (empty($this->items)) {
+    //         $this->dispatch('showNotification', 'Keranjang kosong!', 'error');
+    //         return;
+    //     }
+
+    //     // 🔹 Cek nama pelanggan
+    //     if (empty(trim($this->customerName))) {
+    //         $this->dispatch('showNotification', 'Nama pelanggan harus diisi!', 'error');
+    //         return;
+    //     }
+
+    //     try {
+    //         \DB::beginTransaction();
+
+    //         $subtotal = $this->total ?? 0;
+    //         $tax      = $this->tax ?? 0;
+    //         $discount = $this->discount ?? 0;
+    //         $final    = $this->finalTotal ?? ($subtotal + $tax - $discount);
+
+    //         // 🔹 LOGIKA YANG BENAR:
+    //         // - Jika $this->saleId ADA → UPDATE sale yang diload
+    //         // - Jika $this->saleId NULL → CREATE sale baru
+
+    //         if ($this->saleId) {
+    //             // 🔹 UPDATE: Sale yang diload dari modal
+    //             $sale = Sale::findOrFail($this->saleId);
+
+    //             $sale->update([
+    //                 'customer_name' => $this->customerName ?? 'Umum',
+    //                 'order_type'    => $this->orderType,
+    //                 'subtotal'      => $subtotal,
+    //                 'tax'           => $tax,
+    //                 'discount'      => $discount,
+    //                 'final_total'   => $final,
+    //                 'total'         => $final,
+    //                 'updated_at'    => now(),
+    //             ]);
+
+    //             // Hapus item lama agar bisa simpan item baru
+    //             $sale->items()->delete();
+
+    //         } else {
+    //             // 🔹 CREATE: Transaksi baru dengan order number baru
+    //             $sale = Sale::create([
+    //                 'cash_session_id' => $this->cashSessionId ?? session('cash_session_id'),
+    //                 'user_id'         => auth()->id(),
+    //                 'invoice_number'  => $this->generateOrderNumber(),
+    //                 'customer_name'   => $this->customerName ?? 'Umum',
+    //                 'order_type'      => $this->orderType,
+    //                 'subtotal'        => $subtotal,
+    //                 'tax'             => $tax,
+    //                 'discount'        => $discount,
+    //                 'final_total'     => $final,
+    //                 'total'           => $final,
+    //                 'payment_method'  => '',
+    //                 'status'          => 'draft',
+    //             ]);
+
+    //             // Set saleId untuk transaksi baru
+    //             $this->saleId = $sale->id;
+    //         }
+
+    //         // 🔹 Simpan items (sama untuk kedua kasus)
+    //         foreach ($this->items as $item) {
+    //             $saleItem = SaleItem::create([
+    //                 'sale_id'    => $sale->id,
+    //                 'product_id' => $item['product_id'],
+    //                 'quantity'   => $item['quantity'],
+    //                 'unit_price' => $item['price'],
+    //                 'subtotal'   => $item['subtotal'],
+    //             ]);
+
+    //             $product = Product::find($item['product_id']);
+
+    //             if (!$product) continue;
+
+    //             // 🔹 Kurangi stok (sama untuk kedua kasus)
+    //             if ($product->recipes()->exists()) {
+    //                 $recipes = $product->recipes()->with('ingredient')->get();
+
+    //                 foreach ($recipes as $recipe) {
+    //                     if (! $recipe->ingredient) continue;
+
+    //                     $recipeRate     = max($recipe->unit->conversion_rate ?? 1, 0.0001);
+    //                     $ingredientRate = max($recipe->ingredient->unit->conversion_rate ?? 1, 0.0001);
+
+    //                     $conversion = $ingredientRate / $recipeRate;
+    //                     $totalUsed = $recipe->quantity * $item['quantity'] * $conversion;
+
+    //                     $recipe->ingredient->decrement('stock', $totalUsed);
+
+    //                     StockMovement::create([
+    //                         'product_id' => $recipe->ingredient->id,
+    //                         'quantity'   => -$totalUsed,
+    //                         'type'       => 'decrease',
+    //                         'reason'     => 'POS Sale #' . $sale->invoice_number,
+    //                         'notes'      => 'Bahan untuk produk ' . $product->name . ' dijual (' . auth()->user()->name . ')',
+    //                     ]);
+    //                 }
+
+    //             } else {
+    //                 $product->decrement('stock', $item['quantity']);
+
+    //                 StockMovement::create([
+    //                     'product_id' => $product->id,
+    //                     'quantity'   => -$item['quantity'],
+    //                     'type'       => 'decrease',
+    //                     'reason'     => 'POS Sale #' . $sale->invoice_number,
+    //                     'notes'      => 'Penjualan langsung produk oleh ' . auth()->user()->name,
+    //                 ]);
+    //             }
+    //         }
+
+    //         \DB::commit();
+
+    //         // 🔹 TAMPILKAN NOTIFIKASI BERBEDA
+    //         if ($this->saleId) {
+    //             $this->dispatch('showNotification', 'Transaksi #' . $sale->invoice_number . ' berhasil diupdate!', 'success');
+    //         } else {
+    //             $this->dispatch('showNotification', 'Transaksi baru #' . $sale->invoice_number . ' berhasil disimpan!', 'success');
+    //         }
+
+    //         $this->resetPos();
+
+    //         // 🔹 PENTING: JANGAN resetPos() setelah save!
+    //         // Biarkan saleId tetap ada agar jika user tambah menu lagi, akan update sale yang sama
+    //         // Hanya reset jika memang ingin mulai transaksi baru
+
+    //     } catch (\Exception $e) {
+    //         \DB::rollBack();
+    //         $this->dispatch('showNotification', 'Gagal menyimpan penjualan: ' . $e->getMessage(), 'error');
+    //     }
+    // }
+
     public function saveSale()
     {
         // 🔹 Cek keranjang kosong
@@ -690,6 +829,55 @@ class Pos extends Page
 
             \DB::commit();
 
+            // 🔹 TENTUKAN APAKAH INI UPDATE
+            $isUpdate = !is_null($this->saleId);
+            
+            if ($isUpdate) {
+                // 🔹 DAPATKAN ITEM BARU/TAMBAHAN
+                $newItems = $this->getNewOrUpdatedItems();
+                
+                \Log::info('🔄 Update order detected', [
+                    'sale_id' => $sale->id,
+                    'previous_items_count' => count($this->previousItems),
+                    'current_items_count' => count($this->items),
+                    'new_items_count' => count($newItems)
+                ]);
+
+                // 🔹 PRINT HANYA ITEM BARU JIKA ADA
+                if (!empty($newItems)) {
+                    try {
+                        $orderPrintService = new \App\Services\OrderPrintService();
+                        $printResult = $orderPrintService->printNewItemsOnly($sale, $newItems);
+                        
+                        $this->dispatch('showNotification', '✅ Item berhasil ditambah & tambahan order dicetak!', 'success');
+                        
+                    } catch (\Exception $e) {
+                        $this->dispatch('showNotification', 
+                            '⚠️ Order tersimpan tapi gagal print tambahan: ' . $e->getMessage(), 
+                            'warning'
+                        );
+                    }
+                } else {
+                    $this->dispatch('showNotification', '✅ Order berhasil diupdate!', 'success');
+                }
+            } else {
+                // 🔹 NEW ORDER - PRINT SEMUA
+                try {
+                    $orderPrintService = new \App\Services\OrderPrintService();
+                    $printResult = $orderPrintService->printOrderByProductType($sale);
+                    $this->dispatch('showNotification', '✅ Order baru berhasil dikirim ke divisi!', 'success');
+                    
+                } catch (\Exception $e) {
+                    $this->dispatch('showNotification', 
+                        '⚠️ Order tersimpan tapi gagal print: ' . $e->getMessage(), 
+                        'warning'
+                    );
+                }
+            }
+
+            // 🔹 RESET previousItems
+            $this->previousItems = [];
+
             // 🔹 TAMPILKAN NOTIFIKASI BERBEDA
             if ($this->saleId) {
                 $this->dispatch('showNotification', 'Transaksi #' . $sale->invoice_number . ' berhasil diupdate!', 'success');
@@ -699,13 +887,150 @@ class Pos extends Page
 
             $this->resetPos();
 
-            // 🔹 PENTING: JANGAN resetPos() setelah save!
-            // Biarkan saleId tetap ada agar jika user tambah menu lagi, akan update sale yang sama
-            // Hanya reset jika memang ingin mulai transaksi baru
-
         } catch (\Exception $e) {
             \DB::rollBack();
+            
+            // 🔹 DEBUG: Log error utama
+            \Log::error('💥 Gagal menyimpan penjualan: ' . $e->getMessage(), [
+                'customer_name' => $this->customerName,
+                'items_count' => count($this->items),
+                'error_trace' => $e->getTraceAsString()
+            ]);
+            
             $this->dispatch('showNotification', 'Gagal menyimpan penjualan: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Dapatkan item baru atau yang quantity-nya berubah
+     */
+    protected function getNewOrUpdatedItems(): array
+    {
+        $newItems = [];
+        
+        foreach ($this->items as $currentItem) {
+            $foundInPrevious = false;
+            
+            // Cek apakah item ada di previous items
+            foreach ($this->previousItems as $previousItem) {
+                if ($previousItem['product_id'] == $currentItem['product_id']) {
+                    $foundInPrevious = true;
+                    
+                    // Jika quantity berubah, hitung selisihnya
+                    $quantityDiff = $currentItem['quantity'] - $previousItem['quantity'];
+                    if ($quantityDiff > 0) {
+                        $newItems[] = [
+                            'product_id' => $currentItem['product_id'],
+                            'name' => $currentItem['name'],
+                            'quantity' => $quantityDiff, // Hanya selisihnya
+                            'price' => $currentItem['price'],
+                            'is_update' => true
+                        ];
+                    }
+                    break;
+                }
+            }
+            
+            // Jika item benar-benar baru (tidak ada di previous)
+            if (!$foundInPrevious) {
+                $newItems[] = [
+                    'product_id' => $currentItem['product_id'],
+                    'name' => $currentItem['name'],
+                    'quantity' => $currentItem['quantity'],
+                    'price' => $currentItem['price'],
+                    'is_update' => false
+                ];
+            }
+        }
+        
+        return $newItems;
+    }
+
+    // public function printReceipt($saleId)
+    // {
+    //     try {
+    //         // Validasi saleId
+    //         if (!$saleId) {
+    //             $this->dispatch('showNotification', 'Sale ID tidak valid untuk print.', 'error');
+    //             return;
+    //         }
+
+    //         logger('Print Receipt - Searching Sale:', ['saleId' => $saleId]);
+            
+    //         $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->find($saleId);
+            
+    //         if (!$sale) {
+    //             logger('Sale not found:', ['saleId' => $saleId]);
+    //             $this->dispatch('showNotification', 'Transaksi tidak ditemukan untuk dicetak.', 'error');
+    //             return;
+    //         }
+
+    //         logger('Sale found, proceeding to print:', ['invoice' => $sale->invoice_number]);
+            
+    //         // Sekarang dengan parameter Sale
+    //         $printService = new ReceiptPrintService($sale);
+    //         $printService->printReceipt();
+            
+    //         $this->dispatch('showNotification', 'Struk berhasil dicetak!', 'success');
+            
+    //         // Kirim event ke PosPaymentModal bahwa print sudah selesai
+    //         $this->dispatch('printCompleted');
+            
+    //     } catch (\Exception $e) {
+    //         Log::error('Print receipt failed: ' . $e->getMessage());
+    //         $this->dispatch('showNotification', 'Gagal mencetak struk: ' . $e->getMessage(), 'error');
+            
+    //         // Kirim event error ke PosPaymentModal
+    //         $this->dispatch('printFailed');
+    //     }
+    // }
+
+    public function printReceipt($saleId)
+    {
+        // 🔹 CEK APAKAH SEDANG PRINT
+        if ($this->isPrinting) {
+            Log::warning('Print receipt skipped - already printing', ['saleId' => $saleId]);
+            return;
+        }
+
+        try {
+            $this->isPrinting = true; // SET FLAG
+            
+            // Validasi saleId
+            if (!$saleId) {
+                $this->dispatch('showNotification', 'Sale ID tidak valid untuk print.', 'error');
+                $this->isPrinting = false;
+                return;
+            }
+
+            logger('Print Receipt - Searching Sale:', ['saleId' => $saleId]);
+            
+            $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->find($saleId);
+            
+            if (!$sale) {
+                logger('Sale not found:', ['saleId' => $saleId]);
+                $this->dispatch('showNotification', 'Transaksi tidak ditemukan untuk dicetak.', 'error');
+                $this->isPrinting = false;
+                return;
+            }
+
+            logger('Sale found, proceeding to print:', ['invoice' => $sale->invoice_number]);
+            
+            $printService = new ReceiptPrintService($sale);
+            $printService->printReceipt();
+            
+            $this->dispatch('showNotification', 'Struk berhasil dicetak!', 'success');
+            
+            // Kirim event ke PosPaymentModal bahwa print sudah selesai
+            $this->dispatch('printCompleted');
+            
+        } catch (\Exception $e) {
+            Log::error('Print receipt failed: ' . $e->getMessage());
+            $this->dispatch('showNotification', 'Gagal mencetak struk: ' . $e->getMessage(), 'error');
+            $this->dispatch('printFailed');
+        } finally {
+            // 🔹 RESET FLAG di finally block
+            $this->isPrinting = false;
         }
     }
 
@@ -727,6 +1052,35 @@ class Pos extends Page
         $this->dispatch('openLoadModal');
     }
 
+    // public function loadSale($saleId)
+    // {
+    //     $sale = Sale::with('items.product')->findOrFail($saleId);
+
+    //     $this->saleId = $sale->id;
+    //     $this->orderNumber = $sale->invoice_number;
+    //     $this->customerName = $sale->customer_name ?? '';
+    //     $this->orderType = $sale->order_type ?? 'Dine In';
+    //     $this->discount = $sale->discount ?? 0; // set discount dulu
+
+    //     // Map ulang items
+    //     $this->items = $sale->items->map(function ($item) {
+    //         $product = $item->product;
+    //         return [
+    //             'product_id' => $item->product_id,
+    //             'name'       => $product?->name ?? '(Produk dihapus)',
+    //             'quantity'   => $item->quantity,
+    //             'price'      => $item->unit_price,
+    //             'subtotal'   => $item->subtotal,
+    //         ];
+    //     })->toArray();
+
+    //     // Hitung total terbaru
+    //     $this->recalculateTotals();
+
+    //     $this->showLoadModal = false;
+    //     $this->dispatch('showNotification', 'Transaksi berhasil dimuat.', 'success');
+    // }
+
     public function loadSale($saleId)
     {
         $sale = Sale::with('items.product')->findOrFail($saleId);
@@ -735,9 +1089,17 @@ class Pos extends Page
         $this->orderNumber = $sale->invoice_number;
         $this->customerName = $sale->customer_name ?? '';
         $this->orderType = $sale->order_type ?? 'Dine In';
-        $this->discount = $sale->discount ?? 0; // set discount dulu
+        $this->discount = $sale->discount ?? 0;
 
-        // Map ulang items
+        // 🔹 SIMPAN ITEMS SEBELUMNYA untuk tracking
+        $this->previousItems = $sale->items->map(function ($item) {
+            return [
+                'product_id' => $item->product_id,
+                'quantity' => $item->quantity,
+            ];
+        })->toArray();
+
+        // Map ulang items untuk tampilan
         $this->items = $sale->items->map(function ($item) {
             $product = $item->product;
             return [
@@ -749,9 +1111,7 @@ class Pos extends Page
             ];
         })->toArray();
 
-        // Hitung total terbaru
         $this->recalculateTotals();
-
         $this->showLoadModal = false;
         $this->dispatch('showNotification', 'Transaksi berhasil dimuat.', 'success');
     }
@@ -797,43 +1157,43 @@ class Pos extends Page
     }
 
     // Method untuk print receipt
-    public function printReceipt($saleId)
-    {
-        try {
-            // Validasi saleId
-            if (!$saleId) {
-                $this->dispatch('showNotification', 'Sale ID tidak valid untuk print.', 'error');
-                return;
-            }
+    // public function printReceipt($saleId)
+    // {
+    //     try {
+    //         // Validasi saleId
+    //         if (!$saleId) {
+    //             $this->dispatch('showNotification', 'Sale ID tidak valid untuk print.', 'error');
+    //             return;
+    //         }
 
-            logger('Print Receipt - Searching Sale:', ['saleId' => $saleId]);
+    //         logger('Print Receipt - Searching Sale:', ['saleId' => $saleId]);
             
-            $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->find($saleId);
+    //         $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->find($saleId);
             
-            if (!$sale) {
-                logger('Sale not found:', ['saleId' => $saleId]);
-                $this->dispatch('showNotification', 'Transaksi tidak ditemukan untuk dicetak.', 'error');
-                return;
-            }
+    //         if (!$sale) {
+    //             logger('Sale not found:', ['saleId' => $saleId]);
+    //             $this->dispatch('showNotification', 'Transaksi tidak ditemukan untuk dicetak.', 'error');
+    //             return;
+    //         }
 
-            logger('Sale found, proceeding to print:', ['invoice' => $sale->invoice_number]);
+    //         logger('Sale found, proceeding to print:', ['invoice' => $sale->invoice_number]);
             
-            $printService = new ReceiptPrintService($sale);
-            $printService->printReceipt();
+    //         $printService = new ReceiptPrintService($sale);
+    //         $printService->printReceipt();
             
-            $this->dispatch('showNotification', 'Struk berhasil dicetak!', 'success');
+    //         $this->dispatch('showNotification', 'Struk berhasil dicetak!', 'success');
             
-            // Kirim event ke PosPaymentModal bahwa print sudah selesai
-            $this->dispatch('printCompleted');
+    //         // Kirim event ke PosPaymentModal bahwa print sudah selesai
+    //         $this->dispatch('printCompleted');
             
-        } catch (\Exception $e) {
-            Log::error('Print receipt failed: ' . $e->getMessage());
-            $this->dispatch('showNotification', 'Gagal mencetak struk: ' . $e->getMessage(), 'error');
+    //     } catch (\Exception $e) {
+    //         Log::error('Print receipt failed: ' . $e->getMessage());
+    //         $this->dispatch('showNotification', 'Gagal mencetak struk: ' . $e->getMessage(), 'error');
             
-            // Kirim event error ke PosPaymentModal
-            $this->dispatch('printFailed');
-        }
-    }
+    //         // Kirim event error ke PosPaymentModal
+    //         $this->dispatch('printFailed');
+    //     }
+    // }
 
     // Handler untuk print completed
     public function handlePrintCompleted()

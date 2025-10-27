@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use BackedEnum;
+use UnitEnum;
 use GeneralSettings;
 use Filament\Schemas\Schema;
 use Filament\Pages\SettingsPage;
@@ -14,6 +15,10 @@ use Filament\Forms\Components\FileUpload;
 class AppSettings extends SettingsPage
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
+
+    protected static string | UnitEnum | null $navigationGroup = 'Settings';
+    
+    protected static ?string $navigationLabel = 'General Settings';
 
     protected static string $settings = GeneralSettings::class;
 
