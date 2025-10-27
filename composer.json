@@ -11,7 +11,8 @@
         "filament/spatie-laravel-settings-plugin": "^4.1",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
-        "mike42/escpos-php": "^4.0"
+        "mike42/escpos-php": "^4.0",
+        "spatie/laravel-settings": "^3.5"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
