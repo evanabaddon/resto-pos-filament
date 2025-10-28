@@ -10,19 +10,13 @@ use Illuminate\Support\Facades\Http;
 
 class OrderPrintService
 {
-    protected $printService;
     protected $printerConfig;
+    protected $receiptPrintService;
 
     public function __construct()
     {
         $this->printerConfig = $this->loadPrinterConfig();
-        
-        // Tentukan service berdasarkan environment
-        if (app()->environment('production')) {
-            $this->printService = new WindowsPrintService(); // Untuk hosting
-        } else {
-            $this->printService = new ReceiptPrintService(); // Untuk local development
-        }
+        $this->receiptPrintService = new ReceiptPrintService();
     }
 
     /**
@@ -62,18 +56,24 @@ class OrderPrintService
     }
 
     /**
-     * PRINT ORDER BY PRODUCT TYPE - UNTUK HOSTING & LOCAL
+     * PRINT ORDER BY PRODUCT TYPE - FIXED VERSION
      */
     public function printOrderByProductType(Sale $sale): array
     {
         try {
+            Log::info("🖨️ Starting order print by product type", [
+                'sale_id' => $sale->id,
+                'invoice' => $sale->invoice_number,
+                'items_count' => $sale->items->count()
+            ]);
+
             // Kelompokkan items berdasarkan tipe produk
             $kitchenItems = [];
             $barItems = [];
             $generalItems = [];
 
             foreach ($sale->items as $item) {
-                $productType = $item->product->type;
+                $productType = $item->product->type ?? 'general';
                 
                 switch ($productType) {
                     case 'produced':
@@ -95,100 +95,99 @@ class OrderPrintService
                 $content = $this->generateKitchenOrderContent($sale, $kitchenItems);
                 $printerName = $this->getPrinterNameForDivision('kitchen');
                 $printResults['kitchen'] = $this->sendToPrinter($content, $printerName, 'Kitchen');
-                $printResults['kitchen'] = $this->sendWebhookPrint($content, 'BAR', 'Kitchen');
             }
 
             if (!empty($barItems)) {
                 $content = $this->generateBarOrderContent($sale, $barItems);
                 $printerName = $this->getPrinterNameForDivision('bar');
                 $printResults['bar'] = $this->sendToPrinter($content, $printerName, 'Bar');
-                $printResults['bar'] = $this->sendWebhookPrint($content, 'BAR', 'Bar');
             }
 
             if (!empty($generalItems)) {
                 $content = $this->generateGeneralOrderContent($sale, $generalItems);
                 $printerName = $this->getPrinterNameForDivision('general');
                 $printResults['general'] = $this->sendToPrinter($content, $printerName, 'General');
-                $printResults['general'] = $this->sendWebhookPrint($content, 'BAR', 'General');
             }
 
-            Log::info("Order printing completed for sale #{$sale->invoice_number}", $printResults);
+            Log::info("✅ Order printing completed for sale #{$sale->invoice_number}", $printResults);
             return $printResults;
 
         } catch (\Exception $e) {
-            Log::error("Order printing failed: " . $e->getMessage());
+            Log::error("❌ Order printing failed: " . $e->getMessage());
             throw $e;
         }
     }
 
     /**
-     * Send print job via webhook
+     * Send content ke printer - FIXED VERSION
      */
-    private function sendWebhookPrint(string $content, string $printer, string $division): array
+    protected function sendToPrinter(string $content, string $printerName, string $division): array
     {
         try {
-            $response = Http::withHeaders([
-                'X-Print-Secret' => config('app.print_secret'),
-            ])->post('https://pos.suralaya.id/webhook/print', [
-                'content' => $content,
-                'printer' => $printer,
-                'division' => $division
+            Log::info("Sending to printer", [
+                'division' => $division,
+                'printer' => $printerName,
+                'content_length' => strlen($content)
             ]);
 
-            $result = $response->json();
+            // Untuk semua environment, gunakan ReceiptPrintService yang sudah diperbaiki
+            $this->receiptPrintService->printRawContent($content, $printerName);
             
-            if ($response->successful() && $result['success']) {
-                return [
-                    'success' => true,
-                    'job_id' => $result['job_id'],
-                    'message' => 'Print job queued'
-                ];
-            } else {
-                throw new \Exception($result['error'] ?? 'Webhook failed');
-            }
+            return [
+                'success' => true,
+                'type' => 'direct',
+                'printer' => $printerName,
+                'division' => $division
+            ];
             
         } catch (\Exception $e) {
+            Log::error("❌ {$division} print failed: " . $e->getMessage());
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'division' => $division,
+                'printer' => $printerName
             ];
         }
     }
 
     /**
-     * Send content ke printer (compatible hosting & local)
+     * Method untuk print raw content (tambahkan di ReceiptPrintService)
+     * Ini akan kita buat di ReceiptPrintService
      */
-    protected function sendToPrinter(string $content, string $printerName, string $division): array
+    public function printRawContent(string $content, string $printerName): bool
     {
+        $printer = null;
+
         try {
-            if (app()->environment('production')) {
-                // Untuk hosting - kirim ke Windows print server
-                $result = $this->printService->printToWindows($content, $printerName);
-                return [
-                    'success' => $result['success'] ?? false,
-                    'type' => 'remote',
-                    'printer' => $printerName,
-                    'division' => $division,
-                    'message' => $result['message'] ?? 'Sent to Windows print server'
-                ];
-            } else {
-                // Untuk local development - print langsung
-                $this->printService->printToUsbPrinter($content, $printerName);
-                return [
-                    'success' => true,
-                    'type' => 'local',
-                    'printer' => $printerName,
-                    'division' => $division
-                ];
-            }
+            Log::info("🖨️ Printing raw content", [
+                'printer' => $printerName,
+                'content_length' => strlen($content)
+            ]);
+
+            // Create connector
+            $connector = new \Mike42\Escpos\PrintConnectors\WindowsPrintConnector($printerName);
+            $printer = new \Mike42\Escpos\Printer($connector);
+            $printer->initialize();
+            
+            // Print content
+            $printer->text($content);
+            $printer->cut();
+            
+            Log::info("✅ Raw content printed successfully");
+            return true;
             
         } catch (\Exception $e) {
-            Log::error("{$division} print failed: " . $e->getMessage());
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-                'division' => $division
-            ];
+            Log::error("❌ Raw content print failed: " . $e->getMessage());
+            throw $e;
+        } finally {
+            if ($printer instanceof \Mike42\Escpos\Printer) {
+                try {
+                    $printer->close();
+                } catch (\Exception $e) {
+                    Log::warning('Error closing printer: ' . $e->getMessage());
+                }
+            }
         }
     }
 
@@ -272,10 +271,11 @@ class OrderPrintService
                 $printResults['general'] = $this->sendToPrinter($content, $printerName, 'General Update');
             }
 
+            Log::info("✅ New items printing completed", $printResults);
             return $printResults;
 
         } catch (\Exception $e) {
-            Log::error("New items printing failed: " . $e->getMessage());
+            Log::error("❌ New items printing failed: " . $e->getMessage());
             throw $e;
         }
     }
@@ -292,16 +292,26 @@ class OrderPrintService
         $content .= "No: {$sale->invoice_number}\n";
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
+        $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
         $content .= "========================\n";
         $content .= "ITEMS:\n";
-        $content .= "========================\n";
         
         foreach ($items as $item) {
-            $content .= "{$item->product->name} x{$item->quantity}\n";
+            $productName = $item->product->name ?? 'Unknown';
+            if (strlen($productName) > 20) {
+                $productName = substr($productName, 0, 17) . '...';
+            }
+            $content .= "{$productName} x{$item->quantity}\n";
+            
+            // Tambah notes jika ada
+            if (!empty($item->note)) {
+                $content .= "  Note: {$item->note}\n";
+            }
         }
         
         $content .= "========================\n";
-        $content .= "*** HARAP DIPROSES ***\n\n\n";
+        $content .= "*** HARAP DIPROSES ***\n";
+        $content .= "========================\n\n\n";
         
         return $content;
     }
@@ -316,16 +326,25 @@ class OrderPrintService
         $content .= "No: {$sale->invoice_number}\n";
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
+        $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
         $content .= "========================\n";
         $content .= "MINUMAN:\n";
-        $content .= "========================\n";
         
         foreach ($items as $item) {
-            $content .= "{$item->product->name} x{$item->quantity}\n";
+            $productName = $item->product->name ?? 'Unknown';
+            if (strlen($productName) > 20) {
+                $productName = substr($productName, 0, 17) . '...';
+            }
+            $content .= "{$productName} x{$item->quantity}\n";
+            
+            if (!empty($item->note)) {
+                $content .= "  Note: {$item->note}\n";
+            }
         }
         
         $content .= "========================\n";
-        $content .= "*** READY TO SERVE ***\n\n\n";
+        $content .= "*** READY TO SERVE ***\n";
+        $content .= "========================\n\n\n";
         
         return $content;
     }
@@ -340,16 +359,25 @@ class OrderPrintService
         $content .= "No: {$sale->invoice_number}\n";
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
+        $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
         $content .= "========================\n";
         $content .= "ITEMS:\n";
-        $content .= "========================\n";
         
         foreach ($items as $item) {
-            $content .= "{$item->product->name} x{$item->quantity}\n";
+            $productName = $item->product->name ?? 'Unknown';
+            if (strlen($productName) > 20) {
+                $productName = substr($productName, 0, 17) . '...';
+            }
+            $content .= "{$productName} x{$item->quantity}\n";
+            
+            if (!empty($item->note)) {
+                $content .= "  Note: {$item->note}\n";
+            }
         }
         
         $content .= "========================\n";
-        $content .= "** ITEM READY **\n\n\n";
+        $content .= "** ITEM READY **\n";
+        $content .= "========================\n\n\n";
         
         return $content;
     }
@@ -364,17 +392,51 @@ class OrderPrintService
         $content .= "No: {$sale->invoice_number}\n";
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
+        $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
         $content .= "========================\n";
         $content .= "TAMBAHAN:\n";
-        $content .= "========================\n";
         
         foreach ($newItems as $item) {
-            $content .= "+ {$item->product->name} x{$item->quantity}\n";
+            $productName = $item->product->name ?? 'Unknown';
+            if (strlen($productName) > 20) {
+                $productName = substr($productName, 0, 17) . '...';
+            }
+            $content .= "+ {$productName} x{$item->quantity}\n";
         }
         
         $content .= "========================\n";
-        $content .= "*** TAMBAHAN ORDER ***\n\n\n";
+        $content .= "*** TAMBAHAN ORDER ***\n";
+        $content .= "========================\n\n\n";
         
         return $content;
+    }
+
+    /**
+     * Test order printing
+     */
+    public function testOrderPrinting(): array
+    {
+        try {
+            $testContent = "TEST ORDER PRINTING\n";
+            $testContent .= "===================\n";
+            $testContent .= "Time: " . now()->format('Y-m-d H:i:s') . "\n";
+            $testContent .= "Printer: " . $this->printerConfig['usb_printer_name'] . "\n";
+            $testContent .= "Status: OK\n";
+            $testContent .= "===================\n\n\n";
+
+            $printerName = $this->printerConfig['usb_printer_name'];
+            $this->printRawContent($testContent, $printerName);
+
+            return [
+                'success' => true,
+                'message' => 'Test order printing successful'
+            ];
+
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
     }
 }

@@ -378,4 +378,50 @@ class ReceiptPrintService
             $this->safeClose($printer);
         }
     }
+
+    /**
+     * Print raw content ke printer - untuk order printing
+     */
+    public function printRawContent(string $content, string $printerName): bool
+    {
+        $printer = null;
+        $connector = null;
+
+        try {
+            Log::info("🖨️ Printing raw content", [
+                'printer' => $printerName,
+                'content_length' => strlen($content)
+            ]);
+
+            // Create connector berdasarkan OS
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                $connector = new WindowsPrintConnector($printerName);
+            } else {
+                $connector = new FilePrintConnector("/dev/usb/lp0");
+            }
+
+            $printer = new Printer($connector);
+            $printer->initialize();
+            
+            // Print content as-is
+            $printer->text($content);
+            $printer->cut();
+            
+            Log::info("✅ Raw content printed successfully");
+            return true;
+            
+        } catch (\Exception $e) {
+            Log::error("❌ Raw content print failed: " . $e->getMessage());
+            throw new \Exception("Gagal print order: " . $e->getMessage());
+        } finally {
+            // Safe close
+            if ($printer instanceof Printer) {
+                try {
+                    $printer->close();
+                } catch (\Exception $e) {
+                    Log::warning('Error closing printer: ' . $e->getMessage());
+                }
+            }
+        }
+    }
 }

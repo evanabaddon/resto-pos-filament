@@ -2,13 +2,14 @@
 
 namespace App\Filament\Pages;
 
-use App\Settings\PrinterSettings;
 use UnitEnum;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Schemas\Schema;
 use Filament\Pages\SettingsPage;
+use App\Settings\PrinterSettings;
 use Filament\Support\Icons\Heroicon;
+use App\Services\ReceiptPrintService;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -139,7 +140,7 @@ class ManagePrinter extends SettingsPage
     public function detectUsbPrinters()
     {
         try {
-            $printService = new \App\Services\ReceiptPrintService();
+            $printService = new ReceiptPrintService();
             $detectedPrinters = $printService->detectUsbPrinters();
             
             // ✅ FIX: Pastikan $detectedPrinters adalah array
@@ -174,18 +175,18 @@ class ManagePrinter extends SettingsPage
     {
         try {
             /** @var \App\Settings\PrinterSettings $settings */
-            $settings = app(\App\Settings\PrinterSettings::class);
+            $settings = app(PrinterSettings::class);
             $results = [];
 
             if (($settings->printer_type ?? 'usb') === 'usb') {
                 // TEST USB PRINTERS
-                $printService = new \App\Services\ReceiptPrintService();
+                $printService = new ReceiptPrintService();
                 
                 if (($settings->usb_printer_mode ?? 'single') === 'single') {
                     // Test single printer
                     $printerName = $settings->usb_printer_name ?? 'BAR';
                     try {
-                        $testResult = $printService->testUsbPrinter($printerName);
+                        $testResult = $printService->testPrinter($printerName);
                         $results[] = $testResult['success'] 
                             ? "✅ USB Printer (All): SUCCESS - {$printerName}"
                             : "❌ USB Printer (All): FAILED - {$testResult['error']}";
@@ -203,7 +204,7 @@ class ManagePrinter extends SettingsPage
                     
                     foreach ($printers as $division => $printerName) {
                         try {
-                            $testResult = $printService->testUsbPrinter($printerName);
+                            $testResult = $printService->testPrinter($printerName);
                             $results[] = $testResult['success']
                                 ? "✅ {$division}: SUCCESS - {$printerName}"
                                 : "❌ {$division}: FAILED - {$testResult['error']}";

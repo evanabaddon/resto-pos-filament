@@ -13,6 +13,7 @@ use Filament\Pages\Page;
 use App\Models\CashSession;
 use App\Models\DiscountCode;
 use App\Models\StockMovement;
+use App\Services\OrderPrintService;
 use Illuminate\Support\Facades\Log;
 use App\Services\ReceiptPrintService;
 use Filament\Notifications\Notification;
@@ -846,7 +847,7 @@ class Pos extends Page
                 // 🔹 PRINT HANYA ITEM BARU JIKA ADA
                 if (!empty($newItems)) {
                     try {
-                        $orderPrintService = new \App\Services\OrderPrintService();
+                        $orderPrintService = new OrderPrintService();
                         $printResult = $orderPrintService->printNewItemsOnly($sale, $newItems);
                         
                         $this->dispatch('showNotification', '✅ Item berhasil ditambah & tambahan order dicetak!', 'success');
@@ -863,7 +864,7 @@ class Pos extends Page
             } else {
                 // 🔹 NEW ORDER - PRINT SEMUA
                 try {
-                    $orderPrintService = new \App\Services\OrderPrintService();
+                    $orderPrintService = new OrderPrintService();
                     $printResult = $orderPrintService->printOrderByProductType($sale);
                     $this->dispatch('showNotification', '✅ Order baru berhasil dikirim ke divisi!', 'success');
                     
@@ -1013,7 +1014,7 @@ class Pos extends Page
             $this->dispatch('showNotification', '❌ Debug error: ' . $e->getMessage(), 'error');
         }
     }
-    
+
     // public function printReceipt($saleId)
     // {
     //     // 🔹 CEK APAKAH SEDANG PRINT

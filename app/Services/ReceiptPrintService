@@ -10,7 +10,7 @@ use Mike42\Escpos\EscposImage;
 use App\Models\Sale;
 use Illuminate\Support\Facades\Log;
 
-class ReceiptPrintService
+class ReceiptPrintServiceOld
 {
     protected $printer;
     protected $sale;
