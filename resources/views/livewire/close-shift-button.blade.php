@@ -1,4 +1,4 @@
-<div>
+<div class="hidden sm:block">
     <!-- Tombol Tutup Shift -->
     <button 
         wire:click="openConfirmationModal"

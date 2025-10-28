@@ -1,4 +1,4 @@
-<div>
+<div class="hidden sm:block">
     <button id="cash-summary-btn"
         wire:click="openCashSummary"
         @class([

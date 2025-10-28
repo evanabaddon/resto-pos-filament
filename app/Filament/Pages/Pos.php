@@ -41,6 +41,7 @@ class Pos extends Page
         'paymentProcessed' => 'handlePaymentProcessed',
         // 'printReceipt' => 'handlePrintReceipt',
         'printCompleted' => 'handlePrintCompleted',
+        'showSection' => 'handleShowSection', 
     ];
 
     public $showCashInModal = true;
@@ -76,8 +77,10 @@ class Pos extends Page
                 'type' => 'style',
             ],
         ]);
-        $this->outOfStock = 0;
+        
+        // ✅ INISIALISASI ITEMS SEBAGAI ARRAY KOSONG
         $this->items = [];
+        $this->outOfStock = 0;
         $this->total = 0;
         $this->tax = 0;
         $this->discount = 0;
@@ -94,7 +97,6 @@ class Pos extends Page
             $this->cashSessionId = $session->id;
             session(['cash_session_id' => $session->id]);
         } else {
-            // $this->showCashInModal = true;
             $this->dispatch('openCashInModal');
         }
     }
@@ -1245,6 +1247,130 @@ class Pos extends Page
     public function setCategory($category)
     {
         $this->selectedCategory = $category;
+    }
+
+     /**
+     * Handle section switching dari JavaScript
+     */
+    public function handleShowSection($section)
+    {
+        $this->switchToSection($section);
+    }
+
+    /**
+     * Switch section untuk mobile - FIXED
+     */
+    public function switchToSection($section)
+    {
+        // Validasi section yang diperbolehkan
+        $allowedSections = ['products', 'cart'];
+        
+        if (!in_array($section, $allowedSections)) {
+            return;
+        }
+        
+        // Update state jika diperlukan
+        $this->dispatch('updateMobileNav', section: $section);
+        
+        \Log::info("Switching to section: {$section}");
+    }
+
+    /**
+     * Open load modal untuk tombol Order
+     */
+    public function openLoadOrderModal()
+    {
+        $this->openLoadModal();
+    }
+
+    /**
+     * Handle mobile payment modal
+     */
+    public function openPaymentModalMobile()
+    {
+        if (!$this->saleId) {
+            // Jika tidak ada saleId, coba simpan dulu
+            if (!empty($this->items)) {
+                $this->saveSale();
+            } else {
+                $this->dispatch('showNotification', 'Keranjang kosong! Tambahkan produk terlebih dahulu.', 'error');
+                return;
+            }
+        }
+        
+        $this->dispatch('openPaymentModal', saleId: $this->saleId);
+    }
+
+    /**
+     * Quick add product untuk mobile - IMPROVED
+     */
+    public function quickAddProduct($productId)
+    {
+        $this->addProduct($productId);
+        
+        // Auto switch to cart section setelah add product
+        $this->switchToSection('cart');
+        
+        // Show success feedback
+        $this->dispatch('showNotification', 'Produk ditambahkan ke keranjang!', 'success');
+    }
+
+    /**
+     * Mobile-optimized remove item
+     */
+    public function mobileRemoveItem($index)
+    {
+        $itemName = $this->items[$index]['name'] ?? 'Item';
+        $this->removeItem($index);
+        
+        $this->dispatch('showNotification', $itemName . ' dihapus dari keranjang', 'info');
+    }
+
+    /**
+     * Mobile-optimized update quantity
+     */
+    public function mobileUpdateQuantity($index, $quantity)
+    {
+        if ($quantity < 1) {
+            $this->mobileRemoveItem($index);
+            return;
+        }
+        
+        $this->updateQuantity($index, $quantity);
+    }
+
+    /**
+     * Get cart count untuk mobile badge
+     */
+    public function getCartItemsCountProperty()
+    {
+        return is_array($this->items) ? count($this->items) : 0;
+    }
+
+    /**
+     * Get cart items dengan safe check
+     */
+    public function getCartItemsProperty()
+    {
+        return is_array($this->items) ? $this->items : [];
+    }
+
+    /**
+     * Save sale untuk mobile - simplified
+     */
+    public function mobileSaveSale()
+    {
+        if (empty($this->items)) {
+            $this->dispatch('showNotification', 'Keranjang kosong! Tambahkan produk terlebih dahulu.', 'error');
+            return;
+        }
+        
+        if (empty(trim($this->customerName))) {
+            $this->dispatch('showNotification', 'Nama pelanggan harus diisi!', 'error');
+            return;
+        }
+        
+        $this->saveSale();
     }
 
     protected function getViewData(): array
