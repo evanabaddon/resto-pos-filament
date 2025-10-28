@@ -35,4 +35,7 @@ return [
         ],
     ],
 
+    'print_server' => [
+        'ip' => env('PRINT_SERVER_IP', 'localhost'),
+    ],
 ];
