@@ -1015,55 +1015,6 @@ class Pos extends Page
         }
     }
 
-    // public function printReceipt($saleId)
-    // {
-    //     // 🔹 CEK APAKAH SEDANG PRINT
-    //     if ($this->isPrinting) {
-    //         Log::warning('Print receipt skipped - already printing', ['saleId' => $saleId]);
-    //         return;
-    //     }
-
-    //     try {
-    //         $this->isPrinting = true; // SET FLAG
-            
-    //         // Validasi saleId
-    //         if (!$saleId) {
-    //             $this->dispatch('showNotification', 'Sale ID tidak valid untuk print.', 'error');
-    //             $this->isPrinting = false;
-    //             return;
-    //         }
-
-    //         logger('Print Receipt - Searching Sale:', ['saleId' => $saleId]);
-            
-    //         $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->find($saleId);
-            
-    //         if (!$sale) {
-    //             logger('Sale not found:', ['saleId' => $saleId]);
-    //             $this->dispatch('showNotification', 'Transaksi tidak ditemukan untuk dicetak.', 'error');
-    //             $this->isPrinting = false;
-    //             return;
-    //         }
-
-    //         logger('Sale found, proceeding to print:', ['invoice' => $sale->invoice_number]);
-            
-    //         $printService = new ReceiptPrintService($sale);
-    //         $printService->printReceipt();
-            
-    //         $this->dispatch('showNotification', 'Struk berhasil dicetak!', 'success');
-            
-    //         // Kirim event ke PosPaymentModal bahwa print sudah selesai
-    //         $this->dispatch('printCompleted');
-            
-    //     } catch (\Exception $e) {
-    //         Log::error('Print receipt failed: ' . $e->getMessage());
-    //         $this->dispatch('showNotification', 'Gagal mencetak struk: ' . $e->getMessage(), 'error');
-    //         $this->dispatch('printFailed');
-    //     } finally {
-    //         // 🔹 RESET FLAG di finally block
-    //         $this->isPrinting = false;
-    //     }
-    // }
-
     protected function recalculateTotals()
     {
         $this->total = collect($this->items)->sum(fn($i) => $i['subtotal']);
@@ -1157,45 +1108,6 @@ class Pos extends Page
         $this->printReceipt($saleId);
     }
 
-    // Method untuk print receipt
-    // public function printReceipt($saleId)
-    // {
-    //     try {
-    //         // Validasi saleId
-    //         if (!$saleId) {
-    //             $this->dispatch('showNotification', 'Sale ID tidak valid untuk print.', 'error');
-    //             return;
-    //         }
-
-    //         logger('Print Receipt - Searching Sale:', ['saleId' => $saleId]);
-            
-    //         $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->find($saleId);
-            
-    //         if (!$sale) {
-    //             logger('Sale not found:', ['saleId' => $saleId]);
-    //             $this->dispatch('showNotification', 'Transaksi tidak ditemukan untuk dicetak.', 'error');
-    //             return;
-    //         }
-
-    //         logger('Sale found, proceeding to print:', ['invoice' => $sale->invoice_number]);
-            
-    //         $printService = new ReceiptPrintService($sale);
-    //         $printService->printReceipt();
-            
-    //         $this->dispatch('showNotification', 'Struk berhasil dicetak!', 'success');
-            
-    //         // Kirim event ke PosPaymentModal bahwa print sudah selesai
-    //         $this->dispatch('printCompleted');
-            
-    //     } catch (\Exception $e) {
-    //         Log::error('Print receipt failed: ' . $e->getMessage());
-    //         $this->dispatch('showNotification', 'Gagal mencetak struk: ' . $e->getMessage(), 'error');
-            
-    //         // Kirim event error ke PosPaymentModal
-    //         $this->dispatch('printFailed');
-    //     }
-    // }
-
     // Handler untuk print completed
     public function handlePrintCompleted()
     {
@@ -1273,6 +1185,34 @@ class Pos extends Page
         $content .= "</div>";
         
         return $content;
+    }
+
+    public function testWebhookPrinting()
+    {
+        try {
+            $orderPrintService = new OrderPrintService();
+            $result = $orderPrintService->testWebhookConnection();
+            
+            if ($result['success']) {
+                $this->dispatch('showNotification', '✅ Webhook connection successful!', 'success');
+            } else {
+                $this->dispatch('showNotification', '❌ Webhook connection failed: ' . $result['error'], 'error');
+            }
+        } catch (\Exception $e) {
+            $this->dispatch('showNotification', '❌ Webhook test error: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    public function toggleWebhookPrinting()
+    {
+        $current = config('app.use_webhook_printing', false);
+        $newValue = !$current;
+        
+        // Update config temporarily
+        config(['app.use_webhook_printing' => $newValue]);
+        
+        $status = $newValue ? 'ENABLED' : 'DISABLED';
+        $this->dispatch('showNotification', "🔄 Webhook printing {$status}", 'info');
     }
 
     protected function resetPos(): void

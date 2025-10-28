@@ -12,11 +12,13 @@ class OrderPrintService
 {
     protected $printerConfig;
     protected $receiptPrintService;
+    protected $useWebhook;
 
     public function __construct()
     {
         $this->printerConfig = $this->loadPrinterConfig();
         $this->receiptPrintService = new ReceiptPrintService();
+        $this->useWebhook = config('app.use_webhook_printing', false);
     }
 
     /**
@@ -56,7 +58,7 @@ class OrderPrintService
     }
 
     /**
-     * PRINT ORDER BY PRODUCT TYPE - FIXED VERSION
+     * PRINT ORDER BY PRODUCT TYPE - WITH WEBHOOK SUPPORT
      */
     public function printOrderByProductType(Sale $sale): array
     {
@@ -64,7 +66,7 @@ class OrderPrintService
             Log::info("🖨️ Starting order print by product type", [
                 'sale_id' => $sale->id,
                 'invoice' => $sale->invoice_number,
-                'items_count' => $sale->items->count()
+                'use_webhook' => $this->useWebhook
             ]);
 
             // Kelompokkan items berdasarkan tipe produk
@@ -94,19 +96,34 @@ class OrderPrintService
             if (!empty($kitchenItems)) {
                 $content = $this->generateKitchenOrderContent($sale, $kitchenItems);
                 $printerName = $this->getPrinterNameForDivision('kitchen');
-                $printResults['kitchen'] = $this->sendToPrinter($content, $printerName, 'Kitchen');
+                
+                if ($this->useWebhook) {
+                    $printResults['kitchen'] = $this->sendWebhookPrint($content, $printerName, 'Kitchen', $sale->id);
+                } else {
+                    $printResults['kitchen'] = $this->sendToPrinter($content, $printerName, 'Kitchen');
+                }
             }
 
             if (!empty($barItems)) {
                 $content = $this->generateBarOrderContent($sale, $barItems);
                 $printerName = $this->getPrinterNameForDivision('bar');
-                $printResults['bar'] = $this->sendToPrinter($content, $printerName, 'Bar');
+                
+                if ($this->useWebhook) {
+                    $printResults['bar'] = $this->sendWebhookPrint($content, $printerName, 'Bar', $sale->id);
+                } else {
+                    $printResults['bar'] = $this->sendToPrinter($content, $printerName, 'Bar');
+                }
             }
 
             if (!empty($generalItems)) {
                 $content = $this->generateGeneralOrderContent($sale, $generalItems);
                 $printerName = $this->getPrinterNameForDivision('general');
-                $printResults['general'] = $this->sendToPrinter($content, $printerName, 'General');
+                
+                if ($this->useWebhook) {
+                    $printResults['general'] = $this->sendWebhookPrint($content, $printerName, 'General', $sale->id);
+                } else {
+                    $printResults['general'] = $this->sendToPrinter($content, $printerName, 'General');
+                }
             }
 
             Log::info("✅ Order printing completed for sale #{$sale->invoice_number}", $printResults);
@@ -119,18 +136,16 @@ class OrderPrintService
     }
 
     /**
-     * Send content ke printer - FIXED VERSION
+     * Send content ke printer - DIRECT PRINT
      */
     protected function sendToPrinter(string $content, string $printerName, string $division): array
     {
         try {
-            Log::info("Sending to printer", [
-                'division' => $division,
+            Log::info("🖨️ Direct printing to {$division}", [
                 'printer' => $printerName,
                 'content_length' => strlen($content)
             ]);
 
-            // Untuk semua environment, gunakan ReceiptPrintService yang sudah diperbaiki
             $this->receiptPrintService->printRawContent($content, $printerName);
             
             return [
@@ -141,12 +156,125 @@ class OrderPrintService
             ];
             
         } catch (\Exception $e) {
-            Log::error("❌ {$division} print failed: " . $e->getMessage());
+            Log::error("❌ {$division} direct print failed: " . $e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
                 'division' => $division,
                 'printer' => $printerName
+            ];
+        }
+    }
+
+    /**
+     * Send print job via webhook
+     */
+    protected function sendWebhookPrint(string $content, string $printer, string $division, ?int $saleId = null): array
+    {
+        try {
+            $webhookUrl = config('app.webhook_url', 'https://your-domain.com/webhook/print');
+            $secretKey = config('app.print_secret', 'default-print-secret');
+            
+            Log::info("🌐 Sending webhook print to {$division}", [
+                'printer' => $printer,
+                'webhook_url' => $webhookUrl,
+                'content_length' => strlen($content)
+            ]);
+
+            $response = Http::timeout(10)
+                ->withHeaders([
+                    'X-Print-Secret' => $secretKey,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post($webhookUrl, [
+                    'content' => $content,
+                    'printer' => $printer,
+                    'division' => $division,
+                    'sale_id' => $saleId,
+                    'type' => 'order'
+                ]);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                
+                if ($result['success']) {
+                    Log::info("✅ Webhook print queued: {$result['job_id']}");
+                    return [
+                        'success' => true,
+                        'type' => 'webhook',
+                        'job_id' => $result['job_id'],
+                        'printer' => $printer,
+                        'division' => $division,
+                        'message' => 'Print job queued via webhook'
+                    ];
+                } else {
+                    throw new \Exception($result['error'] ?? 'Webhook returned error');
+                }
+            } else {
+                throw new \Exception("HTTP {$response->status()}: {$response->body()}");
+            }
+            
+        } catch (\Exception $e) {
+            Log::error("❌ Webhook print failed: " . $e->getMessage());
+            
+            // Fallback ke direct print jika webhook gagal
+            Log::info("🔄 Falling back to direct print for {$division}");
+            return $this->sendToPrinter($content, $printer, $division);
+        }
+    }
+
+    /**
+     * Test webhook connection
+     */
+    public function testWebhookConnection(): array
+    {
+        try {
+            $webhookUrl = config('app.webhook_url');
+            $secretKey = config('app.print_secret');
+            
+            if (!$webhookUrl) {
+                return [
+                    'success' => false,
+                    'error' => 'Webhook URL not configured'
+                ];
+            }
+
+            $testContent = "TEST WEBHOOK PRINT\n";
+            $testContent .= "===================\n";
+            $testContent .= "Time: " . now()->format('Y-m-d H:i:s') . "\n";
+            $testContent .= "Status: Webhook Test\n";
+            $testContent .= "===================\n\n\n";
+
+            $response = Http::timeout(5)
+                ->withHeaders([
+                    'X-Print-Secret' => $secretKey,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post($webhookUrl, [
+                    'content' => $testContent,
+                    'printer' => 'TEST',
+                    'division' => 'Test',
+                    'type' => 'test'
+                ]);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                return [
+                    'success' => true,
+                    'message' => 'Webhook connection successful',
+                    'job_id' => $result['job_id'] ?? null
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error' => "HTTP {$response->status()}: {$response->body()}"
+                ];
+            }
+            
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
             ];
         }
     }

@@ -123,6 +123,8 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
-    'print_secret' => env('APP_PRINT_SECRET', 'default-secret'),
+    'use_webhook_printing' => env('USE_WEBHOOK_PRINTING', false),
+    'webhook_url' => env('WEBHOOK_URL', 'https://localhost/webhook/print'),
+    'print_secret' => env('PRINT_SECRET', 'default-print-secret'),
 
 ];
