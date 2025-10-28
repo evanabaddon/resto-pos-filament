@@ -443,7 +443,7 @@ class ReceiptPrintService
             // Hanya close printer jika masih terbuka
             if ($this->printer) {
                 Log::info('Closing printer in destructor');
-                $this->printer->close();
+                // $this->printer->close();
                 $this->printer = null;
             }
             
