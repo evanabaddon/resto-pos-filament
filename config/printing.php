@@ -2,9 +2,9 @@
 
 return [
     'printer' => [
-        'connector' => 'windows', // 'windows', 'cups', 'network', 'file'
-        'name' => 'POS-58', // Nama printer di Windows
-        'ip' => '192.168.1.100', // IP untuk network printer
-        'port' => 9100, // Port untuk network printer
+        'type' => env('PRINTER_TYPE', 'usb'),
+        'usb_name' => env('USB_PRINTER_NAME', 'POS-58'),
+        'network_ip' => env('NETWORK_PRINTER_IP', '192.168.1.100'),
+        'network_port' => env('NETWORK_PRINTER_PORT', 9100),
     ],
 ];

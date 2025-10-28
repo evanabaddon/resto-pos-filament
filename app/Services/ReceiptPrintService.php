@@ -6,8 +6,8 @@ use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
 use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\Printer;
-use Mike42\Escpos\EscposImage;
 use App\Models\Sale;
+use App\Settings\PrinterSettings;
 use Illuminate\Support\Facades\Log;
 
 class ReceiptPrintService
@@ -15,194 +15,17 @@ class ReceiptPrintService
     protected $printer;
     protected $sale;
     protected $connector;
+    protected $printerInitialized = false;
+    protected $printerSettings;
 
-    // Explicit nullable parameter
     public function __construct(?Sale $sale = null)
     {
         $this->sale = $sale;
-        if ($sale) {
-            Log::info('ReceiptPrintService initialized', ['sale_id' => $sale->id, 'invoice' => $sale->invoice_number]);
-        }
-        // Jangan initialize printer di constructor, biarkan manual
-    }
-
-    public function initializeUsbPrinter($vendorId = null, $productId = null)
-    {
-        try {
-            // Cari printer USB thermal yang terpasang
-            $connector = new \Mike42\Escpos\PrintConnectors\FilePrintConnector("USB://printer-name");
-            // atau
-            // $connector = new \Mike42\Escpos\PrintConnectors\WindowsPrintConnector("POS-58");
-            
-            $printer = new \Mike42\Escpos\Printer($connector);
-            return $printer;
-            
-        } catch (\Exception $e) {
-            \Log::error('USB printer initialization failed: ' . $e->getMessage());
-            throw $e;
-        }
+        $this->printerSettings = app(PrinterSettings::class);
     }
 
     /**
-     * Initialize printer untuk network printing
-     */
-    public function initializeNetworkPrinter(string $ip, string $port = '9100'): void
-    {
-        try {
-            Log::info('Initializing network printer', ['ip' => $ip, 'port' => $port]);
-            
-            $this->connector = new NetworkPrintConnector($ip, $port);
-            $this->printer = new Printer($this->connector);
-            
-            Log::info('Network printer initialized successfully');
-            
-        } catch (\Exception $e) {
-            Log::error('Network printer initialization failed: ' . $e->getMessage());
-            $this->printer = null;
-            $this->connector = null;
-            throw $e;
-        }
-    }
-
-    /**
-     * Print plain text ke network printer (untuk order divisi)
-     */
-    public function printToNetworkPrinter(string $content, string $ip, string $port = '9100'): bool
-    {
-        try {
-            $this->initializeNetworkPrinter($ip, $port);
-            
-            if (!$this->printer) {
-                throw new \Exception('Printer not initialized');
-            }
-
-            $this->printer->initialize();
-            $this->printer->setJustification(Printer::JUSTIFY_LEFT);
-            
-            // Print content
-            $this->printer->text($content);
-            
-            $this->printer->feed(3);
-            $this->printer->cut();
-            $this->printer->close();
-            
-            Log::info("Content printed to {$ip}:{$port} successfully");
-            
-            return true;
-            
-        } catch (\Exception $e) {
-            Log::error("Failed to print to {$ip}:{$port} - " . $e->getMessage());
-            if ($this->printer) {
-                try {
-                    $this->printer->close();
-                } catch (\Exception $closeException) {
-                    Log::error('Error closing printer: ' . $closeException->getMessage());
-                }
-                $this->printer = null;
-            }
-            throw $e;
-        }
-    }
-
-    /**
-     * Print ke USB Printer (NEW METHOD)
-     */
-    public function printToUsbPrinter(string $content, string $printerName)
-    {
-        $connector = null;
-        $printer = null;
-
-        try {
-            Log::info("🖨️ Initializing USB printer: {$printerName}");
-
-            // Untuk Windows - gunakan WindowsPrintConnector
-            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                $connector = new WindowsPrintConnector($printerName);
-            } 
-            // Untuk Linux - gunakan FilePrintConnector
-            else {
-                $connector = new FilePrintConnector("/dev/usb/lp0"); // Sesuaikan path
-            }
-
-            $printer = new Printer($connector);
-            
-            // Set printer configuration
-            $printer->setJustification(Printer::JUSTIFY_CENTER);
-            $printer->setTextSize(1, 1);
-            
-            // Print content
-            $printer->text($content);
-            
-            // Cut paper
-            $printer->cut();
-            
-            Log::info("✅ USB Print successful: {$printerName}");
-            
-        } catch (\Exception $e) {
-            Log::error("❌ USB Print failed {$printerName}: " . $e->getMessage());
-            throw new \Exception("USB Printer error: " . $e->getMessage());
-            
-        } finally {
-            // Always close printer
-            if ($printer) {
-                $printer->close();
-            }
-        }
-    }
-
-    /**
-     * Detect available USB printers (Helper method)
-     */
-    public function detectUsbPrinters()
-    {
-        $printers = [];
-        
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            // Windows - get printer list
-            exec('wmic printer get name', $output);
-            foreach ($output as $line) {
-                $printerName = trim($line);
-                if ($printerName && !str_contains($printerName, 'Name')) {
-                    $printers[] = $printerName;
-                }
-            }
-        } else {
-            // Linux - get printer list
-            exec('lpstat -p 2>/dev/null', $output);
-            foreach ($output as $line) {
-                if (preg_match('/printer (\S+)/', $line, $matches)) {
-                    $printers[] = $matches[1];
-                }
-            }
-        }
-        
-        Log::info("Detected USB printers: " . implode(', ', $printers));
-        return $printers;
-    }
-
-    /**
-     * Test USB printer connection
-     */
-    public function testUsbPrinter($printerName = "POS-58")
-    {
-        try {
-            $content = "TEST PRINT\n";
-            $content .= "==========\n";
-            $content .= "Printer: {$printerName}\n";
-            $content .= "Time: " . now()->format('Y-m-d H:i:s') . "\n";
-            $content .= "Status: OK\n";
-            $content .= "==========\n";
-            
-            $this->printToUsbPrinter($content, $printerName);
-            return ['success' => true, 'message' => 'Test print berhasil'];
-            
-        } catch (\Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-
-    /**
-     * Print receipt untuk customer (membutuhkan sale)
+     * Print receipt untuk customer - FIXED VERSION
      */
     public function printReceipt(): bool
     {
@@ -210,171 +33,178 @@ class ReceiptPrintService
             throw new \Exception('Sale data is required for receipt printing');
         }
 
-        $this->initializePrinter();
-        
-        // Cek jika printer tidak terinisialisasi
-        if (!$this->printer) {
-            Log::error('Cannot print - Printer not initialized');
-            throw new \Exception('Printer tidak terinisialisasi. Periksa koneksi printer.');
-        }
+        $printer = null;
+        $connector = null;
 
         try {
             $sale = $this->sale->load(['items.product', 'user', 'paymentMethod']);
             
-            Log::info('Starting receipt print', [
+            Log::info('🖨️ Starting receipt print', [
                 'sale_id' => $sale->id,
                 'invoice' => $sale->invoice_number,
-                'items_count' => $sale->items->count()
+                'printer_type' => $this->printerSettings->printer_type,
+                'printer_name' => $this->printerSettings->usb_printer_name
             ]);
             
-            /* Initialize printer */
-            $this->printer->initialize();
+            // Initialize printer berdasarkan settings
+            $connector = $this->createConnector();
+            $printer = new Printer($connector);
+            $printer->initialize();
+            $this->printerInitialized = true;
             
-            /* Header */
-            $this->printHeader($sale);
+            Log::info('✅ Printer initialized successfully');
+
+            // Print sections
+            $this->printHeader($printer, $sale);
+            $this->printStoreInfo($printer);
+            $this->printSaleInfo($printer, $sale);
+            $this->printItems($printer, $sale);
+            $this->printSummary($printer, $sale);
+            $this->printPaymentInfo($printer, $sale);
+            $this->printFooter($printer);
             
-            /* Store info */
-            $this->printStoreInfo();
+            $printer->cut();
             
-            /* Sale info */
-            $this->printSaleInfo($sale);
-            
-            /* Items */
-            $this->printItems($sale);
-            
-            /* Summary */
-            $this->printSummary($sale);
-            
-            /* Payment info */
-            $this->printPaymentInfo($sale);
-            
-            /* Footer */
-            $this->printFooter();
-            
-            /* Cut paper */
-            $this->printer->cut();
-            
-            /* Close connection */
-            $this->printer->close();
-            
-            // Set printer ke null setelah close untuk hindari double close
-            $this->printer = null;
-            
-            Log::info('Receipt printed successfully');
-            
+            Log::info('✅ Receipt printed successfully');
             return true;
             
         } catch (\Exception $e) {
-            Log::error('Print receipt failed: ' . $e->getMessage());
+            Log::error('❌ Print receipt failed: ' . $e->getMessage());
+            throw new \Exception("Gagal mencetak struk: " . $e->getMessage());
             
-            // Close printer jika masih terbuka
-            if ($this->printer) {
-                try {
-                    $this->printer->close();
-                } catch (\Exception $closeException) {
-                    Log::error('Error closing printer: ' . $closeException->getMessage());
-                }
-                $this->printer = null;
-            }
-            
-            throw $e;
+        } finally {
+            $this->safeClose($printer);
         }
     }
 
     /**
-     * Initialize printer untuk receipt (menggunakan config)
+     * Create printer connector dengan fallback
      */
-    protected function initializePrinter(): void
+    protected function createConnector()
     {
+        $printerType = $this->printerSettings->printer_type;
+        $printerName = $this->printerSettings->usb_printer_name ?? 'POS-58';
+        
+        Log::info('Creating printer connector', [
+            'printer_type' => $printerType,
+            'printer_name' => $printerName
+        ]);
+        
         try {
-            $connectorType = config('printing.printer.connector', 'windows');
-            
-            Log::info('Initializing printer', ['connector_type' => $connectorType]);
-            
-            switch ($connectorType) {
-                case 'windows':
-                    $printerName = config('printing.printer.name', 'POS-58');
-                    Log::info('Using Windows printer', ['printer_name' => $printerName]);
-                    $this->connector = new WindowsPrintConnector($printerName);
-                    break;
+            switch ($printerType) {
+                case 'usb':
+                    Log::info('Using USB printer', ['printer_name' => $printerName]);
+                    
+                    // Untuk Windows - gunakan WindowsPrintConnector
+                    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                        return new WindowsPrintConnector($printerName);
+                    } else {
+                        return new FilePrintConnector("/dev/usb/lp0");
+                    }
                     
                 case 'network':
-                    $ip = config('printing.printer.ip', '192.168.1.100');
-                    $port = config('printing.printer.port', 9100);
+                    $ip = $this->printerSettings->general_printer_ip ?? '192.168.1.100';
+                    $port = $this->printerSettings->general_printer_port ?? 9100;
                     Log::info('Using Network printer', ['ip' => $ip, 'port' => $port]);
-                    $this->connector = new NetworkPrintConnector($ip, $port);
-                    break;
+                    return new NetworkPrintConnector($ip, $port);
                     
                 case 'file':
                     Log::info('Using File printer (debug mode)');
-                    $this->connector = new FilePrintConnector("php://stdout");
-                    break;
+                    return new FilePrintConnector("php://stdout");
                     
                 default:
-                    throw new \Exception("Printer connector type not supported: " . $connectorType);
+                    throw new \Exception("Printer type not supported: " . $printerType);
             }
-
-            $this->printer = new Printer($this->connector);
-            Log::info('Printer initialized successfully');
-            
         } catch (\Exception $e) {
-            Log::error('Printer initialization failed: ' . $e->getMessage());
-            $this->printer = null;
-            $this->connector = null;
-            throw $e;
+            Log::error('❌ Failed to create printer connector: ' . $e->getMessage());
+            throw new \Exception("Tidak dapat terhubung ke printer '{$printerName}'. Pastikan printer tersedia dan terinstall.");
         }
     }
 
-    protected function printHeader($sale)
+    /**
+     * Safe close printer only
+     */
+    protected function safeClose($printer = null)
     {
-        $this->printer->setJustification(Printer::JUSTIFY_CENTER);
+        try {
+            if ($printer instanceof Printer) {
+                Log::info('Closing printer...');
+                $printer->close();
+                Log::info('Printer closed successfully');
+            }
+        } catch (\Exception $e) {
+            Log::warning('Error closing printer: ' . $e->getMessage());
+        }
+        
+        $this->printerInitialized = false;
+    }
+
+    // ... (method printHeader, printStoreInfo, dll tetap sama)
+    protected function printHeader($printer, $sale)
+    {
+        if (!$printer) {
+            throw new \Exception('Printer not initialized');
+        }
+
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
         
         // Judul
-        $this->printer->selectPrintMode(Printer::MODE_DOUBLE_HEIGHT | Printer::MODE_DOUBLE_WIDTH);
-        $this->printer->text("STRUK PEMBAYARAN\n");
-        $this->printer->selectPrintMode();
+        $printer->selectPrintMode(Printer::MODE_DOUBLE_HEIGHT | Printer::MODE_DOUBLE_WIDTH);
+        $printer->text("STRUK PEMBAYARAN\n");
+        $printer->selectPrintMode();
         
-        $this->printer->text("========================\n");
-        $this->printer->feed();
+        $printer->text("========================\n");
+        $printer->feed();
     }
 
-    protected function printStoreInfo()
+    protected function printStoreInfo($printer)
     {
-        $this->printer->setJustification(Printer::JUSTIFY_LEFT);
-        $this->printer->text(config('app.name', 'Toko Saya') . "\n");
-        $this->printer->text("Telp: 08123456789\n");
-        $this->printer->text("Alamat: Jl. Contoh No. 123\n");
-        $this->printer->text("========================\n");
-        $this->printer->feed();
+        if (!$printer) {
+            throw new \Exception('Printer not initialized');
+        }
+
+        $printer->setJustification(Printer::JUSTIFY_LEFT);
+        $printer->text(config('app.name', 'Toko Saya') . "\n");
+        $printer->text("Telp: 08123456789\n");
+        $printer->text("Alamat: Jl. Contoh No. 123\n");
+        $printer->text("========================\n");
+        $printer->feed();
     }
 
-    protected function printSaleInfo($sale)
+    protected function printSaleInfo($printer, $sale)
     {
-        $this->printer->setJustification(Printer::JUSTIFY_LEFT);
-        $this->printer->text("No. Transaksi: " . $sale->invoice_number . "\n");
-        $this->printer->text("Tanggal: " . $sale->created_at->format('d/m/Y H:i') . "\n");
-        $this->printer->text("Kasir: " . ($sale->user->name ?? 'System') . "\n");
-        $this->printer->text("Customer: " . ($sale->customer_name ?? 'Umum') . "\n");
-        $this->printer->text("Tipe Order: " . $sale->order_type . "\n");
-        $this->printer->text("========================\n");
-        $this->printer->feed();
+        if (!$printer) {
+            throw new \Exception('Printer not initialized');
+        }
+
+        $printer->setJustification(Printer::JUSTIFY_LEFT);
+        $printer->text("No. Transaksi: " . $sale->invoice_number . "\n");
+        $printer->text("Tanggal: " . $sale->created_at->format('d/m/Y H:i') . "\n");
+        $printer->text("Kasir: " . ($sale->user->name ?? 'System') . "\n");
+        $printer->text("Customer: " . ($sale->customer_name ?? 'Umum') . "\n");
+        $printer->text("Tipe Order: " . $sale->order_type . "\n");
+        $printer->text("========================\n");
+        $printer->feed();
     }
 
-    protected function printItems($sale)
+    protected function printItems($printer, $sale)
     {
-        $this->printer->setJustification(Printer::JUSTIFY_LEFT);
-        $this->printer->text("ITEM YANG DIBELI:\n");
-        $this->printer->text("------------------------\n");
+        if (!$printer) {
+            throw new \Exception('Printer not initialized');
+        }
+
+        $printer->setJustification(Printer::JUSTIFY_LEFT);
+        $printer->text("ITEM YANG DIBELI:\n");
+        $printer->text("------------------------\n");
         
         foreach ($sale->items as $item) {
-            $productName = $item->product->name;
+            $productName = $item->product->name ?? 'Unknown Product';
             
-            // Potong nama produk jika terlalu panjang
             if (strlen($productName) > 20) {
                 $productName = substr($productName, 0, 17) . '...';
             }
             
-            $this->printer->text($productName . "\n");
+            $printer->text($productName . "\n");
             
             $quantityLine = sprintf("  %-2d x %-10s", 
                 $item->quantity, 
@@ -382,54 +212,68 @@ class ReceiptPrintService
             );
             
             $subtotal = "Rp" . number_format($item->subtotal, 0, ',', '.');
-            $this->printer->text($quantityLine . $subtotal . "\n");
+            $printer->text($quantityLine . $subtotal . "\n");
         }
         
-        $this->printer->text("------------------------\n");
-        $this->printer->feed();
+        $printer->text("------------------------\n");
+        $printer->feed();
     }
 
-    protected function printSummary($sale)
+    protected function printSummary($printer, $sale)
     {
-        $this->printer->setJustification(Printer::JUSTIFY_RIGHT);
+        if (!$printer) {
+            throw new \Exception('Printer not initialized');
+        }
+
+        $printer->setJustification(Printer::JUSTIFY_RIGHT);
         
-        $this->printer->text("Subtotal: " . $this->formatCurrency($sale->subtotal) . "\n");
-        $this->printer->text("Pajak (10%): " . $this->formatCurrency($sale->tax) . "\n");
+        $printer->text("Subtotal: " . $this->formatCurrency($sale->subtotal) . "\n");
+        $printer->text("Pajak (10%): " . $this->formatCurrency($sale->tax) . "\n");
         
         if ($sale->discount > 0) {
-            $this->printer->text("Diskon: -" . $this->formatCurrency($sale->discount) . "\n");
+            $printer->text("Diskon: -" . $this->formatCurrency($sale->discount) . "\n");
         }
         
-        $this->printer->setEmphasis(true);
-        $this->printer->text("TOTAL: " . $this->formatCurrency($sale->final_total) . "\n");
-        $this->printer->setEmphasis(false);
-        $this->printer->feed();
+        $printer->setEmphasis(true);
+        $printer->text("TOTAL: " . $this->formatCurrency($sale->final_total) . "\n");
+        $printer->setEmphasis(false);
+        $printer->feed();
     }
 
-    protected function printPaymentInfo($sale)
+    protected function printPaymentInfo($printer, $sale)
     {
-        $this->printer->setJustification(Printer::JUSTIFY_LEFT);
-        $this->printer->text("PEMBAYARAN:\n");
-        $this->printer->text("Metode: " . ($sale->paymentMethod->name ?? 'Cash') . "\n");
-        $this->printer->text("Bayar: " . $this->formatCurrency($sale->amount_paid) . "\n");
+        if (!$printer) {
+            throw new \Exception('Printer not initialized');
+        }
+
+        $printer->setJustification(Printer::JUSTIFY_LEFT);
+        $printer->text("PEMBAYARAN:\n");
+        $printer->text("Metode: " . ($sale->paymentMethod->name ?? 'Cash') . "\n");
+        $printer->text("Bayar: " . $this->formatCurrency($sale->amount_paid) . "\n");
         
         if (($sale->paymentMethod->code ?? 'cash') === 'cash') {
             $change = $sale->amount_paid - $sale->final_total;
-            $this->printer->text("Kembali: " . $this->formatCurrency($change) . "\n");
+            if ($change > 0) {
+                $printer->text("Kembali: " . $this->formatCurrency($change) . "\n");
+            }
         }
         
-        $this->printer->text("========================\n");
-        $this->printer->feed();
+        $printer->text("========================\n");
+        $printer->feed();
     }
 
-    protected function printFooter()
+    protected function printFooter($printer)
     {
-        $this->printer->setJustification(Printer::JUSTIFY_CENTER);
-        $this->printer->text("Terima kasih atas kunjungan Anda\n");
-        $this->printer->setEmphasis(true);
-        $this->printer->text("*** SELAMAT MENIKMATI ***\n");
-        $this->printer->setEmphasis(false);
-        $this->printer->feed(2);
+        if (!$printer) {
+            throw new \Exception('Printer not initialized');
+        }
+
+        $printer->setJustification(Printer::JUSTIFY_CENTER);
+        $printer->text("Terima kasih atas kunjungan Anda\n");
+        $printer->setEmphasis(true);
+        $printer->text("*** SELAMAT MENIKMATI ***\n");
+        $printer->setEmphasis(false);
+        $printer->feed(2);
     }
 
     protected function formatCurrency($amount)
@@ -437,24 +281,101 @@ class ReceiptPrintService
         return "Rp" . number_format($amount, 0, ',', '.');
     }
 
-    public function __destruct()
+    /**
+     * Get available printers list
+     */
+    public function getAvailablePrinters(): array
     {
+        $printers = [];
+        
         try {
-            // Hanya close printer jika masih terbuka
-            if ($this->printer) {
-                Log::info('Closing printer in destructor');
-                // $this->printer->close();
-                $this->printer = null;
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                // Windows - get printer list
+                exec('wmic printer get name', $output, $returnCode);
+                
+                if ($returnCode === 0 && !empty($output)) {
+                    foreach ($output as $line) {
+                        $printerName = trim($line);
+                        if ($printerName && !str_contains($printerName, 'Name') && $printerName !== '') {
+                            $printers[] = $printerName;
+                        }
+                    }
+                }
+            } else {
+                // Linux - get printer list
+                exec('lpstat -p 2>/dev/null', $output, $returnCode);
+                
+                if ($returnCode === 0 && !empty($output)) {
+                    foreach ($output as $line) {
+                        if (preg_match('/printer (\S+)/', $line, $matches)) {
+                            $printers[] = $matches[1];
+                        }
+                    }
+                }
             }
             
-            // Close connector jika ada
-            if ($this->connector) {
-                // Untuk beberapa connector mungkin perlu close secara explicit
-                $this->connector = null;
-            }
+            Log::info('Available printers: ' . implode(', ', $printers));
+            return $printers;
+            
         } catch (\Exception $e) {
-            // Log error tapi jangan throw exception di destructor
-            Log::error('Error in ReceiptPrintService destructor: ' . $e->getMessage());
+            Log::error('Error getting printers: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Test printer connection
+     */
+    public function testPrinter(): array
+    {
+        $printer = null;
+
+        try {
+            $printers = $this->getAvailablePrinters();
+            $targetPrinter = $this->printerSettings->usb_printer_name;
+            
+            Log::info('Testing printer connection', [
+                'target_printer' => $targetPrinter,
+                'available_printers' => $printers
+            ]);
+
+            // Cek apakah printer tersedia
+            if (!in_array($targetPrinter, $printers)) {
+                return [
+                    'success' => false,
+                    'error' => "Printer '{$targetPrinter}' tidak ditemukan. Printers yang tersedia: " . implode(', ', $printers)
+                ];
+            }
+
+            $connector = $this->createConnector();
+            $printer = new Printer($connector);
+            $printer->initialize();
+            
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->text("TEST PRINT\n");
+            $printer->text("==========\n");
+            $printer->text("Printer: " . $targetPrinter . "\n");
+            $printer->text("Time: " . now()->format('Y-m-d H:i:s') . "\n");
+            $printer->text("Status: OK\n");
+            $printer->text("==========\n");
+            
+            $printer->cut();
+            
+            Log::info('✅ Printer test successful');
+            
+            return [
+                'success' => true,
+                'message' => 'Test print berhasil dikirim ke printer ' . $targetPrinter
+            ];
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Printer test failed: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        } finally {
+            $this->safeClose($printer);
         }
     }
 }

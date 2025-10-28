@@ -946,45 +946,6 @@ class Pos extends Page
         return $newItems;
     }
 
-    // public function printReceipt($saleId)
-    // {
-    //     try {
-    //         // Validasi saleId
-    //         if (!$saleId) {
-    //             $this->dispatch('showNotification', 'Sale ID tidak valid untuk print.', 'error');
-    //             return;
-    //         }
-
-    //         logger('Print Receipt - Searching Sale:', ['saleId' => $saleId]);
-            
-    //         $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->find($saleId);
-            
-    //         if (!$sale) {
-    //             logger('Sale not found:', ['saleId' => $saleId]);
-    //             $this->dispatch('showNotification', 'Transaksi tidak ditemukan untuk dicetak.', 'error');
-    //             return;
-    //         }
-
-    //         logger('Sale found, proceeding to print:', ['invoice' => $sale->invoice_number]);
-            
-    //         // Sekarang dengan parameter Sale
-    //         $printService = new ReceiptPrintService($sale);
-    //         $printService->printReceipt();
-            
-    //         $this->dispatch('showNotification', 'Struk berhasil dicetak!', 'success');
-            
-    //         // Kirim event ke PosPaymentModal bahwa print sudah selesai
-    //         $this->dispatch('printCompleted');
-            
-    //     } catch (\Exception $e) {
-    //         Log::error('Print receipt failed: ' . $e->getMessage());
-    //         $this->dispatch('showNotification', 'Gagal mencetak struk: ' . $e->getMessage(), 'error');
-            
-    //         // Kirim event error ke PosPaymentModal
-    //         $this->dispatch('printFailed');
-    //     }
-    // }
-
     public function printReceipt($saleId)
     {
         // 🔹 CEK APAKAH SEDANG PRINT
@@ -994,9 +955,8 @@ class Pos extends Page
         }
 
         try {
-            $this->isPrinting = true; // SET FLAG
+            $this->isPrinting = true;
             
-            // Validasi saleId
             if (!$saleId) {
                 $this->dispatch('showNotification', 'Sale ID tidak valid untuk print.', 'error');
                 $this->isPrinting = false;
@@ -1016,23 +976,92 @@ class Pos extends Page
 
             logger('Sale found, proceeding to print:', ['invoice' => $sale->invoice_number]);
             
+            // ✅ GUNAKAN RECEIPT PRINT SERVICE YANG DIPERBAIKI
             $printService = new ReceiptPrintService($sale);
             $printService->printReceipt();
             
-            $this->dispatch('showNotification', 'Struk berhasil dicetak!', 'success');
-            
-            // Kirim event ke PosPaymentModal bahwa print sudah selesai
+            $this->dispatch('showNotification', '✅ Struk berhasil dicetak!', 'success');
             $this->dispatch('printCompleted');
             
         } catch (\Exception $e) {
-            Log::error('Print receipt failed: ' . $e->getMessage());
-            $this->dispatch('showNotification', 'Gagal mencetak struk: ' . $e->getMessage(), 'error');
+            Log::error('❌ Print receipt failed: ' . $e->getMessage());
+            $this->dispatch('showNotification', '❌ Gagal mencetak struk: ' . $e->getMessage(), 'error');
             $this->dispatch('printFailed');
         } finally {
-            // 🔹 RESET FLAG di finally block
             $this->isPrinting = false;
         }
     }
+
+    // 🔹 TAMBAHKAN METHOD UNTUK DEBUG PRINTER
+    public function debugPrinter()
+    {
+        try {
+            $printService = new ReceiptPrintService();
+            
+            // 1. Get available printers
+            $printers = $printService->getAvailablePrinters();
+            
+            // 2. Test printer connection
+            $testResult = $printService->testPrinter();
+            
+            $message = "Printers tersedia: " . implode(', ', $printers) . "\n";
+            $message .= "Test result: " . ($testResult['success'] ? '✅ BERHASIL' : '❌ GAGAL: ' . $testResult['error']);
+            
+            $this->dispatch('showNotification', $message, $testResult['success'] ? 'success' : 'error');
+            
+        } catch (\Exception $e) {
+            $this->dispatch('showNotification', '❌ Debug error: ' . $e->getMessage(), 'error');
+        }
+    }
+    
+    // public function printReceipt($saleId)
+    // {
+    //     // 🔹 CEK APAKAH SEDANG PRINT
+    //     if ($this->isPrinting) {
+    //         Log::warning('Print receipt skipped - already printing', ['saleId' => $saleId]);
+    //         return;
+    //     }
+
+    //     try {
+    //         $this->isPrinting = true; // SET FLAG
+            
+    //         // Validasi saleId
+    //         if (!$saleId) {
+    //             $this->dispatch('showNotification', 'Sale ID tidak valid untuk print.', 'error');
+    //             $this->isPrinting = false;
+    //             return;
+    //         }
+
+    //         logger('Print Receipt - Searching Sale:', ['saleId' => $saleId]);
+            
+    //         $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->find($saleId);
+            
+    //         if (!$sale) {
+    //             logger('Sale not found:', ['saleId' => $saleId]);
+    //             $this->dispatch('showNotification', 'Transaksi tidak ditemukan untuk dicetak.', 'error');
+    //             $this->isPrinting = false;
+    //             return;
+    //         }
+
+    //         logger('Sale found, proceeding to print:', ['invoice' => $sale->invoice_number]);
+            
+    //         $printService = new ReceiptPrintService($sale);
+    //         $printService->printReceipt();
+            
+    //         $this->dispatch('showNotification', 'Struk berhasil dicetak!', 'success');
+            
+    //         // Kirim event ke PosPaymentModal bahwa print sudah selesai
+    //         $this->dispatch('printCompleted');
+            
+    //     } catch (\Exception $e) {
+    //         Log::error('Print receipt failed: ' . $e->getMessage());
+    //         $this->dispatch('showNotification', 'Gagal mencetak struk: ' . $e->getMessage(), 'error');
+    //         $this->dispatch('printFailed');
+    //     } finally {
+    //         // 🔹 RESET FLAG di finally block
+    //         $this->isPrinting = false;
+    //     }
+    // }
 
     protected function recalculateTotals()
     {
@@ -1051,35 +1080,6 @@ class Pos extends Page
         // $this->showLoadModal = true;
         $this->dispatch('openLoadModal');
     }
-
-    // public function loadSale($saleId)
-    // {
-    //     $sale = Sale::with('items.product')->findOrFail($saleId);
-
-    //     $this->saleId = $sale->id;
-    //     $this->orderNumber = $sale->invoice_number;
-    //     $this->customerName = $sale->customer_name ?? '';
-    //     $this->orderType = $sale->order_type ?? 'Dine In';
-    //     $this->discount = $sale->discount ?? 0; // set discount dulu
-
-    //     // Map ulang items
-    //     $this->items = $sale->items->map(function ($item) {
-    //         $product = $item->product;
-    //         return [
-    //             'product_id' => $item->product_id,
-    //             'name'       => $product?->name ?? '(Produk dihapus)',
-    //             'quantity'   => $item->quantity,
-    //             'price'      => $item->unit_price,
-    //             'subtotal'   => $item->subtotal,
-    //         ];
-    //     })->toArray();
-
-    //     // Hitung total terbaru
-    //     $this->recalculateTotals();
-
-    //     $this->showLoadModal = false;
-    //     $this->dispatch('showNotification', 'Transaksi berhasil dimuat.', 'success');
-    // }
 
     public function loadSale($saleId)
     {
