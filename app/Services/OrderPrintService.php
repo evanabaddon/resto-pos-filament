@@ -6,6 +6,7 @@ use App\Models\Sale;
 use App\Models\Product;
 use App\Settings\PrinterSettings;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class OrderPrintService
 {
@@ -94,18 +95,21 @@ class OrderPrintService
                 $content = $this->generateKitchenOrderContent($sale, $kitchenItems);
                 $printerName = $this->getPrinterNameForDivision('kitchen');
                 $printResults['kitchen'] = $this->sendToPrinter($content, $printerName, 'Kitchen');
+                $printResults['kitchen'] = $this->sendWebhookPrint($content, 'BAR', 'Kitchen');
             }
 
             if (!empty($barItems)) {
                 $content = $this->generateBarOrderContent($sale, $barItems);
                 $printerName = $this->getPrinterNameForDivision('bar');
                 $printResults['bar'] = $this->sendToPrinter($content, $printerName, 'Bar');
+                $printResults['bar'] = $this->sendWebhookPrint($content, 'BAR', 'Bar');
             }
 
             if (!empty($generalItems)) {
                 $content = $this->generateGeneralOrderContent($sale, $generalItems);
                 $printerName = $this->getPrinterNameForDivision('general');
                 $printResults['general'] = $this->sendToPrinter($content, $printerName, 'General');
+                $printResults['general'] = $this->sendWebhookPrint($content, 'BAR', 'General');
             }
 
             Log::info("Order printing completed for sale #{$sale->invoice_number}", $printResults);
@@ -114,6 +118,40 @@ class OrderPrintService
         } catch (\Exception $e) {
             Log::error("Order printing failed: " . $e->getMessage());
             throw $e;
+        }
+    }
+
+    /**
+     * Send print job via webhook
+     */
+    private function sendWebhookPrint(string $content, string $printer, string $division): array
+    {
+        try {
+            $response = Http::withHeaders([
+                'X-Print-Secret' => config('app.print_secret'),
+            ])->post('https://pos.suralaya.id/webhook/print', [
+                'content' => $content,
+                'printer' => $printer,
+                'division' => $division
+            ]);
+
+            $result = $response->json();
+            
+            if ($response->successful() && $result['success']) {
+                return [
+                    'success' => true,
+                    'job_id' => $result['job_id'],
+                    'message' => 'Print job queued'
+                ];
+            } else {
+                throw new \Exception($result['error'] ?? 'Webhook failed');
+            }
+            
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
         }
     }
 

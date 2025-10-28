@@ -123,4 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'print_secret' => env('APP_PRINT_SECRET', 'default-secret'),
+
 ];
