@@ -2,9 +2,9 @@
 
 namespace App\Filament\Pages;
 
+use App\Settings\PrinterSettings;
 use UnitEnum;
 use BackedEnum;
-use PrinterSettings;
 use Filament\Actions\Action;
 use Filament\Schemas\Schema;
 use Filament\Pages\SettingsPage;

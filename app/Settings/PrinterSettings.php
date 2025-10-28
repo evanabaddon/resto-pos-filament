@@ -1,5 +1,6 @@
 <?php
 
+namespace App\Settings;
 use Spatie\LaravelSettings\Settings;
 
 class PrinterSettings extends Settings
