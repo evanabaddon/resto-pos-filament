@@ -13,12 +13,36 @@ class OrderPrintService
     protected $printerConfig;
     protected $receiptPrintService;
     protected $useWebhook;
+    protected $isHostingEnvironment;
 
     public function __construct()
     {
         $this->printerConfig = $this->loadPrinterConfig();
         $this->receiptPrintService = new ReceiptPrintService();
         $this->useWebhook = config('app.use_webhook_printing', false);
+    }
+
+    /**
+     * Deteksi apakah running di hosting environment
+     */
+    protected function detectHostingEnvironment(): bool
+    {
+        // Cek berdasarkan beberapa kondisi hosting
+        $host = request()->getHost();
+        $serverIp = $_SERVER['SERVER_ADDR'] ?? '';
+        
+        // Jika domain bukan localhost/127.0.0.1, consider sebagai hosting
+        $isHosting = !in_array($host, ['localhost', '127.0.0.1', '::1']) 
+                  && !str_contains($host, '.local')
+                  && !str_contains($host, 'test')
+                  && filter_var($host, FILTER_VALIDATE_IP) === false;
+        
+        // Atau cek dari APP_ENV
+        if (config('app.env') === 'production') {
+            $isHosting = true;
+        }
+        
+        return $isHosting;
     }
 
     /**
@@ -58,7 +82,7 @@ class OrderPrintService
     }
 
     /**
-     * PRINT ORDER BY PRODUCT TYPE - WITH WEBHOOK SUPPORT
+     * PRINT ORDER BY PRODUCT TYPE - SMART ROUTING
      */
     public function printOrderByProductType(Sale $sale): array
     {
@@ -66,6 +90,7 @@ class OrderPrintService
             Log::info("🖨️ Starting order print by product type", [
                 'sale_id' => $sale->id,
                 'invoice' => $sale->invoice_number,
+                'environment' => $this->isHostingEnvironment ? 'hosting' : 'local',
                 'use_webhook' => $this->useWebhook
             ]);
 
@@ -92,37 +117,28 @@ class OrderPrintService
 
             $printResults = [];
 
-            // Generate dan print content untuk masing-masing divisi
-            if (!empty($kitchenItems)) {
-                $content = $this->generateKitchenOrderContent($sale, $kitchenItems);
-                $printerName = $this->getPrinterNameForDivision('kitchen');
-                
+            // **STRATEGI PRINT BERDASARKAN ENVIRONMENT**
+            if ($this->isHostingEnvironment) {
+                // DI HOSTING: SELALU PAKAI WEBHOOK
+                $printResults = $this->printViaWebhook($sale, [
+                    'kitchen' => $kitchenItems,
+                    'bar' => $barItems,
+                    'general' => $generalItems
+                ]);
+            } else {
+                // DI LOCAL: PILIH WEBHOOK ATAU DIRECT
                 if ($this->useWebhook) {
-                    $printResults['kitchen'] = $this->sendWebhookPrint($content, $printerName, 'Kitchen', $sale->id);
+                    $printResults = $this->printViaWebhook($sale, [
+                        'kitchen' => $kitchenItems,
+                        'bar' => $barItems,
+                        'general' => $generalItems
+                    ]);
                 } else {
-                    $printResults['kitchen'] = $this->sendToPrinter($content, $printerName, 'Kitchen');
-                }
-            }
-
-            if (!empty($barItems)) {
-                $content = $this->generateBarOrderContent($sale, $barItems);
-                $printerName = $this->getPrinterNameForDivision('bar');
-                
-                if ($this->useWebhook) {
-                    $printResults['bar'] = $this->sendWebhookPrint($content, $printerName, 'Bar', $sale->id);
-                } else {
-                    $printResults['bar'] = $this->sendToPrinter($content, $printerName, 'Bar');
-                }
-            }
-
-            if (!empty($generalItems)) {
-                $content = $this->generateGeneralOrderContent($sale, $generalItems);
-                $printerName = $this->getPrinterNameForDivision('general');
-                
-                if ($this->useWebhook) {
-                    $printResults['general'] = $this->sendWebhookPrint($content, $printerName, 'General', $sale->id);
-                } else {
-                    $printResults['general'] = $this->sendToPrinter($content, $printerName, 'General');
+                    $printResults = $this->printDirect($sale, [
+                        'kitchen' => $kitchenItems,
+                        'bar' => $barItems,
+                        'general' => $generalItems
+                    ]);
                 }
             }
 
@@ -136,10 +152,24 @@ class OrderPrintService
     }
 
     /**
-     * Send content ke printer - DIRECT PRINT
+     * Send content ke printer - DIRECT PRINT (HANYA LOCAL)
      */
     protected function sendToPrinter(string $content, string $printerName, string $division): array
     {
+        // Safety check: jangan allow direct print di hosting
+        if ($this->isHostingEnvironment) {
+            Log::warning("🚫 Blocked direct print attempt on hosting", [
+                'division' => $division,
+                'printer' => $printerName
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Direct printing not allowed on hosting environment',
+                'division' => $division
+            ];
+        }
+
         try {
             Log::info("🖨️ Direct printing to {$division}", [
                 'printer' => $printerName,
@@ -167,18 +197,61 @@ class OrderPrintService
     }
 
     /**
+     * Print direct (hanya untuk local)
+     */
+    protected function printDirect(Sale $sale, array $itemsByDivision): array
+    {
+        $printResults = [];
+
+        foreach ($itemsByDivision as $division => $items) {
+            if (!empty($items)) {
+                $content = $this->generateOrderContent($sale, $items, $division);
+                $printerName = $this->getPrinterNameForDivision($division);
+                
+                $printResults[$division] = $this->sendToPrinter($content, $printerName, $division);
+            }
+        }
+
+        return $printResults;
+    }
+
+    /**
+     * Print via webhook (untuk hosting)
+     */
+    protected function printViaWebhook(Sale $sale, array $itemsByDivision): array
+    {
+        $printResults = [];
+
+        foreach ($itemsByDivision as $division => $items) {
+            if (!empty($items)) {
+                $content = $this->generateOrderContent($sale, $items, $division);
+                $printerName = $this->getPrinterNameForDivision($division);
+                
+                $printResults[$division] = $this->sendWebhookPrint($content, $printerName, $division, $sale->id);
+            }
+        }
+
+        return $printResults;
+    }
+
+    /**
      * Send print job via webhook
      */
     protected function sendWebhookPrint(string $content, string $printer, string $division, ?int $saleId = null): array
     {
         try {
-            $webhookUrl = config('app.webhook_url', 'https://your-domain.com/webhook/print');
-            $secretKey = config('app.print_secret', 'default-print-secret');
+            $webhookUrl = config('app.webhook_print_url'); // Pastikan ada di .env
+            $secretKey = config('app.print_secret');
             
+            if (!$webhookUrl) {
+                throw new \Exception('Webhook URL not configured');
+            }
+
             Log::info("🌐 Sending webhook print to {$division}", [
                 'printer' => $printer,
                 'webhook_url' => $webhookUrl,
-                'content_length' => strlen($content)
+                'content_length' => strlen($content),
+                'environment' => $this->isHostingEnvironment ? 'hosting' : 'local'
             ]);
 
             $response = Http::timeout(10)
@@ -197,7 +270,7 @@ class OrderPrintService
             if ($response->successful()) {
                 $result = $response->json();
                 
-                if ($result['success']) {
+                if ($result['success'] ?? false) {
                     Log::info("✅ Webhook print queued: {$result['job_id']}");
                     return [
                         'success' => true,
@@ -217,9 +290,20 @@ class OrderPrintService
         } catch (\Exception $e) {
             Log::error("❌ Webhook print failed: " . $e->getMessage());
             
-            // Fallback ke direct print jika webhook gagal
-            Log::info("🔄 Falling back to direct print for {$division}");
-            return $this->sendToPrinter($content, $printer, $division);
+            // Fallback strategy berbeda untuk hosting vs local
+            if ($this->isHostingEnvironment) {
+                // Di hosting, tidak ada fallback - langsung return error
+                return [
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                    'division' => $division,
+                    'type' => 'webhook_failed'
+                ];
+            } else {
+                // Di local, fallback ke direct print
+                Log::info("🔄 Falling back to direct print for {$division}");
+                return $this->sendToPrinter($content, $printer, $division);
+            }
         }
     }
 
@@ -411,6 +495,54 @@ class OrderPrintService
     // ==================== GENERATE CONTENT METHODS ====================
 
     /**
+     * Generate content berdasarkan divisi
+     */
+    protected function generateOrderContent(Sale $sale, array $items, string $division): string
+    {
+        $divisionTitles = [
+            'kitchen' => 'ORDER DAPUR',
+            'bar' => 'ORDER BAR', 
+            'general' => 'ORDER UMUM'
+        ];
+
+        $divisionFooters = [
+            'kitchen' => '*** HARAP DIPROSES ***',
+            'bar' => '*** READY TO SERVE ***',
+            'general' => '** ITEM READY **'
+        ];
+
+        $title = $divisionTitles[$division] ?? 'ORDER';
+        $footer = $divisionFooters[$division] ?? '** ORDER **';
+
+        $content = "{$title}\n";
+        $content .= "========================\n";
+        $content .= "No: {$sale->invoice_number}\n";
+        $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
+        $content .= "Time: " . now()->format('H:i:s') . "\n";
+        $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
+        $content .= "========================\n";
+        $content .= "ITEMS:\n";
+        
+        foreach ($items as $item) {
+            $productName = $item->product->name ?? 'Unknown';
+            if (strlen($productName) > 20) {
+                $productName = substr($productName, 0, 17) . '...';
+            }
+            $content .= "{$productName} x{$item->quantity}\n";
+            
+            if (!empty($item->note)) {
+                $content .= "  Note: {$item->note}\n";
+            }
+        }
+        
+        $content .= "========================\n";
+        $content .= "{$footer}\n";
+        $content .= "========================\n\n\n";
+        
+        return $content;
+    }
+
+    /**
      * Generate content untuk kitchen order
      */
     protected function generateKitchenOrderContent(Sale $sale, array $items): string
@@ -566,5 +698,19 @@ class OrderPrintService
                 'error' => $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Test environment detection
+     */
+    public function testEnvironment(): array
+    {
+        return [
+            'is_hosting' => $this->isHostingEnvironment,
+            'app_env' => config('app.env'),
+            'host' => request()->getHost(),
+            'use_webhook' => $this->useWebhook,
+            'recommended_method' => $this->isHostingEnvironment ? 'webhook' : ($this->useWebhook ? 'webhook' : 'direct')
+        ];
     }
 }
