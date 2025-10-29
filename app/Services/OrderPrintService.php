@@ -367,6 +367,10 @@ class OrderPrintService
             $testContent .= "===================\n\n\n";
 
             $response = Http::timeout(5)
+                ->withOptions([
+                    'verify' => false,
+                    'debug' => false,
+                ])
                 ->withHeaders([
                     'X-Print-Secret' => $secretKey,
                     'Content-Type' => 'application/json',
