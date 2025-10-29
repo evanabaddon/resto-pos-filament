@@ -146,7 +146,7 @@
         </div>
 
         {{-- List Item --}}
-        <div class="flex-1 overflow-auto p-2 space-y-1">
+        <div class="flex-1 overflow-auto p-2 space-y-1 min-h-0">
             @forelse ($items as $index => $item)
                 <div class="bg-white border border-gray-200 rounded p-2 hover:shadow-sm transition-all duration-200">
                     <div class="flex items-start justify-between">
@@ -197,7 +197,7 @@
         </div>
 
         {{-- Ringkasan & Aksi --}}
-        <div class="border-t border-gray-200 bg-white flex-shrink-0 pb-20 sm:pb-0"> {{-- Tambah pb-20 untuk space di mobile --}}
+         <div class="border-t border-gray-200 bg-white flex-shrink-0">
             {{-- Input Diskon --}}
             <div class="p-2 border-b border-gray-100">
                 <label class="block text-xs font-semibold text-gray-900 mb-1 mobile-text-xs">Kode Diskon</label>
@@ -245,7 +245,7 @@
             </div>
 
             {{-- Tombol Aksi untuk Mobile --}}
-            <div class="border-t border-gray-200 bg-white flex-shrink-0 p-3 space-y-2 lg:hidden">
+            <div class="lg:hidden border-t border-gray-200 bg-white p-3 space-y-2 sticky bottom-0 z-10">
                 <div class="grid grid-cols-2 gap-2">
                     <button wire:click="mobileSaveSale"
                         class="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold text-sm shadow-md hover:shadow-lg transition touch-target">
@@ -354,6 +354,14 @@
 
         /* Mobile grid adjustments */
         @media (max-width: 640px) {
+            #mobile-cart-section {
+                padding-bottom: 80px; /* Space untuk bottom nav */
+            }
+            
+            .mobile-section {
+                min-height: calc(100vh - 140px);
+            }
+
             .mobile-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
                 gap: 8px !important;
@@ -385,6 +393,26 @@
                 font-size: 16px;
             }
         }
+
+        /* Better scroll behavior */
+        .overflow-auto {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e0 transparent;
+        }
+
+        .overflow-auto::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .overflow-auto::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .overflow-auto::-webkit-scrollbar-thumb {
+            background-color: #cbd5e0;
+            border-radius: 2px;
+        }
+
     </style>
 
     <style>
@@ -424,18 +452,31 @@
                 padding-bottom: 100px;
             }
         }
-
-        /* Pastikan section mobile memiliki height yang tepat */
-        .mobile-section {
-            min-height: calc(100vh - 100px);
-            transition: opacity 0.3s ease;
-        }
     </style>
 
     <style>
         /* Pastikan section keranjang memiliki padding bottom yang cukup */
         #mobile-cart-section {
-            padding-bottom: 120px; /* Space untuk bottom nav + tombol */
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* Scrollable area untuk items */
+        #mobile-cart-section .flex-1 {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling di iOS */
+        }
+
+        /* Fixed bottom action buttons untuk mobile */
+        #mobile-cart-section .lg\\:hidden {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
 
         /* Untuk desktop, hapus padding bottom */
@@ -541,6 +582,17 @@
                 } else {
                     switchSection('products');
                 }
+            }
+        });
+
+        // Improved scroll behavior untuk mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const cartScrollArea = document.querySelector('#mobile-cart-section .flex-1');
+            if (cartScrollArea) {
+                // Force redraw untuk memastikan scroll area berfungsi
+                setTimeout(() => {
+                    cartScrollArea.style.overflow = 'auto';
+                }, 100);
             }
         });
     </script>

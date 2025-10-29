@@ -25,7 +25,7 @@ class PosPaymentModal extends Component
     public $showReceiptPreview = false;
     public $receiptContent = '';
     public $isPrinting = false;
-     public $currentSaleIdForPrint = null; 
+    public $currentSaleIdForPrint = null; 
 
     protected $rules = [
         'amount_paid' => 'required|numeric|min:0',
