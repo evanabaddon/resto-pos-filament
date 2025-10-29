@@ -9,22 +9,41 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-// Webhook routes tanpa CSRF protection (API routes)
+/*
+|--------------------------------------------------------------------------
+| API Routes for Print Webhook
+|--------------------------------------------------------------------------
+*/
+
 Route::prefix('webhook')->group(function () {
     
+    // Test endpoint
+    Route::get('/test', function () {
+        return response()->json([
+            'message' => 'Print Webhook API is running!',
+            'timestamp' => now()->toISOString(),
+            'status' => 'active'
+        ]);
+    });
+
+    // Receive print job dari POS
     Route::post('/print', function (Request $request) {
         try {
-            Log::info('🖨️ Print webhook received', $request->all());
+            Log::info('🖨️ Print webhook received', ['data' => $request->all()]);
             
             // Validasi secret key
             $expectedSecret = config('app.print_secret', 'default-print-secret-123');
             $receivedSecret = $request->header('X-Print-Secret');
             
             if ($receivedSecret !== $expectedSecret) {
-                Log::warning('❌ Unauthorized print webhook attempt');
+                Log::warning('❌ Unauthorized print webhook attempt', [
+                    'expected' => substr($expectedSecret, 0, 10) . '...',
+                    'received' => $receivedSecret ? substr($receivedSecret, 0, 10) . '...' : 'null'
+                ]);
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
             
+            // Validasi input
             $validated = $request->validate([
                 'content' => 'required|string',
                 'printer' => 'sometimes|string',
@@ -33,8 +52,10 @@ Route::prefix('webhook')->group(function () {
                 'type' => 'sometimes|string|in:receipt,order,test'
             ]);
 
+            // Generate job ID
             $jobId = 'job_' . uniqid() . '_' . time();
             
+            // Simpan ke database
             $printJob = PrintJob::create([
                 'job_id' => $jobId,
                 'content' => $validated['content'],
@@ -46,7 +67,7 @@ Route::prefix('webhook')->group(function () {
                 'attempts' => 0
             ]);
             
-            Log::info("✅ Print job queued: {$jobId}");
+            Log::info("✅ Print job queued: {$jobId}", ['job_id' => $jobId]);
 
             return response()->json([
                 'success' => true,
@@ -56,16 +77,22 @@ Route::prefix('webhook')->group(function () {
             
         } catch (\Exception $e) {
             Log::error('❌ Webhook print error: ' . $e->getMessage());
-            return response()->json(['error' => 'Server error'], 500);
+            return response()->json([
+                'success' => false,
+                'error' => 'Server error: ' . $e->getMessage()
+            ], 500);
         }
     });
     
+    // Get pending print jobs untuk Windows client
     Route::get('/print-jobs', function (Request $request) {
         try {
+            // Validasi secret key
             $expectedSecret = config('app.print_secret', 'default-print-secret-123');
             $receivedSecret = $request->header('X-Print-Secret');
             
             if ($receivedSecret !== $expectedSecret) {
+                Log::warning('❌ Unauthorized print jobs attempt');
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
             
@@ -88,17 +115,23 @@ Route::prefix('webhook')->group(function () {
             return response()->json([
                 'success' => true,
                 'jobs' => $jobs,
-                'total' => count($jobs)
+                'total' => count($jobs),
+                'timestamp' => now()->toISOString()
             ]);
             
         } catch (\Exception $e) {
             Log::error('❌ Get print jobs error: ' . $e->getMessage());
-            return response()->json(['error' => 'Server error'], 500);
+            return response()->json([
+                'success' => false,
+                'error' => 'Server error: ' . $e->getMessage()
+            ], 500);
         }
     });
     
+    // Update job status setelah berhasil diprint
     Route::post('/print-job/{jobId}/complete', function ($jobId, Request $request) {
         try {
+            // Validasi secret key
             $expectedSecret = config('app.print_secret', 'default-print-secret-123');
             $receivedSecret = $request->header('X-Print-Secret');
             
@@ -115,19 +148,30 @@ Route::prefix('webhook')->group(function () {
                 ]);
                 
                 Log::info("✅ Print job completed: {$jobId}");
-                return response()->json(['success' => true, 'message' => 'Job completed']);
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Job marked as completed'
+                ]);
             } else {
-                return response()->json(['error' => 'Job not found'], 404);
+                return response()->json([
+                    'success' => false, 
+                    'error' => 'Job not found'
+                ], 404);
             }
             
         } catch (\Exception $e) {
             Log::error('❌ Complete job error: ' . $e->getMessage());
-            return response()->json(['error' => 'Server error'], 500);
+            return response()->json([
+                'success' => false,
+                'error' => 'Server error: ' . $e->getMessage()
+            ], 500);
         }
     });
 
+    // Update job status jika gagal
     Route::post('/print-job/{jobId}/failed', function ($jobId, Request $request) {
         try {
+            // Validasi secret key
             $expectedSecret = config('app.print_secret', 'default-print-secret-123');
             $receivedSecret = $request->header('X-Print-Secret');
             
@@ -150,36 +194,44 @@ Route::prefix('webhook')->group(function () {
                 ]);
                 
                 Log::info("❌ Print job failed: {$jobId}");
-                return response()->json(['success' => true, 'message' => 'Job failed']);
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Job marked as failed'
+                ]);
             } else {
-                return response()->json(['error' => 'Job not found'], 404);
+                return response()->json([
+                    'success' => false, 
+                    'error' => 'Job not found'
+                ], 404);
             }
             
         } catch (\Exception $e) {
             Log::error('❌ Failed job error: ' . $e->getMessage());
-            return response()->json(['error' => 'Server error'], 500);
+            return response()->json([
+                'success' => false,
+                'error' => 'Server error: ' . $e->getMessage()
+            ], 500);
         }
     });
     
+    // Health check endpoint
     Route::get('/health', function () {
         try {
             $pendingJobs = PrintJob::where('status', 'pending')->count();
             
             return response()->json([
                 'status' => 'ok',
+                'service' => 'Print Webhook',
+                'timestamp' => now()->toISOString(),
                 'pending_jobs' => $pendingJobs,
-                'timestamp' => now()->toISOString()
+                'version' => '1.0.0'
             ]);
             
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error'], 500);
+            return response()->json([
+                'status' => 'error',
+                'error' => $e->getMessage()
+            ], 500);
         }
-    });
-
-    Route::get('/test', function () {
-        return response()->json([
-            'message' => 'Webhook API is running!',
-            'timestamp' => now()->toISOString()
-        ]);
     });
 });

@@ -111,3 +111,41 @@ Route::get('/debug-printing', function () {
         ]
     ]);
 });
+
+// routes/web.php - temporary test routes
+Route::get('/test-api-routes', function () {
+    $tests = [];
+    
+    // Test 1: API test endpoint
+    try {
+        $response = Http::timeout(10)
+            ->withOptions(['verify' => false])
+            ->get('https://pos.suralaya.id/api/webhook/test');
+            
+        $tests['api_test'] = [
+            'success' => $response->successful(),
+            'status' => $response->status(),
+            'data' => $response->json()
+        ];
+    } catch (\Exception $e) {
+        $tests['api_test'] = [
+            'success' => false,
+            'error' => $e->getMessage()
+        ];
+    }
+    
+    // Test 2: Config check
+    $tests['config'] = [
+        'webhook_print_url' => config('app.webhook_print_url'),
+        'use_webhook_printing' => config('app.use_webhook_printing'),
+        'print_secret' => config('app.print_secret') ? '***' . substr(config('app.print_secret'), -4) : 'not set'
+    ];
+    
+    // Test 3: Database check
+    $tests['database'] = [
+        'print_jobs_table' => \Schema::hasTable('print_jobs'),
+        'pending_jobs' => \App\Models\PrintJob::where('status', 'pending')->count()
+    ];
+    
+    return response()->json($tests);
+});

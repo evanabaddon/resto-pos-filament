@@ -265,11 +265,18 @@ class OrderPrintService
     protected function sendWebhookPrint(string $content, string $printer, string $division, ?int $saleId = null): array
     {
         try {
+            // GUNAKAN config yang benar
             $webhookUrl = config('app.webhook_print_url');
             $secretKey = config('app.print_secret');
             
+            Log::info("🔧 Webhook config check", [
+                'webhook_url' => $webhookUrl,
+                'secret_set' => !empty($secretKey),
+                'from_config' => 'app.webhook_print_url'
+            ]);
+            
             if (!$webhookUrl) {
-                throw new \Exception('Webhook URL not configured');
+                throw new \Exception('Webhook URL not configured in app.webhook_print_url');
             }
 
             Log::info("🌐 Sending webhook print to {$division}", [
@@ -279,25 +286,22 @@ class OrderPrintService
                 'environment' => $this->isHostingEnvironment ? 'hosting' : 'local'
             ]);
 
-            // Create HTTP client dengan options untuk handle SSL
-            $httpClient = Http::timeout(15)
+            $response = Http::timeout(15)
                 ->withOptions([
-                    'verify' => false, // Disable SSL verification untuk development
-                    'debug' => false,
+                    'verify' => false,
                 ])
                 ->withHeaders([
                     'X-Print-Secret' => $secretKey,
                     'Content-Type' => 'application/json',
                     'User-Agent' => 'POS-System/1.0'
+                ])
+                ->post($webhookUrl, [
+                    'content' => $content,
+                    'printer' => $printer,
+                    'division' => $division,
+                    'sale_id' => $saleId,
+                    'type' => 'order'
                 ]);
-
-            $response = $httpClient->post($webhookUrl, [
-                'content' => $content,
-                'printer' => $printer,
-                'division' => $division,
-                'sale_id' => $saleId,
-                'type' => 'order'
-            ]);
 
             if ($response->successful()) {
                 $result = $response->json();
@@ -316,20 +320,13 @@ class OrderPrintService
                     throw new \Exception($result['error'] ?? 'Webhook returned error');
                 }
             } else {
-                $errorBody = $response->body();
-                // Truncate long HTML responses
-                if (strlen($errorBody) > 200) {
-                    $errorBody = substr($errorBody, 0, 200) . '...';
-                }
-                throw new \Exception("HTTP {$response->status()}: {$errorBody}");
+                throw new \Exception("HTTP {$response->status()}: " . substr($response->body(), 0, 200));
             }
             
         } catch (\Exception $e) {
             Log::error("❌ Webhook print failed: " . $e->getMessage());
             
-            // Fallback strategy berbeda untuk hosting vs local
             if ($this->isHostingEnvironment) {
-                // Di hosting, tidak ada fallback - langsung return error
                 return [
                     'success' => false,
                     'error' => $e->getMessage(),
@@ -337,7 +334,6 @@ class OrderPrintService
                     'type' => 'webhook_failed'
                 ];
             } else {
-                // Di local, fallback ke direct print
                 Log::info("🔄 Falling back to direct print for {$division}");
                 return $this->sendToPrinter($content, $printer, $division);
             }
@@ -350,13 +346,19 @@ class OrderPrintService
     public function testWebhookConnection(): array
     {
         try {
-            $webhookUrl = config('app.webhook_url');
+            // GUNAKAN config yang benar
+            $webhookUrl = config('app.webhook_print_url');
             $secretKey = config('app.print_secret');
+            
+            Log::info("🔧 Test Webhook Config", [
+                'webhook_url' => $webhookUrl,
+                'secret_set' => !empty($secretKey)
+            ]);
             
             if (!$webhookUrl) {
                 return [
                     'success' => false,
-                    'error' => 'Webhook URL not configured'
+                    'error' => 'Webhook URL not configured (app.webhook_print_url)'
                 ];
             }
 
@@ -366,11 +368,8 @@ class OrderPrintService
             $testContent .= "Status: Webhook Test\n";
             $testContent .= "===================\n\n\n";
 
-            $response = Http::timeout(5)
-                ->withOptions([
-                    'verify' => false,
-                    'debug' => false,
-                ])
+            $response = Http::timeout(10)
+                ->withOptions(['verify' => false])
                 ->withHeaders([
                     'X-Print-Secret' => $secretKey,
                     'Content-Type' => 'application/json',
@@ -387,12 +386,14 @@ class OrderPrintService
                 return [
                     'success' => true,
                     'message' => 'Webhook connection successful',
-                    'job_id' => $result['job_id'] ?? null
+                    'job_id' => $result['job_id'] ?? null,
+                    'response' => $result
                 ];
             } else {
                 return [
                     'success' => false,
-                    'error' => "HTTP {$response->status()}: {$response->body()}"
+                    'error' => "HTTP {$response->status()}",
+                    'body' => substr($response->body(), 0, 200)
                 ];
             }
             
