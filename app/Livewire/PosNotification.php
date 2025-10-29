@@ -19,7 +19,7 @@ class PosNotification extends Component
         $this->visible = true;
 
         // Kirim event ke browser agar bisa auto-hide
-        $this->dispatch('hide-notification', timeout: 3000);
+        $this->dispatch('hide-notification', timeout: 500);
     }
 
     public function render()

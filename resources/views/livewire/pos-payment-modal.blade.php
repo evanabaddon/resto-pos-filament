@@ -1,29 +1,29 @@
 <div>
     @if ($show)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
             {{-- Background overlay --}}
             <div class="absolute inset-0 bg-gray-900 bg-opacity-75" wire:click="closeModal"></div>
 
             {{-- Struk Container --}}
-            <div class="relative w-full max-w-sm mx-auto">
-                {{-- Struk Content --}}
-                <div class="bg-white border border-gray-300 shadow-2xl">
+            <div class="relative w-full max-w-sm mx-auto h-full sm:h-auto flex flex-col">
+                {{-- Struk Content - Scrollable on Mobile --}}
+                <div class="bg-white border border-gray-300 shadow-2xl max-h-[90vh] sm:max-h-none overflow-y-auto">
                     {{-- Header Struk --}}
-                    <div class="text-center border-b border-gray-300 py-4 px-4 bg-gray-50">
-                        <h1 class="text-lg font-bold uppercase tracking-tight text-gray-900">STRUK PEMBAYARAN</h1>
+                    <div class="text-center border-b border-gray-300 py-3 sm:py-4 px-3 sm:px-4 bg-gray-50 sticky top-0 z-10">
+                        <h1 class="text-base sm:text-lg font-bold uppercase tracking-tight text-gray-900">STRUK PEMBAYARAN</h1>
                         <p class="text-xs text-gray-600 mt-1 font-medium">{{ now()->format('d/m/Y H:i') }}</p>
                     </div>
 
                     {{-- Info Transaksi --}}
-                    <div class="py-3 px-4 border-b border-gray-200">
-                        <div class="space-y-1.5 text-sm">
+                    <div class="py-2 sm:py-3 px-3 sm:px-4 border-b border-gray-200">
+                        <div class="space-y-1.5 text-xs sm:text-sm">
                             <div class="flex justify-between">
                                 <span class="text-gray-600 font-medium">No. Transaksi:</span>
-                                <span class="font-semibold text-gray-900">{{ $invoiceNumber }}</span>
+                                <span class="font-semibold text-gray-900 text-right max-w-[150px] truncate">{{ $invoiceNumber }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600 font-medium">Kasir:</span>
-                                <span class="font-semibold text-gray-900">{{ auth()->user()->name }}</span>
+                                <span class="font-semibold text-gray-900 text-right max-w-[120px] truncate">{{ auth()->user()->name }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600 font-medium">Customer:</span>
@@ -33,21 +33,21 @@
                     </div>
 
                     {{-- Daftar Produk --}}
-                    <div class="py-3 px-4 border-b border-gray-200">
-                        <div class="text-center font-bold text-sm mb-3 text-gray-900">DAFTAR PESANAN</div>
-                        <div class="space-y-2.5 text-sm">
+                    <div class="py-2 sm:py-3 px-3 sm:px-4 border-b border-gray-200">
+                        <div class="text-center font-bold text-sm mb-2 sm:mb-3 text-gray-900">DAFTAR PESANAN</div>
+                        <div class="space-y-2 text-xs sm:text-sm">
                             @if($saleItems && count($saleItems) > 0)
                                 @foreach($saleItems as $item)
                                     <div class="flex justify-between items-start">
                                         <div class="flex-1 pr-2">
-                                            <div class="font-semibold text-gray-900 text-[13px] leading-tight">
+                                            <div class="font-semibold text-gray-900 text-xs sm:text-[13px] leading-tight">
                                                 {{ $item['name'] }}
                                             </div>
                                             <div class="text-xs text-gray-500 mt-0.5">
                                                 {{ $item['quantity'] }} × Rp{{ number_format($item['price'], 0, ',', '.') }}
                                             </div>
                                         </div>
-                                        <div class="text-right font-semibold text-gray-900 whitespace-nowrap">
+                                        <div class="text-right font-semibold text-gray-900 whitespace-nowrap text-xs sm:text-sm">
                                             Rp{{ number_format($item['subtotal'], 0, ',', '.') }}
                                         </div>
                                     </div>
@@ -56,7 +56,7 @@
                                     @endif
                                 @endforeach
                             @else
-                                <div class="text-center text-gray-500 text-sm py-3">
+                                <div class="text-center text-gray-500 text-xs sm:text-sm py-2 sm:py-3">
                                     Tidak ada item dalam pesanan
                                 </div>
                             @endif
@@ -64,8 +64,8 @@
                     </div>
 
                     {{-- Ringkasan Pembayaran --}}
-                    <div class="py-3 px-4 border-b border-gray-200">
-                        <div class="space-y-2 text-sm">
+                    <div class="py-2 sm:py-3 px-3 sm:px-4 border-b border-gray-200">
+                        <div class="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Subtotal:</span>
                                 <span class="font-medium text-gray-900">Rp{{ number_format($subtotal ?? 0, 0, ',', '.') }}</span>
@@ -81,7 +81,7 @@
                                 </div>
                             @endif
                             <div class="border-t border-gray-300 pt-2 mt-1">
-                                <div class="flex justify-between text-base font-bold text-gray-900">
+                                <div class="flex justify-between text-sm sm:text-base font-bold text-gray-900">
                                     <span>TOTAL:</span>
                                     <span>Rp{{ number_format($finalTotal, 0, ',', '.') }}</span>
                                 </div>
@@ -90,14 +90,14 @@
                     </div>
 
                     {{-- Metode Pembayaran --}}
-                    <div class="py-3 px-4 border-b border-gray-200">
-                        <div class="text-center font-bold text-sm mb-3 text-gray-900">PEMBAYARAN</div>
+                    <div class="py-2 sm:py-3 px-3 sm:px-4 border-b border-gray-200">
+                        <div class="text-center font-bold text-sm mb-2 sm:mb-3 text-gray-900">PEMBAYARAN</div>
                         
                         {{-- Pilihan Metode --}}
-                        <div class="flex justify-between items-center text-sm mb-3">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs sm:text-sm mb-2 sm:mb-3">
                             <span class="text-gray-600 font-medium">Metode:</span>
                             <select wire:model.live="payment_method" 
-                                    class="border border-gray-300 rounded px-2 py-1 text-sm font-medium focus:ring-1 focus:ring-green-500 focus:border-green-500 cursor-pointer bg-white">
+                                    class="border border-gray-300 rounded px-2 py-1.5 text-xs sm:text-sm font-medium focus:ring-1 focus:ring-green-500 focus:border-green-500 cursor-pointer bg-white w-full sm:w-auto">
                                 <option value="">Pilih Metode</option>
                                 @foreach($paymentMethods as $method)
                                     <option value="{{ $method['id'] }}">{{ $method['name'] }}</option>
@@ -107,24 +107,24 @@
 
                         {{-- Input Cash --}}
                         @if($isCashPayment)
-                            <div class="space-y-2.5 bg-gray-50 p-3 rounded border border-gray-200">
-                                <div class="flex justify-between items-center text-sm">
+                            <div class="space-y-2 bg-gray-50 p-2 sm:p-3 rounded border border-gray-200">
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs sm:text-sm">
                                     <span class="text-gray-600 font-medium">Bayar:</span>
-                                    <div class="relative">
-                                        <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">Rp</span>
+                                    <div class="relative w-full sm:w-auto">
+                                        <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs sm:text-sm">Rp</span>
                                         <input type="number" 
                                                wire:model.live="amount_paid"
                                                wire:keydown.enter="processPayment"
-                                               class="pl-7 pr-2 py-1.5 border border-gray-300 rounded text-right font-semibold w-28 focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white"
+                                               class="pl-7 pr-2 py-1.5 border border-gray-300 rounded text-right font-semibold w-full sm:w-28 focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white text-xs sm:text-sm"
                                                placeholder="0"
                                                min="{{ $finalTotal }}"
                                                autofocus>
                                     </div>
                                 </div>
                                 
-                                <div class="flex justify-between items-center text-sm pt-2 border-t border-gray-200">
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs sm:text-sm pt-2 border-t border-gray-200">
                                     <span class="text-gray-600 font-medium">Kembali:</span>
-                                    <span class="font-bold text-lg {{ $amount_paid < $finalTotal ? 'text-red-600' : 'text-green-600' }}">
+                                    <span class="font-bold text-sm sm:text-lg {{ $amount_paid < $finalTotal ? 'text-red-600' : 'text-green-600' }}">
                                         Rp{{ number_format($this->change, 0, ',', '.') }}
                                     </span>
                                 </div>
@@ -138,20 +138,20 @@
                         @else
                             {{-- Non-cash payment --}}
                             @if($selectedPaymentMethod)
-                                <div class="text-center bg-blue-50 border border-blue-200 rounded py-3">
-                                    <div class="font-semibold text-blue-800 text-sm mb-1">
+                                <div class="text-center bg-blue-50 border border-blue-200 rounded py-2 sm:py-3 text-xs sm:text-sm">
+                                    <div class="font-semibold text-blue-800 mb-1">
                                         {{ strtoupper($selectedPaymentMethod['name']) }}
                                     </div>
-                                    <div class="text-xs text-blue-600 font-medium">
+                                    <div class="text-blue-600 font-medium">
                                         Rp{{ number_format($finalTotal, 0, ',', '.') }}
                                     </div>
-                                    <div class="text-xs text-blue-500 mt-1">
+                                    <div class="text-blue-500 mt-1">
                                         Jumlah bayar otomatis disesuaikan
                                     </div>
                                 </div>
                             @else
-                                <div class="text-center bg-yellow-50 border border-yellow-200 rounded py-3">
-                                    <div class="text-xs text-yellow-700">
+                                <div class="text-center bg-yellow-50 border border-yellow-200 rounded py-2 sm:py-3 text-xs sm:text-sm">
+                                    <div class="text-yellow-700">
                                         Pilih metode pembayaran terlebih dahulu
                                     </div>
                                 </div>
@@ -160,23 +160,23 @@
                     </div>
 
                     {{-- Footer Struk --}}
-                    <div class="py-4 px-4 text-center bg-gray-50">
+                    <div class="py-3 sm:py-4 px-3 sm:px-4 text-center bg-gray-50">
                         <p class="text-xs text-gray-600 mb-1">Terima kasih atas kunjungan Anda</p>
                         <p class="text-xs font-semibold text-gray-700">*** SELAMAT MENIKMATI ***</p>
                     </div>
                 </div>
 
-                {{-- Tombol Action --}}
-                <div class="flex space-x-3 mt-4">
+                {{-- Tombol Action - Sticky di Mobile --}}
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3 sm:mt-4 bg-white p-2 sm:p-0 rounded-lg sm:rounded-none shadow-lg sm:shadow-none sticky bottom-0 z-20">
                     <button wire:click="closeModal"
-                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 font-semibold text-sm cursor-pointer transition-colors rounded shadow-sm">
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 font-semibold text-sm cursor-pointer transition-colors rounded shadow-sm touch-target">
                         BATAL
                     </button>
                     <button wire:click="processPayment"
                             wire:loading.attr="disabled"
-                            class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 font-semibold text-sm cursor-pointer transition-colors rounded shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 font-semibold text-sm cursor-pointer transition-colors rounded shadow-sm disabled:opacity-50 disabled:cursor-not-allowed touch-target"
                             {{ (!$payment_method || ($isCashPayment && $amount_paid < $finalTotal)) ? 'disabled' : '' }}>
-                        <span wire:loading.remove>BAYAR</span>
+                        <span wire:loading.remove>💳 BAYAR</span>
                         <span wire:loading>MEMPROSES...</span>
                     </button>
                 </div>
@@ -198,41 +198,59 @@
             .fixed.inset-0 {
                 animation: struk-appear 0.2s ease-out;
             }
+
+            /* Mobile optimizations */
+            @media (max-width: 640px) {
+                .touch-target {
+                    min-height: 44px;
+                    min-width: 44px;
+                }
+                
+                /* Better scroll on mobile */
+                .overflow-y-auto {
+                    -webkit-overflow-scrolling: touch;
+                    scrollbar-width: none;
+                }
+                
+                .overflow-y-auto::-webkit-scrollbar {
+                    display: none;
+                }
+            }
         </style>
     @endif
     
-    {{-- Modal Preview Struk --}}
+    {{-- Modal Preview Struk - Responsif --}}
     @if ($showReceiptPreview)
-        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-md bg-opacity-50">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-xl mx-auto">
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4 backdrop-blur-sm bg-black bg-opacity-50">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-xl mx-auto h-full sm:h-auto max-h-[95vh] sm:max-h-[90vh] flex flex-col">
                 {{-- Header --}}
-                <div class="flex justify-between items-center p-4 border-b">
-                    <h3 class="text-lg font-bold">Preview Struk</h3>
-                    <button wire:click="closeReceiptPreview" class="text-gray-500 hover:text-gray-700">
+                <div class="flex justify-between items-center p-3 sm:p-4 border-b flex-shrink-0">
+                    <h3 class="text-base sm:text-lg font-bold">Preview Struk</h3>
+                    <button wire:click="closeReceiptPreview" class="text-gray-500 hover:text-gray-700 text-lg p-1 touch-target">
                         ✕
                     </button>
                 </div>
 
-                {{-- Content Struk --}}
-                <div class="p-4 max-h-150 overflow-y-auto">
-                    <div class="receipt-preview text-sm">
+                {{-- Content Struk - Scrollable --}}
+                <div class="p-3 sm:p-4 flex-1 overflow-y-auto">
+                    <div class="receipt-preview text-xs sm:text-sm">
                         {!! $receiptContent !!}
                     </div>
                 </div>
 
                 {{-- Actions --}}
-                <div class="flex space-x-2 p-4 border-t">
+                <div class="flex flex-col sm:flex-row gap-2 p-3 sm:p-4 border-t flex-shrink-0 bg-gray-50">
                     <button wire:click="closeReceiptPreview" 
-                            class="cursor-pointer flex-1 bg-gray-500 text-white py-2 rounded font-medium">
+                            class="cursor-pointer flex-1 bg-gray-500 text-white py-3 rounded font-medium touch-target">
                         TUTUP
                     </button>
                     
                     {{-- Tombol Cetak dengan Printer Thermal --}}
                     <button wire:click="manualPrintReceipt" 
                             wire:loading.attr="disabled"
-                            class="cursor-pointer flex-1 bg-green-600 text-white py-2 rounded font-medium flex items-center justify-center gap-2 disabled:opacity-50">
+                            class="cursor-pointer flex-1 bg-green-600 text-white py-3 rounded font-medium flex items-center justify-center gap-2 disabled:opacity-50 touch-target">
                         <span wire:loading.remove>🖨️ CETAK STRUK</span>
-                        <span wire:loading>
+                        <span wire:loading class="flex items-center gap-2">
                             <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -244,14 +262,14 @@
 
                 {{-- Status Printing --}}
                 @if ($isPrinting)
-                <div class="px-4 pb-4">
+                <div class="px-3 sm:px-4 pb-3 sm:pb-4 flex-shrink-0">
                     <div class="bg-blue-50 border border-blue-200 rounded p-3 text-center">
-                        <div class="flex items-center justify-center gap-2 text-blue-700">
+                        <div class="flex items-center justify-center gap-2 text-blue-700 text-xs sm:text-sm">
                             <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span class="text-sm font-medium">Mengirim ke printer thermal...</span>
+                            <span class="font-medium">Mengirim ke printer thermal...</span>
                         </div>
                     </div>
                 </div>
@@ -354,4 +372,16 @@ function printReceiptDirect(content) {
     
     printWindow.document.close();
 }
+
+// Handle mobile viewport height
+function setMobileViewport() {
+    if (window.innerWidth <= 640) {
+        document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    }
+}
+
+// Initialize and handle resize
+setMobileViewport();
+window.addEventListener('resize', setMobileViewport);
+window.addEventListener('orientationchange', setMobileViewport);
 </script>

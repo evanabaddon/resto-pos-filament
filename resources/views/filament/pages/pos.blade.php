@@ -355,7 +355,7 @@
         /* Mobile grid adjustments */
         @media (max-width: 640px) {
             #mobile-cart-section {
-                padding-bottom: 80px; /* Space untuk bottom nav */
+                padding-bottom: 90px; /* Space untuk bottom nav */
             }
             
             .mobile-section {
@@ -417,7 +417,7 @@
 
     <style>
         /* Mobile Bottom Navigation - FIXED */
-        .mobile-bottom-nav {
+        /* .mobile-bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
@@ -427,7 +427,7 @@
             z-index: 1000;
             padding: 12px 16px;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-        }
+        } */
 
         .safe-area-bottom {
             padding-bottom: max(12px, env(safe-area-inset-bottom));
@@ -435,7 +435,7 @@
 
         /* Touch-friendly buttons */
         .touch-target {
-            min-height: 20px;
+            min-height: 10px;
         }
 
         /* Active state untuk nav buttons */

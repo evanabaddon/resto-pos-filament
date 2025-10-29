@@ -23,7 +23,7 @@
     }"
     x-init="
         $wire.on('hide-notification', e => {
-            setTimeout(() => visible = false, e.timeout || 000)
+            setTimeout(() => visible = false, e.timeout || 500)
         });
         $watch('visible', value => {
             if (value) playSound();
