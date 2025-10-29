@@ -87,6 +87,8 @@ Route::prefix('webhook')->group(function () {
     // Get pending print jobs untuk Windows client
     Route::get('/print-jobs', function (Request $request) {
         try {
+            Log::info('📋 Getting pending print jobs');
+            
             // Validasi secret key
             $expectedSecret = config('app.print_secret', 'default-print-secret-123');
             $receivedSecret = $request->header('X-Print-Secret');
@@ -96,21 +98,24 @@ Route::prefix('webhook')->group(function () {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
             
+            // Get pending jobs - TANPA created_at
             $jobs = PrintJob::where('status', 'pending')
-                           ->where('attempts', '<', 3)
-                           ->get()
-                           ->map(function ($job) {
-                               return [
-                                   'id' => $job->job_id,
-                                   'content' => $job->content,
-                                   'printer' => $job->printer,
-                                   'division' => $job->division,
-                                   'type' => $job->type,
-                                   'sale_id' => $job->sale_id,
-                                   'created_at' => $job->created_at->toISOString()
-                               ];
-                           })
-                           ->toArray();
+                        ->where('attempts', '<', 3)
+                        ->get()
+                        ->map(function ($job) {
+                            return [
+                                'id' => $job->job_id,
+                                'content' => $job->content,
+                                'printer' => $job->printer,
+                                'division' => $job->division,
+                                'type' => $job->type,
+                                'sale_id' => $job->sale_id
+                                // HAPUS created_at karena tidak ada di database
+                            ];
+                        })
+                        ->toArray();
+            
+            Log::info("✅ Returning " . count($jobs) . " pending jobs");
             
             return response()->json([
                 'success' => true,
