@@ -124,12 +124,6 @@ class ManagePrinter extends SettingsPage
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('detectPrinters')
-                ->label('Detect USB Printers')
-                ->color('info')
-                ->action('detectUsbPrinters')
-                ->visible(fn () => $this->data['printer_type'] === 'usb' ?? false),
-                
             Action::make('testPrinters')
                 ->label('Test Printers')
                 ->color('success')

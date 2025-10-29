@@ -13,42 +13,33 @@ Route::prefix('webhook')->group(function () {
             Log::info('🖨️ Print webhook received', $request->all());
             
             // Validasi secret key
-            $expectedSecret = config('app.print_secret', 'default-print-secret-123');
+            $expectedSecret = config('app.print_secret');
             $receivedSecret = $request->header('X-Print-Secret');
             
             if ($receivedSecret !== $expectedSecret) {
-                Log::warning('❌ Unauthorized print webhook attempt', [
-                    'expected' => $expectedSecret,
-                    'received' => $receivedSecret
-                ]);
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
             
-            // Validasi input
             $validated = $request->validate([
                 'content' => 'required|string',
                 'printer' => 'sometimes|string',
-                'division' => 'sometimes|string',
+                'division' => 'sometimes|string', 
                 'sale_id' => 'sometimes|integer',
                 'type' => 'sometimes|string|in:receipt,order,test'
             ]);
 
-            // Generate job ID
             $jobId = 'job_' . uniqid() . '_' . time();
             
-            // Simpan ke database
+            // SIMPAN KE DATABASE - jangan coba print dari hosting!
             $printJob = PrintJob::create([
                 'job_id' => $jobId,
                 'content' => $validated['content'],
-                'printer' => $validated['printer'] ?? 'BAR',
+                'printer' => $validated['printer'] ?? 'KASIR', // Hanya nama printer
                 'division' => $validated['division'] ?? 'general',
                 'sale_id' => $validated['sale_id'] ?? null,
                 'type' => $validated['type'] ?? 'order',
-                'status' => 'pending',
-                'attempts' => 0
+                'status' => 'pending'
             ]);
-            
-            Log::info("✅ Print job queued: {$jobId}");
 
             return response()->json([
                 'success' => true,
@@ -58,43 +49,37 @@ Route::prefix('webhook')->group(function () {
             
         } catch (\Exception $e) {
             Log::error('❌ Webhook print error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'error' => 'Server error: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['error' => 'Server error'], 500);
         }
     });
-    
-    // Get pending print jobs untuk Windows client
+
+    // Endpoint untuk client lokal mengambil jobs
     Route::get('/print-jobs', function (Request $request) {
-        try {
-            // Validasi secret key
-            $expectedSecret = config('app.print_secret', 'default-print-secret-123');
-            $receivedSecret = $request->header('X-Print-Secret');
-            
-            if ($receivedSecret !== $expectedSecret) {
-                return response()->json(['error' => 'Unauthorized'], 401);
-            }
-            
-            $jobs = PrintJob::where('status', 'pending')
-                           ->where('attempts', '<', 3)
-                           ->get()
-                           ->toArray();
-            
-            return response()->json([
-                'success' => true,
-                'jobs' => $jobs,
-                'total' => count($jobs),
-                'timestamp' => now()->toISOString()
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('❌ Get print jobs error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'error' => 'Server error: ' . $e->getMessage()
-            ], 500);
+        $expectedSecret = config('app.print_secret');
+        $receivedSecret = $request->header('X-Print-Secret');
+        
+        if ($receivedSecret !== $expectedSecret) {
+            return response()->json(['error' => 'Unauthorized'], 401);
         }
+        
+        $jobs = PrintJob::where('status', 'pending')
+                       ->where('attempts', '<', 3)
+                       ->get()
+                       ->map(function ($job) {
+                           return [
+                               'id' => $job->job_id,
+                               'content' => $job->content,
+                               'printer' => $job->printer,
+                               'division' => $job->division,
+                               'type' => $job->type
+                           ];
+                       });
+        
+        return response()->json([
+            'success' => true,
+            'jobs' => $jobs,
+            'total' => count($jobs)
+        ]);
     });
     
     // Update job status setelah berhasil diprint
