@@ -9,6 +9,9 @@ class PrintJob extends Model
 {
     use HasFactory;
 
+    // NON-AKTIFKAN TIMESTAMPS OTOMATIS
+    public $timestamps = false;
+
     protected $fillable = [
         'job_id',
         'content',
