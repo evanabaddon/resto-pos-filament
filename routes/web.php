@@ -11,11 +11,33 @@ Route::get('/', function () {
 require __DIR__.'/webhook.php';
 
 
-Route::get('/test-printing-env', function () {
+// routes/api.php atau routes/web.php
+Route::get('/test-api-webhook', function () {
     $printService = new OrderPrintService();
     
+    $envTest = $printService->testEnvironment();
+    
+    // Test API webhook
+    try {
+        $webhookUrl = 'https://pos.suralaya.id/api/webhook/test';
+        $response = Http::get($webhookUrl);
+        
+        $apiTest = [
+            'success' => $response->successful(),
+            'status' => $response->status(),
+            'body' => $response->json()
+        ];
+        
+    } catch (\Exception $e) {
+        $apiTest = [
+            'success' => false,
+            'error' => $e->getMessage()
+        ];
+    }
+    
     return response()->json([
-        'environment_test' => $printService->testEnvironment(),
-        'webhook_test' => $printService->testWebhookConnection()
+        'environment_test' => $envTest,
+        'api_webhook_test' => $apiTest,
+        'webhook_url' => config('app.webhook_print_url')
     ]);
 });

@@ -240,18 +240,14 @@ class OrderPrintService
     protected function sendWebhookPrint(string $content, string $printer, string $division, ?int $saleId = null): array
     {
         try {
-            $webhookUrl = config('app.webhook_print_url'); // Pastikan ada di .env
+            // Gunakan API route bukan web route
+            $webhookUrl = config('app.webhook_print_url', 'https://pos.suralaya.id/api/webhook/print');
             $secretKey = config('app.print_secret');
             
-            if (!$webhookUrl) {
-                throw new \Exception('Webhook URL not configured');
-            }
-
             Log::info("🌐 Sending webhook print to {$division}", [
                 'printer' => $printer,
                 'webhook_url' => $webhookUrl,
-                'content_length' => strlen($content),
-                'environment' => $this->isHostingEnvironment ? 'hosting' : 'local'
+                'content_length' => strlen($content)
             ]);
 
             $response = Http::timeout(10)
@@ -270,7 +266,7 @@ class OrderPrintService
             if ($response->successful()) {
                 $result = $response->json();
                 
-                if ($result['success'] ?? false) {
+                if ($result['success']) {
                     Log::info("✅ Webhook print queued: {$result['job_id']}");
                     return [
                         'success' => true,
@@ -290,9 +286,7 @@ class OrderPrintService
         } catch (\Exception $e) {
             Log::error("❌ Webhook print failed: " . $e->getMessage());
             
-            // Fallback strategy berbeda untuk hosting vs local
             if ($this->isHostingEnvironment) {
-                // Di hosting, tidak ada fallback - langsung return error
                 return [
                     'success' => false,
                     'error' => $e->getMessage(),
@@ -300,7 +294,6 @@ class OrderPrintService
                     'type' => 'webhook_failed'
                 ];
             } else {
-                // Di local, fallback ke direct print
                 Log::info("🔄 Falling back to direct print for {$division}");
                 return $this->sendToPrinter($content, $printer, $division);
             }
