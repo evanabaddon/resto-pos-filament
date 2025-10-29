@@ -17,15 +17,45 @@ class ReceiptPrintService
     protected $connector;
     protected $printerInitialized = false;
     protected $printerSettings;
+    protected $useWebhook;
+    protected $isHostingEnvironment;
 
     public function __construct(?Sale $sale = null)
     {
         $this->sale = $sale;
         $this->printerSettings = app(PrinterSettings::class);
+        $this->useWebhook = config('app.use_webhook_printing', false);
+        $this->isHostingEnvironment = $this->detectHostingEnvironment();
+        
+        Log::info("🖨️ ReceiptPrintService initialized", [
+            'environment' => $this->isHostingEnvironment ? 'hosting' : 'local',
+            'use_webhook' => $this->useWebhook
+        ]);
     }
 
     /**
-     * Print receipt untuk customer - FIXED VERSION
+     * Deteksi apakah running di hosting environment
+     */
+    protected function detectHostingEnvironment(): bool
+    {
+        if (config('app.env') === 'production') {
+            return true;
+        }
+        
+        $host = request()->getHost() ?? parse_url(config('app.url'), PHP_URL_HOST) ?? '';
+        
+        $isLocal = in_array($host, ['localhost', '127.0.0.1', '::1', '0.0.0.0']) 
+                || str_contains($host, '.local')
+                || str_contains($host, '.test')
+                || str_contains($host, '192.168.')
+                || $host === 'localhost'
+                || empty($host);
+        
+        return !$isLocal;
+    }
+
+    /**
+     * Print receipt untuk customer - WITH WEBHOOK SUPPORT
      */
     public function printReceipt(): bool
     {
@@ -33,20 +63,282 @@ class ReceiptPrintService
             throw new \Exception('Sale data is required for receipt printing');
         }
 
+        // **STRATEGI PRINT BERDASARKAN ENVIRONMENT**
+        if ($this->isHostingEnvironment) {
+            // DI HOSTING: PAKAI WEBHOOK
+            return $this->printReceiptViaWebhook();
+        } else {
+            // DI LOCAL: PILIH WEBHOOK ATAU DIRECT
+            if ($this->useWebhook) {
+                return $this->printReceiptViaWebhook();
+            } else {
+                return $this->printReceiptDirect();
+            }
+        }
+    }
+
+    /**
+     * Print receipt via webhook (untuk hosting)
+     */
+    protected function printReceiptViaWebhook(): bool
+    {
+        try {
+            $sale = $this->sale->load(['items.product', 'user', 'paymentMethod']);
+            
+            Log::info('🌐 Sending receipt print via webhook', [
+                'sale_id' => $sale->id,
+                'invoice' => $sale->invoice_number
+            ]);
+
+            // Generate receipt content
+            $content = $this->generateReceiptContent($sale);
+            $printerName = $this->printerSettings->usb_printer_name ?? 'KASIR';
+            
+            // Kirim via webhook
+            $result = $this->sendWebhookPrint($content, $printerName, 'receipt', $sale->id);
+            
+            if ($result['success']) {
+                Log::info('✅ Receipt print queued via webhook', ['job_id' => $result['job_id']]);
+                return true;
+            } else {
+                throw new \Exception($result['error'] ?? 'Webhook print failed');
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Webhook receipt print failed: ' . $e->getMessage());
+            
+            // Fallback ke direct print jika di local environment
+            if (!$this->isHostingEnvironment) {
+                Log::info('🔄 Falling back to direct receipt print');
+                return $this->printReceiptDirect();
+            }
+            
+            throw new \Exception("Gagal mencetak struk: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send print job via webhook
+     */
+    protected function sendWebhookPrint(string $content, string $printer, string $type, ?int $saleId = null): array
+    {
+        try {
+            $webhookUrl = config('app.webhook_print_url');
+            $secretKey = config('app.print_secret');
+            
+            if (!$webhookUrl) {
+                throw new \Exception('Webhook URL not configured');
+            }
+
+            Log::info("🌐 Sending webhook print for {$type}", [
+                'printer' => $printer,
+                'webhook_url' => $webhookUrl,
+                'content_length' => strlen($content)
+            ]);
+
+            $response = Http::timeout(15)
+                ->withOptions(['verify' => false])
+                ->withHeaders([
+                    'X-Print-Secret' => $secretKey,
+                    'Content-Type' => 'application/json',
+                    'User-Agent' => 'POS-System/1.0'
+                ])
+                ->post($webhookUrl, [
+                    'content' => $content,
+                    'printer' => $printer,
+                    'division' => 'receipt',
+                    'sale_id' => $saleId,
+                    'type' => $type
+                ]);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                
+                if ($result['success'] ?? false) {
+                    return [
+                        'success' => true,
+                        'job_id' => $result['job_id'],
+                        'message' => 'Print job queued via webhook'
+                    ];
+                } else {
+                    throw new \Exception($result['error'] ?? 'Webhook returned error');
+                }
+            } else {
+                throw new \Exception("HTTP {$response->status()}: " . substr($response->body(), 0, 200));
+            }
+            
+        } catch (\Exception $e) {
+            Log::error("❌ Webhook print failed: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Test receipt printing dengan webhook support
+     */
+    public function testReceiptPrint(): array
+    {
+        try {
+            if ($this->isHostingEnvironment || $this->useWebhook) {
+                // Test via webhook
+                $testContent = $this->generateTestReceiptContent();
+                $printerName = $this->printerSettings->usb_printer_name ?? 'KASIR';
+                
+                $result = $this->sendWebhookPrint($testContent, $printerName, 'test');
+                
+                if ($result['success']) {
+                    return [
+                        'success' => true,
+                        'message' => 'Test receipt queued via webhook',
+                        'job_id' => $result['job_id'],
+                        'method' => 'webhook'
+                    ];
+                } else {
+                    throw new \Exception($result['error']);
+                }
+            } else {
+                // Test direct print
+                return $this->testPrinter();
+            }
+            
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'method' => $this->isHostingEnvironment ? 'webhook' : 'direct'
+            ];
+        }
+    }
+
+    /**
+     * Generate test receipt content
+     */
+    protected function generateTestReceiptContent(): string
+    {
+        $content = "TEST STRUK\n";
+        $content .= "===================\n";
+        $content .= config('app.name', 'Toko Saya') . "\n";
+        $content .= "===================\n";
+        $content .= "No. Transaksi: TEST-001\n";
+        $content .= "Tanggal: " . now()->format('d/m/Y H:i') . "\n";
+        $content .= "Kasir: Test User\n";
+        $content .= "===================\n";
+        $content .= "ITEM TEST x1 - Rp10.000\n";
+        $content .= "===================\n";
+        $content .= "Subtotal: Rp10.000\n";
+        $content .= "Pajak (10%): Rp1.000\n";
+        $content .= "TOTAL: Rp11.000\n";
+        $content .= "===================\n";
+        $content .= "Bayar: Rp20.000\n";
+        $content .= "Kembali: Rp9.000\n";
+        $content .= "===================\n";
+        $content .= "*** TEST SUCCESS ***\n\n\n";
+        
+        return $content;
+    }
+
+    /**
+     * Generate receipt content untuk webhook
+     */
+    protected function generateReceiptContent(Sale $sale): string
+    {
+        $content = "";
+        
+        // Header
+        $content .= "STRUK PEMBAYARAN\n";
+        $content .= "========================\n\n";
+        
+        // Store Info
+        $content .= config('app.name', 'Toko Saya') . "\n";
+        $content .= "Telp: 08123456789\n";
+        $content .= "Alamat: Jl. Contoh No. 123\n";
+        $content .= "========================\n\n";
+        
+        // Sale Info
+        $content .= "No. Transaksi: " . $sale->invoice_number . "\n";
+        $content .= "Tanggal: " . $sale->created_at->format('d/m/Y H:i') . "\n";
+        $content .= "Kasir: " . ($sale->user->name ?? 'System') . "\n";
+        $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
+        $content .= "Tipe Order: " . $sale->order_type . "\n";
+        $content .= "========================\n\n";
+        
+        // Items
+        $content .= "ITEM YANG DIBELI:\n";
+        $content .= "------------------------\n";
+        
+        foreach ($sale->items as $item) {
+            $productName = $item->product->name ?? 'Unknown Product';
+            
+            if (strlen($productName) > 20) {
+                $productName = substr($productName, 0, 17) . '...';
+            }
+            
+            $content .= $productName . "\n";
+            
+            $quantityLine = sprintf("  %-2d x %-10s", 
+                $item->quantity, 
+                "Rp" . number_format($item->unit_price, 0, ',', '.')
+            );
+            
+            $subtotal = "Rp" . number_format($item->subtotal, 0, ',', '.');
+            $content .= $quantityLine . $subtotal . "\n";
+        }
+        
+        $content .= "------------------------\n\n";
+        
+        // Summary
+        $content .= "Subtotal: " . $this->formatCurrency($sale->subtotal) . "\n";
+        $content .= "Pajak (10%): " . $this->formatCurrency($sale->tax) . "\n";
+        
+        if ($sale->discount > 0) {
+            $content .= "Diskon: -" . $this->formatCurrency($sale->discount) . "\n";
+        }
+        
+        $content .= "TOTAL: " . $this->formatCurrency($sale->final_total) . "\n\n";
+        
+        // Payment Info
+        $content .= "PEMBAYARAN:\n";
+        $content .= "Metode: " . ($sale->paymentMethod->name ?? 'Cash') . "\n";
+        $content .= "Bayar: " . $this->formatCurrency($sale->amount_paid) . "\n";
+        
+        if (($sale->paymentMethod->code ?? 'cash') === 'cash') {
+            $change = $sale->amount_paid - $sale->final_total;
+            if ($change > 0) {
+                $content .= "Kembali: " . $this->formatCurrency($change) . "\n";
+            }
+        }
+        
+        $content .= "========================\n\n";
+        
+        // Footer
+        $content .= "Terima kasih atas kunjungan Anda\n";
+        $content .= "*** SELAMAT MENIKMATI ***\n\n\n";
+        
+        return $content;
+    }
+
+    /**
+     * Print receipt direct (hanya untuk local)
+     */
+    protected function printReceiptDirect(): bool
+    {
         $printer = null;
         $connector = null;
 
         try {
             $sale = $this->sale->load(['items.product', 'user', 'paymentMethod']);
             
-            Log::info('🖨️ Starting receipt print', [
+            Log::info('🖨️ Starting direct receipt print', [
                 'sale_id' => $sale->id,
                 'invoice' => $sale->invoice_number,
                 'printer_type' => $this->printerSettings->printer_type,
                 'printer_name' => $this->printerSettings->usb_printer_name
             ]);
             
-            // Initialize printer berdasarkan settings
+            // Initialize printer
             $connector = $this->createConnector();
             $printer = new Printer($connector);
             $printer->initialize();
@@ -69,7 +361,7 @@ class ReceiptPrintService
             return true;
             
         } catch (\Exception $e) {
-            Log::error('❌ Print receipt failed: ' . $e->getMessage());
+            Log::error('❌ Direct receipt print failed: ' . $e->getMessage());
             throw new \Exception("Gagal mencetak struk: " . $e->getMessage());
             
         } finally {
