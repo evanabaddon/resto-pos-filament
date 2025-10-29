@@ -27,22 +27,20 @@ class OrderPrintService
      */
     protected function detectHostingEnvironment(): bool
     {
-        // Cek berdasarkan beberapa kondisi hosting
-        $host = request()->getHost();
-        $serverIp = $_SERVER['SERVER_ADDR'] ?? '';
-        
-        // Jika domain bukan localhost/127.0.0.1, consider sebagai hosting
-        $isHosting = !in_array($host, ['localhost', '127.0.0.1', '::1']) 
-                  && !str_contains($host, '.local')
-                  && !str_contains($host, 'test')
-                  && filter_var($host, FILTER_VALIDATE_IP) === false;
-        
-        // Atau cek dari APP_ENV
+        // Method 1: Check APP_ENV
         if (config('app.env') === 'production') {
-            $isHosting = true;
+            return true;
         }
         
-        return $isHosting;
+        // Method 2: Check host dari request atau config
+        $host = request()->getHost() ?? parse_url(config('app.url'), PHP_URL_HOST);
+        
+        $isLocal = in_array($host, ['localhost', '127.0.0.1', '::1']) 
+                || str_contains($host, '.local')
+                || str_contains($host, 'test')
+                || $host === 'localhost';
+        
+        return !$isLocal;
     }
 
     /**
@@ -240,33 +238,44 @@ class OrderPrintService
     protected function sendWebhookPrint(string $content, string $printer, string $division, ?int $saleId = null): array
     {
         try {
-            // Gunakan API route bukan web route
-            $webhookUrl = config('app.webhook_print_url', 'https://pos.suralaya.id/api/webhook/print');
+            $webhookUrl = config('app.webhook_print_url');
             $secretKey = config('app.print_secret');
             
+            if (!$webhookUrl) {
+                throw new \Exception('Webhook URL not configured');
+            }
+
             Log::info("🌐 Sending webhook print to {$division}", [
                 'printer' => $printer,
                 'webhook_url' => $webhookUrl,
-                'content_length' => strlen($content)
+                'content_length' => strlen($content),
+                'environment' => $this->isHostingEnvironment ? 'hosting' : 'local'
             ]);
 
-            $response = Http::timeout(10)
+            // Create HTTP client dengan options untuk handle SSL
+            $httpClient = Http::timeout(15)
+                ->withOptions([
+                    'verify' => false, // Disable SSL verification untuk development
+                    'debug' => false,
+                ])
                 ->withHeaders([
                     'X-Print-Secret' => $secretKey,
                     'Content-Type' => 'application/json',
-                ])
-                ->post($webhookUrl, [
-                    'content' => $content,
-                    'printer' => $printer,
-                    'division' => $division,
-                    'sale_id' => $saleId,
-                    'type' => 'order'
+                    'User-Agent' => 'POS-System/1.0'
                 ]);
+
+            $response = $httpClient->post($webhookUrl, [
+                'content' => $content,
+                'printer' => $printer,
+                'division' => $division,
+                'sale_id' => $saleId,
+                'type' => 'order'
+            ]);
 
             if ($response->successful()) {
                 $result = $response->json();
                 
-                if ($result['success']) {
+                if ($result['success'] ?? false) {
                     Log::info("✅ Webhook print queued: {$result['job_id']}");
                     return [
                         'success' => true,
@@ -280,13 +289,20 @@ class OrderPrintService
                     throw new \Exception($result['error'] ?? 'Webhook returned error');
                 }
             } else {
-                throw new \Exception("HTTP {$response->status()}: {$response->body()}");
+                $errorBody = $response->body();
+                // Truncate long HTML responses
+                if (strlen($errorBody) > 200) {
+                    $errorBody = substr($errorBody, 0, 200) . '...';
+                }
+                throw new \Exception("HTTP {$response->status()}: {$errorBody}");
             }
             
         } catch (\Exception $e) {
             Log::error("❌ Webhook print failed: " . $e->getMessage());
             
+            // Fallback strategy berbeda untuk hosting vs local
             if ($this->isHostingEnvironment) {
+                // Di hosting, tidak ada fallback - langsung return error
                 return [
                     'success' => false,
                     'error' => $e->getMessage(),
@@ -294,6 +310,7 @@ class OrderPrintService
                     'type' => 'webhook_failed'
                 ];
             } else {
+                // Di local, fallback ke direct print
                 Log::info("🔄 Falling back to direct print for {$division}");
                 return $this->sendToPrinter($content, $printer, $division);
             }
@@ -698,10 +715,14 @@ class OrderPrintService
      */
     public function testEnvironment(): array
     {
+        $host = request()->getHost() ?? parse_url(config('app.url'), PHP_URL_HOST);
+        
         return [
             'is_hosting' => $this->isHostingEnvironment,
             'app_env' => config('app.env'),
-            'host' => request()->getHost(),
+            'host' => $host,
+            'app_url' => config('app.url'),
+            'webhook_url' => config('app.webhook_print_url'),
             'use_webhook' => $this->useWebhook,
             'recommended_method' => $this->isHostingEnvironment ? 'webhook' : ($this->useWebhook ? 'webhook' : 'direct')
         ];
