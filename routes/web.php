@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\PrintJob;
 use App\Services\OrderPrintService;
 use Illuminate\Support\Facades\Route;
 
@@ -81,4 +82,32 @@ Route::get('/test-api-basic', function () {
             'error' => $e->getMessage()
         ]);
     }
+});
+
+// routes/web.php - tambahkan route debug
+Route::get('/debug-printing', function () {
+    $printService = new OrderPrintService();
+    
+    $envTest = $printService->testEnvironment();
+    $webhookTest = $printService->testWebhookConnection();
+    
+    // Check database untuk print jobs
+    $pendingJobs = PrintJob::where('status', 'pending')->count();
+    $totalJobs = PrintJob::count();
+    
+    return response()->json([
+        'environment' => $envTest,
+        'webhook_test' => $webhookTest,
+        'database' => [
+            'pending_jobs' => $pendingJobs,
+            'total_jobs' => $totalJobs
+        ],
+        'config' => [
+            'webhook_print_url' => config('app.webhook_print_url'),
+            'use_webhook_printing' => config('app.use_webhook_printing'),
+            'print_secret_set' => !empty(config('app.print_secret')),
+            'app_env' => config('app.env'),
+            'app_url' => config('app.url')
+        ]
+    ]);
 });
