@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use App\Models\PrintJob;
 
 Route::prefix('webhook')->group(function () {
     
@@ -36,21 +36,17 @@ Route::prefix('webhook')->group(function () {
             // Generate job ID
             $jobId = 'job_' . uniqid() . '_' . time();
             
-            // Simpan print job
-            $printData = [
-                'id' => $jobId,
+            // Simpan ke database
+            $printJob = PrintJob::create([
+                'job_id' => $jobId,
                 'content' => $validated['content'],
                 'printer' => $validated['printer'] ?? 'BAR',
                 'division' => $validated['division'] ?? 'general',
                 'sale_id' => $validated['sale_id'] ?? null,
                 'type' => $validated['type'] ?? 'order',
-                'created_at' => now()->toISOString(),
                 'status' => 'pending',
                 'attempts' => 0
-            ];
-            
-            // Simpan ke file JSON
-            savePrintJob($printData);
+            ]);
             
             Log::info("✅ Print job queued: {$jobId}");
 
@@ -80,7 +76,10 @@ Route::prefix('webhook')->group(function () {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
             
-            $jobs = getPendingPrintJobs();
+            $jobs = PrintJob::where('status', 'pending')
+                           ->where('attempts', '<', 3)
+                           ->get()
+                           ->toArray();
             
             return response()->json([
                 'success' => true,
@@ -109,9 +108,14 @@ Route::prefix('webhook')->group(function () {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
             
-            $success = markJobCompleted($jobId);
+            $printJob = PrintJob::where('job_id', $jobId)->first();
             
-            if ($success) {
+            if ($printJob) {
+                $printJob->update([
+                    'status' => 'completed',
+                    'completed_at' => now()
+                ]);
+                
                 Log::info("✅ Print job completed: {$jobId}");
                 return response()->json([
                     'success' => true, 
@@ -132,17 +136,63 @@ Route::prefix('webhook')->group(function () {
             ], 500);
         }
     });
+
+    // Update job status jika gagal
+    Route::post('/print-job/{jobId}/failed', function ($jobId, Request $request) {
+        try {
+            // Validasi secret key
+            $expectedSecret = config('app.print_secret', 'default-print-secret-123');
+            $receivedSecret = $request->header('X-Print-Secret');
+            
+            if ($receivedSecret !== $expectedSecret) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+            
+            $validated = $request->validate([
+                'error' => 'required|string'
+            ]);
+            
+            $printJob = PrintJob::where('job_id', $jobId)->first();
+            
+            if ($printJob) {
+                $printJob->update([
+                    'status' => 'failed',
+                    'error' => $validated['error'],
+                    'attempts' => $printJob->attempts + 1,
+                    'completed_at' => now()
+                ]);
+                
+                Log::info("❌ Print job failed: {$jobId}");
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Job marked as failed'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false, 
+                    'error' => 'Job not found'
+                ], 404);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Failed job error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    });
     
     // Health check endpoint
     Route::get('/health', function () {
         try {
-            $pendingJobs = getPendingPrintJobs();
+            $pendingJobs = PrintJob::where('status', 'pending')->count();
             
             return response()->json([
                 'status' => 'ok',
                 'service' => 'Print Webhook',
                 'timestamp' => now()->toISOString(),
-                'pending_jobs' => count($pendingJobs),
+                'pending_jobs' => $pendingJobs,
                 'version' => '1.0.0'
             ]);
             
@@ -163,136 +213,3 @@ Route::prefix('webhook')->group(function () {
         ]);
     });
 });
-
-// Helper functions
-function savePrintJob(array $jobData): void
-{
-    try {
-        $jobsFile = storage_path('app/print_jobs.json');
-        $jobs = [];
-        
-        if (file_exists($jobsFile)) {
-            $content = file_get_contents($jobsFile);
-            if (!empty($content)) {
-                $jobs = json_decode($content, true) ?? [];
-            }
-        }
-        
-        $jobs[] = $jobData;
-        file_put_contents($jobsFile, json_encode($jobs, JSON_PRETTY_PRINT));
-        
-    } catch (\Exception $e) {
-        Log::error('Error saving print job: ' . $e->getMessage());
-        throw $e;
-    }
-}
-
-function getPendingPrintJobs(): array
-{
-    try {
-        $jobsFile = storage_path('app/print_jobs.json');
-        
-        if (!file_exists($jobsFile)) {
-            return [];
-        }
-        
-        $content = file_get_contents($jobsFile);
-        if (empty($content)) {
-            return [];
-        }
-        
-        $allJobs = json_decode($content, true) ?? [];
-        
-        return array_filter($allJobs, function ($job) {
-            return isset($job['status']) && 
-                   $job['status'] === 'pending' && 
-                   (!isset($job['attempts']) || $job['attempts'] < 3);
-        });
-        
-    } catch (\Exception $e) {
-        Log::error('Error getting print jobs: ' . $e->getMessage());
-        return [];
-    }
-}
-
-function markJobCompleted(string $jobId): bool
-{
-    return updateJobStatus($jobId, 'completed');
-}
-
-function markJobFailed(string $jobId, string $error): bool
-{
-    try {
-        $jobsFile = storage_path('app/print_jobs.json');
-        
-        if (!file_exists($jobsFile)) {
-            return false;
-        }
-        
-        $content = file_get_contents($jobsFile);
-        if (empty($content)) {
-            return false;
-        }
-        
-        $jobs = json_decode($content, true) ?? [];
-        $updated = false;
-        
-        foreach ($jobs as &$job) {
-            if (isset($job['id']) && $job['id'] === $jobId) {
-                $job['status'] = 'failed';
-                $job['error'] = $error;
-                $job['completed_at'] = now()->toISOString();
-                $updated = true;
-                break;
-            }
-        }
-        
-        if ($updated) {
-            file_put_contents($jobsFile, json_encode($jobs, JSON_PRETTY_PRINT));
-        }
-        
-        return $updated;
-        
-    } catch (\Exception $e) {
-        Log::error('Error marking job failed: ' . $e->getMessage());
-        return false;
-    }
-}
-
-function updateJobStatus(string $jobId, string $status): bool
-{
-    try {
-        $jobsFile = storage_path('app/print_jobs.json');
-        
-        if (!file_exists($jobsFile)) {
-            return false;
-        }
-        
-        $content = file_get_contents($jobsFile);
-        if (empty($content)) {
-            return false;
-        }
-        
-        $jobs = json_decode($content, true) ?? [];
-        $updated = false;
-        
-        foreach ($jobs as &$job) {
-            if (isset($job['id']) && $job['id'] === $jobId) {
-                $job['status'] = $status;
-                $job['completed_at'] = now()->toISOString();
-                $updated = true;
-                break;
-            }
-        }
-        
-        if ($updated) {
-            file_put_contents($jobsFile, json_encode($jobs, JSON_PRETTY_PRINT));
-        }
-        
-        return $updated;
-        
-    } catch (\Exception $e) {
-        Log::error('Error updating job status: ' . $e->getMessage());
-        return false;
-    }
-}
