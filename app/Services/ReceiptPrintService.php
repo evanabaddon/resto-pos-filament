@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
-use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
-use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
-use Mike42\Escpos\PrintConnectors\FilePrintConnector;
-use Mike42\Escpos\Printer;
 use App\Models\Sale;
+use Mike42\Escpos\Printer;
 use App\Settings\PrinterSettings;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use Mike42\Escpos\PrintConnectors\FilePrintConnector;
+use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
+use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 
 class ReceiptPrintService
 {
