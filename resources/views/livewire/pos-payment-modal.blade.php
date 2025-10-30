@@ -1,13 +1,18 @@
 <div>
     @if ($show)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+        <div class="fixed inset-0 z-50 flex items-end justify-center p-2 sm:items-center sm:p-4">
             {{-- Background overlay --}}
             <div class="absolute inset-0 bg-gray-900 bg-opacity-75" wire:click="closeModal"></div>
 
-            {{-- Struk Container --}}
-            <div class="relative w-full max-w-sm mx-auto h-full sm:h-auto flex flex-col">
+            {{-- Struk Container - Full height di mobile --}}
+            <div class="relative w-full max-w-sm mx-auto h-[95vh] sm:h-auto flex flex-col bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
+                {{-- Close button untuk mobile --}}
+                <div class="sm:hidden flex justify-center py-2 border-b border-gray-200 bg-white">
+                    <div class="w-12 h-1 bg-gray-300 rounded-full"></div>
+                </div>
+
                 {{-- Struk Content - Scrollable on Mobile --}}
-                <div class="bg-white border border-gray-300 shadow-2xl max-h-[90vh] sm:max-h-none overflow-y-auto">
+                <div class="flex-1 overflow-y-auto">
                     {{-- Header Struk --}}
                     <div class="text-center border-b border-gray-300 py-3 sm:py-4 px-3 sm:px-4 bg-gray-50 sticky top-0 z-10">
                         <h1 class="text-base sm:text-lg font-bold uppercase tracking-tight text-gray-900">STRUK PEMBAYARAN</h1>
@@ -166,8 +171,8 @@
                     </div>
                 </div>
 
-                {{-- Tombol Action - Sticky di Mobile --}}
-                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3 sm:mt-4 bg-white p-2 sm:p-0 rounded-lg sm:rounded-none shadow-lg sm:shadow-none sticky bottom-0 z-20">
+                {{-- Tombol Action - Fixed di Mobile --}}
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 sm:p-4 border-t border-gray-200 bg-white safe-area-bottom">
                     <button wire:click="closeModal"
                             class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 font-semibold text-sm cursor-pointer transition-colors rounded shadow-sm touch-target">
                         BATAL
@@ -184,7 +189,18 @@
         </div>
 
         <style>
-            @keyframes struk-appear {
+            @keyframes struk-appear-mobile {
+                from { 
+                    opacity: 0; 
+                    transform: translateY(100%); 
+                }
+                to { 
+                    opacity: 1; 
+                    transform: translateY(0); 
+                }
+            }
+
+            @keyframes struk-appear-desktop {
                 from { 
                     opacity: 0; 
                     transform: scale(0.95) translateY(-10px); 
@@ -195,8 +211,18 @@
                 }
             }
             
-            .fixed.inset-0 {
-                animation: struk-appear 0.2s ease-out;
+            /* Animasi untuk mobile */
+            @media (max-width: 640px) {
+                .fixed.inset-0 {
+                    animation: struk-appear-mobile 0.3s ease-out;
+                }
+            }
+            
+            /* Animasi untuk desktop */
+            @media (min-width: 641px) {
+                .fixed.inset-0 {
+                    animation: struk-appear-desktop 0.2s ease-out;
+                }
             }
 
             /* Mobile optimizations */
@@ -215,14 +241,24 @@
                 .overflow-y-auto::-webkit-scrollbar {
                     display: none;
                 }
+
+                /* Safe area untuk bottom buttons */
+                .safe-area-bottom {
+                    padding-bottom: max(12px, env(safe-area-inset-bottom));
+                }
             }
         </style>
     @endif
     
     {{-- Modal Preview Struk - Responsif --}}
     @if ($showReceiptPreview)
-        <div class="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4 backdrop-blur-sm bg-black bg-opacity-50">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-xl mx-auto h-full sm:h-auto max-h-[95vh] sm:max-h-[90vh] flex flex-col">
+        <div class="fixed inset-0 z-[60] flex items-end justify-center p-2 sm:items-center sm:p-4 backdrop-blur-sm bg-black bg-opacity-50">
+            <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-xl mx-auto h-[95vh] sm:h-auto max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
+                {{-- Close handle untuk mobile --}}
+                <div class="sm:hidden flex justify-center py-2 border-b border-gray-200 bg-white">
+                    <div class="w-12 h-1 bg-gray-300 rounded-full"></div>
+                </div>
+
                 {{-- Header --}}
                 <div class="flex justify-between items-center p-3 sm:p-4 border-b flex-shrink-0">
                     <h3 class="text-base sm:text-lg font-bold">Preview Struk</h3>
@@ -232,14 +268,14 @@
                 </div>
 
                 {{-- Content Struk - Scrollable --}}
-                <div class="p-3 sm:p-4 flex-1 overflow-y-auto">
+                <div class="flex-1 overflow-y-auto p-3 sm:p-4">
                     <div class="receipt-preview text-xs sm:text-sm">
                         {!! $receiptContent !!}
                     </div>
                 </div>
 
                 {{-- Actions --}}
-                <div class="flex flex-col sm:flex-row gap-2 p-3 sm:p-4 border-t flex-shrink-0 bg-gray-50">
+                <div class="flex flex-col sm:flex-row gap-2 p-3 sm:p-4 border-t flex-shrink-0 bg-gray-50 safe-area-bottom">
                     <button wire:click="closeReceiptPreview" 
                             class="cursor-pointer flex-1 bg-gray-500 text-white py-3 rounded font-medium touch-target">
                         TUTUP
@@ -373,15 +409,34 @@ function printReceiptDirect(content) {
     printWindow.document.close();
 }
 
-// Handle mobile viewport height
-function setMobileViewport() {
+// Handle mobile viewport height dan bottom navigation
+function setupModalForMobile() {
     if (window.innerWidth <= 640) {
-        document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+        // Set viewport height yang aman
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+        
+        // Pastikan modal tidak tertutup bottom nav
+        const modalContainer = document.querySelector('.fixed.inset-0');
+        if (modalContainer) {
+            modalContainer.style.zIndex = '9999';
+        }
     }
 }
 
 // Initialize and handle resize
-setMobileViewport();
-window.addEventListener('resize', setMobileViewport);
-window.addEventListener('orientationchange', setMobileViewport);
+setupModalForMobile();
+window.addEventListener('resize', setupModalForMobile);
+window.addEventListener('orientationchange', setupModalForMobile);
+
+// Prevent body scroll ketika modal terbuka
+document.addEventListener('livewire:initialized', () => {
+    Livewire.on('showModal', () => {
+        document.body.style.overflow = 'hidden';
+    });
+    
+    Livewire.on('closeModal', () => {
+        document.body.style.overflow = '';
+    });
+});
 </script>
