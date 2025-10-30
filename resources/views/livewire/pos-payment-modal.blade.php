@@ -216,6 +216,11 @@
                 .fixed.inset-0 {
                     animation: struk-appear-mobile 0.3s ease-out;
                 }
+                
+                /* Sembunyikan bottom nav ketika modal terbuka */
+                .mobile-bottom-nav {
+                    display: none !important;
+                }
             }
             
             /* Animasi untuk desktop */
@@ -316,6 +321,18 @@
 </div>
 
 <script>
+// Fungsi untuk mengontrol bottom nav bar
+function toggleBottomNav(show) {
+    const bottomNav = document.querySelector('.mobile-bottom-nav');
+    if (bottomNav) {
+        if (show) {
+            bottomNav.style.display = 'block';
+        } else {
+            bottomNav.style.display = 'none';
+        }
+    }
+}
+
 function printReceipt() {
     const receiptContent = document.querySelector('.receipt-preview').innerHTML;
     
@@ -374,6 +391,27 @@ function printReceipt() {
 
 // Event listener untuk Livewire
 document.addEventListener('livewire:initialized', () => {
+    // Sembunyikan bottom nav ketika modal payment terbuka
+    Livewire.on('showModal', () => {
+        document.body.style.overflow = 'hidden';
+        toggleBottomNav(false);
+    });
+    
+    // Tampilkan kembali bottom nav ketika modal ditutup
+    Livewire.on('closeModal', () => {
+        document.body.style.overflow = '';
+        toggleBottomNav(true);
+    });
+
+    // Handle untuk receipt preview
+    Livewire.on('showReceiptPreview', () => {
+        toggleBottomNav(false);
+    });
+    
+    Livewire.on('closeReceiptPreview', () => {
+        toggleBottomNav(true);
+    });
+
     Livewire.on('printReceiptDirect', (event) => {
         printReceiptDirect(event.content);
     });
@@ -429,14 +467,8 @@ setupModalForMobile();
 window.addEventListener('resize', setupModalForMobile);
 window.addEventListener('orientationchange', setupModalForMobile);
 
-// Prevent body scroll ketika modal terbuka
-document.addEventListener('livewire:initialized', () => {
-    Livewire.on('showModal', () => {
-        document.body.style.overflow = 'hidden';
-    });
-    
-    Livewire.on('closeModal', () => {
-        document.body.style.overflow = '';
-    });
+// Pastikan bottom nav muncul kembali saat halaman dimuat ulang
+document.addEventListener('DOMContentLoaded', function() {
+    toggleBottomNav(true);
 });
 </script>
