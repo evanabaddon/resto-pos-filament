@@ -35,9 +35,8 @@ class CashSessionInfolist
                                     ->icon('heroicon-o-clock')
                                     ->iconColor(fn ($state) => $state ? 'danger' : 'warning'),
 
-                                TextEntry::make('sales_count')
+                                TextEntry::make('transaction_count')
                                     ->label('Total Transaksi')
-                                    ->formatStateUsing(fn ($record) => $record->sales()->where('status', 'completed')->count())
                                     ->icon('heroicon-o-document-text')
                                     ->iconColor('info'),
                             ]),
