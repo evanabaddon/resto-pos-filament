@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\PaymentMethod;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CashSession extends Model
 {
@@ -32,6 +33,11 @@ class CashSession extends Model
         return $this->hasMany(Sale::class);
     }
 
+    public function paymentMethod(): BelongsTo
+    {
+        return $this->belongsTo(PaymentMethod::class, 'payment_method');
+    }
+
     public function getSessionSummaryAttribute()
     {
         return [
@@ -44,20 +50,21 @@ class CashSession extends Model
     }
 
     // 🔹 TOTAL penjualan CASH yang COMPLETED
-    public function getTotalCashSalesAttribute()
+    public function getTotalCashSalesAttribute(): float
     {
+        $cashId = PaymentMethod::where('code', 'cash')->value('id');
         return $this->sales()
             ->where('status', 'completed')
-            ->where('payment_method', 'cash')
+            ->where('payment_method', $cashId)
             ->sum('final_total');
     }
 
     // 🔹 TOTAL penjualan NON-CASH yang COMPLETED  
-    public function getTotalNonCashSalesAttribute()
+    public function getTotalNonCashSalesAttribute(): float
     {
         return $this->sales()
             ->where('status', 'completed')
-            ->where('payment_method', '!=', 'cash')
+            ->where('payment_method', '!=', 1)
             ->sum('final_total');
     }
 
@@ -70,20 +77,37 @@ class CashSession extends Model
     }
 
     // 🔹 Uang yang seharusnya ada di laci (kas awal + penjualan cash)
-    public function getExpectedCashAttribute()
+    public function getExpectedCashAttribute(): float
     {
         return $this->cash_in_hand + $this->total_cash_sales;
     }
 
     // 🔹 Profit kotor dari penjualan cash
-    public function getCashProfitAttribute()
+    public function getTotalCashRevenueAttribute()
     {
         return $this->total_cash_sales;
     }
 
-    // 🔹 Selisih jika ada hitungan fisik
-    public function getCashDifferenceAttribute($physicalCash)
+    // 🔹 Selisih kas aktual dengan kas seharusnya
+    public function getCashDifferenceAttribute(): ?float
     {
-        return $physicalCash - $this->expected_cash;
+        if (is_null($this->cash_out)) {
+            return null; // belum ditutup
+        }
+
+        return $this->cash_out - $this->expected_cash;
+    }
+
+    // Jumlah transaksi completed
+    public function getTransactionCountAttribute(): int
+    {
+        return $this->sales()->where('status', 'completed')->count();
+    }
+
+    // Rata-rata transaksi completed
+    public function getAverageTransactionAttribute(): float
+    {
+        $count = $this->transaction_count;
+        return $count > 0 ? $this->total_completed_sales / $count : 0;
     }
 }
