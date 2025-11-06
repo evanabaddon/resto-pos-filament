@@ -28,7 +28,34 @@
                     <p class="text-sm text-gray-500 mt-2">
                         Setelah shift ditutup, Anda tidak dapat melakukan transaksi lagi sampai membuka shift baru.
                     </p>
+
+                    <div class="mt-5 space-y-3">
+                        <label for="cashOutInput" class="block text-sm font-medium text-gray-700">
+                            Jumlah Uang Fisik di Laci Kasir
+                        </label>
+
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-sm">
+                                Rp
+                            </span>
+
+                            <input
+                                id="cashOutInput"
+                                type="number"
+                                wire:model.defer="cashOutInput"
+                                placeholder="Masukkan total uang fisik"
+                                class="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg 
+                                    focus:border-red-500 focus:ring-red-500 focus:outline-none
+                                    transition-colors duration-200"
+                            />
+                        </div>
+
+                        <p class="text-xs text-gray-500">
+                            Masukkan total uang yang benar-benar ada di laci kasir saat ini.
+                        </p>
+                    </div>
                 </div>
+
 
                 <!-- Footer -->
                 <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">

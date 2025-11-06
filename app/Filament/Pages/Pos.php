@@ -209,7 +209,7 @@ class Pos extends Page
         redirect()->route('filament.admin.pages.dashboard');
     }
 
-    public function closeCashSession()
+    public function closeCashSession($cashOut = null)
     {
         $session = CashSession::find(session('cash_session_id'));
         
@@ -222,25 +222,36 @@ class Pos extends Page
             return;
         }
 
+        // Jika user isi manual, pakai itu, kalau kosong tetap fallback ke default
+        $cashOutValue = $cashOut ?? ($session->cash_in_hand + $session->sales()
+            ->where('status', 'completed')
+            ->whereHas('paymentMethod', fn($q) => $q->where('code', 'cash'))
+            ->sum('final_total'));
+            
         // Hitung TOTAL penjualan CASH yang status COMPLETED
         $totalCashSales = $session->sales()
             ->where('status', 'completed')
             ->where('payment_method', 'cash')
             ->sum('final_total');
 
+        $expectedCash = $session->cash_in_hand + $totalCashSales;
+
         $session->update([
-            'cash_out' => $session->cash_in_hand + $totalCashSales, // ✅ BENAR
+            'cash_out' => $cashOutValue,
             'closed_at' => now(),
             'status' => 'closed',
         ]);
 
-        session()->forget('cash_session_id');
+        $difference = $cashOut - $expectedCash;
 
         Notification::make()
             ->title('Shift Ditutup')
-            ->body('Shift kasir telah ditutup. Total penjualan cash: Rp ' . number_format($totalCashSales, 0, ',', '.'))
+            ->body('Shift kasir telah ditutup. Selisih: Rp ' . number_format($difference, 0, ',', '.'))
             ->success()
             ->send();
+
+        session()->forget('cash_session_id');
+
 
         redirect()->route('filament.admin.pages.dashboard');
     }

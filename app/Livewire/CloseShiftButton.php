@@ -7,6 +7,7 @@ use Livewire\Component;
 class CloseShiftButton extends Component
 {
     public $showConfirmationModal = false;
+    public $cashOutInput;
 
     public function openConfirmationModal()
     {
@@ -20,7 +21,8 @@ class CloseShiftButton extends Component
 
     public function closeShift()
     {
-        $this->dispatch('closeCashSessionFromLayout'); // event yang akan didengar oleh POS
+        $this->dispatch('closeCashSessionFromLayout', cashOut: $this->cashOutInput);
+        $this->closeConfirmationModal();
     }
     
     public function render()

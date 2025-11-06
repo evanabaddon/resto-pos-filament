@@ -55,7 +55,7 @@ class CashSession extends Model
         $cashId = PaymentMethod::where('code', 'cash')->value('id');
         return $this->sales()
             ->where('status', 'completed')
-            ->where('payment_method', $cashId)
+            ->where('payment_method_id', $cashId)
             ->sum('final_total');
     }
 
@@ -64,7 +64,7 @@ class CashSession extends Model
     {
         return $this->sales()
             ->where('status', 'completed')
-            ->where('payment_method', '!=', 1)
+            ->where('payment_method_id', '!=', 1)
             ->sum('final_total');
     }
 
