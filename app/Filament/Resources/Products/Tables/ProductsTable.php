@@ -24,7 +24,8 @@ class ProductsTable
                     ->width(50),
                     
                 TextColumn::make('name')
-                    ->label('Nama'),
+                    ->label('Nama')
+                    ->searchable(),
 
                 TextColumn::make('category.name')
                     ->label('Kategori'),
