@@ -68,7 +68,7 @@ class ProductForm
                     ->numeric()
                     ->label('Stok Saat Ini')
                     ->hidden(fn(callable $get) => in_array($get('type'), ['produced', 'bar']))
-                    ->disabled(fn($record) => $record !== null)
+                    // ->disabled(fn($record) => $record !== null)
                     ->default(0),
 
                 // 🍳 Komposisi bahan untuk produk produced DAN bar
