@@ -7,9 +7,11 @@ use Filament\Tables\Table;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Schemas\Components\Utilities\Set;
 
 class ProductsTable
 {
@@ -76,7 +78,8 @@ class ProductsTable
                         return "{$stock} {$unitSymbol}";
                     })
                     ->html()
-                    ->sortable(),
+                    ->sortable(query: fn ($query, $direction) => $query->orderBy('stock', $direction)),
+
 
                 TextColumn::make('base_price')
                     ->label('HPP')
@@ -89,7 +92,6 @@ class ProductsTable
                 TextColumn::make('profit')
                     ->label('Keuntungan')
                     ->money('IDR')
-                    ->sortable()
                     ->getStateUsing(function ($record) {
                         $basePrice = $record->base_price ?? 0;
                         $sellPrice = $record->sell_price ?? 0;
@@ -114,10 +116,30 @@ class ProductsTable
                         }
                         
                         return '0%';
-                    }),
+                    })
+                    ->sortable(query: fn ($query, $direction) => 
+                        $query->orderByRaw('(sell_price - base_price) ' . $direction)
+                    ),
             ])
             ->filters([
-                //
+                // 🔹 Filter kategori (relasi)
+                SelectFilter::make('category_id')
+                    ->label('Kategori')
+                    ->relationship('category', 'name')
+                    ->preload()
+                    ->searchable(),
+
+                // 🔹 Filter stok rendah
+                TernaryFilter::make('low_stock')
+                    ->label('Stok Rendah')
+                    ->placeholder('Semua')
+                    ->trueLabel('Stok < 10')
+                    ->falseLabel('Stok ≥ 10')
+                    ->queries(
+                        true: fn ($query) => $query->where('stock', '<', 10),
+                        false: fn ($query) => $query->where('stock', '>=', 10),
+                        blank: fn ($query) => $query
+                    ),
             ])
             ->recordActions([
                 EditAction::make(),
