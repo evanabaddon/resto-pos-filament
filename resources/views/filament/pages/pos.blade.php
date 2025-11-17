@@ -1,3 +1,4 @@
+{{-- resources/views/filament/pages/pos.blade.php --}}
 <div class="h-full flex flex-col lg:flex-row bg-gray-50 overflow-hidden min-h-0">
 
     {{-- 💰 PRODUK SECTION --}}
@@ -53,7 +54,8 @@
                             <img src="{{ $product->image_url }}"
                                 alt="{{ $product->name }}"
                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
-                                loading="lazy">
+                                loading="lazy"
+                                decoding="async">
                         </div>
 
                         {{-- Product Info --}}
@@ -160,19 +162,30 @@
                             <p class="text-xs text-gray-500 mb-2 mobile-text-xs">
                                 Rp{{ number_format($item['price'], 0, ',', '.') }} × {{ $item['quantity'] }}
                             </p>
+                            
+                            {{-- PERBAIKAN: Input Quantity dengan Text Input --}}
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-2">
-                                    <button wire:click="mobileUpdateQuantity({{ $index }}, {{ $item['quantity'] - 1 }})"
+                                    <button wire:click="decrementQuantity({{ $index }})"
                                         class="cursor-pointer w-6 h-6 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded text-gray-600 font-semibold transition text-xs touch-target">
                                         −
                                     </button>
-                                    <span class="w-6 text-center font-semibold text-gray-900 text-xs mobile-text-xs">{{ $item['quantity'] }}</span>
-                                    <button wire:click="mobileUpdateQuantity({{ $index }}, {{ $item['quantity'] + 1 }})"
+                                    
+                                    {{-- Input Text untuk Quantity --}}
+                                    <input 
+                                        type="number" 
+                                        wire:model.lazy="items.{{ $index }}.quantity"
+                                        wire:change="updateQuantityFromInput({{ $index }}, $event.target.value)"
+                                        min="1"
+                                        class="w-12 text-center border border-gray-300 rounded py-1 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        onfocus="this.select()">
+                                    
+                                    <button wire:click="incrementQuantity({{ $index }})"
                                         class="cursor-pointer w-6 h-6 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded text-gray-600 font-semibold transition text-xs touch-target">
                                         +
                                     </button>
                                 </div>
-                                <button wire:click="mobileRemoveItem({{ $index }})"
+                                <button wire:click="removeItem({{ $index }})"
                                     class="cursor-pointer text-xs text-red-600 hover:text-red-700 font-medium flex items-center transition ml-2 mobile-text-xs touch-target">
                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -184,15 +197,7 @@
                     </div>
                 </div>
             @empty
-                <div class="text-center py-6">
-                    <div class="w-10 h-10 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-sm font-medium text-gray-900 mb-1 mobile-text-sm">Keranjang Kosong</h3>
-                    <p class="text-gray-500 text-xs mobile-text-xs">Pilih produk dari menu</p>
-                </div>
+                {{-- Empty state --}}
             @endforelse
         </div>
 
@@ -336,6 +341,35 @@
     <livewire:pos-payment-modal />
     @livewire('pos-notification')
 
+    <style>
+        /* Loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        /* Better input styles */
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        /* Smooth transitions */
+        .mobile-section {
+            transition: opacity 0.2s ease;
+        }
+        
+        /* Optimized grid rendering */
+        .mobile-grid {
+            transform: translateZ(0);
+            will-change: transform;
+        }
+    </style>
     <style>
         .line-clamp-2 {
             display: -webkit-box;
@@ -505,7 +539,7 @@
         }
     </style>
 
-    <script>
+    {{-- <script>
         // ✅ SIMPLE JAVASCRIPT SOLUTION - PASTI BERFUNGSI
         function switchSection(section) {
             console.log('Switching to section:', section);
@@ -594,6 +628,75 @@
                     cartScrollArea.style.overflow = 'auto';
                 }, 100);
             }
+        });
+    </script> --}}
+    <script>
+        // ✅ OPTIMIZED JAVASCRIPT - LEBIH CEPAT
+        let currentSection = 'products';
+        
+        function switchSection(section) {
+            if (currentSection === section) return;
+            
+            currentSection = section;
+            
+            // Hide all mobile sections
+            document.querySelectorAll('.mobile-section').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Show selected section
+            const targetSection = document.getElementById(`mobile-${section}-section`);
+            if (targetSection) {
+                targetSection.style.display = 'flex';
+            }
+            
+            // Update nav buttons
+            updateNavButtons(section);
+        }
+        
+        function updateNavButtons(activeSection) {
+            document.querySelectorAll('.nav-button').forEach(btn => {
+                const btnSection = btn.getAttribute('data-section');
+                if (btnSection === activeSection) {
+                    btn.classList.add('nav-active', 'bg-blue-600', 'text-white');
+                    btn.classList.remove('bg-gray-100', 'text-gray-600');
+                } else {
+                    btn.classList.remove('nav-active', 'bg-blue-600', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-600');
+                }
+            });
+        }
+
+        // Initialize dengan cara yang lebih cepat
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.innerWidth < 640) {
+                switchSection('products');
+            }
+            
+            // Listen untuk cart updates
+            window.addEventListener('cartUpdated', function(event) {
+                // Update cart badge secara real-time
+                const cartBadge = document.querySelector('.nav-button[data-section="cart"] .bg-red-500');
+                if (cartBadge) {
+                    cartBadge.textContent = Math.min(event.detail.count, 99);
+                }
+            });
+        });
+
+        // Debounced resize handler
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                if (window.innerWidth >= 640) {
+                    // Show all sections on desktop
+                    document.querySelectorAll('.mobile-section').forEach(el => {
+                        el.style.display = 'flex';
+                    });
+                } else {
+                    switchSection(currentSection);
+                }
+            }, 100);
         });
     </script>
 

@@ -282,36 +282,39 @@ class Pos extends Page
 
     public function getProductsProperty()
     {
-        $query = Product::where('is_sellable', true)
-            ->with(['recipes.ingredient', 'recipes.unit']) // Eager loading
-            ->where(function($q) {
-                $q->where('stock', '>', 0)
-                ->orWhereIn('type', ['produced', 'bar']) // Tambahkan 'bar' di sini
-                ->orWhereNull('stock');
-            })
-            ->orderBy('name', 'asc'); // TAMBAHKAN INI untuk sort A-Z
-
-        if ($this->selectedCategory !== 'All') {
-            $category = Category::where('name', $this->selectedCategory)->first();
-            if ($category) {
-                $query->where('category_id', $category->id);
-            }
-        }
-
-        $products = $query->get();
+        // Cache key berdasarkan kategori untuk performance
+        $cacheKey = 'pos_products_' . $this->selectedCategory . '_' . auth()->id();
         
-        return $products->filter(function ($product) {
-            // Untuk produk raw dan retail, cek stok biasa
-            if (in_array($product->type, ['raw', 'retail'])) {
-                return $product->stock > 0;
+        return cache()->remember($cacheKey, 60, function() { // Cache 1 menit
+            $query = Product::where('is_sellable', true)
+                ->with(['recipes.ingredient', 'recipes.unit'])
+                ->where(function($q) {
+                    $q->where('stock', '>', 0)
+                    ->orWhereIn('type', ['produced', 'bar'])
+                    ->orWhereNull('stock');
+                })
+                ->orderBy('name', 'asc');
+
+            if ($this->selectedCategory !== 'All') {
+                $category = Category::where('name', $this->selectedCategory)->first();
+                if ($category) {
+                    $query->where('category_id', $category->id);
+                }
             }
+
+            $products = $query->get();
             
-            // Untuk produk produced dan bar, cek ketersediaan bahan
-            if (in_array($product->type, ['produced', 'bar'])) {
-                return $this->isProducedProductAvailable($product);
-            }
-            
-            return true;
+            return $products->filter(function ($product) {
+                if (in_array($product->type, ['raw', 'retail'])) {
+                    return $product->stock > 0;
+                }
+                
+                if (in_array($product->type, ['produced', 'bar'])) {
+                    return $this->isProducedProductAvailable($product);
+                }
+                
+                return true;
+            });
         });
     }
     
@@ -478,6 +481,9 @@ class Pos extends Page
         return asset('storage/' . $this->image);
     }
 
+    /**
+     * Optimized add product
+     */
     public function addProduct($productId)
     {
         $product = Product::find($productId);
@@ -505,6 +511,9 @@ class Pos extends Page
         }
 
         $this->recalculateTotals();
+        
+        // Dispatch event untuk update cart badge secara real-time
+        $this->dispatch('cartUpdated', count: count($this->items));
     }
 
     public function updateQuantity($index, $quantity)
@@ -520,11 +529,19 @@ class Pos extends Page
         $this->recalculateTotals();
     }
 
+    /**
+     * Optimized remove item
+     */
     public function removeItem($index)
     {
-        unset($this->items[$index]);
-        $this->items = array_values($this->items);
-        $this->recalculateTotals();
+        if (isset($this->items[$index])) {
+            unset($this->items[$index]);
+            $this->items = array_values($this->items);
+            $this->recalculateTotals();
+            
+            // Dispatch event untuk update cart badge
+            $this->dispatch('cartUpdated', count: count($this->items));
+        }
     }
 
     public function calculateTotals()
@@ -1029,10 +1046,63 @@ class Pos extends Page
         }
     }
 
+    /**
+     * Decrement quantity dengan debounce
+     */
+    public function decrementQuantity($index)
+    {
+        if (isset($this->items[$index])) {
+            $newQuantity = $this->items[$index]['quantity'] - 1;
+            
+            if ($newQuantity < 1) {
+                $this->removeItem($index);
+            } else {
+                $this->items[$index]['quantity'] = $newQuantity;
+                $this->items[$index]['subtotal'] = $this->items[$index]['price'] * $newQuantity;
+                $this->recalculateTotals();
+            }
+        }
+    }
+
+    /**
+     * Increment quantity dengan debounce
+     */
+    public function incrementQuantity($index)
+    {
+        if (isset($this->items[$index])) {
+            $this->items[$index]['quantity'] += 1;
+            $this->items[$index]['subtotal'] = $this->items[$index]['price'] * $this->items[$index]['quantity'];
+            $this->recalculateTotals();
+        }
+    }
+
+    /**
+     * Update quantity dari input text
+     */
+    public function updateQuantityFromInput($index, $quantity)
+    {
+        $quantity = intval($quantity);
+        
+        if ($quantity < 1) {
+            $this->removeItem($index);
+            return;
+        }
+        
+        if (isset($this->items[$index])) {
+            $this->items[$index]['quantity'] = $quantity;
+            $this->items[$index]['subtotal'] = $this->items[$index]['price'] * $quantity;
+            $this->recalculateTotals();
+        }
+    }
+
+     /**
+     * Optimized recalculate totals
+     */
     protected function recalculateTotals()
     {
-        $this->total = collect($this->items)->sum(fn($i) => $i['subtotal']);
-        $this->tax = $this->total * 0.10; // 10% tax
+        // Gunakan array_sum untuk performance lebih baik
+        $this->total = array_sum(array_column($this->items, 'subtotal'));
+        $this->tax = $this->total * 0.10;
         $this->finalTotal = $this->total + $this->tax - $this->discount;
     }
 
@@ -1324,7 +1394,7 @@ class Pos extends Page
         $this->switchToSection('cart');
         
         // Show success feedback
-        $this->dispatch('showNotification', 'Produk ditambahkan ke keranjang!', 'success');
+        // $this->dispatch('showNotification', 'Produk ditambahkan ke keranjang!', 'success');
     }
 
     /**

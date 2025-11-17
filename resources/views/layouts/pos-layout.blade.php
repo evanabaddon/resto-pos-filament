@@ -1,3 +1,4 @@
+{{-- resource/views/layouts/pos-layout.blade.php --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
