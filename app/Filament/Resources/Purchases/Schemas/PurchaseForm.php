@@ -57,10 +57,30 @@ class PurchaseForm
                             ->required(),
 
                         Select::make('unit_id')
-                            ->relationship('unit', 'name')
+                            ->label('Unit')
+                            ->options(function (callable $get, $state) {
+                                // Dapatkan product_id dari state repeater
+                                $productId = $get('product_id');
+                                
+                                if (!$productId) {
+                                    // Jika belum ada produk yang dipilih, tampilkan semua unit
+                                    return \App\Models\Unit::all()->pluck('name', 'id');
+                                }
+                                
+                                // Ambil produk dan unit yang terkait
+                                $product = \App\Models\Product::find($productId);
+                                if ($product && $product->unit_id) {
+                                    // Tampilkan hanya unit yang terkait dengan produk
+                                    return \App\Models\Unit::where('id', $product->unit_id)
+                                        ->pluck('name', 'id');
+                                }
+                                
+                                return \App\Models\Unit::all()->pluck('name', 'id');
+                            })
                             ->searchable()
                             ->preload()
-                            ->required(),
+                            ->required()
+                            ->live(),
 
                         TextInput::make('quantity')
                             ->numeric()
