@@ -48,13 +48,36 @@ class PurchaseForm
                     ->schema([
                         Select::make('product_id')
                             ->relationship(
-                                    name: 'product',
-                                    titleAttribute: 'name',
-                                    modifyQueryUsing: fn (Builder $query) => $query->whereIn('type', ['raw', 'retail'])
-                                )
+                                name: 'product',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn (Builder $query) => $query->whereIn('type', ['raw', 'retail'])
+                            )
                             ->searchable()
                             ->preload()
-                            ->required(),
+                            ->required()
+                            ->live() // Tambahkan live
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                // Reset unit dan price ketika produk berubah
+                                $set('unit_id', null);
+                                $set('price', null);
+                                
+                                if ($state) {
+                                    $product = \App\Models\Product::find($state);
+                                    if ($product) {
+                                        // Set unit_id otomatis dari produk
+                                        if ($product->unit_id) {
+                                            $set('unit_id', $product->unit_id);
+                                        }
+                                        // Set price otomatis dari base_price produk
+                                        if ($product->base_price) {
+                                            $set('price', $product->base_price);
+                                        }
+                                    }
+                                }
+                                
+                                // Hitung ulang subtotal
+                                $set('subtotal', ($get('price') ?? 0) * ($get('quantity') ?? 0));
+                            }),
 
                         Select::make('unit_id')
                             ->label('Unit')
