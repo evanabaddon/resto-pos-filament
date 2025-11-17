@@ -122,6 +122,7 @@ class ProductsTable
                         $query->orderByRaw('(sell_price - base_price) ' . $direction)
                     ),
             ])
+            ->defaultSort('name')
             ->filters([
                 // 🔹 Filter kategori (relasi)
                 SelectFilter::make('category_id')
