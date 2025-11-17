@@ -46,14 +46,6 @@ class AdminPanelProvider extends PanelProvider
                 AccountWidget::class,
                 FilamentInfoWidget::class,
             ])
-            ->navigationItems([
-                NavigationItem::make('Penjualan Ri')
-                    ->url('#')
-                    ->icon('heroicon-o-shopping-cart')
-                    ->childItems([
-                        NavigationItem::make('test')
-                    ])
-            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
