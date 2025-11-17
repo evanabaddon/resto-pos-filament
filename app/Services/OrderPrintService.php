@@ -108,6 +108,8 @@ class OrderPrintService
     public function printOrderByProductType(Sale $sale): array
     {
         try {
+            $sale->refresh()->load('items.product'); // 🔥 penting
+
             Log::info("🖨️ Starting order print by product type", [
                 'sale_id' => $sale->id,
                 'invoice' => $sale->invoice_number,
@@ -471,6 +473,8 @@ class OrderPrintService
      */
     public function printNewItemsOnly(Sale $sale, array $newItems): array
     {
+        $sale->refresh()->load('items.product'); // 🔥 penting
+
         try {
             Log::info("🔄 Printing new items only for sale #{$sale->invoice_number}", [
                 'new_items_count' => count($newItems),
@@ -569,6 +573,7 @@ class OrderPrintService
         $printResults = [];
 
         foreach ($itemsByDivision as $division => $items) {
+            $items = $this->mergeItemsByProduct($items);
             if (!empty($items)) {
                 $content = $this->generateNewItemsContent($sale, $items, strtoupper($division));
                 $printerName = $this->getPrinterNameForDivision($division);
@@ -579,6 +584,23 @@ class OrderPrintService
 
         return $printResults;
     }
+
+    protected function mergeItemsByProduct($items)
+    {
+        $merged = [];
+
+        foreach ($items as $item) {
+            $id = $item->product_id;
+            if (!isset($merged[$id])) {
+                $merged[$id] = clone $item;
+            } else {
+                $merged[$id]->quantity += $item->quantity;
+            }
+        }
+
+        return array_values($merged);
+    }
+
 
     // ==================== GENERATE CONTENT METHODS ====================
 
