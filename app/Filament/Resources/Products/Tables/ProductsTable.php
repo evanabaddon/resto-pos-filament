@@ -23,7 +23,8 @@ class ProductsTable
                     ->label('Gambar')
                     ->default('https://placehold.co/50')
                     ->circular(true)
-                    ->width(50),
+                    ->width(50)
+                    ->disk('public'),
                     
                 TextColumn::make('name')
                     ->label('Nama')
