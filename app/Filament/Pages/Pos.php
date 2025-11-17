@@ -288,7 +288,8 @@ class Pos extends Page
                 $q->where('stock', '>', 0)
                 ->orWhereIn('type', ['produced', 'bar']) // Tambahkan 'bar' di sini
                 ->orWhereNull('stock');
-            });
+            })
+            ->orderBy('name', 'asc'); // TAMBAHKAN INI untuk sort A-Z
 
         if ($this->selectedCategory !== 'All') {
             $category = Category::where('name', $this->selectedCategory)->first();
