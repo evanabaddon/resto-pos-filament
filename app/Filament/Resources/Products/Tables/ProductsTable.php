@@ -12,6 +12,8 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Schemas\Components\Utilities\Set;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
+
 
 class ProductsTable
 {
@@ -149,6 +151,10 @@ class ProductsTable
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                FilamentExportBulkAction::make('export')
+                    ->label('Export Selected')
+                    ->fileName('Daftar Produk')
+                    ->defaultFormat('xlsx'),
                 ]),
             ]);
     }
