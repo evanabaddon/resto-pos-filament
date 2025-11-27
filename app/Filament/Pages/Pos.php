@@ -71,12 +71,6 @@ class Pos extends Page
 
     public function mount()
     {
-        FilamentAsset::register([
-            'pos-theme' => [
-                'path' => resource_path('css/filament/admin/theme.css'),
-                'type' => 'style',
-            ],
-        ]);
         
         // ✅ INISIALISASI ITEMS SEBAGAI ARRAY KOSONG
         $this->items = [];
@@ -99,6 +93,16 @@ class Pos extends Page
         } else {
             $this->dispatch('openCashInModal');
         }
+    }
+
+    protected function getAssets(): array
+    {
+        return [
+            FilamentAsset::makeStyle(
+                'pos-theme',
+                resource_path('css/filament/admin/theme.css')
+            ),
+        ];
     }
 
     public function handleCashInConfirmed($cashInHand)
