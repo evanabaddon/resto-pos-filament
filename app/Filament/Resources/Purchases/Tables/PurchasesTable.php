@@ -9,6 +9,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Summarizers\Sum;
+use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
 class PurchasesTable
 {
@@ -30,7 +31,7 @@ class PurchasesTable
                 TextColumn::make('total')->money('IDR')->summarize(Sum::make()->money('IDR')->label('Total Pembelian')),
             ])
             ->filters([
-                //
+                DateRangeFilter::make('created_at')->label('Tanggal Transaksi'),
             ])
             ->recordActions([
                 EditAction::make(),

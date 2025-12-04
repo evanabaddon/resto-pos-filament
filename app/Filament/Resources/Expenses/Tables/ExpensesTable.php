@@ -14,6 +14,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Columns\TextInputColumn;
+use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
 class ExpensesTable
 {
@@ -105,7 +106,7 @@ class ExpensesTable
                         'rejected' => 'Ditolak',
                     ]),
                 
-
+                DateRangeFilter::make('created_at')->label('Tanggal Transaksi'),
             ])
             ->recordActions([
                 EditAction::make(),
