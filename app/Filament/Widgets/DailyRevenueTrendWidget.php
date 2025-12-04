@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class DailyRevenueTrendWidget extends ChartWidget
 {
-    protected ?string $heading = 'Daily Revenue Trend Widget';
+    protected ?string $heading = 'Trend Pendapatan 30 Hari Terakhir';
 
     protected function getData(): array
     {
@@ -65,7 +65,7 @@ class DailyRevenueTrendWidget extends ChartWidget
                     'position' => 'left',
                     'title' => [
                         'display' => true,
-                        'text' => 'Pendapatan (Ribu Rp)'
+                        'text' => 'Pendapatan (Rp)'
                     ],
                 ],
                 'y1' => [
