@@ -6,10 +6,11 @@ use App\Models\Sale;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Summarizers\Sum;
+use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
 class SalesTable
 {
@@ -27,7 +28,7 @@ class SalesTable
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                //
+                DateRangeFilter::make('created_at')->label('Tanggal Transaksi'),
             ])
             ->recordActions([
                 EditAction::make(),
