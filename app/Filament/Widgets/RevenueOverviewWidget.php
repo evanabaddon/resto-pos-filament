@@ -61,11 +61,22 @@ class RevenueOverviewWidget extends StatsOverviewWidget
     {
         $popular = Sale::whereDate('created_at', today())
             ->where('status', 'completed')
-            ->select('payment_method', DB::raw('count(*) as total'))
-            ->groupBy('payment_method')
+            ->with('paymentMethod')
+            ->select('payment_method_id', DB::raw('count(*) as total'))
+            ->groupBy('payment_method_id')
             ->orderByDesc('total')
             ->first();
-            
-        return $popular ? $popular->payment_method : '-';
+        
+        // Jika menggunakan payment_method_id dengan relasi
+        if ($popular && $popular->paymentMethod) {
+            return $popular->paymentMethod->name; // Asumsi kolom 'name' di tabel payment_methods
+        }
+        
+        // Fallback ke payment_method lama jika masih ada
+        if ($popular && $popular->payment_method) {
+            return $popular->payment_method;
+        }
+        
+        return '-';
     }
 }

@@ -3,26 +3,240 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Sale;
-use Filament\Widgets\Widget;
+use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 use Illuminate\Support\Facades\DB;
 
-class PeakHoursHeatmapWidget extends Widget
+class PeakHoursHeatmapWidget extends ApexChartWidget
 {
-    protected string $view = 'filament.widgets.peak-hours-heatmap-widget';
-
-    protected int | string | array $columnSpan = 'full';
-
     protected static ?int $sort = 6;
     
-    public array $heatmapData = [];
-    public int $maxTransactions = 1;
-
-    public function mount()
+    /**
+     * Chart Id
+     */
+    protected static ?string $chartId = 'peakHoursHeatmap';
+    
+    /**
+     * Widget Title
+     */
+    protected static ?string $heading = 'Heatmap Jam Sibuk Restoran';
+    
+    /**
+     * Widget Description
+     */
+    protected static ?string $description = 'Distribusi transaksi berdasarkan hari dan jam dalam 30 hari terakhir';
+    
+    /**
+     * Make widget full width
+     */
+    protected int|string|array $columnSpan = 'full';
+    
+    /**
+     * Chart options (heatmap)
+     */
+    protected function getOptions(): array
     {
-        $this->heatmapData = $this->getHeatmapData();
-        $this->maxTransactions = $this->getMaxTransactions();
+        $heatmapData = $this->getHeatmapData();
+        $maxTransaction = $this->getMaxTransaction($heatmapData);
+        
+        $series = [];
+        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        $dayLabels = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+        
+        foreach ($days as $index => $day) {
+            $dayData = [];
+            
+            // Data per jam dari jam 10-22
+            for ($hour = 10; $hour <= 22; $hour++) {
+                $count = $heatmapData[$day][$hour]['count'] ?? 0;
+                $dayData[] = [
+                    'x' => sprintf('%02d:00', $hour),
+                    'y' => $count
+                ];
+            }
+            
+            $series[] = [
+                'name' => $dayLabels[$index],
+                'data' => $dayData
+            ];
+        }
+        
+        return [
+            'chart' => [
+                'type' => 'heatmap',
+                'height' => 350,
+                'width' => '100%',
+                'toolbar' => [
+                    'show' => true,
+                    'tools' => [
+                        'download' => true,
+                        'selection' => false,
+                        'zoom' => false,
+                        'zoomin' => false,
+                        'zoomout' => false,
+                        'pan' => false,
+                        'reset' => true,
+                    ]
+                ]
+            ],
+            'plotOptions' => [
+                'heatmap' => [
+                    'shadeIntensity' => 0.6,
+                    'radius' => 3,
+                    'useFillColorAsStroke' => false,
+                    'colorScale' => [
+                        'ranges' => $this->getColorRanges($maxTransaction),
+                    ]
+                ]
+            ],
+            'dataLabels' => [
+                'enabled' => true,
+                'style' => [
+                    'fontSize' => '11px',
+                    'fontWeight' => 'bold',
+                    'colors' => ['#000000']
+                ],
+                'formatter' => 'function(val) { 
+                    return val > 0 ? val : ""; 
+                }'
+            ],
+            'stroke' => [
+                'width' => 1,
+                'colors' => ['#ffffff']
+            ],
+            'xaxis' => [
+                'type' => 'category',
+                'categories' => array_map(function($h) {
+                    return sprintf('%02d:00', $h);
+                }, range(10, 22)),
+                'labels' => [
+                    'style' => [
+                        'fontSize' => '12px',
+                        'fontWeight' => 600,
+                    ]
+                ],
+                'title' => [
+                    'text' => 'Jam Operasional',
+                    'style' => [
+                        'fontSize' => '14px',
+                        'fontWeight' => 'bold',
+                        'color' => '#374151'
+                    ]
+                ]
+            ],
+            'yaxis' => [
+                'labels' => [
+                    'style' => [
+                        'fontSize' => '13px',
+                        'fontWeight' => 600,
+                    ]
+                ],
+                'title' => [
+                    'text' => 'Hari',
+                    'style' => [
+                        'fontSize' => '14px',
+                        'fontWeight' => 'bold',
+                        'color' => '#374151'
+                    ]
+                ]
+            ],
+            'tooltip' => [
+                'custom' => 'function({ series, seriesIndex, dataPointIndex, w }) {
+                    const dayNames = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+                    const hour = w.globals.labels[dataPointIndex];
+                    const day = dayNames[seriesIndex];
+                    const value = series[seriesIndex][dataPointIndex];
+                    
+                    const avgValue = ' . json_encode($this->getAverageValues()) . ';
+                    const avg = avgValue[seriesIndex] ? avgValue[seriesIndex][dataPointIndex] : 0;
+                    
+                    let intensityClass = "text-green-600";
+                    if (value > 15) intensityClass = "text-yellow-600";
+                    if (value > 30) intensityClass = "text-red-600";
+                    
+                    return \'<div class="apexcharts-tooltip-title p-2 bg-gray-100 border-b">\' + 
+                           \'<div class="font-bold text-lg">\' + day + \' \' + hour + \'</div>\' +
+                           \'</div>\' +
+                           \'<div class="p-2">\' +
+                           \'<div class="flex justify-between items-center mb-1">\' +
+                           \'<span>Transaksi:</span>\' +
+                           \'<span class="font-bold \' + intensityClass + \'">\' + value + \'</span>\' +
+                           \'</div>\' +
+                           \'<div class="flex justify-between items-center">\' +
+                           \'<span>Rata-rata Nilai:</span>\' +
+                           \'<span class="font-bold text-blue-600">Rp \' + avg.toLocaleString(\'id-ID\') + \'</span>\' +
+                           \'</div>\' +
+                           \'</div>\';
+                }'
+            ],
+            'legend' => [
+                'position' => 'bottom',
+                'horizontalAlign' => 'center',
+                'fontSize' => '14px',
+                'itemMargin' => [
+                    'horizontal' => 20,
+                    'vertical' => 10
+                ]
+            ],
+            'grid' => [
+                'padding' => [
+                    'top' => 20,
+                    'right' => 20,
+                    'bottom' => 30,
+                    'left' => 20
+                ]
+            ],
+            'responsive' => [
+                [
+                    'breakpoint' => 768,
+                    'options' => [
+                        'chart' => [
+                            'height' => 300
+                        ],
+                        'dataLabels' => [
+                            'style' => [
+                                'fontSize' => '10px'
+                            ]
+                        ],
+                        'xaxis' => [
+                            'labels' => [
+                                'style' => [
+                                    'fontSize' => '10px'
+                                ]
+                            ]
+                        ],
+                        'yaxis' => [
+                            'labels' => [
+                                'style' => [
+                                    'fontSize' => '11px'
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    'breakpoint' => 640,
+                    'options' => [
+                        'chart' => [
+                            'height' => 250
+                        ],
+                        'dataLabels' => [
+                            'enabled' => false
+                        ],
+                        'legend' => [
+                            'position' => 'bottom',
+                            'horizontalAlign' => 'center',
+                            'fontSize' => '12px'
+                        ]
+                    ]
+                ]
+            ],
+            'series' => $series
+        ];
     }
     
+    /**
+     * Get heatmap data from database
+     */
     protected function getHeatmapData(): array
     {
         $data = Sale::select(
@@ -39,22 +253,26 @@ class PeakHoursHeatmapWidget extends Widget
             ->get();
 
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        // Sesuaikan dengan jam operasional resto Anda
-        $hours = range(10, 22); // 10:00 - 22:00
+        $hours = range(10, 22);
         
         $heatmap = [];
         
+        // Initialize with zeros
         foreach ($days as $day) {
             foreach ($hours as $hour) {
-                $record = $data->firstWhere(function($item) use ($day, $hour) {
-                    return $item->day == $day && $item->hour == $hour;
-                });
-                
-                $count = $record ? $record->transaction_count : 0;
-                
                 $heatmap[$day][$hour] = [
-                    'count' => $count,
-                    'avg_value' => $record ? round($record->avg_value) : 0,
+                    'count' => 0,
+                    'avg_value' => 0,
+                ];
+            }
+        }
+        
+        // Fill with actual data
+        foreach ($data as $record) {
+            if (isset($heatmap[$record->day][$record->hour])) {
+                $heatmap[$record->day][$record->hour] = [
+                    'count' => $record->transaction_count,
+                    'avg_value' => round($record->avg_value),
                 ];
             }
         }
@@ -62,10 +280,13 @@ class PeakHoursHeatmapWidget extends Widget
         return $heatmap;
     }
     
-    protected function getMaxTransactions(): int
+    /**
+     * Get maximum transaction count
+     */
+    protected function getMaxTransaction(array $heatmapData): int
     {
         $max = 0;
-        foreach ($this->heatmapData as $day => $hours) {
+        foreach ($heatmapData as $day => $hours) {
             foreach ($hours as $hour => $data) {
                 if ($data['count'] > $max) {
                     $max = $data['count'];
@@ -75,47 +296,68 @@ class PeakHoursHeatmapWidget extends Widget
         return $max ?: 1;
     }
     
-    protected function getIntensity($count): float
+    /**
+     * Get color ranges based on max transaction
+     */
+    protected function getColorRanges(int $maxTransaction): array
     {
-        return $this->maxTransactions > 0 
-            ? min(100, ($count / $this->maxTransactions) * 100) 
-            : 0;
-    }
-    
-    protected function getColorClass($intensity): string
-    {
-        if ($intensity < 25) return 'bg-green-100';
-        if ($intensity < 50) return 'bg-green-300';
-        if ($intensity < 75) return 'bg-yellow-300';
-        return 'bg-red-400';
-    }
-    
-    protected function getColorStyle($intensity): string
-    {
-        // Gradient biru untuk background
-        $baseColor = [79, 70, 229]; // #4F46E5
-        $opacity = $intensity / 100;
-        return "background-color: rgba({$baseColor[0]}, {$baseColor[1]}, {$baseColor[2]}, {$opacity});";
-    }
-    
-    public function getDayName(string $englishDay): string
-    {
-        $days = [
-            'Monday' => 'Sen',
-            'Tuesday' => 'Sel',
-            'Wednesday' => 'Rab',
-            'Thursday' => 'Kam',
-            'Friday' => 'Jum',
-            'Saturday' => 'Sab',
-            'Sunday' => 'Min',
+        $ranges = [
+            [
+                'from' => 0,
+                'to' => ceil($maxTransaction * 0.25),
+                'name' => 'Sepi',
+                'color' => '#DCFCE7' // green-100
+            ],
+            [
+                'from' => ceil($maxTransaction * 0.25) + 1,
+                'to' => ceil($maxTransaction * 0.5),
+                'name' => 'Normal',
+                'color' => '#4ADE80' // green-400
+            ],
+            [
+                'from' => ceil($maxTransaction * 0.5) + 1,
+                'to' => ceil($maxTransaction * 0.75),
+                'name' => 'Rama',
+                'color' => '#FBBF24' // yellow-400
+            ]
         ];
         
-        return $days[$englishDay] ?? substr($englishDay, 0, 3);
+        // Jika ada nilai di atas 75%
+        if ($maxTransaction > ceil($maxTransaction * 0.75)) {
+            $ranges[] = [
+                'from' => ceil($maxTransaction * 0.75) + 1,
+                'to' => $maxTransaction,
+                'name' => 'Sibuk',
+                'color' => '#EF4444' // red-500
+            ];
+        }
+        
+        return $ranges;
     }
     
-    public function getHoursRange(): array
+    /**
+     * Get average values for tooltip
+     */
+    protected function getAverageValues(): array
     {
-        // Return range jam yang ingin ditampilkan
-        return range(10, 22);
+        $heatmapData = $this->getHeatmapData();
+        $averages = [];
+        
+        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        
+        foreach ($days as $day) {
+            $dayAverages = [];
+            for ($hour = 10; $hour <= 22; $hour++) {
+                $dayAverages[] = $heatmapData[$day][$hour]['avg_value'] ?? 0;
+            }
+            $averages[] = $dayAverages;
+        }
+        
+        return $averages;
     }
+    
+    /**
+     * Widget max height
+     */
+    protected static ?string $maxHeight = '400px';
 }
