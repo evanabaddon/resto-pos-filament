@@ -20,6 +20,8 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use App\Filament\Widgets\DailyRevenueTrendWidget;
 use Filament\Http\Middleware\AuthenticateSession;
 use App\Filament\Widgets\BestSellingProductsChart;
+use App\Filament\Widgets\CategoryPerformanceChart;
+use App\Filament\Widgets\LowStockAlertWidget;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -54,6 +56,7 @@ class AdminPanelProvider extends PanelProvider
                 BestSellingProductsChart::class,
                 DailyRevenueTrendWidget::class,
                 PeakHoursHeatmapWidget::class,
+                LowStockAlertWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
