@@ -110,10 +110,6 @@ class LowStockAlertWidget extends BaseWidget
                     }),
             ])
             ->filters([
-                SelectFilter::make('category')
-                    ->relationship('category', 'name')
-                    ->label('Kategori'),
-                    
                 Filter::make('stock_level')
                     ->label('Level Stok')
                     ->schema([
