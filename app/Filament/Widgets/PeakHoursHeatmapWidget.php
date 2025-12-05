@@ -9,119 +9,26 @@ use Illuminate\Support\Facades\DB;
 class PeakHoursHeatmapWidget extends ApexChartWidget
 {
     protected static ?int $sort = 6;
+    
+    /**
+     * Chart Id
+     */
     protected static ?string $chartId = 'peakHoursHeatmap';
+    
+    /**
+     * Widget Title
+     */
     protected static ?string $heading = 'Heatmap Jam Sibuk Restoran';
+    
+    /**
+     * Widget Description
+     */
     protected static ?string $description = 'Distribusi transaksi berdasarkan hari dan jam dalam 30 hari terakhir';
+    
+    /**
+     * Make widget full width
+     */
     protected int|string|array $columnSpan = 'full';
-    protected static ?string $maxHeight = '400px';
-    
-    // Cache untuk data
-    private ?array $cachedHeatmapData = null;
-    private ?array $cachedAverageValues = null;
-    private ?int $cachedMaxTransaction = null;
-    
-    /**
-     * Get heatmap data with caching
-     */
-    protected function getHeatmapData(): array
-    {
-        if ($this->cachedHeatmapData !== null) {
-            return $this->cachedHeatmapData;
-        }
-        
-        $data = Sale::select(
-                DB::raw('HOUR(created_at) as hour'),
-                DB::raw('DAYNAME(created_at) as day'),
-                DB::raw('COUNT(*) as transaction_count'),
-                DB::raw('AVG(final_total) as avg_value')
-            )
-            ->where('status', 'completed')
-            ->where('created_at', '>=', now()->subDays(30))
-            ->groupBy('hour', 'day')
-            ->orderByRaw("FIELD(day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')")
-            ->orderBy('hour')
-            ->get();
-
-        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        $hours = range(10, 22);
-        
-        $heatmap = [];
-        
-        // Initialize with zeros
-        foreach ($days as $day) {
-            foreach ($hours as $hour) {
-                $heatmap[$day][$hour] = [
-                    'count' => 0,
-                    'avg_value' => 0,
-                ];
-            }
-        }
-        
-        // Fill with actual data
-        foreach ($data as $record) {
-            if ($record->hour >= 10 && $record->hour <= 22) {
-                if (isset($heatmap[$record->day][$record->hour])) {
-                    $heatmap[$record->day][$record->hour] = [
-                        'count' => (int) $record->transaction_count,
-                        'avg_value' => round((float) $record->avg_value),
-                    ];
-                }
-            }
-        }
-        
-        $this->cachedHeatmapData = $heatmap;
-        return $heatmap;
-    }
-    
-    /**
-     * Get maximum transaction count with caching
-     */
-    protected function getMaxTransaction(): int
-    {
-        if ($this->cachedMaxTransaction !== null) {
-            return $this->cachedMaxTransaction;
-        }
-        
-        $heatmapData = $this->getHeatmapData();
-        $max = 0;
-        
-        foreach ($heatmapData as $day => $hours) {
-            foreach ($hours as $hour => $data) {
-                if ($data['count'] > $max) {
-                    $max = $data['count'];
-                }
-            }
-        }
-        
-        $this->cachedMaxTransaction = $max ?: 1;
-        return $this->cachedMaxTransaction;
-    }
-    
-    /**
-     * Get average values with caching
-     */
-    protected function getAverageValues(): array
-    {
-        if ($this->cachedAverageValues !== null) {
-            return $this->cachedAverageValues;
-        }
-        
-        $heatmapData = $this->getHeatmapData();
-        $averages = [];
-        
-        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        
-        foreach ($days as $day) {
-            $dayAverages = [];
-            for ($hour = 10; $hour <= 22; $hour++) {
-                $dayAverages[] = $heatmapData[$day][$hour]['avg_value'] ?? 0;
-            }
-            $averages[] = $dayAverages;
-        }
-        
-        $this->cachedAverageValues = $averages;
-        return $averages;
-    }
     
     /**
      * Chart options (heatmap)
@@ -129,15 +36,7 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
     protected function getOptions(): array
     {
         $heatmapData = $this->getHeatmapData();
-        $maxTransaction = $this->getMaxTransaction();
-        
-        // Hitung total transaksi untuk subtitle
-        $totalTransactions = 0;
-        foreach ($heatmapData as $day => $hours) {
-            foreach ($hours as $hour => $data) {
-                $totalTransactions += $data['count'];
-            }
-        }
+        $maxTransaction = $this->getMaxTransaction($heatmapData);
         
         $series = [];
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -161,10 +60,7 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
             ];
         }
         
-        // Gunakan color ranges yang dinamis
-        $colorRanges = $this->getColorRanges($maxTransaction);
-        
-        $options = [
+        return [
             'chart' => [
                 'type' => 'heatmap',
                 'height' => 350,
@@ -188,7 +84,7 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
                     'radius' => 3,
                     'useFillColorAsStroke' => false,
                     'colorScale' => [
-                        'ranges' => $colorRanges,
+                        'ranges' => $this->getColorRanges($maxTransaction),
                     ]
                 ]
             ],
@@ -199,9 +95,6 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
                     'fontWeight' => 'bold',
                     'colors' => ['#000000']
                 ],
-                'formatter' => 'function(val) { 
-                    return val > 0 ? val : ""; 
-                }'
             ],
             'stroke' => [
                 'width' => 1,
@@ -254,8 +147,8 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
                     const avg = avgValue[seriesIndex] ? avgValue[seriesIndex][dataPointIndex] : 0;
                     
                     let intensityClass = "text-green-600";
-                    if (value > 5) intensityClass = "text-yellow-600";
-                    if (value > 10) intensityClass = "text-red-600";
+                    if (value > 15) intensityClass = "text-yellow-600";
+                    if (value > 30) intensityClass = "text-red-600";
                     
                     return \'<div class="apexcharts-tooltip-title p-2 bg-gray-100 border-b">\' + 
                            \'<div class="font-bold text-lg">\' + day + \' \' + hour + \'</div>\' +
@@ -287,14 +180,6 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
                     'right' => 20,
                     'bottom' => 30,
                     'left' => 20
-                ]
-            ],
-            'subtitle' => [
-                'text' => "Total {$totalTransactions} transaksi dalam 30 hari terakhir",
-                'align' => 'center',
-                'style' => [
-                    'fontSize' => '12px',
-                    'color' => '#6B7280'
                 ]
             ],
             'responsive' => [
@@ -344,175 +229,97 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
             ],
             'series' => $series
         ];
+    }
+    
+    /**
+     * Get heatmap data from database
+     */
+    protected function getHeatmapData(): array
+    {
+        $data = Sale::select(
+                DB::raw('HOUR(created_at) as hour'),
+                DB::raw('DAYNAME(created_at) as day'),
+                DB::raw('COUNT(*) as transaction_count'),
+                DB::raw('AVG(final_total) as avg_value')
+            )
+            ->where('status', 'completed')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->groupBy('hour', 'day')
+            ->orderByRaw("FIELD(day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')")
+            ->orderBy('hour')
+            ->get();
+
+        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        $hours = range(10, 22);
         
-        // Jika data kosong, tambahkan pesan
-        if ($totalTransactions === 0) {
-            $options['annotations'] = [
-                'texts' => [
-                    [
-                        'x' => '50%',
-                        'y' => '50%',
-                        'text' => 'Tidak ada data transaksi',
-                        'fontSize' => '16px',
-                        'fontWeight' => 'bold',
-                        'foreColor' => '#9CA3AF'
-                    ]
-                ]
-            ];
+        $heatmap = [];
+        
+        // Initialize with zeros
+        foreach ($days as $day) {
+            foreach ($hours as $hour) {
+                $heatmap[$day][$hour] = [
+                    'count' => 0,
+                    'avg_value' => 0,
+                ];
+            }
         }
         
-        return $options;
+        // Fill with actual data
+        foreach ($data as $record) {
+            if (isset($heatmap[$record->day][$record->hour])) {
+                $heatmap[$record->day][$record->hour] = [
+                    'count' => $record->transaction_count,
+                    'avg_value' => round($record->avg_value),
+                ];
+            }
+        }
+        
+        return $heatmap;
     }
-
-    // Dummy data
-    // protected function getOptions(): array
-    // {
-    //     // TEST SIMPLE - Data dummy pasti muncul
-    //     return [
-    //         'chart' => [
-    //             'type' => 'heatmap',
-    //             'height' => 350,
-    //         ],
-    //         'plotOptions' => [
-    //             'heatmap' => [
-    //                 'colorScale' => [
-    //                     'ranges' => [
-    //                         ['from' => 0, 'to' => 0, 'color' => '#F3F4F6', 'name' => 'Empty'],
-    //                         ['from' => 1, 'to' => 5, 'color' => '#4ADE80', 'name' => 'Low'],
-    //                         ['from' => 6, 'to' => 10, 'color' => '#FBBF24', 'name' => 'Medium'],
-    //                         ['from' => 11, 'to' => 20, 'color' => '#EF4444', 'name' => 'High'],
-    //                     ]
-    //                 ]
-    //             ]
-    //         ],
-    //         'dataLabels' => [
-    //             'enabled' => true,
-    //         ],
-    //         'xaxis' => [
-    //             'categories' => ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'],
-    //         ],
-    //         'series' => [
-    //             [
-    //                 'name' => 'Senin',
-    //                 'data' => [
-    //                     ['x' => '10:00', 'y' => 2],
-    //                     ['x' => '11:00', 'y' => 5],
-    //                     ['x' => '12:00', 'y' => 12],
-    //                     ['x' => '13:00', 'y' => 8],
-    //                     ['x' => '14:00', 'y' => 3],
-    //                     ['x' => '15:00', 'y' => 4],
-    //                     ['x' => '16:00', 'y' => 6],
-    //                     ['x' => '17:00', 'y' => 9],
-    //                     ['x' => '18:00', 'y' => 15],
-    //                     ['x' => '19:00', 'y' => 18],
-    //                     ['x' => '20:00', 'y' => 10],
-    //                     ['x' => '21:00', 'y' => 7],
-    //                     ['x' => '22:00', 'y' => 4],
-    //                 ]
-    //             ],
-    //             [
-    //                 'name' => 'Selasa',
-    //                 'data' => [
-    //                     ['x' => '10:00', 'y' => 3],
-    //                     ['x' => '11:00', 'y' => 4],
-    //                     ['x' => '12:00', 'y' => 14],
-    //                     ['x' => '13:00', 'y' => 10],
-    //                     ['x' => '14:00', 'y' => 5],
-    //                     ['x' => '15:00', 'y' => 6],
-    //                     ['x' => '16:00', 'y' => 8],
-    //                     ['x' => '17:00', 'y' => 12],
-    //                     ['x' => '18:00', 'y' => 16],
-    //                     ['x' => '19:00', 'y' => 20],
-    //                     ['x' => '20:00', 'y' => 12],
-    //                     ['x' => '21:00', 'y' => 8],
-    //                     ['x' => '22:00', 'y' => 5],
-    //                 ]
-    //             ]
-    //         ]
-    //     ];
-    // }
+    
+    /**
+     * Get maximum transaction count
+     */
+    protected function getMaxTransaction(array $heatmapData): int
+    {
+        $max = 0;
+        foreach ($heatmapData as $day => $hours) {
+            foreach ($hours as $hour => $data) {
+                if ($data['count'] > $max) {
+                    $max = $data['count'];
+                }
+            }
+        }
+        return $max ?: 1;
+    }
     
     /**
      * Get color ranges based on max transaction
      */
     protected function getColorRanges(int $maxTransaction): array
     {
-        // Untuk data sangat sedikit
-        if ($maxTransaction <= 1) {
-            return [
-                [
-                    'from' => 0,
-                    'to' => 0,
-                    'name' => 'Tidak Ada',
-                    'color' => '#F3F4F6' // gray-100
-                ],
-                [
-                    'from' => 1,
-                    'to' => 1,
-                    'name' => 'Ada Transaksi',
-                    'color' => '#10B981' // green-500
-                ]
-            ];
-        }
-        
-        // Untuk data sedikit (2-5 transaksi)
-        if ($maxTransaction <= 5) {
-            return [
-                [
-                    'from' => 0,
-                    'to' => 0,
-                    'name' => 'Sepi',
-                    'color' => '#F3F4F6' // gray-100
-                ],
-                [
-                    'from' => 1,
-                    'to' => ceil($maxTransaction / 2),
-                    'name' => 'Normal',
-                    'color' => '#86EFAC' // green-300
-                ],
-                [
-                    'from' => ceil($maxTransaction / 2) + 1,
-                    'to' => $maxTransaction,
-                    'name' => 'Rama',
-                    'color' => '#22C55E' // green-500
-                ]
-            ];
-        }
-        
-        // Untuk data lebih banyak
         $ranges = [
             [
                 'from' => 0,
-                'to' => 0,
-                'name' => 'Sepi',
-                'color' => '#F3F4F6' // gray-100
-            ],
-            [
-                'from' => 1,
                 'to' => ceil($maxTransaction * 0.25),
                 'name' => 'Sepi',
                 'color' => '#DCFCE7' // green-100
-            ]
-        ];
-        
-        if ($maxTransaction > ceil($maxTransaction * 0.25)) {
-            $ranges[] = [
+            ],
+            [
                 'from' => ceil($maxTransaction * 0.25) + 1,
                 'to' => ceil($maxTransaction * 0.5),
                 'name' => 'Normal',
                 'color' => '#4ADE80' // green-400
-            ];
-        }
-        
-        if ($maxTransaction > ceil($maxTransaction * 0.5)) {
-            $ranges[] = [
+            ],
+            [
                 'from' => ceil($maxTransaction * 0.5) + 1,
                 'to' => ceil($maxTransaction * 0.75),
                 'name' => 'Rama',
                 'color' => '#FBBF24' // yellow-400
-            ];
-        }
+            ]
+        ];
         
+        // Jika ada nilai di atas 75%
         if ($maxTransaction > ceil($maxTransaction * 0.75)) {
             $ranges[] = [
                 'from' => ceil($maxTransaction * 0.75) + 1,
@@ -524,4 +331,30 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
         
         return $ranges;
     }
+    
+    /**
+     * Get average values for tooltip
+     */
+    protected function getAverageValues(): array
+    {
+        $heatmapData = $this->getHeatmapData();
+        $averages = [];
+        
+        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        
+        foreach ($days as $day) {
+            $dayAverages = [];
+            for ($hour = 10; $hour <= 22; $hour++) {
+                $dayAverages[] = $heatmapData[$day][$hour]['avg_value'] ?? 0;
+            }
+            $averages[] = $dayAverages;
+        }
+        
+        return $averages;
+    }
+    
+    /**
+     * Widget max height
+     */
+    protected static ?string $maxHeight = '400px';
 }
