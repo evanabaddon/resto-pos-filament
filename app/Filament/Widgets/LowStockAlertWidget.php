@@ -74,7 +74,7 @@ class LowStockAlertWidget extends BaseWidget
                     ->size('sm'),
                     
                 TextColumn::make('total_stock_value')
-                    ->label('NILAI TOTAL')
+                    ->label('NILAI STOK')
                     ->getStateUsing(fn (Product $record): float => $record->stock * $record->base_price)
                     ->money('IDR')
                     ->alignRight()
@@ -86,15 +86,6 @@ class LowStockAlertWidget extends BaseWidget
                     })
                     ->size('sm'),
                     
-                // Kolom perhitungan manual untuk clarity
-                TextColumn::make('calculation')
-                    ->label('PERHITUNGAN')
-                    ->getStateUsing(function (Product $record): string {
-                        return "{$record->stock} × Rp " . number_format($record->base_price, 0, ',', '.');
-                    })
-                    ->alignCenter()
-                    ->color('gray')
-                    ->size('xs'),
             ])
             ->recordActions([
                 // edit
