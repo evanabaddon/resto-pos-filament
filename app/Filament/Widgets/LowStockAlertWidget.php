@@ -35,12 +35,12 @@ class LowStockAlertWidget extends BaseWidget
             })
             ->columns([
                 TextColumn::make('name')
-                    ->label('Nama Bahan Baku')
+                    ->label('NAMA BAHAN BAKU')
                     ->searchable()
                     ->sortable(),
                     
                 TextColumn::make('stock')
-                    ->label('Stok')
+                    ->label('STOK')
                     ->sortable()
                     ->badge()
                     ->color(fn (int $state): string => match (true) {
@@ -54,22 +54,47 @@ class LowStockAlertWidget extends BaseWidget
                         $state <= 5 => $state . ' (KRITIS)',
                         $state <= 10 => $state . ' (RENDAH)',
                         default => (string) $state,
-                    }),
+                    })
+                    ->alignCenter()
+                    ->size('sm'),
                     
                 TextColumn::make('unit.name')
-                    ->label('Satuan')
-                    ->sortable(),
-                    
-                TextColumn::make('category.name')
-                    ->label('Kategori')
-                    ->sortable(),
+                    ->label('UNIT')
+                    ->sortable()
+                    ->alignCenter()
+                    ->size('sm'),
                     
                 TextColumn::make('base_price')
-                    ->label('Harga Beli')
+                    ->label('HARGA/UNIT')
                     ->money('IDR')
                     ->sortable()
-                    ->description(fn (Product $record): string => 'Total: Rp ' . number_format($record->stock * $record->base_price, 0, ',', '.'))
-                    ->tooltip('Harga per unit'),
+                    ->alignRight()
+                    ->tooltip('Harga beli per unit')
+                    ->description(fn (Product $record): string => $record->unit ? "per {$record->unit->name}" : '')
+                    ->size('sm'),
+                    
+                TextColumn::make('total_stock_value')
+                    ->label('NILAI TOTAL')
+                    ->getStateUsing(fn (Product $record): float => $record->stock * $record->base_price)
+                    ->money('IDR')
+                    ->alignRight()
+                    ->weight('semibold')
+                    ->tooltip('Stok × Harga/Unit')
+                    ->color(function (Product $record): string {
+                        $totalValue = $record->stock * $record->base_price;
+                        return $totalValue <= 0 ? 'danger' : 'success';
+                    })
+                    ->size('sm'),
+                    
+                // Kolom perhitungan manual untuk clarity
+                TextColumn::make('calculation')
+                    ->label('PERHITUNGAN')
+                    ->getStateUsing(function (Product $record): string {
+                        return "{$record->stock} × Rp " . number_format($record->base_price, 0, ',', '.');
+                    })
+                    ->alignCenter()
+                    ->color('gray')
+                    ->size('xs'),
             ])
             ->recordActions([
                 // edit

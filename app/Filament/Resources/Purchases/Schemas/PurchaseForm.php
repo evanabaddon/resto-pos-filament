@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Purchases\Schemas;
 
+use App\Models\Product;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Repeater;
@@ -14,6 +15,10 @@ class PurchaseForm
 {
     public static function configure(Schema $schema): Schema
     {
+        // Ambil parameter dari URL
+        $productId = request()->query('product_id');
+        $quantity = request()->query('quantity', 1);
+
         return $schema
             ->components([
                 TextInput::make('invoice_number')
@@ -55,14 +60,20 @@ class PurchaseForm
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->live() // Tambahkan live
+                            ->live()
+                            ->default(function () use ($productId) {
+                                if ($productId) {
+                                    return $productId;
+                                }
+                                return null;
+                            })
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                 // Reset unit dan price ketika produk berubah
                                 $set('unit_id', null);
                                 $set('price', null);
                                 
                                 if ($state) {
-                                    $product = \App\Models\Product::find($state);
+                                    $product = Product::find($state);
                                     if ($product) {
                                         // Set unit_id otomatis dari produk
                                         if ($product->unit_id) {
@@ -148,4 +159,5 @@ class PurchaseForm
                     ->columnSpanFull(),
             ]);
     }
+    
 }
