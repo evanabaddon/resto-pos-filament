@@ -283,6 +283,31 @@ class ReservationCalendarWidget extends CalendarWidget
             'reservation_date' => $info->date->format('Y-m-d H:i:s'),
         ]);
     }
+
+    /**
+     * Helper untuk membuat URL WhatsApp
+     */
+    private function getWhatsAppUrl(?string $phoneNumber): ?string
+    {
+        if (empty($phoneNumber)) {
+            return null;
+        }
+        
+        // Format nomor untuk WhatsApp
+        $phone = preg_replace('/[^0-9]/', '', $phoneNumber);
+        
+        if (substr($phone, 0, 2) === '62') {
+            $whatsappNumber = $phone;
+        } elseif (substr($phone, 0, 1) === '0') {
+            $whatsappNumber = '62' . substr($phone, 1);
+        } elseif (substr($phone, 0, 1) === '8') {
+            $whatsappNumber = '62' . $phone;
+        } else {
+            $whatsappNumber = $phone;
+        }
+        
+        return 'https://wa.me/' . $whatsappNumber;
+    }
     
     /**
      * OVERRIDE viewAction() untuk menentukan schema view
@@ -300,7 +325,22 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->disabled(),
                         TextInput::make('customer_phone')
                             ->label('Telepon')
-                            ->disabled(),
+                            ->disabled()
+                            ->suffixAction(
+                                Action::make('whatsapp')
+                                    ->icon('heroicon-o-chat-bubble-left-right')
+                                    ->iconButton()
+                                    ->color('success')
+                                    ->size('sm')
+                                    ->tooltip('Buka WhatsApp')
+                                    ->url(function ($get, $record) {
+                                        // Ambil nomor dari field atau langsung dari record
+                                        $phoneNumber = $get('customer_phone') ?? $record?->customer_phone;
+                                        return $this->getWhatsAppUrl($phoneNumber);
+                                    })
+                                    ->openUrlInNewTab()
+                                    ->visible(fn($get, $record) => !empty($get('customer_phone') ?? $record?->customer_phone))
+                            ),
                     ])->columns(2),
                 
                 Section::make('Detail Reservasi')
