@@ -83,7 +83,7 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                 ],
                 [
                     'name' => 'Jumlah Transaksi',
-                    'type' => 'line',
+                    'type' => 'area',
                     'data' => $transactions,
                 ]
             ],
@@ -147,20 +147,22 @@ class DailyRevenueTrendWidget extends ApexChartWidget
             'stroke' => [
                 'width' => [3, 3],
                 'curve' => 'smooth',
-                'colors' => ['#4F46E5', '#10B981'], // Warna garis
+                'colors' => ['#4F46E5', '#10B981'],
             ],
+            // HANYA untuk series pertama (Pendapatan)
             'fill' => [
                 'type' => 'solid',
-                'opacity' => 0.1
+                'colors' => ['#4F46E5'], // Hanya warna untuk series pertama
+                'opacity' => 0.1,
             ],
             'markers' => [
                 'size' => 4,
-                'colors' => ['#4F46E5', '#10B981'], // Warna markers
+                'colors' => ['#4F46E5', '#10B981'],
                 'strokeColors' => '#fff',
                 'strokeWidth' => 2,
                 'hover' => ['size' => 6]
             ],
-            'colors' => ['#4F46E5', '#10B981'], // Warna utama untuk series
+            'colors' => ['#4F46E5', '#10B981'],
             'dataLabels' => [
                 'enabled' => false
             ],
