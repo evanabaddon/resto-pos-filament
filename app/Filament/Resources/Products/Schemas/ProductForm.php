@@ -99,19 +99,7 @@ class ProductForm
                                 self::updateMaterialPrice($set, $get, $component);
                                 self::updateHpp($set, $get);
                             }),
-
-                        TextInput::make('quantity')
-                            ->label('Jumlah')
-                            ->numeric()
-                            ->required()
-                            ->default(1)
-                            ->reactive()
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
-                                self::updateMaterialPrice($set, $get, $component);
-                                self::updateHpp($set, $get);
-                            }),
-
+                        
                         Select::make('unit_id')
                             ->label('Satuan')
                             ->searchable()
@@ -140,6 +128,18 @@ class ProductForm
                                 });
                             })
                             ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
+                                self::updateMaterialPrice($set, $get, $component);
+                                self::updateHpp($set, $get);
+                            }),
+
+                        TextInput::make('quantity')
+                            ->label('Jumlah')
+                            ->numeric()
+                            ->required()
+                            ->default(1)
+                            ->reactive()
+                            ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
                                 self::updateMaterialPrice($set, $get, $component);
                                 self::updateHpp($set, $get);

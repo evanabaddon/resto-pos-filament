@@ -6,11 +6,11 @@ use App\Models\SaleItem;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 use Illuminate\Support\Facades\DB;
 
-class BestSellingProductsChart extends ApexChartWidget
+class BestSellingFoodChart extends ApexChartWidget
 {
-    protected static ?string $chartId = 'bestSellingProductsChart';
-    protected static ?string $heading = 'Produk Terlaris (7 Hari Terakhir)';
-    protected static ?string $description = 'Top 10 produk dengan penjualan tertinggi';
+    protected static ?string $chartId = 'bestSellingFoodChart';
+    protected static ?string $heading = 'Makanan Terlaris (7 Hari Terakhir)';
+    protected static ?string $description = 'Top 10 makanan dengan penjualan tertinggi';
     protected static ?int $sort = 1;
     
     protected function getOptions(): array
@@ -24,6 +24,7 @@ class BestSellingProductsChart extends ApexChartWidget
                 $query->where('status', 'completed')
                     ->where('created_at', '>=', now()->subDays(7));
             })
+            ->where('products.type', 'produced')
             ->groupBy('products.name', 'products.id')
             ->orderByDesc('total_quantity')
             ->limit(10)

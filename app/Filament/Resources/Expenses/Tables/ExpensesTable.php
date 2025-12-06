@@ -13,6 +13,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextInputColumn;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
@@ -84,6 +85,11 @@ class ExpensesTable
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('amount')
+                    ->summarize(Sum::make()->hidden(fn (Builder $query): bool => ! $query->exists())
+                    ->money('IDR')
+                    ->label('Total Pengeluaran')),
             ])
             ->filters([
                 SelectFilter::make('expense_category_id')

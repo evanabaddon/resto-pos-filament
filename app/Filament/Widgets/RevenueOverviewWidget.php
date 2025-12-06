@@ -50,8 +50,8 @@ class RevenueOverviewWidget extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-shopping-cart')
                 ->color('info'),
                 
-            Stat::make('Metode Pembayaran Terpopuler', $this->getPopularPaymentMethod())
-                ->description('Paling banyak digunakan hari ini')
+            Stat::make('Pembayaran Terpopuler', $this->getPopularPaymentMethod())
+                ->description('Paling banyak')
                 ->descriptionIcon('heroicon-m-credit-card')
                 ->color('warning'),
         ];

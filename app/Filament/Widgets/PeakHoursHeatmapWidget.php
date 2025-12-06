@@ -28,7 +28,7 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
     /**
      * Make widget full width
      */
-    protected int|string|array $columnSpan = 'full';
+    // protected int|string|array $columnSpan = 'full';
     
     /**
      * Chart options (heatmap)

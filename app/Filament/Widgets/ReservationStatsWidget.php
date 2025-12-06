@@ -16,7 +16,7 @@ class ReservationStatsWidget extends StatsOverviewWidget
         
         return [
             Stat::make('Reservasi Hari Ini', $today)
-                ->description('Total booking untuk hari ini')
+                ->description('Total booking hari ini')
                 ->descriptionIcon('heroicon-o-calendar')
                 ->color($today > 0 ? 'success' : 'gray'),
                 

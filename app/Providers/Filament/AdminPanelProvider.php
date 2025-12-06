@@ -3,6 +3,8 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Resources\Reservations\Widgets\ReservationCalendarWidget;
+use App\Filament\Widgets\BestSellingDrinkChart;
+use App\Filament\Widgets\BestSellingFoodChart;
 use Filament\Panel;
 use Livewire\Livewire;
 use Filament\PanelProvider;
@@ -23,8 +25,6 @@ use App\Filament\Widgets\ReservationStatsWidget;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use App\Filament\Widgets\DailyRevenueTrendWidget;
 use Filament\Http\Middleware\AuthenticateSession;
-use App\Filament\Widgets\BestSellingProductsChart;
-use App\Filament\Widgets\CategoryPerformanceChart;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -58,7 +58,8 @@ class AdminPanelProvider extends PanelProvider
                 ReservationCalendarWidget::class,
                 ReservationStatsWidget::class,
                 RevenueOverviewWidget::class,
-                BestSellingProductsChart::class,
+                BestSellingFoodChart::class,
+                BestSellingDrinkChart::class,
                 DailyRevenueTrendWidget::class,
                 PeakHoursHeatmapWidget::class,
                 LowStockAlertWidget::class,
