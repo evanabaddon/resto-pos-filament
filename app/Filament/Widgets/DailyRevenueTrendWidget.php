@@ -27,7 +27,6 @@ class DailyRevenueTrendWidget extends ApexChartWidget
             ->orderBy('date')
             ->get();
         
-        // Jika data kosong
         if ($revenueData->isEmpty()) {
             return [
                 'chart' => [
@@ -51,7 +50,6 @@ class DailyRevenueTrendWidget extends ApexChartWidget
             ];
         }
         
-        // Format data
         $dates = $revenueData->pluck('date')->map(function($date) {
             return Carbon::parse($date)->format('d M');
         })->toArray();
@@ -82,13 +80,11 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                     'name' => 'Pendapatan',
                     'type' => 'area',
                     'data' => $revenues,
-                    'color' => '#4F46E5',
                 ],
                 [
                     'name' => 'Jumlah Transaksi',
                     'type' => 'line',
                     'data' => $transactions,
-                    'color' => '#10B981',
                 ]
             ],
             'xaxis' => [
@@ -110,17 +106,13 @@ class DailyRevenueTrendWidget extends ApexChartWidget
             'yaxis' => [
                 [
                     'seriesName' => 'Pendapatan',
-                    'axisTicks' => [
-                        'show' => true,
-                    ],
+                    'axisTicks' => ['show' => true],
                     'axisBorder' => [
                         'show' => true,
                         'color' => '#4F46E5',
                     ],
                     'labels' => [
-                        'style' => [
-                            'colors' => '#4F46E5',
-                        ],
+                        'style' => ['colors' => '#4F46E5'],
                     ],
                     'title' => [
                         'text' => 'Pendapatan (Rp)',
@@ -134,17 +126,13 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                 [
                     'seriesName' => 'Jumlah Transaksi',
                     'opposite' => true,
-                    'axisTicks' => [
-                        'show' => true,
-                    ],
+                    'axisTicks' => ['show' => true],
                     'axisBorder' => [
                         'show' => true,
                         'color' => '#10B981',
                     ],
                     'labels' => [
-                        'style' => [
-                            'colors' => '#10B981',
-                        ]
+                        'style' => ['colors' => '#10B981']
                     ],
                     'title' => [
                         'text' => 'Jumlah Transaksi',
@@ -159,46 +147,28 @@ class DailyRevenueTrendWidget extends ApexChartWidget
             'stroke' => [
                 'width' => [3, 3],
                 'curve' => 'smooth',
+                'colors' => ['#4F46E5', '#10B981'], // Warna garis
             ],
             'fill' => [
                 'type' => 'gradient',
+                'colors' => ['#4F46E5'], // Warna fill untuk area
                 'gradient' => [
-                    'shade' => 'dark',
-                    'type' => 'vertical',
-                    'shadeIntensity' => 0.5,
-                    'gradientToColors' => ['#4F46E5'], // Warna utama
-                    'inverseColors' => false,
-                    'opacityFrom' => 0.8,
-                    'opacityTo' => 0.2,
-                    'stops' => [0, 50, 100],
-                    'colorStops' => [
-                        [
-                            'offset' => 0,
-                            'color' => '#4F46E5',
-                            'opacity' => 0.8
-                        ],
-                        [
-                            'offset' => 50,
-                            'color' => '#6366F1', // Warna lebih terang
-                            'opacity' => 0.4
-                        ],
-                        [
-                            'offset' => 100,
-                            'color' => '#A5B4FC', // Warna paling terang
-                            'opacity' => 0.1
-                        ]
-                    ]
+                    'shadeIntensity' => 1,
+                    'opacityFrom' => 0.7,
+                    'opacityTo' => 0.1,
+                    'stops' => [0, 90, 100]
                 ]
             ],
             'markers' => [
                 'size' => 4,
-                'hover' => [
-                    'size' => 6
-                ]
+                'colors' => ['#4F46E5', '#10B981'], // Warna markers
+                'strokeColors' => '#fff',
+                'strokeWidth' => 2,
+                'hover' => ['size' => 6]
             ],
-            'colors' => ['#4F46E5', '#10B981'],
+            'colors' => ['#4F46E5', '#10B981'], // Warna utama untuk series
             'dataLabels' => [
-                'enabled' => false // Nonaktifkan untuk line chart
+                'enabled' => false
             ],
             'legend' => [
                 'position' => 'top',
@@ -210,6 +180,8 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                 ]
             ],
             'grid' => [
+                'borderColor' => '#E5E7EB',
+                'strokeDashArray' => 4,
                 'padding' => [
                     'top' => 20,
                     'right' => 20,
@@ -221,14 +193,10 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                 [
                     'breakpoint' => 768,
                     'options' => [
-                        'chart' => [
-                            'height' => 300
-                        ],
+                        'chart' => ['height' => 300],
                         'xaxis' => [
                             'labels' => [
-                                'style' => [
-                                    'fontSize' => '10px'
-                                ]
+                                'style' => ['fontSize' => '10px']
                             ]
                         ]
                     ]
@@ -236,9 +204,7 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                 [
                     'breakpoint' => 640,
                     'options' => [
-                        'chart' => [
-                            'height' => 250
-                        ],
+                        'chart' => ['height' => 250],
                         'legend' => [
                             'position' => 'bottom',
                             'horizontalAlign' => 'center',
@@ -250,8 +216,5 @@ class DailyRevenueTrendWidget extends ApexChartWidget
         ];
     }
     
-    /**
-     * Widget max height
-     */
     protected static ?string $maxHeight = '400px';
 }
