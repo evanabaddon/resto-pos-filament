@@ -132,38 +132,9 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
                     'style' => [
                         'fontSize' => '14px',
                         'fontWeight' => 'bold',
-                        'color' => '#374151'
+                        'color' => '#6B7280'
                     ]
                 ]
-            ],
-            'tooltip' => [
-                'custom' => 'function({ series, seriesIndex, dataPointIndex, w }) {
-                    const dayNames = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
-                    const hour = w.globals.labels[dataPointIndex];
-                    const day = dayNames[seriesIndex];
-                    const value = series[seriesIndex][dataPointIndex];
-                    
-                    const avgValue = ' . json_encode($this->getAverageValues()) . ';
-                    const avg = avgValue[seriesIndex] ? avgValue[seriesIndex][dataPointIndex] : 0;
-                    
-                    let intensityClass = "text-green-600";
-                    if (value > 15) intensityClass = "text-yellow-600";
-                    if (value > 30) intensityClass = "text-red-600";
-                    
-                    return \'<div class="apexcharts-tooltip-title p-2 bg-gray-100 border-b">\' + 
-                           \'<div class="font-bold text-lg">\' + day + \' \' + hour + \'</div>\' +
-                           \'</div>\' +
-                           \'<div class="p-2">\' +
-                           \'<div class="flex justify-between items-center mb-1">\' +
-                           \'<span>Transaksi:</span>\' +
-                           \'<span class="font-bold \' + intensityClass + \'">\' + value + \'</span>\' +
-                           \'</div>\' +
-                           \'<div class="flex justify-between items-center">\' +
-                           \'<span>Rata-rata Nilai:</span>\' +
-                           \'<span class="font-bold text-blue-600">Rp \' + avg.toLocaleString(\'id-ID\') + \'</span>\' +
-                           \'</div>\' +
-                           \'</div>\';
-                }'
             ],
             'legend' => [
                 'position' => 'bottom',
