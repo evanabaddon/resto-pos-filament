@@ -6,6 +6,7 @@ use Filament\Panel;
 use Livewire\Livewire;
 use Filament\PanelProvider;
 use Filament\Pages\Dashboard;
+use Filament\Support\Enums\Width;
 use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
@@ -13,6 +14,7 @@ use Filament\Navigation\NavigationItem;
 use Illuminate\Support\Facades\Request;
 use Filament\Widgets\FilamentInfoWidget;
 use Filament\Http\Middleware\Authenticate;
+use App\Filament\Widgets\LowStockAlertWidget;
 use App\Filament\Widgets\RevenueOverviewWidget;
 use Illuminate\Session\Middleware\StartSession;
 use App\Filament\Widgets\PeakHoursHeatmapWidget;
@@ -21,7 +23,6 @@ use App\Filament\Widgets\DailyRevenueTrendWidget;
 use Filament\Http\Middleware\AuthenticateSession;
 use App\Filament\Widgets\BestSellingProductsChart;
 use App\Filament\Widgets\CategoryPerformanceChart;
-use App\Filament\Widgets\LowStockAlertWidget;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -74,6 +75,7 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->maxContentWidth(Width::Full)
             ->plugins([
                 FilamentApexChartsPlugin::make()
             ]);
