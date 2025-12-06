@@ -163,10 +163,31 @@ class DailyRevenueTrendWidget extends ApexChartWidget
             'fill' => [
                 'type' => 'gradient',
                 'gradient' => [
-                    'shadeIntensity' => 1,
-                    'opacityFrom' => 0.7,
-                    'opacityTo' => 0.1,
-                    'stops' => [0, 90, 100]
+                    'shade' => 'dark',
+                    'type' => 'vertical',
+                    'shadeIntensity' => 0.5,
+                    'gradientToColors' => ['#4F46E5'], // Warna utama
+                    'inverseColors' => false,
+                    'opacityFrom' => 0.8,
+                    'opacityTo' => 0.2,
+                    'stops' => [0, 50, 100],
+                    'colorStops' => [
+                        [
+                            'offset' => 0,
+                            'color' => '#4F46E5',
+                            'opacity' => 0.8
+                        ],
+                        [
+                            'offset' => 50,
+                            'color' => '#6366F1', // Warna lebih terang
+                            'opacity' => 0.4
+                        ],
+                        [
+                            'offset' => 100,
+                            'color' => '#A5B4FC', // Warna paling terang
+                            'opacity' => 0.1
+                        ]
+                    ]
                 ]
             ],
             'markers' => [
