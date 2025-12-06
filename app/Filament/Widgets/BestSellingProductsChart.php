@@ -11,7 +11,7 @@ class BestSellingProductsChart extends ApexChartWidget
     protected static ?string $chartId = 'bestSellingProductsChart';
     protected static ?string $heading = 'Produk Terlaris (7 Hari Terakhir)';
     protected static ?string $description = 'Top 10 produk dengan penjualan tertinggi';
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 1;
     
     protected function getOptions(): array
     {
