@@ -4,12 +4,15 @@ namespace App\Filament\Resources\Reservations\Widgets;
 
 use Filament\Forms;
 use App\Models\Reservation;
+use Filament\Actions\Action;
 use Filament\Schemas\Schema;
 use Guava\Calendar\CalendarEvent;
 use Illuminate\Support\HtmlString;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Illuminate\Database\Eloquent\Builder;
 use Guava\Calendar\Enums\CalendarViewType;
@@ -19,6 +22,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Guava\Calendar\ValueObjects\DateClickInfo;
 use Guava\Calendar\Filament\Actions\EditAction;
 use Guava\Calendar\Filament\Actions\ViewAction;
+use Guava\Calendar\ValueObjects\EventClickInfo;
 use Guava\Calendar\Filament\Actions\CreateAction;
 
 class ReservationCalendarWidget extends CalendarWidget
@@ -32,13 +36,188 @@ class ReservationCalendarWidget extends CalendarWidget
     protected ?string $locale = 'id';
 
     protected string | HtmlString | bool | null $heading = 'Kalender Reservasi';
-
+    
     protected function getEventClickContextMenuActions(): array
     {
         return [
             $this->viewAction(),
             $this->editAction(),
+            Action::make('change_status_pending')
+                ->label('Ubah ke Pending')
+                ->icon('heroicon-o-clock')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->modalHeading('Konfirmasi Perubahan Status')
+                ->modalDescription(function (array $arguments) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $reservation = $reservationId ? Reservation::find($reservationId) : null;
+                    
+                    if (!$reservation) {
+                        return 'Reservasi tidak ditemukan';
+                    }
+                    
+                    return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Pending'?";
+                })
+                ->modalSubmitActionLabel('Ya, Ubah Status')
+                ->modalCancelActionLabel('Batal')
+                ->action(function (array $arguments) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $this->updateReservationStatus('pending', $reservationId);
+                }),
+            Action::make('change_status_confirmed')
+                ->label('Ubah ke Dikonfirmasi')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('Konfirmasi Perubahan Status')
+                ->modalDescription(function (array $arguments) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $reservation = $reservationId ? Reservation::find($reservationId) : null;
+                    
+                    if (!$reservation) {
+                        return 'Reservasi tidak ditemukan';
+                    }
+                    
+                    return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Dikonfirmasi'?";
+                })
+                ->modalSubmitActionLabel('Ya, Ubah Status')
+                ->modalCancelActionLabel('Batal')
+                ->action(function (array $arguments) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $this->updateReservationStatus('confirmed', $reservationId);
+                }),
+            Action::make('change_status_seated')
+                ->label('Ubah ke Sudah Duduk')
+                ->icon('heroicon-o-user-group')
+                ->color('info')
+                ->requiresConfirmation()
+                ->modalHeading('Konfirmasi Perubahan Status')
+                ->modalDescription(function (array $arguments) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $reservation = $reservationId ? Reservation::find($reservationId) : null;
+                    
+                    if (!$reservation) {
+                        return 'Reservasi tidak ditemukan';
+                    }
+                    
+                    return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Sudah Duduk'?";
+                })
+                ->modalSubmitActionLabel('Ya, Ubah Status')
+                ->modalCancelActionLabel('Batal')
+                ->action(function (array $arguments) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $this->updateReservationStatus('seated', $reservationId);
+                }),
+            Action::make('change_status_completed')
+                ->label('Ubah ke Selesai')
+                ->icon('heroicon-o-check')
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalHeading('Konfirmasi Perubahan Status')
+                ->modalDescription(function (array $arguments) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $reservation = $reservationId ? Reservation::find($reservationId) : null;
+                    
+                    if (!$reservation) {
+                        return 'Reservasi tidak ditemukan';
+                    }
+                    
+                    return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Selesai'?";
+                })
+                ->modalSubmitActionLabel('Ya, Ubah Status')
+                ->modalCancelActionLabel('Batal')
+                ->action(function (array $arguments) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $this->updateReservationStatus('completed', $reservationId);
+                }),
+            Action::make('change_status_cancelled')
+                ->label('Ubah ke Dibatalkan')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading('Konfirmasi Perubahan Status')
+                ->modalDescription(function (array $arguments) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $reservation = $reservationId ? Reservation::find($reservationId) : null;
+                    
+                    if (!$reservation) {
+                        return 'Reservasi tidak ditemukan';
+                    }
+                    
+                    return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Dibatalkan'?";
+                })
+                ->modalSubmitActionLabel('Ya, Ubah Status')
+                ->modalCancelActionLabel('Batal')
+                ->action(function (array $arguments) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $this->updateReservationStatus('cancelled', $reservationId);
+                }),
         ];
+    }
+
+    /**
+     * Update status reservation
+     */
+    private function updateReservationStatus(string $newStatus, ?int $reservationId): void
+    {
+        if (!$reservationId) {
+            Notification::make()
+                ->title('Error')
+                ->body('Tidak ada reservasi yang dipilih')
+                ->danger()
+                ->send();
+            return;
+        }
+        
+        $reservation = Reservation::find($reservationId);
+        
+        if (!$reservation) {
+            Notification::make()
+                ->title('Error')
+                ->body('Reservasi tidak ditemukan')
+                ->danger()
+                ->send();
+            return;
+        }
+        
+        $oldStatus = $reservation->status;
+        $reservation->update(['status' => $newStatus]);
+        
+        Notification::make()
+            ->title('Status berhasil diubah')
+            ->body("Status berubah dari {$this->getStatusLabel($oldStatus)} ke {$this->getStatusLabel($newStatus)}")
+            ->success()
+            ->send();
+            
+        $this->refreshRecords();
+    }
+
+    /**
+     * Ekstrak ID reservation dari arguments
+     */
+    private function extractReservationId(array $arguments): ?int
+    {
+        // Cek di extendedProps['key']
+        if (isset($arguments['data']['event']['extendedProps']['key'])) {
+            return (int) $arguments['data']['event']['extendedProps']['key'];
+        }
+        
+        return null;
+    }
+
+    /**
+     * Helper untuk mendapatkan label status
+     */
+    private function getStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'pending' => 'Pending',
+            'confirmed' => 'Dikonfirmasi',
+            'seated' => 'Sudah Duduk',
+            'completed' => 'Selesai',
+            'cancelled' => 'Dibatalkan',
+            default => $status,
+        };
     }
 
     public function defaultSchema(Schema $schema): Schema
@@ -112,6 +291,7 @@ class ReservationCalendarWidget extends CalendarWidget
     {
         return ViewAction::make()
             ->model(Reservation::class)
+            ->modalHeading('Detail Reservasi')
             ->schema([
                 Section::make('Informasi Customer')
                     ->schema([
@@ -160,6 +340,7 @@ class ReservationCalendarWidget extends CalendarWidget
     public function editAction(): EditAction
     {
         return EditAction::make()
+            ->modalHeading('Edit Reservasi')
             ->model(Reservation::class)
             ->schema([
                 Section::make('Informasi Customer')
@@ -212,6 +393,7 @@ class ReservationCalendarWidget extends CalendarWidget
     public function createReservationAction(): CreateAction
     {
         return CreateAction::make('createReservation')
+            ->modalHeading('Buat Reservasi Baru')
             ->model(Reservation::class)
             ->schema([
                 Section::make('Informasi Customer')
