@@ -2,21 +2,88 @@
 
 namespace App\Filament\Resources\Reservations\Widgets;
 
-use App\Models\Reservation;
-use App\Models\Table; // Jika ada relasi dengan table
 use Filament\Forms;
+use App\Models\Reservation;
+use Filament\Schemas\Schema;
+use Guava\Calendar\CalendarEvent;
+use Illuminate\Support\HtmlString;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Illuminate\Database\Eloquent\Builder;
 use Guava\Calendar\Enums\CalendarViewType;
-use Guava\Calendar\Filament\Actions\CreateAction;
-use Guava\Calendar\Filament\Actions\EditAction;
-use Guava\Calendar\Filament\Actions\ViewAction;
 use Guava\Calendar\ValueObjects\FetchInfo;
 use Guava\Calendar\Filament\CalendarWidget;
-use Guava\Calendar\CalendarEvent;
+use Filament\Forms\Components\DateTimePicker;
+use Guava\Calendar\ValueObjects\DateClickInfo;
+use Guava\Calendar\Filament\Actions\EditAction;
+use Guava\Calendar\Filament\Actions\ViewAction;
+use Guava\Calendar\Filament\Actions\CreateAction;
 
 class ReservationCalendarWidget extends CalendarWidget
 {
     protected CalendarViewType $calendarView = CalendarViewType::DayGridMonth;
+
+    protected bool $dateClickEnabled = true;
+
+    protected bool $eventClickEnabled = true;
+
+    protected ?string $locale = 'id';
+
+    protected string | HtmlString | bool | null $heading = 'Kalender Reservasi';
+
+    protected function getEventClickContextMenuActions(): array
+    {
+        return [
+            $this->viewAction(),
+            $this->editAction(),
+        ];
+    }
+
+    public function defaultSchema(Schema $schema): Schema
+    {
+        return $schema->components([
+            Section::make('Informasi Customer')
+                ->schema([
+                    TextInput::make('customer_name')
+                        ->label('Nama Customer')
+                        ->disabled(),
+                    TextInput::make('customer_phone')
+                        ->label('Telepon')
+                        ->disabled(),
+                ])->columns(2),
+            
+            Section::make('Detail Reservasi')
+                ->schema([
+                    DateTimePicker::make('reservation_date')
+                        ->label('Tanggal & Waktu Reservasi')
+                        ->disabled(),
+                    TextInput::make('party_size')
+                        ->label('Jumlah Orang')
+                        ->numeric()
+                        ->disabled(),
+                    Select::make('status')
+                        ->label('Status')
+                        ->options([
+                            'pending' => 'Pending',
+                            'confirmed' => 'Confirmed',
+                            'seated' => 'Seated',
+                            'completed' => 'Completed',
+                            'cancelled' => 'Cancelled',
+                        ])
+                        ->disabled(),
+                ])->columns(3),
+            
+            Section::make('Tambahan')
+                ->schema([
+                    Textarea::make('special_requests')
+                        ->label('Permintaan Khusus')
+                        ->disabled()
+                        ->rows(3),
+                ]),
+        ]);
+    }
     
     /**
      * Get events query
@@ -30,50 +97,42 @@ class ReservationCalendarWidget extends CalendarWidget
                 $info->end->endOfDay()
             ]);
     }
-    
-    /**
-     * Konfigurasi event kalender - UNTUK CLICK ACTION
-     */
-    protected function getEventConfiguration(): array
+
+    protected function onDateClick(DateClickInfo $info): void
     {
-        return [
-            CalendarEvent::make()
-                ->action('view') // default action saat diklik
-                ->actions([ // multiple actions jika perlu
-                    'view',
-                    'edit',
-                ]),
-        ];
+        $this->mountAction('createReservation', [
+            'reservation_date' => $info->date->format('Y-m-d H:i:s'),
+        ]);
     }
     
     /**
-     * Action untuk melihat detail reservation
+     * OVERRIDE viewAction() untuk menentukan schema view
      */
-    public function viewReservationAction(): ViewAction
+    public function viewAction(): ViewAction
     {
-        return ViewAction::make('viewReservation')
+        return ViewAction::make()
             ->model(Reservation::class)
-            ->form([
-                Forms\Components\Section::make('Informasi Customer')
+            ->schema([
+                Section::make('Informasi Customer')
                     ->schema([
-                        Forms\Components\TextInput::make('customer_name')
+                        TextInput::make('customer_name')
                             ->label('Nama Customer')
                             ->disabled(),
-                        Forms\Components\TextInput::make('customer_phone')
+                        TextInput::make('customer_phone')
                             ->label('Telepon')
                             ->disabled(),
                     ])->columns(2),
                 
-                Forms\Components\Section::make('Detail Reservasi')
+                Section::make('Detail Reservasi')
                     ->schema([
-                        Forms\Components\DateTimePicker::make('reservation_date')
+                        DateTimePicker::make('reservation_date')
                             ->label('Tanggal & Waktu Reservasi')
                             ->disabled(),
-                        Forms\Components\TextInput::make('party_size')
+                        TextInput::make('party_size')
                             ->label('Jumlah Orang')
                             ->numeric()
                             ->disabled(),
-                        Forms\Components\Select::make('status')
+                        Select::make('status')
                             ->label('Status')
                             ->options([
                                 'pending' => 'Pending',
@@ -85,9 +144,9 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->disabled(),
                     ])->columns(3),
                 
-                Forms\Components\Section::make('Tambahan')
+                Section::make('Tambahan')
                     ->schema([
-                        Forms\Components\Textarea::make('special_requests')
+                        Textarea::make('special_requests')
                             ->label('Permintaan Khusus')
                             ->disabled()
                             ->rows(3),
@@ -96,38 +155,38 @@ class ReservationCalendarWidget extends CalendarWidget
     }
     
     /**
-     * Action untuk edit reservation
+     * OVERRIDE editAction() untuk menentukan schema edit
      */
-    public function editReservationAction(): EditAction
+    public function editAction(): EditAction
     {
-        return EditAction::make('editReservation')
+        return EditAction::make()
             ->model(Reservation::class)
-            ->form([
-                Forms\Components\Section::make('Informasi Customer')
+            ->schema([
+                Section::make('Informasi Customer')
                     ->schema([
-                        Forms\Components\TextInput::make('customer_name')
+                        TextInput::make('customer_name')
                             ->label('Nama Customer')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('customer_phone')
+                        TextInput::make('customer_phone')
                             ->label('Telepon')
                             ->required()
                             ->tel(),
                     ])->columns(2),
                 
-                Forms\Components\Section::make('Detail Reservasi')
+                Section::make('Detail Reservasi')
                     ->schema([
-                        Forms\Components\DateTimePicker::make('reservation_date')
+                        DateTimePicker::make('reservation_date')
                             ->label('Tanggal & Waktu Reservasi')
                             ->required()
                             ->seconds(false),
-                        Forms\Components\TextInput::make('party_size')
+                        TextInput::make('party_size')
                             ->label('Jumlah Orang')
                             ->numeric()
                             ->required()
                             ->minValue(1)
                             ->maxValue(20),
-                        Forms\Components\Select::make('status')
+                        Select::make('status')
                             ->label('Status')
                             ->options([
                                 'pending' => 'Pending',
@@ -139,9 +198,9 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->required(),
                     ])->columns(3),
                 
-                Forms\Components\Section::make('Tambahan')
+                Section::make('Tambahan')
                     ->schema([
-                        Forms\Components\Textarea::make('special_requests')
+                        Textarea::make('special_requests')
                             ->label('Permintaan Khusus')
                             ->rows(3),
                     ]),
@@ -155,42 +214,44 @@ class ReservationCalendarWidget extends CalendarWidget
     {
         return CreateAction::make('createReservation')
             ->model(Reservation::class)
-            ->form([
-                Forms\Components\Section::make('Informasi Customer')
+            ->schema([
+                Section::make('Informasi Customer')
                     ->schema([
-                        Forms\Components\TextInput::make('customer_name')
+                        TextInput::make('customer_name')
                             ->label('Nama Customer')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('customer_phone')
+                        TextInput::make('customer_phone')
                             ->label('Telepon')
                             ->required()
                             ->tel(),
                     ])->columns(2),
                 
-                Forms\Components\Section::make('Detail Reservasi')
+                Section::make('Detail Reservasi')
                     ->schema([
-                        Forms\Components\DateTimePicker::make('reservation_date')
+                        DateTimePicker::make('reservation_date')
                             ->label('Tanggal & Waktu Reservasi')
                             ->required()
-                            ->seconds(false)
-                            ->default(now()->addHour()), // default 1 jam dari sekarang
-                        Forms\Components\TextInput::make('party_size')
+                            ->seconds(false),
+                        TextInput::make('party_size')
                             ->label('Jumlah Orang')
                             ->numeric()
                             ->required()
-                            ->minValue(1)
-                            ->maxValue(20)
-                            ->default(2),
+                            ->minValue(1),
                     ])->columns(2),
                 
-                Forms\Components\Section::make('Tambahan')
+                Section::make('Tambahan')
                     ->schema([
-                        Forms\Components\Textarea::make('special_requests')
+                        Textarea::make('special_requests')
                             ->label('Permintaan Khusus')
                             ->rows(3),
                     ]),
             ])
+            ->fillForm(function (array $arguments) {
+                return [
+                    'reservation_date' => $arguments['reservation_date'] ?? null,
+                ];
+            })
             ->createAnother(false);
     }
     
@@ -239,19 +300,4 @@ class ReservationCalendarWidget extends CalendarWidget
     {
         return '22:00:00';
     }
-    
-    /**
-     * HEADER TOOLBAR dengan button Create
-     */
-    // protected function getHeaderActions(): array
-    // {
-    //     return [
-    //         \Filament\Actions\Action::make('create')
-    //             ->label('Reservasi Baru')
-    //             ->icon('heroicon-o-plus')
-    //             ->action(function() {
-    //                 $this->mountAction('createReservation');
-    //             }),
-    //     ];
-    // }
 }

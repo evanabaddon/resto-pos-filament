@@ -31,8 +31,7 @@ class ReservationForm
                             ->label('Jumlah Orang')
                             ->numeric()
                             ->required()
-                            ->minValue(1)
-                            ->maxValue(50),
+                            ->minValue(1),
                             
                         Textarea::make('special_requests')
                             ->label('Permintaan Khusus')
