@@ -24,6 +24,8 @@ class ReservationResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Operasional';
 
+    protected static ?string $navigationLabel = 'Reservasi';
+
     protected static ?int $navigationSort = 3;
 
     public static function getWidgets(): array
