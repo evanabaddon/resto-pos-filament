@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Resources\Reservations\Widgets\ReservationCalendarWidget;
 use Filament\Panel;
 use Livewire\Livewire;
 use Filament\PanelProvider;
@@ -18,6 +19,7 @@ use App\Filament\Widgets\LowStockAlertWidget;
 use App\Filament\Widgets\RevenueOverviewWidget;
 use Illuminate\Session\Middleware\StartSession;
 use App\Filament\Widgets\PeakHoursHeatmapWidget;
+use App\Filament\Widgets\ReservationStatsWidget;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use App\Filament\Widgets\DailyRevenueTrendWidget;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -53,6 +55,8 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 // AccountWidget::class,
                 // FilamentInfoWidget::class,
+                ReservationCalendarWidget::class,
+                ReservationStatsWidget::class,
                 RevenueOverviewWidget::class,
                 BestSellingProductsChart::class,
                 DailyRevenueTrendWidget::class,

@@ -3,9 +3,12 @@
 @import 'tailwindcss/utilities.css';
 
 @import '../../../../vendor/filament/filament/resources/css/theme.css';
+@import '../../../../vendor/guava/calendar/resources/css/theme.css';
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+@source '../../../../vendor/guava/calendar/resources/**/*';
+
  
 
 @tailwind utilities;
