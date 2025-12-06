@@ -285,7 +285,7 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
             [
                 'from' => ceil($maxTransaction * 0.5) + 1,
                 'to' => ceil($maxTransaction * 0.75),
-                'name' => 'Rama',
+                'name' => 'Ramai',
                 'color' => '#FBBF24' // yellow-400
             ]
         ];
