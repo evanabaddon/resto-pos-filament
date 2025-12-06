@@ -184,8 +184,7 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->label('Jumlah Orang')
                             ->numeric()
                             ->required()
-                            ->minValue(1)
-                            ->maxValue(20),
+                            ->minValue(1),
                         Select::make('status')
                             ->label('Status')
                             ->options([
