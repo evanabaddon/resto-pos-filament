@@ -150,14 +150,8 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                 'colors' => ['#4F46E5', '#10B981'], // Warna garis
             ],
             'fill' => [
-                'type' => 'gradient',
-                'colors' => ['#4F46E5'], // Warna fill untuk area
-                'gradient' => [
-                    'shadeIntensity' => 1,
-                    'opacityFrom' => 0.7,
-                    'opacityTo' => 0.1,
-                    'stops' => [0, 90, 100]
-                ]
+                'type' => 'solid',
+                'opacity' => 0.1
             ],
             'markers' => [
                 'size' => 4,
