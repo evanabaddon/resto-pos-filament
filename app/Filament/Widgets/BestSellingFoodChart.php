@@ -30,7 +30,7 @@ class BestSellingFoodChart extends ApexChartWidget
             )
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->whereHas('sale', function($query) {
-                $query->where('status', 'completed');
+                $query->where('status', 'draft');
                 
                 // Filter berdasarkan periode
                 if ($this->filter === 'today') {
