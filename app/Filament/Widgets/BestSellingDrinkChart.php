@@ -30,7 +30,7 @@ class BestSellingDrinkChart extends ApexChartWidget
             )
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->whereHas('sale', function($query) {
-                $query->where('status', 'draft');
+                $query->where('status', 'completed');
                 
                 // Filter berdasarkan periode
                 if ($this->filter === 'today') {
