@@ -13,22 +13,42 @@ class BestSellingDrinkChart extends ApexChartWidget
     protected static ?string $description = 'Top 10 minuman dengan penjualan tertinggi';
     protected static ?int $sort = 1;
     
+    // Property untuk filter
+    public ?string $filter = '7days';
+    
+    // Override method getHeading() untuk mendukung filter
+    public function getHeading(): string
+    {
+        return $this->getHeadingByFilter();
+    }
+    
     protected function getOptions(): array
     {
-        $products = SaleItem::select(
+        $query = SaleItem::select(
                 'products.name as product_name',
                 DB::raw('SUM(sale_items.quantity) as total_quantity')
             )
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->whereHas('sale', function($query) {
-                $query->where('status', 'completed')
-                    ->where('created_at', '>=', now()->subDays(7));
+                $query->where('status', 'completed');
+                
+                // Filter berdasarkan periode
+                if ($this->filter === 'today') {
+                    $query->whereDate('created_at', today());
+                } elseif ($this->filter === 'yesterday') {
+                    $query->whereDate('created_at', today()->subDay());
+                } elseif ($this->filter === '7days') {
+                    $query->where('created_at', '>=', now()->subDays(7));
+                } elseif ($this->filter === '30days') {
+                    $query->where('created_at', '>=', now()->subDays(30));
+                }
             })
             ->where('products.type', 'bar')
             ->groupBy('products.name', 'products.id')
             ->orderByDesc('total_quantity')
-            ->limit(10)
-            ->get();
+            ->limit(10);
+        
+        $products = $query->get();
         
         // Jika data kosong
         if ($products->isEmpty()) {
@@ -120,6 +140,28 @@ class BestSellingDrinkChart extends ApexChartWidget
                     'formatter' => 'function(value) { return value + " unit"; }'
                 ]
             ],
+        ];
+    }
+    
+    protected function getHeadingByFilter(): string
+    {
+        return match($this->filter) {
+            'today' => 'Minuman Terlaris (Hari Ini)',
+            'yesterday' => 'Minuman Terlaris (Kemarin)',
+            '7days' => 'Minuman Terlaris (7 Hari Terakhir)',
+            '30days' => 'Minuman Terlaris (30 Hari Terakhir)',
+            default => 'Minuman Terlaris (7 Hari Terakhir)',
+        };
+    }
+    
+    // Method untuk menampilkan filter dropdown di widget
+    protected function getFilters(): ?array
+    {
+        return [
+            'today' => 'Hari Ini',
+            'yesterday' => 'Kemarin',
+            '7days' => '7 Hari Terakhir',
+            '30days' => '30 Hari Terakhir',
         ];
     }
 }
