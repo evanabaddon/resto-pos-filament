@@ -42,6 +42,10 @@ class Pos extends Page
         // 'printReceipt' => 'handlePrintReceipt',
         'printCompleted' => 'handlePrintCompleted',
         'showSection' => 'handleShowSection', 
+        'openMergeModal' => 'openMergeModal',
+        'mergeConfirmed' => 'handleMergeConfirmed',
+        'mergeCancelled' => 'handleMergeCancelled',
+        'refreshSalesList' => 'refreshSalesList',
     ];
 
     public $showCashInModal = true;
@@ -68,6 +72,11 @@ class Pos extends Page
     public $outOfStock = 0;
     public $isPrinting = false;
     public $previousItems = [];
+    public $showMergeModal = false;
+    public $selectedSalesToMerge = [];
+    public $availableSales = [];
+    public $mergeTargetSale = null;
+
 
     public function mount()
     {
@@ -1457,6 +1466,523 @@ class Pos extends Page
         }
         
         $this->saveSale();
+    }
+
+    // Handler untuk merge confirmed
+    public function handleMergeConfirmed($selectedSales, $mergeTarget)
+    {
+        $this->selectedSalesToMerge = $selectedSales;
+        $this->mergeTargetSale = $mergeTarget;
+        $this->processMergeBill();
+    }
+
+    // Handler untuk merge cancelled
+    public function handleMergeCancelled()
+    {
+        $this->showMergeModal = false;
+        $this->selectedSalesToMerge = [];
+        $this->mergeTargetSale = null;
+    }
+
+    /**
+     * Get merge sales data
+     */
+    public function getMergeSalesProperty()
+    {
+        if (!$this->showMergeModal) {
+            return collect();
+        }
+
+        return Sale::where('status', 'draft')
+            ->where('cash_session_id', $this->cashSessionId ?? session('cash_session_id'))
+            ->with(['items.product', 'user'])
+            ->latest()
+            ->take(20)
+            ->get()
+            ->filter(function($sale) {
+                return $sale->items->isNotEmpty();
+            });
+    }
+
+   // Method untuk menghitung merge totals
+    public function getMergeTotalsProperty()
+    {
+        if (empty($this->selectedSalesToMerge)) {
+            return [
+                'count' => 0,
+                'total' => 0,
+                'items' => 0,
+                'has_target' => false
+            ];
+        }
+
+        try {
+            $sales = Sale::whereIn('id', $this->selectedSalesToMerge)->get();
+            
+            $total = 0;
+            $items = 0;
+            
+            foreach ($sales as $sale) {
+                $total += $sale->final_total;
+                $items += $sale->items->sum('quantity');
+            }
+            
+            return [
+                'count' => $sales->count(),
+                'total' => $total,
+                'items' => $items,
+                'has_target' => !empty($this->mergeTargetSale)
+            ];
+        } catch (\Exception $e) {
+            return [
+                'count' => 0,
+                'total' => 0,
+                'items' => 0,
+                'has_target' => false
+            ];
+        }
+    }
+
+    // Method untuk mendapatkan info target sale
+    public function getTargetSaleInfoProperty()
+    {
+        if (!$this->mergeTargetSale) {
+            return null;
+        }
+
+        try {
+            return Sale::with('items')->find($this->mergeTargetSale);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    // Method untuk mendapatkan sales yang tersedia untuk merge
+    public function getAvailableMergeSalesProperty()
+    {
+        if (!$this->showMergeModal) {
+            return collect();
+        }
+
+        try {
+            return Sale::where('status', 'draft')
+                ->where('cash_session_id', $this->cashSessionId ?? session('cash_session_id'))
+                ->with(['items.product', 'user'])
+                ->latest()
+                ->take(20)
+                ->get()
+                ->filter(function($sale) {
+                    return $sale->items->isNotEmpty();
+                });
+        } catch (\Exception $e) {
+            return collect();
+        }
+    }
+
+    /**
+     * Open merge bill modal - DENGAN DEBUG DETAIL
+     */
+    public function openMergeModal()
+    {
+        \Log::info('🔄 openMergeModal dipanggil');
+
+        try {
+            // Ambil data sales
+            $availableSales = Sale::where('status', 'draft')
+                ->where('cash_session_id', $this->cashSessionId ?? session('cash_session_id'))
+                ->whereHas('items')
+                ->with(['items', 'user'])
+                ->latest()
+                ->take(20)
+                ->get();
+
+            \Log::info('📊 Data sales ditemukan DETAIL', [
+                'count' => $availableSales->count(),
+                'sales' => $availableSales->map(function($sale) {
+                    return [
+                        'id' => $sale->id,
+                        'invoice_number' => $sale->invoice_number,
+                        'customer_name' => $sale->customer_name,
+                        'final_total' => $sale->final_total,
+                        'items_count' => $sale->items->count(),
+                        'has_user' => !is_null($sale->user)
+                    ];
+                })->toArray()
+            ]);
+
+            // Convert ke array sederhana untuk Livewire
+            $this->availableSales = $availableSales->map(function($sale) {
+                return [
+                    'id' => $sale->id,
+                    'invoice_number' => $sale->invoice_number,
+                    'customer_name' => $sale->customer_name,
+                    'final_total' => $sale->final_total,
+                    'order_type' => $sale->order_type,
+                    'created_at' => $sale->created_at,
+                    'items' => $sale->items->map(function($item) {
+                        return [
+                            'quantity' => $item->quantity
+                        ];
+                    })->toArray(),
+                    'user' => $sale->user ? [
+                        'name' => $sale->user->name
+                    ] : null
+                ];
+            })->toArray();
+
+            \Log::info('✅ Data dikonversi ke array untuk Livewire');
+
+            $this->selectedSalesToMerge = [];
+            $this->mergeTargetSale = null;
+            $this->showMergeModal = true;
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Error openMergeModal: ' . $e->getMessage());
+            $this->dispatch('showNotification', 'Gagal membuka modal merge: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Toggle select sale untuk merge
+     */
+    public function toggleSelectSale($saleId)
+    {
+        $index = array_search($saleId, $this->selectedSalesToMerge);
+        
+        if ($index !== false) {
+            // Unselect jika sudah terpilih
+            unset($this->selectedSalesToMerge[$index]);
+            $this->selectedSalesToMerge = array_values($this->selectedSalesToMerge);
+            
+            // Jika sale yang di-unselect adalah merge target, reset merge target
+            if ($this->mergeTargetSale == $saleId) {
+                $this->mergeTargetSale = null;
+            }
+        } else {
+            // Select sale baru
+            $this->selectedSalesToMerge[] = $saleId;
+            
+            // Auto-set sale pertama sebagai merge target jika belum ada
+            if (count($this->selectedSalesToMerge) === 1) {
+                $this->mergeTargetSale = $saleId;
+            }
+        }
+    }
+
+    /**
+     * Set merge target sale
+     */
+    public function setMergeTarget($saleId)
+    {
+        if (in_array($saleId, $this->selectedSalesToMerge)) {
+            $this->mergeTargetSale = $saleId;
+        }
+    }
+
+    /**
+     * Proses merge bill - DENGAN LOG DETAIL
+     */
+    public function processMergeBill()
+    {
+        \Log::info('🔄 processMergeBill dipanggil', [
+            'selected_sales' => $this->selectedSalesToMerge,
+            'merge_target' => $this->mergeTargetSale,
+            'count_selected' => count($this->selectedSalesToMerge)
+        ]);
+
+        // Validasi
+        if (count($this->selectedSalesToMerge) < 2) {
+            $this->dispatch('showNotification', 'Pilih minimal 2 transaksi untuk digabung!', 'error');
+            return;
+        }
+
+        if (!$this->mergeTargetSale) {
+            $this->dispatch('showNotification', 'Pilih transaksi tujuan untuk penggabungan!', 'error');
+            return;
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            // Ambil sale target
+            $targetSale = Sale::with('items')->findOrFail($this->mergeTargetSale);
+            
+            \Log::info('🎯 Target sale ditemukan', [
+                'target_sale_id' => $targetSale->id,
+                'invoice_number' => $targetSale->invoice_number,
+                'items_count' => $targetSale->items->count(),
+                'existing_items' => $targetSale->items->map(function($item) {
+                    return [
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->quantity,
+                        'price' => $item->unit_price
+                    ];
+                })->toArray()
+            ]);
+
+            // Ambil semua sale yang akan digabung
+            $salesToMerge = Sale::with('items')
+                ->whereIn('id', $this->selectedSalesToMerge)
+                ->where('id', '!=', $this->mergeTargetSale)
+                ->get();
+
+            \Log::info('📦 Sales to merge DETAIL', [
+                'count' => $salesToMerge->count(),
+                'sales' => $salesToMerge->map(function($sale) {
+                    return [
+                        'id' => $sale->id,
+                        'invoice_number' => $sale->invoice_number,
+                        'items_count' => $sale->items->count(),
+                        'items' => $sale->items->map(function($item) {
+                            return [
+                                'product_id' => $item->product_id,
+                                'quantity' => $item->quantity,
+                                'price' => $item->unit_price
+                            ];
+                        })->toArray()
+                    ];
+                })->toArray()
+            ]);
+
+            // Gabungkan semua item ke target sale
+            $allItems = [];
+            $totalItems = 0;
+            
+            foreach ($salesToMerge as $sale) {
+                \Log::info('📝 Processing sale to merge', [
+                    'sale_id' => $sale->id,
+                    'items_count' => $sale->items->count()
+                ]);
+                
+                foreach ($sale->items as $item) {
+                    $allItems[] = [
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->unit_price,
+                        'subtotal' => $item->subtotal,
+                        'from_sale_id' => $sale->id,
+                    ];
+                    $totalItems += $item->quantity;
+                    
+                    \Log::info('📦 Item detail', [
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->quantity,
+                        'price' => $item->unit_price
+                    ]);
+                }
+            }
+
+            \Log::info('📊 All items to merge', [
+                'total_items_count' => count($allItems),
+                'total_quantity' => $totalItems,
+                'items' => $allItems
+            ]);
+
+            // Hitung total dari target sale yang sudah ada
+            $existingTotalItems = $targetSale->items->sum('quantity');
+            \Log::info('🏷️ Existing target sale items', [
+                'total_quantity' => $existingTotalItems,
+                'items_count' => $targetSale->items->count()
+            ]);
+            
+            // Gabungkan item yang sama
+            $mergedItems = [];
+            foreach ($allItems as $item) {
+                $key = $item['product_id'] . '-' . $item['unit_price'];
+                
+                \Log::info('🔑 Checking item key: ' . $key, $item);
+                
+                if (isset($mergedItems[$key])) {
+                    $mergedItems[$key]['quantity'] += $item['quantity'];
+                    $mergedItems[$key]['subtotal'] += $item['subtotal'];
+                    $mergedItems[$key]['from_sales'][] = $item['from_sale_id'];
+                    \Log::info('➕ Item quantity added', [
+                        'key' => $key,
+                        'new_quantity' => $mergedItems[$key]['quantity']
+                    ]);
+                } else {
+                    $mergedItems[$key] = [
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'subtotal' => $item['subtotal'],
+                        'from_sales' => [$item['from_sale_id']]
+                    ];
+                    \Log::info('🆕 New item added', [
+                        'key' => $key,
+                        'quantity' => $item['quantity']
+                    ]);
+                }
+            }
+
+            \Log::info('🔀 Merged items (before adding existing)', [
+                'count' => count($mergedItems),
+                'items' => $mergedItems
+            ]);
+
+            // Tambahkan item yang sudah ada di target sale
+            foreach ($targetSale->items as $existingItem) {
+                $key = $existingItem->product_id . '-' . $existingItem->unit_price;
+                
+                \Log::info('🏷️ Processing existing item: ' . $key, [
+                    'product_id' => $existingItem->product_id,
+                    'quantity' => $existingItem->quantity,
+                    'price' => $existingItem->unit_price
+                ]);
+                
+                if (isset($mergedItems[$key])) {
+                    $mergedItems[$key]['quantity'] += $existingItem->quantity;
+                    $mergedItems[$key]['subtotal'] += $existingItem->subtotal;
+                    \Log::info('➕ Existing item added to merge', [
+                        'key' => $key,
+                        'new_total_quantity' => $mergedItems[$key]['quantity']
+                    ]);
+                } else {
+                    $mergedItems[$key] = [
+                        'product_id' => $existingItem->product_id,
+                        'quantity' => $existingItem->quantity,
+                        'unit_price' => $existingItem->unit_price,
+                        'subtotal' => $existingItem->subtotal,
+                        'from_sales' => ['existing']
+                    ];
+                    \Log::info('🆕 Existing item as new in merge', ['key' => $key]);
+                }
+            }
+
+            \Log::info('🎯 Final merged items', [
+                'count' => count($mergedItems),
+                'items' => $mergedItems
+            ]);
+
+            // Hapus semua item lama dari target sale
+            \Log::info('🗑️ Deleting old items from target sale');
+            $deletedCount = $targetSale->items()->delete();
+            \Log::info('✅ Deleted ' . $deletedCount . ' old items');
+
+            // Simpan item yang sudah digabung
+            \Log::info('💾 Saving merged items to target sale');
+            foreach ($mergedItems as $mergedItem) {
+                $saleItem = SaleItem::create([
+                    'sale_id' => $targetSale->id,
+                    'product_id' => $mergedItem['product_id'],
+                    'quantity' => $mergedItem['quantity'],
+                    'unit_price' => $mergedItem['unit_price'],
+                    'subtotal' => $mergedItem['subtotal'],
+                ]);
+                
+                \Log::info('💿 Saved item', [
+                    'product_id' => $mergedItem['product_id'],
+                    'quantity' => $mergedItem['quantity'],
+                    'price' => $mergedItem['unit_price']
+                ]);
+            }
+
+            // Hitung ulang total untuk target sale
+            $newSubtotal = array_sum(array_column($mergedItems, 'subtotal'));
+            $newTax = $newSubtotal * 0.10;
+            $newFinalTotal = $newSubtotal + $newTax;
+            
+            \Log::info('🧮 Recalculating totals', [
+                'new_subtotal' => $newSubtotal,
+                'new_tax' => $newTax,
+                'new_final_total' => $newFinalTotal,
+                'old_final_total' => $targetSale->final_total
+            ]);
+            
+            $targetSale->update([
+                'subtotal' => $newSubtotal,
+                'tax' => $newTax,
+                'final_total' => $newFinalTotal,
+                'total' => $newFinalTotal,
+                'updated_at' => now(),
+            ]);
+
+            \Log::info('✅ Target sale updated', [
+                'invoice_number' => $targetSale->invoice_number,
+                'new_final_total' => $newFinalTotal
+            ]);
+
+            // Hapus sale yang sudah digabung (kecuali target sale)
+            \Log::info('🗑️ Deleting merged sales');
+            $deletedSales = Sale::whereIn('id', $this->selectedSalesToMerge)
+                ->where('id', '!=', $this->mergeTargetSale)
+                ->delete();
+                
+            \Log::info('✅ Deleted ' . $deletedSales . ' merged sales');
+
+            // Log activity
+            \Log::info('🎉 Bill merged SUCCESS', [
+                'user_id' => auth()->id(),
+                'target_sale_id' => $targetSale->id,
+                'merged_sale_ids' => array_diff($this->selectedSalesToMerge, [$this->mergeTargetSale]),
+                'total_items_merged' => $totalItems,
+                'existing_items' => $existingTotalItems,
+                'final_item_count' => count($mergedItems)
+            ]);
+
+            \DB::commit();
+
+            $this->showMergeModal = false;
+            $this->selectedSalesToMerge = [];
+            $this->mergeTargetSale = null;
+            
+            $this->dispatch('showNotification', 
+                "✅ Berhasil menggabungkan " . count($salesToMerge) . " transaksi ke #" . $targetSale->invoice_number, 
+                'success'
+            );
+
+            // Refresh available sales list
+            $this->dispatch('refreshSalesList');
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('❌ Gagal menggabungkan transaksi', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+            $this->dispatch('showNotification', '❌ Gagal menggabungkan transaksi: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Cancel merge process
+     */
+    public function cancelMerge()
+    {
+        $this->showMergeModal = false;
+        $this->selectedSalesToMerge = [];
+        $this->mergeTargetSale = null;
+    }
+
+    /**
+     * Safe get merge totals
+     */
+    public function safeGetMergeTotals()
+    {
+        try {
+            return $this->mergeTotals;
+        } catch (\Exception $e) {
+            return [
+                'count' => 0,
+                'total' => 0,
+                'items' => 0,
+                'has_target' => false
+            ];
+        }
+    }
+
+    /**
+     * Safe get target sale info
+     */
+    public function safeGetTargetSaleInfo()
+    {
+        try {
+            return $this->targetSaleInfo;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     protected function getViewData(): array

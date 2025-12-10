@@ -277,13 +277,29 @@
                         BAYAR
                     </button>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-3 gap-2">
+                    {{-- TOMBOL MERGE BILL --}}
+                    <button wire:click="openMergeModal"
+                        class="cursor-pointer bg-purple-600 hover:bg-purple-700 text-white py-2 rounded font-semibold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                        </svg>
+                        Merge Bill
+                    </button>
+                    
                     <button wire:click="openLoadModal"
                         class="cursor-pointer bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded font-semibold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
                         Transaksi
                     </button>
+                    
                     <button wire:click="cancelSale"
                         class="cursor-pointer bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded font-semibold text-xs transition flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
                         Batal
                     </button>
                 </div>
@@ -335,6 +351,295 @@
         </div>
     </nav>
 
+    {{-- MODAL MERGE BILL - FIXED OVERLAY --}}
+    @if($showMergeModal)
+        @php
+            $salesData = is_array($availableSales) ? $availableSales : [];
+            $mergeCount = count($selectedSalesToMerge);
+        @endphp
+        
+        <!-- Modal container dengan z-index yang sangat tinggi -->
+        <div class="fixed inset-0 z-[99999] overflow-y-auto" x-data 
+            style="position: fixed; z-index: 99999;">
+            
+            <!-- Overlay dengan z-index lebih rendah dari modal content -->
+            <div class="fixed inset-0 backdrop-blur-md" 
+                style="position: fixed; z-index: 99998;"
+                @click="$wire.set('showMergeModal', false)"></div>
+
+            <!-- Modal content dengan z-index lebih tinggi -->
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0"
+                style="position: relative; z-index: 99999;">
+                
+                <!-- Spacer untuk alignment -->
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                
+                <!-- Modal panel -->
+                <div class="inline-block w-full max-w-4xl my-8 text-left align-bottom transition-all transform bg-white rounded-lg shadow-2xl sm:my-16 sm:align-middle"
+                    style="position: relative; z-index: 99999;"
+                    @click.stop>
+                    
+                    <!-- Header -->
+                    <div class="px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-t-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">
+                                    <span class="flex items-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                        </svg>
+                                        MERGER BILL
+                                    </span>
+                                </h3>
+                                <p class="text-sm text-purple-100 mt-1">
+                                    Gabungkan beberapa transaksi menjadi satu
+                                </p>
+                            </div>
+                            <button @click="$wire.set('showMergeModal', false)" 
+                                    class="text-white hover:text-gray-200 transition cursor-pointer">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="px-6 py-4 bg-gray-50 max-h-[70vh] overflow-y-auto">
+                        <!-- Instructions -->
+                        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex">
+                                <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-medium text-blue-800">
+                                        Cara menggunakan Merger Bill:
+                                    </p>
+                                    <ol class="text-xs text-blue-600 mt-1 list-decimal pl-4 space-y-1">
+                                        <li>Pilih minimal 2 transaksi dengan mengeklik kartu transaksi</li>
+                                        <li>Tentukan transaksi tujuan dengan mengeklik tombol "Jadikan Tujuan"</li>
+                                        <li>Transaksi lainnya akan digabungkan ke transaksi tujuan</li>
+                                        <li>Transaksi asal akan dihapus setelah digabungkan</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Selected Info -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Terpilih:</span>
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
+                                        {{ $mergeCount }} transaksi
+                                    </span>
+                                </div>
+                                <div class="text-xs text-gray-600">
+                                    @if($mergeCount > 0)
+                                        @php
+                                            $totalAmount = 0;
+                                            $totalItems = 0;
+                                            try {
+                                                $selectedSales = \App\Models\Sale::whereIn('id', $selectedSalesToMerge)->get();
+                                                foreach ($selectedSales as $sale) {
+                                                    $totalAmount += $sale->final_total ?? 0;
+                                                    $totalItems += $sale->items->sum('quantity') ?? 0;
+                                                }
+                                            } catch (\Exception $e) {
+                                                // ignore
+                                            }
+                                        @endphp
+                                        <p>Total nilai: <span class="font-bold">Rp{{ number_format($totalAmount, 0, ',', '.') }}</span></p>
+                                        <p>Total items: <span class="font-bold">{{ $totalItems }}</span> produk</p>
+                                    @else
+                                        <p class="text-gray-400">Belum ada transaksi terpilih</p>
+                                    @endif
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Transaksi Tujuan:</span>
+                                    @if($mergeTargetSale)
+                                        @php
+                                            $targetSale = \App\Models\Sale::find($mergeTargetSale);
+                                        @endphp
+                                        @if($targetSale)
+                                            <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full">
+                                                #{{ $targetSale->invoice_number }}
+                                            </span>
+                                        @else
+                                            <span class="text-xs text-gray-400">Belum dipilih</span>
+                                        @endif
+                                    @else
+                                        <span class="text-xs text-gray-400">Belum dipilih</span>
+                                    @endif
+                                </div>
+                                @if($mergeTargetSale && isset($targetSale))
+                                    <div class="text-xs text-gray-600">
+                                        <p>Customer: <span class="font-bold">{{ $targetSale->customer_name }}</span></p>
+                                        <p>Items: <span class="font-bold">{{ $targetSale->items->sum('quantity') }}</span> produk</p>
+                                        <p>Total: <span class="font-bold">Rp{{ number_format($targetSale->final_total, 0, ',', '.') }}</span></p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Sales List -->
+                        <div class="mb-4">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-2">DAFTAR TRANSAKSI DRAFT</h4>
+                            @if(!empty($salesData))
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-1">
+                                    @foreach($salesData as $sale)
+                                        @php
+                                            // DEBUG: Lihat struktur data
+                                            // \Log::info('📝 Sale item data', [
+                                            //     'sale_id' => $sale['id'] ?? 'no_id',
+                                            //     'invoice_number' => $sale['invoice_number'] ?? 'no_invoice',
+                                            //     'has_items' => isset($sale['items']) && !empty($sale['items'])
+                                            // ]);
+                                            
+                                            $saleId = $sale['id'] ?? null;
+                                            $invoiceNumber = $sale['invoice_number'] ?? 'N/A';
+                                            $customerName = $sale['customer_name'] ?? 'N/A';
+                                            $finalTotal = $sale['final_total'] ?? 0;
+                                            $orderType = $sale['order_type'] ?? 'N/A';
+                                            $createdAt = isset($sale['created_at']) ? \Carbon\Carbon::parse($sale['created_at'])->format('H:i') : 'N/A';
+                                            $userName = isset($sale['user']['name']) ? $sale['user']['name'] : (isset($sale['user_name']) ? $sale['user_name'] : 'N/A');
+                                            
+                                            // Hitung total items
+                                            $totalItems = 0;
+                                            if (isset($sale['items']) && is_array($sale['items'])) {
+                                                foreach ($sale['items'] as $item) {
+                                                    $totalItems += $item['quantity'] ?? 0;
+                                                }
+                                            }
+                                            
+                                            // Check if selected
+                                            $isSelected = in_array($saleId, $selectedSalesToMerge);
+                                            $isTarget = $mergeTargetSale == $saleId;
+                                            
+                                            // Styling classes
+                                            $borderClass = $isTarget ? 'border-2 border-green-500' : 
+                                                        ($isSelected ? 'border-2 border-blue-500' : 'border-gray-200');
+                                            $bgClass = $isTarget ? 'bg-green-50' : 
+                                                    ($isSelected ? 'bg-blue-50' : 'bg-white hover:bg-gray-50');
+                                        @endphp
+                                        
+                                        <div wire:click="toggleSelectSale({{ $saleId }})"
+                                            class="cursor-pointer border rounded-lg p-3 transition-all duration-200 {{ $borderClass }} {{ $bgClass }} shadow-sm"
+                                            onclick="event.stopPropagation();">
+                                            
+                                            <div class="flex justify-between items-start mb-2">
+                                                <div class="flex-1">
+                                                    <div class="flex items-center mb-1">
+                                                        @if($isTarget)
+                                                            <span class="mr-2 px-1.5 py-0.5 bg-green-100 text-green-800 text-xs font-bold rounded whitespace-nowrap">
+                                                                TUJUAN
+                                                            </span>
+                                                        @endif
+                                                        <span class="font-bold text-sm text-gray-900 truncate">
+                                                            {{ $invoiceNumber }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="text-xs text-gray-600 truncate">
+                                                        {{ $createdAt }} • {{ $customerName }}
+                                                    </p>
+                                                </div>
+                                                <span class="text-sm font-bold {{ $isSelected || $isTarget ? 'text-blue-600' : 'text-gray-700' }} whitespace-nowrap ml-2">
+                                                    Rp{{ number_format($finalTotal, 0, ',', '.') }}
+                                                </span>
+                                            </div>
+
+                                            <div class="text-xs text-gray-600 mb-2">
+                                                <div class="flex items-center justify-between">
+                                                    <span>Items: {{ $totalItems }}</span>
+                                                    <span>{{ $orderType }}</span>
+                                                </div>
+                                                <div class="mt-1">
+                                                    <span>Kasir: {{ $userName }}</span>
+                                                </div>
+                                            </div>
+
+                                            @if($isSelected && !$isTarget)
+                                                <div class="flex justify-end mt-2">
+                                                    <button 
+                                                        wire:click="setMergeTarget({{ $saleId }})"
+                                                        onclick="event.stopPropagation();"
+                                                        class="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-800 font-medium rounded transition">
+                                                        Jadikan Tujuan
+                                                    </button>
+                                                </div>
+                                            @endif
+
+                                            <!-- Selection indicator -->
+                                            <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                                                <div class="flex items-center">
+                                                    <div class="w-4 h-4 rounded-full border flex items-center justify-center mr-2
+                                                        {{ $isSelected ? ($isTarget ? 'bg-green-500 border-green-500' : 'bg-blue-500 border-blue-500') : 'border-gray-300' }}">
+                                                        @if($isSelected)
+                                                            <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        @endif
+                                                    </div>
+                                                    <span class="text-xs {{ $isSelected ? 'font-medium' : 'text-gray-500' }}">
+                                                        {{ $isSelected ? ($isTarget ? 'Tujuan' : 'Terpilih') : 'Klik untuk pilih' }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-8 bg-white rounded-lg border border-gray-200">
+                                    <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                    </svg>
+                                    <p class="text-gray-500">Tidak ada transaksi draft</p>
+                                    <p class="text-xs text-gray-400 mt-1">Buat transaksi draft terlebih dahulu</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="px-6 py-3 bg-gray-100 border-t border-gray-200 rounded-b-lg flex justify-between items-center">
+                        <div class="text-sm text-gray-600">
+                            <span class="font-medium">Info:</span> Transaksi yang digabung akan dihapus kecuali transaksi tujuan
+                        </div>
+                        <div class="flex space-x-2">
+                            <button 
+                                @click="$wire.set('showMergeModal', false)"
+                                class="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition">
+                                Batal
+                            </button>
+                            <button 
+                                wire:click="processMergeBill"
+                                wire:loading.attr="disabled"
+                                wire:loading.class="opacity-50 cursor-not-allowed"
+                                class="cursor-pointer px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition
+                                    {{ count($selectedSalesToMerge) < 2 || !$mergeTargetSale ? 'opacity-50 cursor-not-allowed' : '' }}"
+                                {{ count($selectedSalesToMerge) < 2 || !$mergeTargetSale ? 'disabled' : '' }}>
+                                <span class="flex items-center">
+                                    <svg wire:loading.remove wire:target="processMergeBill" 
+                                        class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                    </svg>
+                                    <svg wire:loading wire:target="processMergeBill" 
+                                        class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    Gabungkan Transaksi
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
     {{-- Include Modal Components --}}
     <livewire:pos-cash-in-modal />
     <livewire:pos-load-modal />
