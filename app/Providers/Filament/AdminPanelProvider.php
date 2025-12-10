@@ -2,9 +2,6 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Resources\Reservations\Widgets\ReservationCalendarWidget;
-use App\Filament\Widgets\BestSellingDrinkChart;
-use App\Filament\Widgets\BestSellingFoodChart;
 use Filament\Panel;
 use Livewire\Livewire;
 use Filament\PanelProvider;
@@ -18,6 +15,9 @@ use Illuminate\Support\Facades\Request;
 use Filament\Widgets\FilamentInfoWidget;
 use Filament\Http\Middleware\Authenticate;
 use App\Filament\Widgets\LowStockAlertWidget;
+use App\Filament\Widgets\BestSellingFoodChart;
+use Resma\FilamentAwinTheme\FilamentAwinTheme;
+use App\Filament\Widgets\BestSellingDrinkChart;
 use App\Filament\Widgets\RevenueOverviewWidget;
 use Illuminate\Session\Middleware\StartSession;
 use App\Filament\Widgets\PeakHoursHeatmapWidget;
@@ -32,6 +32,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use App\Filament\Resources\Reservations\Widgets\ReservationCalendarWidget;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -82,7 +83,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->maxContentWidth(Width::Full)
             ->plugins([
-                FilamentApexChartsPlugin::make()
+                FilamentApexChartsPlugin::make(),
+                FilamentAwinTheme::make()
+                    ->primaryColor('#3b82f6'),
             ]);
     }
 }
