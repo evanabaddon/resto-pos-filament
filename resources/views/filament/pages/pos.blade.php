@@ -1,5 +1,57 @@
 {{-- resources/views/filament/pages/pos.blade.php --}}
-<div class="h-full flex flex-col lg:flex-row bg-gray-50 overflow-hidden min-h-0">
+<div x-data="posLayout()"
+         x-init="initLayout()"
+         @resize.window.debounce.200ms="calculatePerPage()"
+         class="h-full flex flex-col lg:flex-row bg-gray-50 overflow-hidden min-h-0">
+        
+        <script>
+            function posLayout() {
+                return {
+                    perPage: 12, // Default fallback
+                    
+                    initLayout() {
+                        this.calculatePerPage();
+                    },
+
+                    calculatePerPage() {
+                        // 1. Get Available Height for Grid
+                        // Window Height - Topbar/Header (~64px) - Page Padding/Search/Filter (~200px) - Pagination Footer (~80px)
+                        // Approximation: 360px occupied by UI chrome
+                        const availableHeight = window.innerHeight - 340; 
+                        
+                        // 2. Estimate Card Height (including gap)
+                        const cardHeight = 210; // Approx height in px
+                        
+                        // 3. Calculate Rows
+                        let rows = Math.floor(availableHeight / cardHeight);
+                        if (rows < 2) rows = 2; // Minimum 2 rows
+                        
+                        // 4. Calculate Columns based on Breakpoints (matching Tailwind classes)
+                        let cols = 2; // Default mobile
+                        const width = window.innerWidth;
+                        
+                        if (width >= 1536) cols = 7; // 2xl
+                        else if (width >= 1280) cols = 6; // xl
+                        else if (width >= 1024) cols = 5; // lg
+                        else if (width >= 768) cols = 4; // md
+                        else if (width >= 640) cols = 3; // sm
+                        
+                        // 5. Calculate Total Limit
+                        const optimalCount = rows * cols;
+                        
+                        // 6. Update Livewire if changed significantly
+                        if (optimalCount !== this.perPage) {
+                            this.perPage = optimalCount;
+                            // Use timeout to prevent rapid firing during resize
+                            clearTimeout(window.resizeTimer);
+                            window.resizeTimer = setTimeout(() => {
+                                @this.updatePerPage(optimalCount);
+                            }, 300);
+                        }
+                    }
+                }
+            }
+        </script>
 
     {{-- 💰 PRODUK SECTION --}}
     <div id="mobile-products-section" class="mobile-section lg:flex-1 lg:min-w-[60%] w-full h-full flex flex-col border-r border-gray-200 bg-white shadow-sm min-h-0 overflow-hidden">

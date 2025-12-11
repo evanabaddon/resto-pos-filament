@@ -85,6 +85,7 @@ class Pos extends Page
     public $editingNotesIndex = null;
     public $itemNotes = '';
     public $searchQuery = '';
+    public $perPage = 12; // Default per page
 
     public function mount()
     {
@@ -310,6 +311,15 @@ class Pos extends Page
     }
 
     /**
+     * Update per page count from frontend
+     */
+    public function updatePerPage($count)
+    {
+        $this->perPage = $count;
+        $this->resetPage();
+    }
+
+    /**
      * Clear search
      */
     public function clearSearch()
@@ -353,7 +363,8 @@ class Pos extends Page
         }
 
         // Use DB Pagination (Optimized)
-        return $query->orderBy('name', 'asc')->paginate(12);
+        // Use DB Pagination (Optimized)
+        return $query->orderBy('name', 'asc')->paginate($this->perPage);
     }
 
     /**
