@@ -237,25 +237,27 @@
     {{-- 🧺 KERANJANG SECTION - FIXED FOR DESKTOP & MOBILE --}}
     <div id="mobile-cart-section" class="mobile-section lg:flex lg:w-[400px] xl:w-[450px] w-full h-full flex-col bg-white shadow-lg border-l border-gray-200 flex-shrink-0 min-h-0 overflow-hidden">
         {{-- Header Keranjang --}}
-        <div class="p-5 bg-white border-b border-gray-100 flex-shrink-0 z-20 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
+        <div class="p-5 bg-white/80 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-20 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-xl font-bold text-gray-900 tracking-tight mobile-text-lg">Keranjang</h1>
-                    <div class="flex items-center text-xs text-slate-500 mt-0.5">
-                        <span class="font-medium">No. Pesanan:</span>
-                        <span class="ml-1 font-mono font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">{{ $orderNumber }}</span>
+                    <h1 class="text-xl font-bold text-slate-800 tracking-tight mobile-text-lg flex items-center gap-2">
+                        <span>🛒</span> Keranjang
+                    </h1>
+                    <div class="flex items-center text-xs text-slate-500 mt-1">
+                        <span class="font-medium opacity-75">No. Order:</span>
+                        <span class="ml-1.5 font-mono font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md border border-violet-100">{{ $orderNumber }}</span>
                     </div>
                 </div>
                 <div class="text-right ml-2 flex-shrink-0">
-                    <div class="text-xs font-semibold text-slate-500 text-right">Kasir</div>
-                    <div class="font-bold text-slate-800 text-sm truncate">{{ $this->getNameUserLogin() }}</div>
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Kasir</div>
+                    <div class="font-bold text-slate-700 text-sm truncate bg-slate-100 px-2 py-1 rounded-lg">{{ $this->getNameUserLogin() }}</div>
                 </div>
             </div>
 
             {{-- Customer & Order Info --}}
             <div class="space-y-3">
-                {{-- Tipe Order (Segmented Control) --}}
-                <div class="bg-slate-100 p-1 rounded-xl flex shadow-inner">
+                {{-- Tipe Order (Segmented Control - Glassy) --}}
+                <div class="bg-slate-100/50 p-1 rounded-xl flex shadow-inner border border-slate-200/50">
                     <button 
                         wire:click="setOrderType('Dine In')"
                         class="flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 focus:outline-none touch-target flex gap-2 items-center justify-center
@@ -282,7 +284,7 @@
                     <input 
                         type="text" 
                         wire:model="customerName"
-                        class="block w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 sm:text-sm transition shadow-sm mobile-text-sm"
+                        class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 bg-slate-50/50 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm mobile-text-sm font-medium"
                         placeholder="Nama Pelanggan (Optional)">
                 </div>
             </div>
@@ -360,14 +362,15 @@
                     </div>
                 </div>
             @empty
-                <div class="flex flex-col items-center justify-center h-48 text-center text-slate-400 px-4 mt-8">
-                     <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4 shadow-sm animate-pulse-slow">
-                        <svg class="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                        </svg>
+                <div class="flex flex-col items-center justify-center h-64 text-center text-slate-400 px-6 mt-4">
+                     <div class="relative w-24 h-24 mb-6 group">
+                        <div class="absolute inset-0 bg-violet-100 rounded-full opacity-50 blur-xl group-hover:scale-110 transition-transform duration-500"></div>
+                        <div class="relative w-full h-full bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-slate-50 group-hover:-translate-y-1 transition-transform duration-300">
+                            <span class="text-4xl filter grayscale group-hover:grayscale-0 transition-all duration-300">🛍️</span>
+                        </div>
                      </div>
-                     <h3 class="font-bold text-slate-600 text-sm">Keranjang Kosong</h3>
-                     <p class="text-xs mt-1 leading-relaxed">Pilih produk dari menu untuk memulai pesanan.</p>
+                     <h3 class="font-bold text-slate-700 text-base mb-2">Keranjang Belum Keisi Nih</h3>
+                     <p class="text-xs text-slate-400 leading-relaxed max-w-[200px]">Yuk pilih menu favorit pelanggan di sebelah kiri!</p>
                 </div>
             @endforelse
             
