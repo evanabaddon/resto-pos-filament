@@ -81,24 +81,26 @@
         </div>
 
         {{-- Grid Produk - Modern Design --}}
-        <div class="flex-1 overflow-y-auto p-4 bg-slate-50 relative" id="product-grid-container">
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 pb-20 lg:pb-0">
+        {{-- Grid Produk - Modern Design --}}
+        <div class="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-50 relative" id="product-grid-container">
+            {{-- Compact Grid: Mobile 2, Tablet 3, Desktop 4/5, Large 6/7 --}}
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 pb-24 lg:pb-0">
                 @forelse ($products as $index => $product)
                     @php
                         $isAvailable = $this->checkProductAvailability($product);
                     @endphp
                     <div @if($isAvailable) wire:click="quickAddProduct({{ $product->id }})" @endif
-                        class="group relative bg-white rounded-2xl p-2.5 flex flex-col items-stretch transition-all duration-200 select-none touch-manipulation
+                        class="group relative bg-white rounded-xl p-2 flex flex-col items-stretch transition-all duration-200 select-none touch-manipulation
                         {{ $isAvailable 
-                            ? 'cursor-pointer shadow-sm hover:shadow-lg hover:-translate-y-1 active:scale-95 border border-slate-100 hover:border-violet-100' 
+                            ? 'cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-slate-100 hover:border-violet-200' 
                             : 'cursor-not-allowed opacity-60 grayscale bg-slate-50 border border-slate-100' }}">
                         
-                        {{-- Stock Badge --}}
+                        {{-- Stock Badge (Refined) --}}
                         @if($product->type !== 'produced' && $product->type !== 'bar')
-                            <div class="absolute top-2 right-2 z-10 pointer-events-none">
-                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold tracking-wide shadow-sm
-                                    {{ $product->stock > 10 ? 'bg-emerald-100 text-emerald-700' : 
-                                        ($product->stock > 0 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700') }}">
+                            <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
+                                    {{ $product->stock > 10 ? 'bg-white/90 text-emerald-700 border-emerald-100' : 
+                                        ($product->stock > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
                                     {{ intval($product->stock) }}
                                 </span>
                             </div>
@@ -106,42 +108,42 @@
 
                         {{-- OUT OF STOCK OVERLAY --}}
                         @if(!$isAvailable)
-                            <div class="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-2xl pointer-events-none">
-                                <span class="px-3 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-full shadow-lg transform -rotate-6">HABIS</span>
+                            <div class="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-xl pointer-events-none">
+                                <span class="px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold rounded shadow-lg transform -rotate-6 tracking-wider">HABIS</span>
                             </div>
                         @endif
                         
-                        {{-- Product Image --}}
-                        <div class="aspect-[4/3] w-full mb-2.5 rounded-xl bg-slate-100 overflow-hidden relative shadow-inner">
+                        {{-- Product Image (Compact 4:3) --}}
+                        <div class="aspect-[4/3] w-full mb-2 rounded-lg bg-slate-100 overflow-hidden relative shadow-inner">
                             @if($product->image)
                                 <img src="{{ $product->image_url }}"
                                     alt="{{ $product->name }}"
-                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
                                     loading="lazy">
                             @else
                                 <div class="w-full h-full flex items-center justify-center text-slate-300">
-                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </div>
                             @endif
                             
-                            {{-- Add Button Overlay (Mobile Visual Cue) --}}
+                            {{-- Add Button Overlay (Mobile Visual Cue - Minimal) --}}
                             @if($isAvailable)
                             <div class="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div class="bg-white/90 p-1.5 rounded-full shadow-sm text-violet-600">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                <div class="bg-violet-600/90 p-1 rounded-full shadow-sm text-white">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                                 </div>
                             </div>
                             @endif
                         </div>
 
-                        {{-- Product Info --}}
+                        {{-- Product Info (Compact) --}}
                         <div class="flex-1 flex flex-col min-h-0">
-                            <h3 class="text-xs font-bold text-slate-700 leading-snug line-clamp-2 mb-1 group-hover:text-violet-700 transition-colors">
+                            <h3 class="text-[11px] sm:text-xs font-bold text-slate-700 leading-tight line-clamp-2 mb-1 group-hover:text-violet-700 transition-colors">
                                 {{ $product->name }}
                             </h3>
-                            <div class="mt-auto pt-1">
-                                <p class="text-sm font-black text-violet-600 leading-none">
-                                    <span class="text-[10px] font-normal text-violet-400 mr-0.5">Rp</span>{{ number_format($product->sell_price, 0, ',', '.') }}
+                            <div class="mt-auto pt-0.5">
+                                <p class="text-xs sm:text-sm font-black text-violet-600 leading-none">
+                                    <span class="text-[9px] font-normal text-violet-400 mr-0.5">Rp</span>{{ number_format($product->sell_price, 0, ',', '.') }}
                                 </p>
                             </div>
                         </div>
@@ -159,9 +161,11 @@
                 @endforelse
             </div>
             
-            {{-- Pagination Links --}}
-            <div class="mt-6 px-2 pb-safe">
-                {{ $products->links() }}
+            {{-- Pagination Links (Responsive Scrollable) --}}
+            <div class="mt-8 px-2 sm:px-4 pb-24 lg:pb-8 flex justify-center w-full">
+                <div class="bg-white/60 backdrop-blur-md rounded-full px-4 py-2 shadow-sm border border-slate-200/50 overflow-x-auto max-w-full no-scrollbar">
+                    {{ $products->onEachSide(1)->links() }}
+                </div>
             </div>
             
             {{-- Search Results Info --}}

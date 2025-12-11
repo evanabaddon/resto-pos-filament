@@ -9,61 +9,60 @@
             <div class="relative w-full max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-modal-pop">
                 
                 {{-- Header --}}
-                <div class="bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-4 flex items-center justify-between flex-shrink-0">
+                <div class="bg-white px-6 py-4 flex items-center justify-between flex-shrink-0 border-b border-slate-100/50">
                     <div>
-                        <h2 class="text-lg font-bold text-white tracking-wide">Selesaikan Pembayaran</h2>
-                        <p class="text-violet-100 text-xs mt-0.5 opacity-90">Transaction #{{ $invoiceNumber }}</p>
+                        <h2 class="text-lg font-bold text-slate-800 tracking-tight">Selesaikan Pembayaran</h2>
+                        <p class="text-slate-400 text-xs mt-0.5 font-medium">Transaction <span class="font-mono text-violet-500">#{{ $invoiceNumber }}</span></p>
                     </div>
-                    <button wire:click="closeModal" class="text-white/80 hover:text-white transition p-2 rounded-full hover:bg-white/10 touch-target">
+                    <button wire:click="closeModal" class="text-slate-400 hover:text-slate-600 transition p-2 rounded-full hover:bg-slate-100 touch-target">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
                 {{-- Scrollable Content --}}
-                <div class="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-6">
+                <div class="flex-1 overflow-y-auto bg-slate-50/50 p-4 space-y-4 sm:p-6 sm:space-y-6">
                     
                     {{-- 1. Total Tagihan (Hero Card) --}}
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 text-center relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500"></div>
-                        <p class="text-slate-500 text-sm font-medium uppercase tracking-wider mb-1">Total Tagihan</p>
-                        <h3 class="text-4xl font-black text-slate-800 tracking-tight">
-                            <span class="text-2xl text-slate-400 font-bold mr-1 align-top relative top-1">Rp</span>{{ number_format($finalTotal, 0, ',', '.') }}
+                    <div class="bg-white rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.08)] border border-slate-100 p-5 text-center relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Total Tagihan</p>
+                        <h3 class="text-4xl sm:text-5xl font-black text-slate-800 tracking-tight flex justify-center items-start gap-1">
+                            <span class="text-xl sm:text-2xl text-slate-400 font-bold mt-1">Rp</span>{{ number_format($finalTotal, 0, ',', '.') }}
                         </h3>
                         @if($customerName)
-                            <div class="mt-3 inline-flex items-center px-3 py-1 bg-violet-50 text-violet-700 rounded-full text-xs font-bold">
-                                <span class="mr-1">👤</span> {{ $customerName }}
+                            <div class="mt-4 inline-flex items-center px-3 py-1 bg-violet-50 border border-violet-100 text-violet-700 rounded-full text-xs font-bold shadow-sm">
+                                <span class="mr-1.5 opacity-70">👤</span> {{ $customerName }}
                             </div>
                         @endif
                     </div>
 
                     {{-- 2. Metode Pembayaran (Grid) --}}
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-3 ml-1">Pilih Metode Pembayaran</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Metode Pembayaran</label>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             @foreach($paymentMethods as $method)
                                 <button 
                                     wire:click="$set('payment_method', '{{ $method['id'] }}')"
-                                    class="group relative flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 touch-target
+                                    class="group relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 touch-target
                                     {{ $payment_method == $method['id'] 
-                                        ? 'bg-violet-50 border-violet-600 shadow-md transform -translate-y-0.5' 
-                                        : 'bg-white border-slate-200 hover:border-violet-300 hover:shadow-sm' }}">
+                                        ? 'bg-violet-600 border-violet-600 shadow-lg shadow-violet-200 scale-[1.02]' 
+                                        : 'bg-white border-slate-200 hover:border-violet-300 hover:shadow-md' }}">
                                     
-                                    {{-- Radio Indicator --}}
-                                    <div class="absolute top-3 right-3 w-4 h-4 rounded-full border-2 flex items-center justify-center
-                                        {{ $payment_method == $method['id'] ? 'border-violet-600' : 'border-slate-300' }}">
-                                        @if($payment_method == $method['id'])
-                                            <div class="w-2 h-2 rounded-full bg-violet-600"></div>
-                                        @endif
-                                    </div>
+                                    {{-- Radio Check --}}
+                                    @if($payment_method == $method['id'])
+                                        <div class="absolute top-2 right-2 bg-white/20 rounded-full p-1">
+                                            <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                        </div>
+                                    @endif
 
-                                    <span class="text-2xl mb-2 grayscale group-hover:grayscale-0 transition-all duration-300">
+                                    <span class="text-2xl mb-2 transition-transform duration-300 group-hover:scale-110 {{ $payment_method == $method['id'] ? '' : 'grayscale group-hover:grayscale-0' }}">
                                         @if(stripos($method['name'], 'cash') !== false) 💵
                                         @elseif(stripos($method['name'], 'qris') !== false) 📱
                                         @elseif(stripos($method['name'], 'card') !== false) 💳
                                         @else 🪙
                                         @endif
                                     </span>
-                                    <span class="text-xs font-bold {{ $payment_method == $method['id'] ? 'text-violet-700' : 'text-slate-600' }} text-center leading-tight">
+                                    <span class="text-xs font-bold {{ $payment_method == $method['id'] ? 'text-white' : 'text-slate-600' }} text-center leading-tight">
                                         {{ $method['name'] }}
                                     </span>
                                 </button>
@@ -74,44 +73,65 @@
                     {{-- 3. Input Pembayaran (Contextual) --}}
                     @if($isCashPayment)
                         <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm animate-fade-in-up">
-                            <label class="block text-sm font-bold text-slate-700 mb-2">Nominal Diterima</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nominal Diterima</label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <span class="text-slate-400 text-xl font-bold">Rp</span>
                                 </div>
                                 <input type="number" 
                                        wire:model.live="amount_paid"
                                        wire:keydown.enter="processPayment"
-                                       class="block w-full pl-12 pr-4 py-4 text-3xl font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-violet-100 focus:border-violet-500 transition-all placeholder-slate-300"
+                                       class="block w-full pl-14 pr-5 py-4 text-3xl font-bold text-slate-800 bg-slate-50 border-2 border-slate-100 rounded-xl focus:ring-0 focus:border-violet-500 focus:bg-white transition-all placeholder-slate-300"
                                        placeholder="0"
+                                       inputmode="numeric"
                                        autofocus>
                             </div>
 
-                            {{-- Kembalian Display --}}
-                            <div class="mt-4 flex items-center justify-between p-4 bg-slate-50 rounded-xl border {{ $amount_paid >= $finalTotal ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-100' }}">
-                                <span class="text-sm font-semibold text-slate-600">Kembalian</span>
-                                <span class="text-xl font-black {{ $amount_paid >= $finalTotal ? 'text-emerald-600' : 'text-slate-400' }}">
-                                    Rp{{ number_format(max(0, $this->change), 0, ',', '.') }}
-                                </span>
+                            {{-- Kembalian Display (Refined) --}}
+                            <div class="mt-4 overflow-hidden rounded-xl border {{ $amount_paid >= $finalTotal ? 'border-emerald-200 bg-emerald-50' : 'border-slate-100 bg-slate-50' }} transition-colors duration-300">
+                                <div class="flex items-center justify-between p-4">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs font-bold uppercase tracking-wider {{ $amount_paid >= $finalTotal ? 'text-emerald-600' : 'text-slate-500' }}">Kembalian</span>
+                                        @if($amount_paid > 0 && $amount_paid < $finalTotal)
+                                            <span class="text-[10px] font-bold text-rose-500 mt-0.5">⚠️ Kurang {{ number_format($finalTotal - $amount_paid, 0, ',', '.') }}</span>
+                                        @endif
+                                    </div>
+                                    <span class="text-2xl font-black {{ $amount_paid >= $finalTotal ? 'text-emerald-600' : 'text-slate-300' }}">
+                                        Rp{{ number_format(max(0, $this->change), 0, ',', '.') }}
+                                    </span>
+                                </div>
+                                {{-- Suggested Amounts Pills (Optional - Just Visual for now or logic can be added later) --}}
+                                @if($finalTotal > 0 && $amount_paid == 0)
+                                    <div class="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
+                                        <button wire:click="$set('amount_paid', {{ $finalTotal }})" class="flex-shrink-0 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:border-violet-300 hover:text-violet-600 transition">
+                                            Uang Pas
+                                        </button>
+                                        <button wire:click="$set('amount_paid', {{ ceil($finalTotal / 10000) * 10000 }})" class="flex-shrink-0 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:border-violet-300 hover:text-violet-600 transition">
+                                            {{ number_format(ceil($finalTotal / 10000) * 10000, 0, ',', '.') }}
+                                        </button>
+                                        <button wire:click="$set('amount_paid', {{ ceil($finalTotal / 50000) * 50000 }})" class="flex-shrink-0 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:border-violet-300 hover:text-violet-600 transition">
+                                            {{ number_format(ceil($finalTotal / 50000) * 50000, 0, ',', '.') }}
+                                        </button>
+                                    </div>
+                                @endif
                             </div>
-                            
-                            @if($amount_paid > 0 && $amount_paid < $finalTotal)
-                                <p class="text-rose-500 text-xs font-bold mt-2 text-right">⚠️ Kurang Rp{{ number_format($finalTotal - $amount_paid, 0, ',', '.') }}</p>
-                            @endif
                         </div>
                     @else
                          {{-- Non-Cash Feedback --}}
                          @if($selectedPaymentMethod)
-                            <div class="bg-sky-50 rounded-2xl p-6 border border-sky-100 text-center animate-fade-in-up">
-                                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm text-3xl">
-                                    ✓
+                            <div class="bg-violet-50 rounded-2xl p-8 border border-violet-100 text-center animate-fade-in-up">
+                                <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-4xl ring-4 ring-violet-100">
+                                    @if(stripos($selectedPaymentMethod['name'], 'qris') !== false) 📱
+                                    @elseif(stripos($selectedPaymentMethod['name'], 'card') !== false) 💳
+                                    @else ✓
+                                    @endif
                                 </div>
-                                <h3 class="text-sky-800 font-bold text-lg mb-1">{{ $selectedPaymentMethod['name'] }} Selected</h3>
-                                <p class="text-sky-600 text-sm">Proceed to process exact amount: <span class="font-bold">Rp{{ number_format($finalTotal, 0, ',', '.') }}</span></p>
+                                <h3 class="text-violet-900 font-bold text-lg mb-1">{{ $selectedPaymentMethod['name'] }} Selected</h3>
+                                <p class="text-violet-600 text-sm">Silakan proses pembayaran sejumlah <span class="font-bold">Rp{{ number_format($finalTotal, 0, ',', '.') }}</span></p>
                             </div>
                         @else
-                            <div class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-slate-50/50">
-                                <p class="text-slate-400 font-medium text-sm">Silakan pilih metode pembayaran di atas</p>
+                            <div class="border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center bg-slate-50/50">
+                                <p class="text-slate-400 font-bold text-sm">Silakan pilih metode pembayaran di atas</p>
                             </div>
                         @endif
                     @endif
@@ -119,15 +139,16 @@
                 </div>
 
                 {{-- Footer Actions --}}
-                <div class="p-6 bg-white border-t border-slate-100 flex gap-3 pb-safe z-20 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
+                <div class="p-4 sm:p-6 bg-white border-t border-slate-100 flex gap-3 z-20 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]"
+                     style="padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));">
                     <button wire:click="closeModal"
-                        class="flex-1 py-3.5 px-6 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition focus:scale-[0.98]">
+                        class="flex-1 py-3.5 px-6 rounded-xl bg-white border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 transition focus:scale-[0.98] shadow-sm">
                         BATAL
                     </button>
                     
                     <button wire:click="processPayment"
                         wire:loading.attr="disabled"
-                        class="flex-[2] py-3.5 px-6 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm shadow-lg shadow-violet-200 hover:shadow-xl hover:-translate-y-0.5 transition-all focus:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 group"
+                        class="flex-[2] py-3.5 px-6 rounded-xl bg-slate-900 text-white font-bold text-sm shadow-lg shadow-slate-200 hover:bg-black hover:shadow-xl hover:-translate-y-0.5 transition-all focus:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 group"
                         {{ (!$payment_method || ($isCashPayment && $amount_paid < $finalTotal)) ? 'disabled' : '' }}>
                         
                         <span wire:loading.remove class="flex items-center gap-2">
@@ -148,46 +169,53 @@
         </div>
     @endif
     
-    {{-- Modal Preview Struk (Redesigned) --}}
+    {{-- Modal Preview Struk (Redesigned & Fixed Formatting) --}}
     @if ($showReceiptPreview)
         <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-             <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" wire:click="closeReceiptPreview"></div>
+             <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity" wire:click="closeReceiptPreview"></div>
             
-             <div class="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-modal-pop">
-                {{-- Receipt Header --}}
-                <div class="bg-slate-800 text-white px-5 py-3 flex justify-between items-center">
-                    <h3 class="font-bold text-sm uppercase tracking-wider">Preview Struk</h3>
-                    <button wire:click="closeReceiptPreview" class="text-slate-400 hover:text-white transition">✕</button>
-                </div>
-                
-                {{-- Paper Roll Effect Container --}}
-                <div class="flex-1 overflow-y-auto bg-slate-100 p-4">
-                    <div class="receipt-preview bg-white p-4 shadow-sm text-xs sm:text-sm font-mono border-t-8 border-slate-800/10 relative">
-                        {{-- Jagged Edge Top --}}
-                         <div class="absolute top-0 left-0 w-full h-2 bg-[linear-gradient(135deg,transparent_5px,#fff_5px),linear-gradient(225deg,transparent_5px,#fff_5px)] bg-[length:10px_10px] bg-repeat-x mt-[-10px]"></div>
-                        
-                        {!! $receiptContent !!}
-                        
-                         {{-- Jagged Edge Bottom --}}
-                         <div class="absolute bottom-0 left-0 w-full h-2 bg-[linear-gradient(45deg,transparent_5px,#fff_5px),linear-gradient(-45deg,transparent_5px,#fff_5px)] bg-[length:10px_10px] bg-repeat-x mb-[-10px]"></div>
+             <div class="relative w-full max-w-sm bg-transparent flex flex-col items-center animate-modal-pop">
+                {{-- Paper Receipt --}}
+                <div class="w-full bg-white shadow-2xl overflow-hidden relative" style="filter: drop-shadow(0 20px 13px rgba(0, 0, 0, 0.1));">
+                    {{-- Jagged Top --}}
+                    <div class="w-full h-4 bg-slate-900 relative z-10"></div>
+                     <div class="w-full h-2 bg-[linear-gradient(135deg,transparent_5px,#fff_5px),linear-gradient(225deg,transparent_5px,#fff_5px)] bg-[length:10px_10px] bg-repeat-x mt-[-5px] relative z-20"></div>
+
+                    {{-- Receipt Content --}}
+                    <div class="bg-white px-6 py-6 pb-8">
+                         {{-- PRESERVE WHITESPACE AND USE MONOSPACE FONT IS CRITICAL FOR ALIGNMENT --}}
+                         <div class="font-mono text-[11px] leading-tight text-slate-800 whitespace-pre overflow-x-auto text-center">
+{!! $receiptContent !!}
+                         </div>
                     </div>
+
+                    {{-- Jagged Bottom --}}
+                     <div class="w-full h-3 bg-[linear-gradient(45deg,transparent_6px,#fff_6px),linear-gradient(-45deg,transparent_6px,#fff_6px)] bg-[length:12px_12px] bg-repeat-x mb-[-6px]"></div>
                 </div>
 
                 {{-- Action Buttons --}}
-                <div class="p-4 bg-white border-t border-slate-200 pb-safe flex gap-2">
+                <div class="mt-6 flex gap-3 w-full max-w-xs">
+                     <button wire:click="closeReceiptPreview" 
+                            class="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 py-3 rounded-xl font-bold text-sm backdrop-blur-md transition">
+                        Tutup
+                    </button>
                     <button wire:click="manualPrintReceipt" 
                             wire:loading.attr="disabled"
-                            class="flex-1 bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition active:scale-[0.98]">
-                        <span wire:loading.remove>🖨️ CETAK SEKARANG</span>
-                         <span wire:loading class="flex items-center gap-2">
-                            <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition active:scale-[0.98] group">
+                        <span wire:loading.remove class="flex items-center gap-2">
+                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            CETAK
+                        </span>
+                         <span wire:loading class="animate-spin">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         </span>
                     </button>
                 </div>
+                
                  @if ($isPrinting)
-                    <div class="absolute bottom-20 left-4 right-4 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-center gap-3 animate-slide-up">
-                        <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <span class="font-bold text-sm">Sedang mencetak...</span>
+                    <div class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-xl flex items-center gap-3 animate-slide-up z-[70]">
+                        <svg class="animate-spin h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span class="font-bold text-sm">Sedang mengirim ke printer...</span>
                     </div>
                  @endif
              </div>
@@ -209,15 +237,11 @@
         .animate-fade-in-up { animation: fade-in-up 0.4s ease-out forwards; }
         
         @keyframes slide-up {
-            0% { transform: translateY(100%); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
+            0% { transform: translate(-50%, 100%); opacity: 0; }
+            100% { transform: translate(-50%, 0); opacity: 1; }
         }
-        .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
+        .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        /* Safe Area for iOS */
-        .pb-safe {
-            padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
-        }
     </style>
 
     <script>

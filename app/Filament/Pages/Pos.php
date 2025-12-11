@@ -289,12 +289,24 @@ class Pos extends Page
      */
     public function updatedSearchQuery($value)
     {
+        // 🔹 RESET PAGINATION KE HALAMAN 1
+        $this->resetPage();
+
         // Clear cache ketika search berubah
         $cacheKey = $this->getProductsCacheKey();
         cache()->forget($cacheKey);
         
         // Log untuk debugging
-        \Log::info('Search updated', ['query' => $value, 'results_count' => count($this->products)]);
+        \Log::info('Search updated', ['query' => $value]);
+    }
+
+    /**
+     * Handle category updates
+     */
+    public function updatedSelectedCategory($value)
+    {
+        // 🔹 RESET PAGINATION KE HALAMAN 1
+         $this->resetPage();
     }
 
     /**
@@ -303,6 +315,7 @@ class Pos extends Page
     public function clearSearch()
     {
         $this->searchQuery = '';
+        $this->resetPage();
         $this->dispatch('showNotification', 'Pencarian dibersihkan', 'info');
     }
 
@@ -340,7 +353,7 @@ class Pos extends Page
         }
 
         // Use DB Pagination (Optimized)
-        return $query->orderBy('name', 'asc')->paginate(15);
+        return $query->orderBy('name', 'asc')->paginate(12);
     }
 
     /**
