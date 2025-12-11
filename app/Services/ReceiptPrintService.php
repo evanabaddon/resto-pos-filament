@@ -278,6 +278,11 @@ class ReceiptPrintService
             }
             
             $content .= $productName . "\n";
+
+            // TAMBAHKAN NOTES JIKA ADA
+            if (!empty($item->notes)) {
+                $content .= "  📝 " . $item->notes . "\n";
+            }
             
             $quantityLine = sprintf("  %-2d x %-10s", 
                 $item->quantity, 
@@ -498,6 +503,13 @@ class ReceiptPrintService
             }
             
             $printer->text($productName . "\n");
+
+            // TAMBAHKAN NOTES JIKA ADA
+            if (!empty($item->notes)) {
+                $printer->setEmphasis(true);
+                $printer->text("  📝 " . $item->notes . "\n");
+                $printer->setEmphasis(false);
+            }
             
             $quantityLine = sprintf("  %-2d x %-10s", 
                 $item->quantity, 

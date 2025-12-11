@@ -494,7 +494,8 @@ class OrderPrintService
                 $item = (object)[
                     'product' => $product,
                     'quantity' => $itemData['quantity'],
-                    'product_id' => $itemData['product_id']
+                    'product_id' => $itemData['product_id'],
+                    'notes' => $itemData['notes'] ?? '' 
                 ];
 
                 switch ($product->type) {
@@ -595,12 +596,53 @@ class OrderPrintService
                 $merged[$id] = clone $item;
             } else {
                 $merged[$id]->quantity += $item->quantity;
+                // ✅ JIKA ADA NOTES BARU, TAMBAHKAN
+                if (!empty($item->notes) && !empty($merged[$id]->notes)) {
+                    if ($merged[$id]->notes !== $item->notes) {
+                        $merged[$id]->notes .= "\n" . $item->notes;
+                    }
+                } elseif (!empty($item->notes)) {
+                    $merged[$id]->notes = $item->notes;
+                }
             }
         }
 
         return array_values($merged);
     }
 
+    /**
+     * Debug notes untuk testing
+     */
+    public function debugNotes(Sale $sale): array
+    {
+        try {
+            $sale->load('items');
+            
+            $itemsWithNotes = [];
+            foreach ($sale->items as $item) {
+                if (!empty($item->notes)) {
+                    $itemsWithNotes[] = [
+                        'product' => $item->product->name ?? 'Unknown',
+                        'notes' => $item->notes,
+                        'quantity' => $item->quantity
+                    ];
+                }
+            }
+            
+            return [
+                'sale_id' => $sale->id,
+                'invoice' => $sale->invoice_number,
+                'total_items' => $sale->items->count(),
+                'items_with_notes' => $itemsWithNotes,
+                'items_with_notes_count' => count($itemsWithNotes)
+            ];
+            
+        } catch (\Exception $e) {
+            return [
+                'error' => $e->getMessage()
+            ];
+        }
+    }
 
     // ==================== GENERATE CONTENT METHODS ====================
 
@@ -630,6 +672,20 @@ class OrderPrintService
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
         $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
+
+        // ✅ TAMBAHKAN INFORMASI NOTES KESELURUHAN JIKA ADA
+        $hasAnyNotes = false;
+        foreach ($items as $item) {
+            if (!empty($item->notes)) {
+                $hasAnyNotes = true;
+                break;
+            }
+        }
+        
+        if ($hasAnyNotes) {
+            $content .= "--- CATATAN KHUSUS ---\n";
+        }
+        
         $content .= "========================\n";
         $content .= "ITEMS:\n";
         
@@ -639,6 +695,17 @@ class OrderPrintService
                 $productName = substr($productName, 0, 17) . '...';
             }
             $content .= "{$productName} x{$item->quantity}\n";
+
+            // ✅ TAMBAHKAN NOTES JIKA ADA
+            if (!empty($item->notes)) {
+                $notesLines = explode("\n", $item->notes);
+                foreach ($notesLines as $noteLine) {
+                    $trimmedNote = trim($noteLine);
+                    if (!empty($trimmedNote)) {
+                        $content .= "  📝 " . $trimmedNote . "\n";
+                    }
+                }
+            }
             
             if (!empty($item->note)) {
                 $content .= "  Note: {$item->note}\n";
@@ -763,6 +830,20 @@ class OrderPrintService
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
         $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
+
+        // ✅ TAMBAHKAN INFORMASI NOTES KESELURUHAN JIKA ADA
+        $hasAnyNotes = false;
+        foreach ($newItems as $item) {
+            if (!empty($item->notes)) {
+                $hasAnyNotes = true;
+                break;
+            }
+        }
+        
+        if ($hasAnyNotes) {
+            $content .= "--- CATATAN KHUSUS ---\n";
+        }
+        
         $content .= "========================\n";
         $content .= "TAMBAHAN:\n";
         
@@ -772,6 +853,17 @@ class OrderPrintService
                 $productName = substr($productName, 0, 17) . '...';
             }
             $content .= "+ {$productName} x{$item->quantity}\n";
+
+            // ✅ TAMBAHKAN NOTES JIKA ADA
+            if (!empty($item->notes)) {
+                $notesLines = explode("\n", $item->notes);
+                foreach ($notesLines as $noteLine) {
+                    $trimmedNote = trim($noteLine);
+                    if (!empty($trimmedNote)) {
+                        $content .= "  📝 " . $trimmedNote . "\n";
+                    }
+                }
+            }
         }
         
         $content .= "========================\n";

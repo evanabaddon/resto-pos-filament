@@ -163,9 +163,22 @@
                                 Rp{{ number_format($item['price'], 0, ',', '.') }} × {{ $item['quantity'] }}
                             </p>
                             
+                            {{-- TAMBAHKAN NOTES DISPLAY --}}
+                            @if(!empty($item['notes']))
+                                <div class="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                    <div class="flex items-start">
+                                        <svg class="w-3 h-3 text-yellow-500 mr-1 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <span class="text-xs text-yellow-700 font-medium break-words">{{ $item['notes'] }}</span>
+                                    </div>
+                                </div>
+                            @endif
+                            
                             {{-- PERBAIKAN: Input Quantity dengan Text Input --}}
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-2">
+                                    {{-- Tombol Decrement --}}
                                     <button wire:click="decrementQuantity({{ $index }})"
                                         class="cursor-pointer w-6 h-6 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded text-gray-600 font-semibold transition text-xs touch-target">
                                         −
@@ -180,9 +193,26 @@
                                         class="w-12 text-center border border-gray-300 rounded py-1 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         onfocus="this.select()">
                                     
+                                    {{-- Tombol Increment --}}
                                     <button wire:click="incrementQuantity({{ $index }})"
                                         class="cursor-pointer w-6 h-6 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded text-gray-600 font-semibold transition text-xs touch-target">
                                         +
+                                    </button>
+                                    
+                                    {{-- TOMBOL TAMBAH/EDIT CATATAN --}}
+                                    <button wire:click="openEditNotes({{ $index }})"
+                                        class="cursor-pointer px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-xs font-medium transition border border-blue-200 ml-2 touch-target">
+                                        @if(empty($item['notes']))
+                                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                            </svg>
+                                            Catatan
+                                        @else
+                                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            Edit
+                                        @endif
                                     </button>
                                 </div>
                                 <button wire:click="removeItem({{ $index }})"
@@ -350,6 +380,119 @@
             </button>
         </div>
     </nav>
+
+    {{-- MODAL EDIT CATATAN --}}
+    @if($editingNotesIndex !== null && isset($items[$editingNotesIndex]))
+    <!-- Modal container -->
+    <div class="fixed inset-0 z-[9999] overflow-y-auto" 
+        x-data="{ open: true }"
+        x-show="open"
+        style="position: fixed; z-index: 9999;">
+        
+        <!-- Overlay -->
+        <div class="fixed inset-0 backdrop-blur-sm bg-black/20" 
+            @click="$wire.cancelEditNotes()"></div>
+
+        <!-- Modal content -->
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0"
+            style="position: relative; z-index: 10000;">
+            
+            <!-- Spacer untuk alignment -->
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            
+            <!-- Modal panel -->
+            <div class="inline-block w-full max-w-md my-8 text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-16 sm:align-middle"
+                @click.stop>
+                
+                <!-- Header -->
+                <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">
+                                <span class="flex items-center">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Catatan untuk {{ $items[$editingNotesIndex]['name'] ?? 'Item' }}
+                                </span>
+                            </h3>
+                            <p class="text-sm text-blue-100 mt-1">
+                                Tambahkan catatan khusus untuk item ini
+                            </p>
+                        </div>
+                        <button @click="$wire.cancelEditNotes()" 
+                                class="text-white hover:text-gray-200 transition cursor-pointer">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="px-6 py-4 bg-gray-50">
+                    <!-- Input Notes -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Catatan Khusus
+                            <span class="text-xs text-gray-500">(contoh: "Pedas", "Tanpa acar", "Tambah keju")</span>
+                        </label>
+                        <textarea 
+                            wire:model="itemNotes"
+                            rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm"
+                            placeholder="Masukkan catatan khusus untuk item ini..."
+                            autofocus></textarea>
+                    </div>
+                    
+                    <!-- Examples -->
+                    <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p class="text-xs font-medium text-yellow-800 mb-2 flex items-center">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Contoh catatan populer:
+                        </p>
+                        <div class="grid grid-cols-2 gap-2 text-xs text-yellow-700">
+                            <span class="bg-yellow-100 px-2 py-1 rounded">• Pedas level 3</span>
+                            <span class="bg-yellow-100 px-2 py-1 rounded">• Tanpa acar</span>
+                            <span class="bg-yellow-100 px-2 py-1 rounded">• Kurangi garam</span>
+                            <span class="bg-yellow-100 px-2 py-1 rounded">• Tambah telur</span>
+                            <span class="bg-yellow-100 px-2 py-1 rounded">• Tanpa bawang</span>
+                            <span class="bg-yellow-100 px-2 py-1 rounded">• Bungkus</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 py-3 bg-gray-100 border-t border-gray-200 rounded-b-lg flex justify-end space-x-3">
+                    <button 
+                        @click="$wire.cancelEditNotes()"
+                        class="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition">
+                        Batal
+                    </button>
+                    <button 
+                        wire:click="saveItemNotes"
+                        wire:loading.attr="disabled"
+                        wire:loading.class="opacity-50 cursor-not-allowed"
+                        class="cursor-pointer px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                        <span class="flex items-center">
+                            <svg wire:loading.remove wire:target="saveItemNotes" 
+                                class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
+                            <svg wire:loading wire:target="saveItemNotes" 
+                                class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Simpan Catatan
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     {{-- MODAL MERGE BILL - FIXED OVERLAY --}}
     @if($showMergeModal)

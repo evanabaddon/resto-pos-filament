@@ -76,6 +76,8 @@ class Pos extends Page
     public $selectedSalesToMerge = [];
     public $availableSales = [];
     public $mergeTargetSale = null;
+    public $editingNotesIndex = null;
+    public $itemNotes = '';
 
 
     public function mount()
@@ -520,6 +522,7 @@ class Pos extends Page
                 'price' => $product->sell_price,
                 'quantity' => 1,
                 'subtotal' => $product->sell_price,
+                'notes' => '',
             ];
         }
 
@@ -527,6 +530,43 @@ class Pos extends Page
         
         // Dispatch event untuk update cart badge secara real-time
         $this->dispatch('cartUpdated', count: count($this->items));
+    }
+
+    /**
+     * Open edit notes modal untuk item tertentu
+     */
+    public function openEditNotes($index)
+    {
+        if (isset($this->items[$index])) {
+            $this->editingNotesIndex = $index;
+            $this->itemNotes = $this->items[$index]['notes'] ?? '';
+            $this->dispatch('openNotesModal');
+        }
+    }
+
+    /**
+     * Save notes untuk item
+     */
+    public function saveItemNotes()
+    {
+        if ($this->editingNotesIndex !== null && isset($this->items[$this->editingNotesIndex])) {
+            $this->items[$this->editingNotesIndex]['notes'] = trim($this->itemNotes);
+            $this->editingNotesIndex = null;
+            $this->itemNotes = '';
+            
+            $this->dispatch('closeNotesModal');
+            $this->dispatch('showNotification', 'Catatan berhasil disimpan!', 'success');
+        }
+    }
+
+    /**
+     * Cancel edit notes
+     */
+    public function cancelEditNotes()
+    {
+        $this->editingNotesIndex = null;
+        $this->itemNotes = '';
+        $this->dispatch('closeNotesModal');
     }
 
     public function updateQuantity($index, $quantity)
@@ -778,29 +818,27 @@ class Pos extends Page
             $discount = $this->discount ?? 0;
             $final    = $this->finalTotal ?? ($subtotal + $tax - $discount);
 
-            // 🔹 LOGIKA YANG BENAR:
-            // - Jika $this->saleId ADA → UPDATE sale yang diload
-            // - Jika $this->saleId NULL → CREATE sale baru
+            // 🔹 PERBAIKAN: Validasi $this->saleId sebelum digunakan
+            $isUpdate = !empty($this->saleId);
+            $sale = null;
 
-            if ($this->saleId) {
-                // 🔹 UPDATE: Sale yang diload dari modal
-                $sale = Sale::findOrFail($this->saleId);
+            if ($isUpdate) {
+                // 🔹 CARI SALE DENGAN TRY-CATCH
+                try {
+                    $sale = Sale::find($this->saleId);
+                    
+                    if (!$sale) {
+                        // Jika sale tidak ditemukan, anggap sebagai transaksi baru
+                        \Log::warning("⚠️ Sale ID {$this->saleId} not found, creating new sale");
+                        $isUpdate = false;
+                    }
+                } catch (\Exception $e) {
+                    \Log::error("❌ Error finding sale: " . $e->getMessage());
+                    $isUpdate = false;
+                }
+            }
 
-                $sale->update([
-                    'customer_name' => $this->customerName ?? 'Umum',
-                    'order_type'    => $this->orderType,
-                    'subtotal'      => $subtotal,
-                    'tax'           => $tax,
-                    'discount'      => $discount,
-                    'final_total'   => $final,
-                    'total'         => $final,
-                    'updated_at'    => now(),
-                ]);
-
-                // Hapus item lama agar bisa simpan item baru
-                $sale->items()->delete();
-
-            } else {
+            if (!$isUpdate) {
                 // 🔹 CREATE: Transaksi baru dengan order number baru
                 $sale = Sale::create([
                     'cash_session_id' => $this->cashSessionId ?? session('cash_session_id'),
@@ -819,16 +857,41 @@ class Pos extends Page
 
                 // Set saleId untuk transaksi baru
                 $this->saleId = $sale->id;
+                \Log::info("✅ New sale created", ['sale_id' => $sale->id, 'invoice' => $sale->invoice_number]);
+            } else {
+                // 🔹 UPDATE: Sale yang valid ditemukan
+                $sale->update([
+                    'customer_name' => $this->customerName ?? 'Umum',
+                    'order_type'    => $this->orderType,
+                    'subtotal'      => $subtotal,
+                    'tax'           => $tax,
+                    'discount'      => $discount,
+                    'final_total'   => $final,
+                    'total'         => $final,
+                    'updated_at'    => now(),
+                ]);
+
+                // Hapus item lama agar bisa simpan item baru
+                $sale->items()->delete();
+                \Log::info("✅ Existing sale updated", ['sale_id' => $sale->id, 'invoice' => $sale->invoice_number]);
             }
 
             // 🔹 Simpan items (sama untuk kedua kasus)
             foreach ($this->items as $item) {
-                $saleItem = SaleItem::create([
+                $saleItem = \App\Models\SaleItem::create([
                     'sale_id'    => $sale->id,
                     'product_id' => $item['product_id'],
                     'quantity'   => $item['quantity'],
                     'unit_price' => $item['price'],
                     'subtotal'   => $item['subtotal'],
+                    'notes'      => $item['notes'] ?? '', // ✅ TAMBAHKAN NOTES
+                ]);
+
+                \Log::info("💾 Saved sale item", [
+                    'sale_id' => $sale->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'notes' => $item['notes'] ?? ''
                 ]);
 
                 $product = Product::find($item['product_id']);
@@ -850,7 +913,7 @@ class Pos extends Page
 
                         $recipe->ingredient->decrement('stock', $totalUsed);
 
-                        StockMovement::create([
+                        \App\Models\StockMovement::create([
                             'product_id' => $recipe->ingredient->id,
                             'quantity'   => -$totalUsed,
                             'type'       => 'decrease',
@@ -862,7 +925,7 @@ class Pos extends Page
                 } else {
                     $product->decrement('stock', $item['quantity']);
 
-                    StockMovement::create([
+                    \App\Models\StockMovement::create([
                         'product_id' => $product->id,
                         'quantity'   => -$item['quantity'],
                         'type'       => 'decrease',
@@ -875,8 +938,6 @@ class Pos extends Page
             \DB::commit();
 
             // 🔹 TENTUKAN APAKAH INI UPDATE
-            $isUpdate = !is_null($this->saleId);
-            
             if ($isUpdate) {
                 // 🔹 DAPATKAN ITEM BARU/TAMBAHAN
                 $newItems = $this->getNewOrUpdatedItems();
@@ -924,7 +985,7 @@ class Pos extends Page
             $this->previousItems = [];
 
             // 🔹 TAMPILKAN NOTIFIKASI BERBEDA
-            if ($this->saleId) {
+            if ($isUpdate) {
                 $this->dispatch('showNotification', 'Transaksi #' . $sale->invoice_number . ' berhasil diupdate!', 'success');
             } else {
                 $this->dispatch('showNotification', 'Transaksi baru #' . $sale->invoice_number . ' berhasil disimpan!', 'success');
@@ -939,6 +1000,8 @@ class Pos extends Page
             \Log::error('💥 Gagal menyimpan penjualan: ' . $e->getMessage(), [
                 'customer_name' => $this->customerName,
                 'items_count' => count($this->items),
+                'saleId' => $this->saleId,
+                'isUpdate' => $isUpdate ?? false,
                 'error_trace' => $e->getTraceAsString()
             ]);
             
@@ -947,7 +1010,7 @@ class Pos extends Page
     }
 
     /**
-     * Dapatkan item baru atau yang quantity-nya berubah
+     * Dapatkan item baru atau yang quantity-nya berubah DENGAN NOTES
      */
     protected function getNewOrUpdatedItems(): array
     {
@@ -961,14 +1024,18 @@ class Pos extends Page
                 if ($previousItem['product_id'] == $currentItem['product_id']) {
                     $foundInPrevious = true;
                     
-                    // Jika quantity berubah, hitung selisihnya
+                    // Jika quantity berubah atau notes berbeda
                     $quantityDiff = $currentItem['quantity'] - $previousItem['quantity'];
-                    if ($quantityDiff > 0) {
+                    $notesChanged = isset($currentItem['notes']) && 
+                                ($currentItem['notes'] !== ($previousItem['notes'] ?? ''));
+                    
+                    if ($quantityDiff > 0 || $notesChanged) {
                         $newItems[] = [
                             'product_id' => $currentItem['product_id'],
                             'name' => $currentItem['name'],
-                            'quantity' => $quantityDiff, // Hanya selisihnya
+                            'quantity' => $quantityDiff > 0 ? $quantityDiff : $currentItem['quantity'],
                             'price' => $currentItem['price'],
+                            'notes' => $currentItem['notes'] ?? '',
                             'is_update' => true
                         ];
                     }
@@ -983,6 +1050,7 @@ class Pos extends Page
                     'name' => $currentItem['name'],
                     'quantity' => $currentItem['quantity'],
                     'price' => $currentItem['price'],
+                    'notes' => $currentItem['notes'] ?? '',
                     'is_update' => false
                 ];
             }
@@ -1140,11 +1208,12 @@ class Pos extends Page
         $this->orderType = $sale->order_type ?? 'Dine In';
         $this->discount = $sale->discount ?? 0;
 
-        // 🔹 SIMPAN ITEMS SEBELUMNYA untuk tracking
+        // 🔹 SIMPAN ITEMS SEBELUMNYA untuk tracking (dengan notes)
         $this->previousItems = $sale->items->map(function ($item) {
             return [
                 'product_id' => $item->product_id,
                 'quantity' => $item->quantity,
+                'notes' => $item->notes ?? '' // ✅ TAMBAHKAN NOTES
             ];
         })->toArray();
 
@@ -1157,6 +1226,7 @@ class Pos extends Page
                 'quantity'   => $item->quantity,
                 'price'      => $item->unit_price,
                 'subtotal'   => $item->subtotal,
+                'notes'      => $item->notes ?? '', // ✅ TAMBAHKAN NOTES
             ];
         })->toArray();
 
@@ -1327,6 +1397,8 @@ class Pos extends Page
         $this->discountCodeInput = '';
         $this->discountMessage = '';
         $this->discountApplied = false;
+        $this->editingNotesIndex = null;
+        $this->itemNotes = '';
         // jangan ubah $showCashInModal agar modal hanya dikontrol saat mount/cek session
     }
 
