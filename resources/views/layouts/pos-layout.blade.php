@@ -81,7 +81,7 @@
     {{-- ========================= --}}
     {{-- 🔔 TOAST NOTIFICATIONS --}}
     {{-- ========================= --}}
-    <livewire:pos-notification />
+    @include('livewire.pos-notification')
 
     {{-- Cash Summary Modal --}}
     <livewire:cash-summary-modal />

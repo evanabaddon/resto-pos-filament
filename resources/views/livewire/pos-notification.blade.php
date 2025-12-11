@@ -1,5 +1,4 @@
-<div wire:ignore
-    x-data="{ 
+<div x-data="{ 
     notifications: [],
     add(message, type = 'success') {
         if (!message) return;
