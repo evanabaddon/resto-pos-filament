@@ -24,12 +24,9 @@
                     id="product-search-input"
                     type="text"
                     wire:model.live="searchQuery"
-                    placeholder="Cari produk (tekan / untuk langsung mencari...)"
-                    class="w-full bg-gray-50 border border-gray-300 rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition mobile-text-sm"
-                    autocomplete="off"
-                    x-data
-                    @keydown.window.prevent.slash="$el.focus()"
-                    x-ref="searchInput">
+                    placeholder="Cari produk..."
+                    class="w-full bg-gray-50 border border-gray-300 rounded-lg py-2.5 pl-10 pr-20 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition mobile-text-sm"
+                    autocomplete="off">
                 
                 {{-- Search Icon --}}
                 <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
@@ -42,17 +39,17 @@
                 @if(!empty($searchQuery))
                     <button 
                         wire:click="$set('searchQuery', '')"
-                        class="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600 transition">
+                        class="absolute right-10 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 @endif
                 
-                {{-- Debug info (optional) --}}
-                <div class="absolute right-12 top-1/2 transform -translate-y-1/2">
-                    <span class="text-xs text-gray-400 hidden lg:block">
-                        <kbd class="px-1 py-0.5 bg-gray-100 rounded text-xs">/</kbd> to search
+                {{-- Keyboard Shortcut Hint --}}
+                <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <span class="text-xs text-gray-400 hidden sm:inline-block">
+                        <kbd class="px-1.5 py-0.5 bg-gray-100 rounded border border-gray-300 text-xs">/</kbd>
                     </span>
                 </div>
             </div>
@@ -62,8 +59,8 @@
                 <div class="mt-1 text-xs text-gray-500">
                     <span>Mencari: </span>
                     <span class="font-semibold text-blue-600">{{ $searchQuery }}</span>
-                    <span class="ml-2">•</span>
-                    <span class="ml-2">{{ count($products) }} hasil</span>
+                    <span class="mx-2">•</span>
+                    <span>{{ count($products) }} hasil ditemukan</span>
                 </div>
             @endif
         </div>
@@ -91,11 +88,11 @@
                         class="cursor-pointer group bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all duration-200 p-2 flex flex-col items-center relative overflow-hidden h-full touch-target search-result-item">
                         
                         {{-- 🔢 TAMBAHKAN NOMOR QUICK ADD (1-9) --}}
-                        @if($index < 9 && !empty($searchQuery))
+                        {{-- @if($index < 9 && !empty($searchQuery))
                             <div class="quick-add-number">
                                 {{ $index + 1 }}
                             </div>
-                        @endif
+                        @endif --}}
                         
                         {{-- Stock Badge --}}
                         @if($product->type !== 'produced' && $product->type !== 'bar')
@@ -856,192 +853,20 @@
     <livewire:pos-payment-modal />
     @livewire('pos-notification')
 
+    {{-- SEACRH --}}
     <script>
-        // ✅ FOCUS MANAGEMENT UNTUK SEARCH - FIXED VERSION
+        // ✅ SINGLE SCRIPT SOLUTION - NO DUPLICATES
+        // Global variables
+        let currentSection = 'products';
         let searchInput = null;
         let isSearchFocused = false;
+        let resizeTimeout;
         
-        // Initialize search functionality
-        function initSearchFocus() {
-            searchInput = document.getElementById('product-search-input');
-            
-            if (!searchInput) {
-                console.log('❌ Search input not found');
-                return;
-            }
-            
-            console.log('✅ Search input initialized');
-            
-            // Auto focus saat section products aktif
-            if (currentSection === 'products') {
-                setTimeout(() => {
-                    searchInput.focus();
-                    isSearchFocused = true;
-                }, 100);
-            }
-            
-            // Event listener untuk focus/blur
-            searchInput.addEventListener('focus', function() {
-                isSearchFocused = true;
-                console.log('🔍 Search focused');
-            });
-            
-            searchInput.addEventListener('blur', function() {
-                isSearchFocused = false;
-                console.log('🔍 Search blurred');
-            });
-        }
-        
-        // ✅ GLOBAL KEYBOARD SHORTCUTS - FIXED
-        function initKeyboardShortcuts() {
-            document.addEventListener('keydown', function(e) {
-                // 🔍 SHORTCUT: TEKAN '/' UNTUK FOCUS KE SEARCH
-                // Cegah trigger jika user sedang mengetik di input/textarea
-                const activeElement = document.activeElement;
-                const isTextInput = activeElement.tagName === 'INPUT' || 
-                                   activeElement.tagName === 'TEXTAREA' ||
-                                   activeElement.isContentEditable;
-                
-                if (e.key === '/' && !isTextInput) {
-                    e.preventDefault();
-                    console.log('🔍 / pressed - focusing search');
-                    
-                    // Switch ke products section jika belum
-                    if (currentSection !== 'products') {
-                        switchSection('products');
-                        setTimeout(() => {
-                            const searchInput = document.getElementById('product-search-input');
-                            if (searchInput) {
-                                searchInput.focus();
-                                isSearchFocused = true;
-                                console.log('✅ Switched to products and focused search');
-                            }
-                        }, 200);
-                    } else {
-                        const searchInput = document.getElementById('product-search-input');
-                        if (searchInput) {
-                            searchInput.focus();
-                            isSearchFocused = true;
-                            console.log('✅ Focused search in products section');
-                        }
-                    }
-                    return;
-                }
-                
-                // 🔍 SHORTCUT: ESC UNTUK CLEAR SEARCH ATAU BLUR
-                if (e.key === 'Escape' && isSearchFocused) {
-                    e.preventDefault();
-                    const searchInput = document.getElementById('product-search-input');
-                    if (searchInput) {
-                        if (searchInput.value) {
-                            // Clear search jika ada isi
-                            searchInput.value = '';
-                            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                            console.log('🗑️ Cleared search');
-                        } else {
-                            // Blur jika kosong
-                            searchInput.blur();
-                            isSearchFocused = false;
-                            console.log('🔍 Search blurred');
-                        }
-                    }
-                    return;
-                }
-                
-                // 🔍 SHORTCUT: CTRL+K / CMD+K UNTUK SEARCH
-                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                    e.preventDefault();
-                    console.log('🔍 Ctrl+K pressed - focusing search');
-                    
-                    if (currentSection !== 'products') {
-                        switchSection('products');
-                    }
-                    
-                    setTimeout(() => {
-                        const searchInput = document.getElementById('product-search-input');
-                        if (searchInput) {
-                            searchInput.focus();
-                            isSearchFocused = true;
-                        }
-                    }, 200);
-                    return;
-                }
-                
-                // 🔢 SHORTCUT: ANGKA 1-9 UNTUK QUICK ADD (jika di search mode)
-                if (isSearchFocused && !e.ctrlKey && !e.metaKey && !e.altKey) {
-                    if (e.key >= '1' && e.key <= '9') {
-                        e.preventDefault();
-                        const productIndex = parseInt(e.key) - 1;
-                        const productCards = document.querySelectorAll('#mobile-products-section .cursor-pointer[wire\\:click*="quickAddProduct"]');
-                        
-                        if (productCards.length > productIndex) {
-                            const productCard = productCards[productIndex];
-                            const wireClick = productCard.getAttribute('wire:click');
-                            const productIdMatch = wireClick.match(/quickAddProduct\((\d+)\)/);
-                            
-                            if (productIdMatch) {
-                                const productId = parseInt(productIdMatch[1]);
-                                
-                                // Dispatch ke Livewire menggunakan metode yang benar
-                                Livewire.dispatch('quickAddProduct', { id: productId });
-                                
-                                // Tampilkan feedback
-                                showQuickAddFeedback(productCard);
-                                console.log(`➕ Quick added product ${productIndex + 1} (ID: ${productId})`);
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // ✅ LISTEN UNTUK LIVE WIRE EVENTS
-        Livewire.on('searchUpdated', (event) => {
-            console.log('Livewire search updated:', event);
-        });
-        
-        // Initialize dengan cara yang lebih cepat
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('POS Navigation Initialized');
-            
-            if (window.innerWidth < 640) {
-                switchSection('products');
-            }
-            
-            // Initialize semua fungsi
-            setTimeout(() => {
-                initSearchFocus();
-                initKeyboardShortcuts();
-                console.log('✅ Keyboard shortcuts initialized');
-            }, 500);
-            
-            // Listen untuk cart updates
-            window.addEventListener('cartUpdated', function(event) {
-                // Update cart badge secara real-time
-                const cartBadge = document.querySelector('.nav-button[data-section="cart"] .bg-red-500');
-                if (cartBadge) {
-                    cartBadge.textContent = Math.min(event.detail.count, 99);
-                }
-            });
-            
-            // Re-init search focus setelah Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                setTimeout(() => {
-                    if (currentSection === 'products' && isSearchFocused) {
-                        const searchInput = document.getElementById('product-search-input');
-                        if (searchInput) {
-                            searchInput.focus();
-                        }
-                    }
-                }, 50);
-            });
-        });
-    
-        // ✅ UPDATE switchSection FUNCTION UNTUK AUTO-FOCUS
+        // Function to switch section
         function switchSection(section) {
             if (currentSection === section) return;
             
-            console.log(`🔄 Switching section from ${currentSection} to ${section}`);
+            console.log(`🔄 Switching to: ${section}`);
             currentSection = section;
             
             // Hide all mobile sections
@@ -1054,15 +879,10 @@
             if (targetSection) {
                 targetSection.style.display = 'flex';
                 
-                // ✅ AUTO FOCUS KE SEARCH JIKA MASUK KE PRODUCTS SECTION
+                // Auto focus ke search jika masuk ke products section
                 if (section === 'products') {
                     setTimeout(() => {
-                        const searchInput = document.getElementById('product-search-input');
-                        if (searchInput) {
-                            searchInput.focus();
-                            isSearchFocused = true;
-                            console.log('✅ Auto-focused to search');
-                        }
+                        focusSearchInput();
                     }, 150);
                 } else {
                     isSearchFocused = false;
@@ -1073,42 +893,7 @@
             updateNavButtons(section);
         }
         
-        // ✅ UPDATE resize handler
-        let resizeTimeout;
-        window.addEventListener('resize', function() {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function() {
-                if (window.innerWidth >= 640) {
-                    // Show all sections on desktop
-                    document.querySelectorAll('.mobile-section').forEach(el => {
-                        el.style.display = 'flex';
-                    });
-                } else {
-                    switchSection(currentSection);
-                }
-            }, 100);
-        });
-    
-        // ✅ FEEDBACK VISUAL UNTUK QUICK ADD
-        function showQuickAddFeedback(element) {
-            if (!element) return;
-            
-            // Highlight efek
-            const originalTransform = element.style.transform;
-            const originalBoxShadow = element.style.boxShadow;
-            
-            element.style.transform = 'scale(0.95)';
-            element.style.boxShadow = '0 0 0 3px rgba(34, 197, 94, 0.5)';
-            element.style.transition = 'all 0.2s ease';
-            
-            // Reset setelah delay
-            setTimeout(() => {
-                element.style.transform = originalTransform;
-                element.style.boxShadow = originalBoxShadow;
-            }, 300);
-        }
-        
-        // ✅ UPDATE NAV BUTTONS FUNCTION
+        // Function to update nav buttons
         function updateNavButtons(activeSection) {
             document.querySelectorAll('.nav-button').forEach(btn => {
                 const btnSection = btn.getAttribute('data-section');
@@ -1120,6 +905,144 @@
                     btn.classList.add('bg-gray-100', 'text-gray-600');
                 }
             });
+        }
+        
+        // Function to focus search input
+        function focusSearchInput() {
+            searchInput = document.getElementById('product-search-input');
+            if (searchInput) {
+                searchInput.focus();
+                isSearchFocused = true;
+                console.log('✅ Search focused');
+            }
+        }
+        
+        // Function to handle keyboard shortcuts
+        function handleKeyboardShortcuts(e) {
+            const activeElement = document.activeElement;
+            const isTextInput = activeElement.tagName === 'INPUT' || 
+                            activeElement.tagName === 'TEXTAREA';
+            
+            // 🔍 SHORTCUT: '/' to focus search (only when not typing in input)
+            if (e.key === '/' && !isTextInput) {
+                e.preventDefault();
+                
+                if (currentSection !== 'products') {
+                    switchSection('products');
+                    setTimeout(focusSearchInput, 200);
+                } else {
+                    focusSearchInput();
+                }
+            }
+            
+            // 🔍 SHORTCUT: 'Escape' to clear or blur search
+            if (e.key === 'Escape' && isSearchFocused) {
+                e.preventDefault();
+                if (searchInput && searchInput.value) {
+                    searchInput.value = '';
+                    searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    console.log('🗑️ Search cleared');
+                } else if (searchInput) {
+                    searchInput.blur();
+                    isSearchFocused = false;
+                }
+            }
+            
+            // 🔍 SHORTCUT: 'Ctrl+K' or 'Cmd+K' for search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                if (currentSection !== 'products') {
+                    switchSection('products');
+                    setTimeout(focusSearchInput, 200);
+                } else {
+                    focusSearchInput();
+                }
+            }
+        }
+        
+        // Initialize everything
+        function initPOS() {
+            console.log('🚀 POS Navigation Initialized');
+            
+            // Default section for mobile
+            if (window.innerWidth < 640) {
+                switchSection('products');
+            }
+            
+            // Get search input
+            searchInput = document.getElementById('product-search-input');
+            
+            // Add event listeners
+            if (searchInput) {
+                searchInput.addEventListener('focus', () => {
+                    isSearchFocused = true;
+                });
+                
+                searchInput.addEventListener('blur', () => {
+                    isSearchFocused = false;
+                });
+                
+                // Auto focus on page load for products section
+                if (currentSection === 'products') {
+                    setTimeout(focusSearchInput, 300);
+                }
+            }
+            
+            // Add global keyboard listener
+            document.addEventListener('keydown', handleKeyboardShortcuts);
+            
+            // Listen for Livewire events if available
+            if (typeof Livewire !== 'undefined') {
+                Livewire.hook('message.processed', () => {
+                    if (currentSection === 'products' && isSearchFocused) {
+                        setTimeout(() => {
+                            focusSearchInput();
+                        }, 50);
+                    }
+                });
+            }
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                if (window.innerWidth >= 640) {
+                    // Show all sections on desktop
+                    document.querySelectorAll('.mobile-section').forEach(el => {
+                        el.style.display = 'flex';
+                    });
+                } else {
+                    // Keep current section on mobile
+                    switchSection(currentSection);
+                }
+            }, 100);
+        });
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPOS);
+        } else {
+            initPOS();
+        }
+    </script>
+
+    {{-- TAMBAHKAN INI DI BAWAH SCRIPT UTAMA --}}
+    <script>
+        // Handle Livewire not defined error
+        if (typeof Livewire === 'undefined') {
+            console.warn('⚠️ Livewire not loaded yet, retrying...');
+            
+            // Retry after a delay
+            setTimeout(() => {
+                if (typeof Livewire !== 'undefined') {
+                    console.log('✅ Livewire loaded successfully');
+                    // Re-init if needed
+                    if (typeof initPOS === 'function') {
+                        initPOS();
+                    }
+                }
+            }, 1000);
         }
     </script>
 
@@ -1148,7 +1071,7 @@
             text-align: right;
         }
         
-        /* QUICK ADD NUMBER BADGES */
+        /* QUICK ADD NUMBER BADGES - DISABLE FOR NOW */
         .quick-add-number {
             position: absolute;
             top: 2px;
@@ -1160,33 +1083,21 @@
             border-radius: 50%;
             font-size: 10px;
             font-weight: bold;
-            display: flex;
+            display: none; /* ❌ DISABLE QUICK ADD FOR NOW */
             align-items: center;
             justify-content: center;
             z-index: 5;
             opacity: 0.9;
         }
         
-        /* SEARCH MODE INDICATOR */
-        .search-mode-active {
-            background: linear-gradient(45deg, #3b82f6, #8b5cf6) !important;
-            color: white !important;
-        }
-        
-        /* ANIMATION FOR SEARCH RESULTS */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .search-result-item {
-            /* animation: fadeInUp 0.3s ease forwards; */
+        /* Keyboard shortcut hint */
+        kbd {
+            font-family: monospace;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 0.75rem;
         }
     </style>
 
