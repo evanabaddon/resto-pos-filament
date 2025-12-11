@@ -78,7 +78,7 @@ class Pos extends Page
     public $mergeTargetSale = null;
     public $editingNotesIndex = null;
     public $itemNotes = '';
-
+    public $searchQuery = '';
 
     public function mount()
     {
@@ -91,6 +91,7 @@ class Pos extends Page
         $this->discount = 0;
         $this->finalTotal = 0;
         $this->generateOrderNumber();
+        $this->searchQuery = '';
 
         // Cek apakah user sudah punya sesi kas terbuka
         $session = CashSession::where('user_id', auth()->id())
@@ -287,6 +288,28 @@ class Pos extends Page
         $this->orderType = $args;
     }
 
+    /**
+     * Handle search updates
+     */
+    public function updatedSearchQuery($value)
+    {
+        // Clear cache ketika search berubah
+        $cacheKey = $this->getProductsCacheKey();
+        cache()->forget($cacheKey);
+        
+        // Log untuk debugging
+        \Log::info('Search updated', ['query' => $value, 'results_count' => count($this->products)]);
+    }
+
+    /**
+     * Clear search
+     */
+    public function clearSearch()
+    {
+        $this->searchQuery = '';
+        $this->dispatch('showNotification', 'Pencarian dibersihkan', 'info');
+    }
+
     public function getCategoriesProperty()
     {
         // Ambil semua kategori dari DB + tambah "All"
@@ -297,19 +320,23 @@ class Pos extends Page
 
     public function getProductsProperty()
     {
-        // Cache key berdasarkan kategori untuk performance
-        $cacheKey = 'pos_products_' . $this->selectedCategory . '_' . auth()->id();
-        
-        return cache()->remember($cacheKey, 60, function() { // Cache 1 menit
+        return cache()->remember($this->getProductsCacheKey(), 60, function() {
             $query = Product::where('is_sellable', true)
                 ->with(['recipes.ingredient', 'recipes.unit'])
                 ->where(function($q) {
                     $q->where('stock', '>', 0)
                     ->orWhereIn('type', ['produced', 'bar'])
                     ->orWhereNull('stock');
-                })
-                ->orderBy('name', 'asc');
+                });
 
+            // 🔍 TAMBAHKAN FILTER SEARCH
+            if (!empty($this->searchQuery)) {
+                $query->where(function($q) {
+                    $q->where('name', 'like', '%' . $this->searchQuery . '%');
+                });
+            }
+
+            // Filter kategori
             if ($this->selectedCategory !== 'All') {
                 $category = Category::where('name', $this->selectedCategory)->first();
                 if ($category) {
@@ -317,7 +344,7 @@ class Pos extends Page
                 }
             }
 
-            $products = $query->get();
+            $products = $query->orderBy('name', 'asc')->get();
             
             return $products->filter(function ($product) {
                 if (in_array($product->type, ['raw', 'retail'])) {
@@ -331,6 +358,17 @@ class Pos extends Page
                 return true;
             });
         });
+    }
+
+    /**
+     * Cache key yang include search query
+     */
+    protected function getProductsCacheKey(): string
+    {
+        return 'pos_products_' . 
+            $this->selectedCategory . '_' . 
+            md5($this->searchQuery) . '_' . 
+            auth()->id();
     }
     
     /**

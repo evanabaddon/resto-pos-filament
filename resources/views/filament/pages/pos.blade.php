@@ -17,6 +17,57 @@
             </div>
         </div>
 
+        {{-- 🔍 SEARCH BAR --}}
+        <div class="px-3 py-2 bg-white border-b border-gray-100 flex-shrink-0">
+            <div class="relative">
+                <input 
+                    id="product-search-input"
+                    type="text"
+                    wire:model.live="searchQuery"
+                    placeholder="Cari produk (tekan / untuk langsung mencari...)"
+                    class="w-full bg-gray-50 border border-gray-300 rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition mobile-text-sm"
+                    autocomplete="off"
+                    x-data
+                    @keydown.window.prevent.slash="$el.focus()"
+                    x-ref="searchInput">
+                
+                {{-- Search Icon --}}
+                <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                
+                {{-- Clear Button (tampil jika ada query) --}}
+                @if(!empty($searchQuery))
+                    <button 
+                        wire:click="$set('searchQuery', '')"
+                        class="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                @endif
+                
+                {{-- Debug info (optional) --}}
+                <div class="absolute right-12 top-1/2 transform -translate-y-1/2">
+                    <span class="text-xs text-gray-400 hidden lg:block">
+                        <kbd class="px-1 py-0.5 bg-gray-100 rounded text-xs">/</kbd> to search
+                    </span>
+                </div>
+            </div>
+            
+            {{-- Search status --}}
+            @if(!empty($searchQuery))
+                <div class="mt-1 text-xs text-gray-500">
+                    <span>Mencari: </span>
+                    <span class="font-semibold text-blue-600">{{ $searchQuery }}</span>
+                    <span class="ml-2">•</span>
+                    <span class="ml-2">{{ count($products) }} hasil</span>
+                </div>
+            @endif
+        </div>
+
         {{-- Filter Kategori - Horizontal Scroll Mobile --}}
         <div class="px-3 py-2 bg-white border-b border-gray-100 flex-shrink-0">
             <div class="flex space-x-2 overflow-x-auto hide-scrollbar">
@@ -35,9 +86,17 @@
         {{-- Grid Produk - Mobile Optimized --}}
         <div class="flex-1 overflow-auto p-2">
             <div class="grid mobile-grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 auto-rows-[7rem]">
-                @forelse ($products as $product)
+                @forelse ($products as $index => $product)
                     <div wire:click="quickAddProduct({{ $product->id }})"
-                        class="cursor-pointer group bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all duration-200 p-2 flex flex-col items-center relative overflow-hidden h-full touch-target">
+                        class="cursor-pointer group bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all duration-200 p-2 flex flex-col items-center relative overflow-hidden h-full touch-target search-result-item">
+                        
+                        {{-- 🔢 TAMBAHKAN NOMOR QUICK ADD (1-9) --}}
+                        @if($index < 9 && !empty($searchQuery))
+                            <div class="quick-add-number">
+                                {{ $index + 1 }}
+                            </div>
+                        @endif
+                        
                         {{-- Stock Badge --}}
                         @if($product->type !== 'produced' && $product->type !== 'bar')
                             <div class="absolute top-1 right-1 z-10">
@@ -84,6 +143,14 @@
                     </div>
                 @endforelse
             </div>
+            {{-- 🔍 TAMBAHKAN SEARCH RESULTS INFO --}}
+            @if(!empty($searchQuery))
+            <div class="px-2 py-1 text-center">
+                <p class="text-xs text-gray-600 search-results-count">
+                    Menampilkan {{ count($products) }} hasil untuk "<span class="font-semibold">{{ $searchQuery }}</span>"
+                </p>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -789,6 +856,340 @@
     <livewire:pos-payment-modal />
     @livewire('pos-notification')
 
+    <script>
+        // ✅ FOCUS MANAGEMENT UNTUK SEARCH - FIXED VERSION
+        let searchInput = null;
+        let isSearchFocused = false;
+        
+        // Initialize search functionality
+        function initSearchFocus() {
+            searchInput = document.getElementById('product-search-input');
+            
+            if (!searchInput) {
+                console.log('❌ Search input not found');
+                return;
+            }
+            
+            console.log('✅ Search input initialized');
+            
+            // Auto focus saat section products aktif
+            if (currentSection === 'products') {
+                setTimeout(() => {
+                    searchInput.focus();
+                    isSearchFocused = true;
+                }, 100);
+            }
+            
+            // Event listener untuk focus/blur
+            searchInput.addEventListener('focus', function() {
+                isSearchFocused = true;
+                console.log('🔍 Search focused');
+            });
+            
+            searchInput.addEventListener('blur', function() {
+                isSearchFocused = false;
+                console.log('🔍 Search blurred');
+            });
+        }
+        
+        // ✅ GLOBAL KEYBOARD SHORTCUTS - FIXED
+        function initKeyboardShortcuts() {
+            document.addEventListener('keydown', function(e) {
+                // 🔍 SHORTCUT: TEKAN '/' UNTUK FOCUS KE SEARCH
+                // Cegah trigger jika user sedang mengetik di input/textarea
+                const activeElement = document.activeElement;
+                const isTextInput = activeElement.tagName === 'INPUT' || 
+                                   activeElement.tagName === 'TEXTAREA' ||
+                                   activeElement.isContentEditable;
+                
+                if (e.key === '/' && !isTextInput) {
+                    e.preventDefault();
+                    console.log('🔍 / pressed - focusing search');
+                    
+                    // Switch ke products section jika belum
+                    if (currentSection !== 'products') {
+                        switchSection('products');
+                        setTimeout(() => {
+                            const searchInput = document.getElementById('product-search-input');
+                            if (searchInput) {
+                                searchInput.focus();
+                                isSearchFocused = true;
+                                console.log('✅ Switched to products and focused search');
+                            }
+                        }, 200);
+                    } else {
+                        const searchInput = document.getElementById('product-search-input');
+                        if (searchInput) {
+                            searchInput.focus();
+                            isSearchFocused = true;
+                            console.log('✅ Focused search in products section');
+                        }
+                    }
+                    return;
+                }
+                
+                // 🔍 SHORTCUT: ESC UNTUK CLEAR SEARCH ATAU BLUR
+                if (e.key === 'Escape' && isSearchFocused) {
+                    e.preventDefault();
+                    const searchInput = document.getElementById('product-search-input');
+                    if (searchInput) {
+                        if (searchInput.value) {
+                            // Clear search jika ada isi
+                            searchInput.value = '';
+                            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            console.log('🗑️ Cleared search');
+                        } else {
+                            // Blur jika kosong
+                            searchInput.blur();
+                            isSearchFocused = false;
+                            console.log('🔍 Search blurred');
+                        }
+                    }
+                    return;
+                }
+                
+                // 🔍 SHORTCUT: CTRL+K / CMD+K UNTUK SEARCH
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    console.log('🔍 Ctrl+K pressed - focusing search');
+                    
+                    if (currentSection !== 'products') {
+                        switchSection('products');
+                    }
+                    
+                    setTimeout(() => {
+                        const searchInput = document.getElementById('product-search-input');
+                        if (searchInput) {
+                            searchInput.focus();
+                            isSearchFocused = true;
+                        }
+                    }, 200);
+                    return;
+                }
+                
+                // 🔢 SHORTCUT: ANGKA 1-9 UNTUK QUICK ADD (jika di search mode)
+                if (isSearchFocused && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                    if (e.key >= '1' && e.key <= '9') {
+                        e.preventDefault();
+                        const productIndex = parseInt(e.key) - 1;
+                        const productCards = document.querySelectorAll('#mobile-products-section .cursor-pointer[wire\\:click*="quickAddProduct"]');
+                        
+                        if (productCards.length > productIndex) {
+                            const productCard = productCards[productIndex];
+                            const wireClick = productCard.getAttribute('wire:click');
+                            const productIdMatch = wireClick.match(/quickAddProduct\((\d+)\)/);
+                            
+                            if (productIdMatch) {
+                                const productId = parseInt(productIdMatch[1]);
+                                
+                                // Dispatch ke Livewire menggunakan metode yang benar
+                                Livewire.dispatch('quickAddProduct', { id: productId });
+                                
+                                // Tampilkan feedback
+                                showQuickAddFeedback(productCard);
+                                console.log(`➕ Quick added product ${productIndex + 1} (ID: ${productId})`);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // ✅ LISTEN UNTUK LIVE WIRE EVENTS
+        Livewire.on('searchUpdated', (event) => {
+            console.log('Livewire search updated:', event);
+        });
+        
+        // Initialize dengan cara yang lebih cepat
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('POS Navigation Initialized');
+            
+            if (window.innerWidth < 640) {
+                switchSection('products');
+            }
+            
+            // Initialize semua fungsi
+            setTimeout(() => {
+                initSearchFocus();
+                initKeyboardShortcuts();
+                console.log('✅ Keyboard shortcuts initialized');
+            }, 500);
+            
+            // Listen untuk cart updates
+            window.addEventListener('cartUpdated', function(event) {
+                // Update cart badge secara real-time
+                const cartBadge = document.querySelector('.nav-button[data-section="cart"] .bg-red-500');
+                if (cartBadge) {
+                    cartBadge.textContent = Math.min(event.detail.count, 99);
+                }
+            });
+            
+            // Re-init search focus setelah Livewire update
+            Livewire.hook('message.processed', (message, component) => {
+                setTimeout(() => {
+                    if (currentSection === 'products' && isSearchFocused) {
+                        const searchInput = document.getElementById('product-search-input');
+                        if (searchInput) {
+                            searchInput.focus();
+                        }
+                    }
+                }, 50);
+            });
+        });
+    
+        // ✅ UPDATE switchSection FUNCTION UNTUK AUTO-FOCUS
+        function switchSection(section) {
+            if (currentSection === section) return;
+            
+            console.log(`🔄 Switching section from ${currentSection} to ${section}`);
+            currentSection = section;
+            
+            // Hide all mobile sections
+            document.querySelectorAll('.mobile-section').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Show selected section
+            const targetSection = document.getElementById(`mobile-${section}-section`);
+            if (targetSection) {
+                targetSection.style.display = 'flex';
+                
+                // ✅ AUTO FOCUS KE SEARCH JIKA MASUK KE PRODUCTS SECTION
+                if (section === 'products') {
+                    setTimeout(() => {
+                        const searchInput = document.getElementById('product-search-input');
+                        if (searchInput) {
+                            searchInput.focus();
+                            isSearchFocused = true;
+                            console.log('✅ Auto-focused to search');
+                        }
+                    }, 150);
+                } else {
+                    isSearchFocused = false;
+                }
+            }
+            
+            // Update nav buttons
+            updateNavButtons(section);
+        }
+        
+        // ✅ UPDATE resize handler
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                if (window.innerWidth >= 640) {
+                    // Show all sections on desktop
+                    document.querySelectorAll('.mobile-section').forEach(el => {
+                        el.style.display = 'flex';
+                    });
+                } else {
+                    switchSection(currentSection);
+                }
+            }, 100);
+        });
+    
+        // ✅ FEEDBACK VISUAL UNTUK QUICK ADD
+        function showQuickAddFeedback(element) {
+            if (!element) return;
+            
+            // Highlight efek
+            const originalTransform = element.style.transform;
+            const originalBoxShadow = element.style.boxShadow;
+            
+            element.style.transform = 'scale(0.95)';
+            element.style.boxShadow = '0 0 0 3px rgba(34, 197, 94, 0.5)';
+            element.style.transition = 'all 0.2s ease';
+            
+            // Reset setelah delay
+            setTimeout(() => {
+                element.style.transform = originalTransform;
+                element.style.boxShadow = originalBoxShadow;
+            }, 300);
+        }
+        
+        // ✅ UPDATE NAV BUTTONS FUNCTION
+        function updateNavButtons(activeSection) {
+            document.querySelectorAll('.nav-button').forEach(btn => {
+                const btnSection = btn.getAttribute('data-section');
+                if (btnSection === activeSection) {
+                    btn.classList.add('nav-active', 'bg-blue-600', 'text-white');
+                    btn.classList.remove('bg-gray-100', 'text-gray-600');
+                } else {
+                    btn.classList.remove('nav-active', 'bg-blue-600', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-600');
+                }
+            });
+        }
+    </script>
+
+    <style>
+        /* 🔍 SEARCH INPUT STYLING */
+        #product-search-input {
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        #product-search-input:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), 0 1px 3px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+        
+        #product-search-input::placeholder {
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+        
+        /* SEARCH RESULTS COUNT */
+        .search-results-count {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+            text-align: right;
+        }
+        
+        /* QUICK ADD NUMBER BADGES */
+        .quick-add-number {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: rgba(59, 130, 246, 0.9);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            opacity: 0.9;
+        }
+        
+        /* SEARCH MODE INDICATOR */
+        .search-mode-active {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6) !important;
+            color: white !important;
+        }
+        
+        /* ANIMATION FOR SEARCH RESULTS */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .search-result-item {
+            animation: fadeInUp 0.3s ease forwards;
+        }
+    </style>
+
     <style>
         /* Loading states */
         .loading {
@@ -818,6 +1219,7 @@
             will-change: transform;
         }
     </style>
+
     <style>
         .line-clamp-2 {
             display: -webkit-box;
