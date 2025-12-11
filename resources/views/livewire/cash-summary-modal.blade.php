@@ -3,7 +3,7 @@
     @if ($showModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center">
             {{-- Background blur --}}
-            <div class="absolute inset-0 backdrop-blur-md bg-blue-50 bg-opacity-70" wire:click="closeModal"></div>
+            <div class="absolute inset-0 backdrop-blur-md bg-opacity-70" wire:click="closeModal"></div>
 
             {{-- Modal box --}}
             <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in">
@@ -18,7 +18,7 @@
                                 ({{ $summary['session_duration'] ?? '0 jam' }})
                             </p>
                         </div>
-                        <button wire:click="closeModal" class="text-gray-400 hover:text-gray-600">
+                        <button wire:click="closeModal" class="text-gray-400 hover:text-gray-600 cursor-pointer">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -132,7 +132,7 @@
                                 </div>
                                 <button 
                                     wire:click="updateCashOut"
-                                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+                                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition cursor-pointer">
                                     Update
                                 </button>
                             </div>
@@ -186,13 +186,13 @@
                     <div class="flex justify-between items-center">
                         <button 
                             wire:click="closeModal"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition cursor-pointer">
                             Tutup Preview
                         </button>
                         
                         <button 
                             wire:click="closeCashSession"
-                            class="px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition flex items-center">
+                            class="px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition flex items-center cursor-pointer">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>

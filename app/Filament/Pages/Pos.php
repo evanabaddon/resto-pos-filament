@@ -18,9 +18,13 @@ use Illuminate\Support\Facades\Log;
 use App\Services\ReceiptPrintService;
 use Filament\Notifications\Notification;
 use Filament\Support\Facades\FilamentAsset;
+use App\Services\UnitConversionService;
+use Livewire\WithPagination;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class Pos extends Page
 {
+    use WithPagination;
     protected string $view = 'filament.pages.pos';
 
     // Gunakan layout custom
@@ -320,48 +324,68 @@ class Pos extends Page
 
     public function getProductsProperty()
     {
-        return cache()->remember($this->getProductsCacheKey(), 60, function() {
-            $query = Product::where('is_sellable', true)
-                ->with(['recipes.ingredient', 'recipes.unit'])
-                ->where(function($q) {
-                    $q->where('stock', '>', 0)
-                    ->orWhereIn('type', ['produced', 'bar'])
-                    ->orWhereNull('stock');
-                });
-
-            // 🔍 TAMBAHKAN FILTER SEARCH
-            if (!empty($this->searchQuery)) {
-                $query->where(function($q) {
-                    $q->where('name', 'like', '%' . $this->searchQuery . '%');
-                });
-            }
-
-            // Filter kategori
-            if ($this->selectedCategory !== 'All') {
-                $category = Category::where('name', $this->selectedCategory)->first();
-                if ($category) {
-                    $query->where('category_id', $category->id);
-                }
-            }
-
-            $products = $query->orderBy('name', 'asc')->get();
-            
-            return $products->filter(function ($product) {
-                if (in_array($product->type, ['raw', 'retail'])) {
-                    return $product->stock > 0;
-                }
-                
-                if (in_array($product->type, ['produced', 'bar'])) {
-                    return $this->isProducedProductAvailable($product);
-                }
-                
-                return true;
+        // 1. Ambil semua product (bisa dicache query-nya saja kalau mau, tapi kita butuh eager loading)
+        // Kita tidak cache result akhir karena ada pagination dynamic
+        
+        $query = Product::where('is_sellable', true)
+            ->with(['recipes.ingredient.unit', 'recipes.unit', 'unit']) // Eager load unit
+            ->where(function($q) {
+                $q->where('stock', '>', 0)
+                ->orWhereIn('type', ['produced', 'bar'])
+                ->orWhereNull('stock');
             });
+
+        // 🔍 Filter Search
+        if (!empty($this->searchQuery)) {
+            $query->where(function($q) {
+                $q->where('name', 'like', '%' . $this->searchQuery . '%');
+            });
+        }
+
+        // Filter Kategori
+        if ($this->selectedCategory !== 'All') {
+            $category = Category::where('name', $this->selectedCategory)->first();
+            if ($category) {
+                $query->where('category_id', $category->id);
+            }
+        }
+
+        $allProducts = $query->orderBy('name', 'asc')->get();
+        
+        // 2. Load Service (Load all units once)
+        $conversionService = app(UnitConversionService::class);
+
+        // 3. Filter In-Memory (Optimized)
+        $filtered = $allProducts->filter(function ($product) use ($conversionService) {
+            if (in_array($product->type, ['raw', 'retail'])) {
+                return $product->stock > 0;
+            }
+            
+            if (in_array($product->type, ['produced', 'bar'])) {
+                return $this->isProducedProductAvailable($product, $conversionService);
+            }
+            
+            return true;
         });
+
+        // 4. Manual Pagination
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 15;
+        $currentItems = $filtered->slice(($currentPage - 1) * $perPage, $perPage)->all();
+        
+        $paginator = new LengthAwarePaginator(
+            $currentItems,
+            $filtered->count(),
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        return $paginator;
     }
 
     /**
-     * Cache key yang include search query
+     * Cache key yang include search query (Removed/Deperecated for now)
      */
     protected function getProductsCacheKey(): string
     {
@@ -374,155 +398,34 @@ class Pos extends Page
     /**
      * Cek apakah produk produced bisa dibuat - DENGAN KONVERSI UNIT
      */
-    private function isProducedProductAvailable(Product $product): bool
+    private function isProducedProductAvailable(Product $product, UnitConversionService $conversionService): bool
     {
-        // Log::info("=== CHECKING PRODUCT: {$product->name} ===");
-        
         if (!$product->recipes || $product->recipes->isEmpty()) {
-            // Log::info("❌ NO RECIPES for {$product->name}");
             return false;
         }
 
         foreach ($product->recipes as $recipe) {
             $ingredient = $recipe->ingredient;
             if (!$ingredient) {
-                Log::info("❌ INGREDIENT NOT FOUND for recipe");
                 return false;
             }
 
-            // Log::info("Ingredient: {$ingredient->name}");
-            // Log::info("Required: {$recipe->quantity} {$recipe->unit->name}");
-            // Log::info("Stock: {$ingredient->stock} {$ingredient->unit->name}");
-
-            // KONVERSI UNIT: Resep (Gram) → Bahan (Kilogram)
-            $requiredInIngredientUnit = $this->convertQuantityToMaterialUnit(
+            // Gunakan Service untuk konversi (Memory-based, no DB Auto-query)
+            $requiredInIngredientUnit = $conversionService->convert(
                 $recipe->quantity,
-                $recipe->unit_id, 
+                $recipe->unit_id,
                 $ingredient->unit_id
             );
 
-            // Log::info("After conversion - Required: {$requiredInIngredientUnit} {$ingredient->unit->name}");
-
             if ($ingredient->stock < $requiredInIngredientUnit) {
-                // Log::info("❌ INSUFFICIENT STOCK for {$ingredient->name}");
-                // Log::info("Need: {$requiredInIngredientUnit}, Has: {$ingredient->stock}");
                 return false;
             }
         }
 
-        // Log::info("✅ ALL INGREDIENTS AVAILABLE for {$product->name}");
         return true;
     }
 
-    /**
-     * Konversi quantity dari unit resep ke unit bahan baku - VERSI DINAMIS
-     */
-    private function convertQuantityToMaterialUnit($quantity, $fromUnitId, $toUnitId): float
-    {
-        // Jika unit sama, tidak perlu konversi
-        if ($fromUnitId == $toUnitId) {
-            return $quantity;
-        }
-        
-        $fromUnit = Unit::find($fromUnitId);
-        $toUnit = Unit::find($toUnitId);
-        
-        if (!$fromUnit || !$toUnit) {
-            // \Log::info("UNIT NOT FOUND - From: {$fromUnitId}, To: {$toUnitId}");
-            return $quantity;
-        }
-        
-        // \Log::info("Converting from {$fromUnit->name} to {$toUnit->name}");
-        
-        // Cari base unit chain untuk kedua unit
-        $fromBaseUnit = $this->getBaseUnit($fromUnit);
-        $toBaseUnit = $this->getBaseUnit($toUnit);
-        
-        // \Log::info("From base unit: {$fromBaseUnit->name}, To base unit: {$toBaseUnit->name}");
-        
-        // Jika base unit sama, bisa konversi
-        if ($fromBaseUnit->id == $toBaseUnit->id) {
-            // Step 1: Konversi dari unit resep ke base unit
-            $quantityInBaseUnit = $this->convertToBaseUnit($quantity, $fromUnit);
-            // \Log::info("To base unit: {$quantity} {$fromUnit->name} = {$quantityInBaseUnit} {$fromBaseUnit->name}");
-            
-            // Step 2: Konversi dari base unit ke unit bahan baku
-            $quantityInMaterialUnit = $this->convertFromBaseUnit($quantityInBaseUnit, $toUnit);
-            // \Log::info("From base unit: {$quantityInBaseUnit} {$fromBaseUnit->name} = {$quantityInMaterialUnit} {$toUnit->name}");
-            
-            return $quantityInMaterialUnit;
-        }
-        
-        // Jika base unit berbeda, tidak bisa konversi
-        // \Log::info("DIFFERENT BASE UNITS - Cannot convert {$fromBaseUnit->name} to {$toBaseUnit->name}");
-        return $quantity;
-    }
-
-    /**
-     * Cari base unit dari suatu unit (recursive)
-     */
-    private function getBaseUnit(Unit $unit): Unit
-    {
-        // Jika ini sudah base unit (tidak punya parent)
-        if (!$unit->base_unit_id) {
-            return $unit;
-        }
-        
-        // Cari parent unit
-        $parentUnit = Unit::find($unit->base_unit_id);
-        if (!$parentUnit) {
-            return $unit;
-        }
-        
-        // Rekursif cari sampai top
-        return $this->getBaseUnit($parentUnit);
-    }
-
-    /**
-     * Konversi quantity ke base unit
-     */
-    private function convertToBaseUnit($quantity, Unit $unit): float
-    {
-        // Jika ini sudah base unit
-        if (!$unit->base_unit_id) {
-            return $quantity;
-        }
-        
-        // Konversi ke parent unit: quantity / conversion_rate
-        // Karena conversion_rate = "1 base = x unit ini"
-        // Maka: quantity (base) = quantity (unit ini) / conversion_rate
-        $converted = $quantity / $unit->conversion_rate;
-        
-        // Jika parent unit bukan base unit, konversi recursive
-        $parentUnit = Unit::find($unit->base_unit_id);
-        if ($parentUnit->base_unit_id) {
-            return $this->convertToBaseUnit($converted, $parentUnit);
-        }
-        
-        return $converted;
-    }
-
-    /**
-     * Konversi quantity dari base unit ke unit target
-     */
-    private function convertFromBaseUnit($quantity, Unit $unit): float
-    {
-        // Jika ini sudah base unit
-        if (!$unit->base_unit_id) {
-            return $quantity;
-        }
-        
-        // Konversi dari parent unit ke unit ini: quantity × conversion_rate
-        // Karena conversion_rate = "1 base = x unit ini"  
-        // Maka: quantity (unit ini) = quantity (base) × conversion_rate
-        $parentUnit = Unit::find($unit->base_unit_id);
-        
-        // Konversi recursive dulu ke parent unit
-        $quantityInParentUnit = $this->convertFromBaseUnit($quantity, $parentUnit);
-        
-        // Kemudian konversi ke unit ini
-        return $quantityInParentUnit * $unit->conversion_rate;
-    }
+    // Old recursive conversion methods removed and replaced by UnitConversionService
 
     public function getImageUrlAttribute(): string
     {

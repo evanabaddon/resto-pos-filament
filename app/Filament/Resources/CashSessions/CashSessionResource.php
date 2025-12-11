@@ -45,7 +45,7 @@ class CashSessionResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\CashExpensesRelationManager::class,
         ];
     }
 

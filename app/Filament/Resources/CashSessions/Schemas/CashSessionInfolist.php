@@ -59,6 +59,11 @@ class CashSessionInfolist
                                             ->label('Penjualan Cash')
                                             ->formatStateUsing(fn ($state) => self::formatCurrency($state)),
 
+                                        TextEntry::make('total_cash_expenses')
+                                            ->label('Pengeluaran Cash')
+                                            ->formatStateUsing(fn ($state) => self::formatCurrency($state))
+                                            ->color('danger'),
+
                                         TextEntry::make('expected_cash')
                                             ->label('Total Uang di Laci (Seharusnya)')
                                             ->formatStateUsing(fn ($state) => self::formatCurrency($state))
@@ -88,18 +93,9 @@ class CashSessionInfolist
                                 // 📊 Breakdown Penjualan
                                 Section::make('Breakdown Penjualan')
                                     ->schema([
-                                        TextEntry::make('total_cash_sales')
-                                            ->label('Cash')
-                                            ->formatStateUsing(fn ($state) => self::formatCurrency($state)),
-
-                                        TextEntry::make('total_non_cash_sales')
-                                            ->label('Non-Cash')
-                                            ->formatStateUsing(fn ($state) => self::formatCurrency($state)),
-
-                                        TextEntry::make('total_completed_sales')
-                                            ->label('TOTAL PENJUALAN')
-                                            ->formatStateUsing(fn ($state) => self::formatCurrency($state))
-                                            ->color('success'),
+                                        \Filament\Infolists\Components\ViewEntry::make('breakdown')
+                                            ->view('filament.infolists.cash-session-breakdown')
+                                            ->columnSpanFull(),
                                     ]),
 
                                 // 📈 Statistik

@@ -140,6 +140,11 @@
                     </div>
                 @endforelse
             </div>
+            
+            {{-- Pagination Links --}}
+            <div class="mt-4 px-2 pb-4">
+                {{ $products->links() }}
+            </div>
             {{-- 🔍 TAMBAHKAN SEARCH RESULTS INFO --}}
             @if(!empty($searchQuery))
             <div class="px-2 py-1 text-center">
@@ -401,8 +406,8 @@
         </div>
     </div>
 
-    {{-- 🧭 MOBILE BOTTOM NAVIGATION - HANYA UNTUK MOBILE --}}
-    <nav class="mobile-bottom-nav sm:hidden safe-area-bottom">
+    {{-- 🧭 MOBILE BOTTOM NAVIGATION - HANYA UNTUK MOBILE/TABLET (Hidden di Desktop LG+) --}}
+    <nav class="mobile-bottom-nav lg:hidden safe-area-bottom">
         <div class="grid grid-cols-3 gap-2">
             {{-- Products Button --}}
             <button onclick="switchSection('products')"
@@ -964,8 +969,8 @@
         function initPOS() {
             console.log('🚀 POS Navigation Initialized');
             
-            // Default section for mobile
-            if (window.innerWidth < 640) {
+            // Default section for mobile/tablet (< 1024px)
+            if (window.innerWidth < 1024) {
                 switchSection('products');
             }
             
@@ -1007,8 +1012,8 @@
         window.addEventListener('resize', function() {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(function() {
-                if (window.innerWidth >= 640) {
-                    // Show all sections on desktop
+                if (window.innerWidth >= 1024) {
+                    // Show all sections on desktop (LG+)
                     document.querySelectorAll('.mobile-section').forEach(el => {
                         el.style.display = 'flex';
                     });
@@ -1287,16 +1292,26 @@
         }
 
         /* Bottom nav yang fixed */
-        .mobile-bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-top: 1px solid #e5e7eb;
-            z-index: 1000;
-            padding: 12px 16px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+        /* Bottom nav yang fixed - Hanya muncul di mobile/tablet (<1024px) */
+        @media (max-width: 1023px) {
+            .mobile-bottom-nav {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                border-top: 1px solid #e5e7eb;
+                z-index: 1000;
+                padding: 12px 16px;
+                box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+                display: block; /* Ensure visible on mobile */
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .mobile-bottom-nav {
+                display: none !important; /* Force hide on desktop */
+            }
         }
     </style>
 
