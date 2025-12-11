@@ -1,142 +1,216 @@
+<!-- File: resources/views/livewire/cash-summary-modal.blade.php -->
 <div>
-    <!-- Modal Backdrop -->
-    @if($showModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto">
-            <!-- Backdrop -->
-            <div class="fixed inset-0 backdrop-blur-sm bg-opacity-50 transition-opacity animate-fade-in-backdrop"
-                 wire:click="closeModal"></div>
+    @if ($showModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center">
+            {{-- Background blur --}}
+            <div class="absolute inset-0 backdrop-blur-md bg-blue-50 bg-opacity-70" wire:click="closeModal"></div>
 
-            <!-- Modal -->
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl animate-fade-in">
+            {{-- Modal box --}}
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in">
+                
+                {{-- Header --}}
+                <div class="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">Rekap Sesi Kas</h2>
+                            <p class="text-sm text-gray-600 mt-1">
+                                Sesi dibuka: {{ $session->opened_at->format('d/m/Y H:i') }}
+                                ({{ $summary['session_duration'] ?? '0 jam' }})
+                            </p>
+                        </div>
+                        <button wire:click="closeModal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Content --}}
+                <div class="p-6 space-y-6">
                     
-                    <!-- Header -->
-                    <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                              d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01m12-.01a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold text-white">Cash Summary</h3>
-                                    <p class="text-blue-100 text-sm">Ringkasan sesi kas saat ini</p>
-                                </div>
-                            </div>
-                            <button wire:click="closeModal" 
-                                    class="cursor-pointer rounded-md p-1 text-blue-100 hover:bg-blue-500 hover:text-white transition-colors">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                </svg>
-                            </button>
+                    {{-- Section 1: Cash In Hand & Expected Cash --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                            <h3 class="text-sm font-medium text-blue-800 mb-1">Kas Awal</h3>
+                            <p class="text-2xl font-bold text-blue-900">
+                                Rp {{ number_format($summary['cash_in_hand'] ?? 0, 0, ',', '.') }}
+                            </p>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                            <h3 class="text-sm font-medium text-green-800 mb-1">Uang Seharusnya</h3>
+                            <p class="text-2xl font-bold text-green-900">
+                                Rp {{ number_format($summary['expected_cash'] ?? 0, 0, ',', '.') }}
+                            </p>
+                            <p class="text-xs text-green-600 mt-1">
+                                = Kas Awal + Penjualan Cash - Pengeluaran Cash
+                            </p>
                         </div>
                     </div>
 
-                    <!-- Content -->
-                    <div class="bg-white px-6 py-4">
-                        @if($session)
-                            <!-- Session Info -->
-                            <div class="grid grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-                                <div>
-                                    <p class="text-sm text-gray-500">Kasir</p>
-                                    <p class="font-semibold text-gray-900">{{ $session->user->name }}</p>
+                    {{-- Section 2: Sales by Payment Method --}}
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-3">Penjualan per Metode Pembayaran</h3>
+                        <div class="space-y-2">
+                            @foreach($summary['payment_method_sales'] ?? [] as $code => $amount)
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                                    <div class="flex items-center">
+                                        @php
+                                            $bgColor = match($code) {
+                                                'cash' => 'bg-green-500',
+                                                'transfer' => 'bg-purple-500',
+                                                'qris' => 'bg-orange-500',
+                                                'credit_card', 'debit_card' => 'bg-indigo-500',
+                                                'ewallet' => 'bg-pink-500',
+                                                default => 'bg-gray-500',
+                                            };
+                                        @endphp
+                                        <span class="inline-block w-3 h-3 rounded-full mr-2 {{ $bgColor }}"></span>
+                                        <span class="text-sm text-gray-700">{{ $this->getPaymentMethodName($code) }}</span>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900">
+                                        Rp {{ number_format($amount, 0, ',', '.') }}
+                                    </span>
                                 </div>
-                                <div>
-                                    <p class="text-sm text-gray-500">Dibuka</p>
-                                    <p class="font-semibold text-gray-900">{{ $session->opened_at->format('d/m/Y H:i') }}</p>
-                                </div>
+                            @endforeach
+                            
+                            {{-- Total Penjualan --}}
+                            <div class="flex justify-between items-center pt-3 mt-2 border-t border-gray-200">
+                                <span class="text-sm font-semibold text-gray-700">Total Penjualan</span>
+                                <span class="text-lg font-bold text-gray-900">
+                                    Rp {{ number_format($summary['total_sales'] ?? 0, 0, ',', '.') }}
+                                </span>
                             </div>
+                        </div>
+                    </div>
 
-                            <!-- Financial Summary -->
-                            <div class="space-y-4">
-                                <!-- Cash In Hand -->
-                                <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                    <span class="text-sm font-medium text-blue-900">Kas Awal</span>
-                                    <span class="text-lg font-bold text-blue-900">{{ $this->formatCurrency($summary['cash_in_hand']) }}</span>
-                                </div>
-
-                                <!-- Sales Breakdown by Payment Method -->
-                                <div class="space-y-2">
-                                    <h4 class="font-semibold text-gray-900 text-sm uppercase tracking-wide">Penjualan per Metode</h4>
-                                    
-                                    <div class="grid grid-cols-2 gap-2">
-                                        @foreach($summary['payment_method_sales'] as $methodCode => $amount)
-                                            @if($amount > 0)
-                                                @php
-                                                    $color = $this->getPaymentMethodColor($methodCode);
-                                                    $methodName = $this->getPaymentMethodName($methodCode);
-                                                @endphp
-                                                <div class="flex justify-between items-center p-2 bg-{{ $color }}-50 rounded border border-{{ $color }}-200">
-                                                    <span class="text-sm text-{{ $color }}-800">{{ $methodName }}</span>
-                                                    <span class="font-semibold text-{{ $color }}-800">{{ $this->formatCurrency($amount) }}</span>
-                                                </div>
-                                            @endif
-                                        @endforeach
-                                    </div>
-                                </div>
-
-                                <!-- Totals -->
-                                <div class="border-t pt-4 space-y-2">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm font-medium text-gray-600">Total Penjualan</span>
-                                        <span class="text-lg font-bold text-gray-900">{{ $this->formatCurrency($summary['total_sales']) }}</span>
-                                    </div>
-                                    
-                                    <!-- Expected Cash (hanya untuk metode cash) -->
-                                    @if(isset($summary['payment_method_sales']['cash']) && $summary['payment_method_sales']['cash'] > 0)
-                                        <div class="flex justify-between items-center p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-lg text-white">
-                                            <span class="font-semibold">Uang di Laci (Expected)</span>
-                                            <span class="text-xl font-bold">{{ $this->formatCurrency($summary['expected_cash']) }}</span>
-                                        </div>
-                                    @endif
-                                </div>
-
-                                <!-- Statistics -->
-                                <div class="grid grid-cols-2 gap-4 pt-4 border-t">
-                                    <div class="text-center p-3 bg-gray-50 rounded-lg">
-                                        <p class="text-2xl font-bold text-blue-600">{{ $summary['transaction_count'] }}</p>
-                                        <p class="text-xs text-gray-500">Total Transaksi</p>
-                                    </div>
-                                    <div class="text-center p-3 bg-gray-50 rounded-lg">
-                                        <p class="text-2xl font-bold text-green-600">{{ $this->formatCurrency($summary['average_transaction']) }}</p>
-                                        <p class="text-xs text-gray-500">Rata-rata/Transaksi</p>
-                                    </div>
+                    {{-- Section 3: Cash Expenses --}}
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-sm font-semibold text-gray-700">Pengeluaran dari Kasir</h3>
+                            <span class="text-xs text-gray-500">
+                                {{ $summary['expense_count'] ?? 0 }} transaksi
+                            </span>
+                        </div>
+                        
+                        @if(($summary['expense_count'] ?? 0) > 0)
+                            <div class="bg-red-50 p-3 rounded mb-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-red-700">Total Pengeluaran Cash</span>
+                                    <span class="text-lg font-bold text-red-900">
+                                        Rp {{ number_format($summary['total_cash_expenses'] ?? 0, 0, ',', '.') }}
+                                    </span>
                                 </div>
                             </div>
                         @else
-                            <div class="text-center py-8">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                          d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01m12-.01a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada sesi aktif</h3>
-                                <p class="mt-1 text-sm text-gray-500">Mulai sesi kas terlebih dahulu untuk melihat summary.</p>
+                            <p class="text-sm text-gray-500 text-center py-3">Tidak ada pengeluaran dari kasir</p>
+                        @endif
+                    </div>
+
+                    {{-- Section 4: Cash Out & Difference --}}
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4">Kas Akhir & Selisih</h3>
+                        
+                        {{-- Input Cash Out --}}
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Jumlah Kas Akhir (Fisik di Laci)
+                            </label>
+                            <div class="flex items-center space-x-3">
+                                <div class="relative flex-1">
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
+                                    <input 
+                                        type="number" 
+                                        wire:model="manualCashOut"
+                                        wire:change="updateCashOut"
+                                        class="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                        placeholder="Masukkan jumlah kas akhir"
+                                        min="0"
+                                        step="1000"
+                                    />
+                                </div>
+                                <button 
+                                    wire:click="updateCashOut"
+                                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+                                    Update
+                                </button>
+                            </div>
+                            @if($actualCashOut > 0)
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Terakhir diisi: Rp {{ number_format($actualCashOut, 0, ',', '.') }}
+                                </p>
+                            @endif
+                        </div>
+
+                        {{-- Cash Difference --}}
+                        @if($actualCashOut > 0)
+                            <div class="border-t border-gray-200 pt-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-700">Selisih Kas</span>
+                                    <span class="text-lg font-bold {{ $cashDifference >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ $cashDifference >= 0 ? '+' : '' }}Rp {{ number_format($cashDifference, 0, ',', '.') }}
+                                    </span>
+                                </div>
+                                <p class="text-xs {{ $cashDifference >= 0 ? 'text-green-600' : 'text-red-600' }} mt-1">
+                                    @if($cashDifference > 0)
+                                        💰 Lebih Rp {{ number_format($cashDifference, 0, ',', '.') }}
+                                    @elseif($cashDifference < 0)
+                                        ⚠️ Kurang Rp {{ number_format(abs($cashDifference), 0, ',', '.') }}
+                                    @else
+                                        ✅ Tepat
+                                    @endif
+                                </p>
                             </div>
                         @endif
                     </div>
 
-                    <!-- Footer -->
-                    <div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3">
-                        <button wire:click="closeModal" 
-                                type="button"
-                                class="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                            Tutup
+                    {{-- Statistics --}}
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <p class="text-xs text-gray-500">Total Transaksi</p>
+                            <p class="text-lg font-bold text-gray-900">{{ $summary['transaction_count'] ?? 0 }}</p>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <p class="text-xs text-gray-500">Rata-rata Transaksi</p>
+                            <p class="text-lg font-bold text-gray-900">
+                                Rp {{ number_format($summary['average_transaction'] ?? 0, 0, ',', '.') }}
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                {{-- Footer with Close Session Button --}}
+                <div class="sticky bottom-0 bg-white border-t border-gray-200 p-6 rounded-b-xl">
+                    <div class="flex justify-between items-center">
+                        <button 
+                            wire:click="closeModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                            Tutup Preview
                         </button>
-                        @if($session)
-                            <button onclick="window.print()"
-                                    class="cursor-pointer px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center space-x-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                          d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                </svg>
-                                <span>Print</span>
-                            </button>
-                        @endif
+                        
+                        <button 
+                            wire:click="closeCashSession"
+                            class="px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Tutup Sesi Kas
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
+
+        <style>
+            @keyframes fade-in {
+                0% { opacity: 0; transform: translateY(-10px); }
+                100% { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fade-in {
+                animation: fade-in 0.25s ease-out forwards;
+            }
+        </style>
     @endif
 </div>

@@ -5,7 +5,9 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\CashSession;
 use App\Models\PaymentMethod;
+use App\Models\Expense;
 use Illuminate\Support\Collection;
+use Filament\Notifications\Notification;
 
 class CashSummaryModal extends Component
 {
@@ -13,12 +15,17 @@ class CashSummaryModal extends Component
     public $session;
     public $summary = [];
     public Collection $paymentMethods;
+    public $manualCashOut = 0;
+    public $actualCashOut = 0;
+    public $cashDifference = 0;
 
-    protected $listeners = ['openCashSummaryModal' => 'openModal'];
+    protected $listeners = [
+        'openCashSummaryModal' => 'openModal',
+        'refreshSummary' => 'refreshSummary'
+    ];
 
     public function mount()
     {
-        // Load semua payment method untuk mapping sebagai Collection
         $this->paymentMethods = PaymentMethod::active()->get()->keyBy('code');
     }
 
@@ -34,9 +41,15 @@ class CashSummaryModal extends Component
             return;
         }
 
-        $this->session = CashSession::with(['sales' => function($query) {
-            $query->where('status', 'completed');
-        }])->find($sessionId);
+        // Load session dengan semua data terkait
+        $this->session = CashSession::with([
+            'sales' => function($query) {
+                $query->where('status', 'completed');
+            },
+            'cashExpenses' => function($query) {
+                $query->where('status', 'approved');
+            }
+        ])->find($sessionId);
 
         if ($this->session) {
             $this->calculateSummary();
@@ -44,17 +57,25 @@ class CashSummaryModal extends Component
         }
     }
 
+    public function refreshSummary()
+    {
+        if ($this->session) {
+            $this->calculateSummary();
+        }
+    }
+
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['session', 'summary']);
+        $this->reset(['session', 'summary', 'manualCashOut', 'actualCashOut', 'cashDifference']);
     }
 
     private function calculateSummary()
     {
         $sales = $this->session->sales;
+        $expenses = $this->session->cashExpenses; // Hanya expenses dari kasir
 
-        // Hitung berdasarkan payment method ID
+        // Hitung penjualan berdasarkan payment method
         $paymentMethodSales = [];
         $totalSales = 0;
         
@@ -70,41 +91,144 @@ class CashSummaryModal extends Component
             $totalSales += $amount;
         }
 
-        // Hitung cash sales khusus (cash_in_hand + penjualan cash)
+        // Hitung total pengeluaran dari kasir
+        $totalCashExpenses = $expenses->sum('amount');
+        
+        // Cash sales khusus untuk perhitungan expected cash
         $cashSales = $paymentMethodSales['cash'] ?? 0;
-        $expectedCash = $this->session->cash_in_hand + $cashSales;
+        
+        // Expected cash = kas awal + penjualan cash - pengeluaran cash
+        $expectedCash = $this->session->cash_in_hand + $cashSales - $totalCashExpenses;
+
+        // Jika sudah ada cash_out yang diisi, hitung selisih
+        $cashDifference = null;
+        if ($this->session->cash_out !== null) {
+            $cashDifference = $this->session->cash_out - $expectedCash;
+        }
 
         $this->summary = [
             'cash_in_hand' => $this->session->cash_in_hand,
             'payment_method_sales' => $paymentMethodSales,
             'total_sales' => $totalSales,
+            'cash_sales' => $cashSales,
+            'total_cash_expenses' => $totalCashExpenses,
             'expected_cash' => $expectedCash,
+            'cash_out' => $this->session->cash_out,
+            'cash_difference' => $cashDifference,
             'transaction_count' => $sales->count(),
+            'expense_count' => $expenses->count(),
             'average_transaction' => $sales->count() > 0 ? $totalSales / $sales->count() : 0,
+            'session_duration' => $this->session->opened_at->diffForHumans(now(), true),
         ];
+
+        // Set nilai untuk input
+        $this->actualCashOut = $this->session->cash_out ?? 0;
+        $this->manualCashOut = $this->actualCashOut;
+        $this->cashDifference = $cashDifference ?? 0;
     }
 
-    // Helper untuk mendapatkan nama payment method yang user-friendly
+    public function updateCashOut()
+    {
+        $this->validate([
+            'manualCashOut' => 'required|numeric|min:0',
+        ]);
+
+        try {
+            // Update cash_out di database
+            $this->session->update([
+                'cash_out' => $this->manualCashOut
+            ]);
+
+            // Hitung ulang selisih
+            $cashDifference = $this->manualCashOut - $this->summary['expected_cash'];
+            
+            $this->summary['cash_out'] = $this->manualCashOut;
+            $this->summary['cash_difference'] = $cashDifference;
+            $this->cashDifference = $cashDifference;
+            $this->actualCashOut = $this->manualCashOut;
+
+            // ✅ PERBAIKAN: Kirim string, bukan array
+            $this->dispatch('showNotification', 
+                'Kas akhir berhasil diperbarui'
+            );
+
+        } catch (\Exception $e) {
+            // ✅ PERBAIKAN: Kirim string, bukan array
+            $this->dispatch('showNotification', 
+                'Gagal memperbarui kas akhir: ' . $e->getMessage()
+            );
+        }
+    }
+
+    public function closeCashSession()
+    {
+        // Validasi: cash_out harus diisi
+        if ($this->actualCashOut === null || $this->actualCashOut === '') {
+            $this->dispatch('showNotification',
+                'Harap masukkan jumlah kas akhir terlebih dahulu'
+            );
+            return;
+        }
+
+        try {
+            // Update cash_out jika belum diisi
+            if ($this->session->cash_out === null) {
+                $this->session->update(['cash_out' => $this->actualCashOut]);
+            }
+
+            // Tutup sesi
+            $this->session->update([
+                'closed_at' => now(),
+                'status' => 'closed'
+            ]);
+
+            // Clear session
+            session()->forget('cash_session_id');
+
+            $this->dispatch('showNotification',
+                'Sesi kas berhasil ditutup'
+            );
+
+            // Tutup modal dan refresh halaman
+            $this->closeModal();
+            
+            // Dispatch event untuk refresh dashboard
+            $this->dispatch('cashSessionClosed');
+            
+            // Redirect atau refresh
+            redirect()->route('filament.admin.pages.dashboard');
+
+            Notification::make()
+                ->title('Berhasil')
+                ->body('Kas akhir berhasil diperbarui')
+                ->success()
+                ->send();
+
+        } catch (\Exception $e) {
+            $this->dispatch('showNotification',
+                'Gagal menutup sesi: ' . $e->getMessage()
+            );
+        }
+    }
+
     public function getPaymentMethodName($code)
     {
         $method = $this->paymentMethods->get($code);
         return $method ? $method->name : ucfirst(str_replace('_', ' ', $code));
     }
 
-    // Helper untuk mendapatkan warna berdasarkan payment method
-    public function getPaymentMethodColor($code)
+    public function getPaymentMethodColorClass($color): string
     {
-        return match($code) {
-            'cash' => 'green',
-            'transfer' => 'purple',
-            'qris' => 'orange',
-            'credit_card', 'debit_card' => 'indigo',
-            'ewallet' => 'pink',
-            default => 'gray',
+        return match($color) {
+            'green' => '#10B981',
+            'purple' => '#8B5CF6',
+            'orange' => '#F97316',
+            'indigo' => '#6366F1',
+            'pink' => '#EC4899',
+            default => '#6B7280',
         };
     }
 
-    // 🔥 PERBAIKAN: Buat method formatCurrency yang bisa diakses di view
     public function formatCurrency($amount)
     {
         return 'Rp ' . number_format($amount, 0, ',', '.');

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\PaymentMethod;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,9 +32,10 @@ class CashSession extends Model
         return $this->hasMany(Sale::class);
     }
 
-    public function paymentMethod(): BelongsTo
+    // 🔹 Relasi ke expenses dari cash session ini
+    public function cashExpenses(): HasMany
     {
-        return $this->belongsTo(PaymentMethod::class, 'payment_method');
+        return $this->hasMany(Expense::class)->where('fund_source', Expense::FUND_SOURCE_CASHIER);
     }
 
     public function getSessionSummaryAttribute()
@@ -43,10 +43,17 @@ class CashSession extends Model
         return [
             'cash_in_hand' => $this->cash_in_hand,
             'total_cash_sales' => $this->total_cash_sales,
-            'total_non_cash_sales' => $this->total_non_cash_sales,
+            'total_cash_expenses' => $this->total_cash_expenses,
             'expected_cash' => $this->expected_cash,
             'total_completed_sales' => $this->total_completed_sales,
+            'total_transactions' => $this->transaction_count,
         ];
+    }
+
+    // 🔹 TOTAL pengeluaran CASH dari session ini
+    public function getTotalCashExpensesAttribute(): float
+    {
+        return $this->cashExpenses()->sum('amount');
     }
 
     // 🔹 TOTAL penjualan CASH yang COMPLETED
@@ -76,16 +83,10 @@ class CashSession extends Model
             ->sum('final_total');
     }
 
-    // 🔹 Uang yang seharusnya ada di laci (kas awal + penjualan cash)
+    // 🔹 Uang yang seharusnya ada di laci (kas awal + penjualan cash - pengeluaran cash)
     public function getExpectedCashAttribute(): float
     {
-        return $this->cash_in_hand + $this->total_cash_sales;
-    }
-
-    // 🔹 Profit kotor dari penjualan cash
-    public function getTotalCashRevenueAttribute()
-    {
-        return $this->total_cash_sales;
+        return $this->cash_in_hand + $this->total_cash_sales - $this->total_cash_expenses;
     }
 
     // 🔹 Selisih kas aktual dengan kas seharusnya

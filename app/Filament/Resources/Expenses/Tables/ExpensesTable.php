@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Expenses\Tables;
 
 use Dom\Text;
+use App\Models\Expense;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Filament\Actions\EditAction;
@@ -44,6 +45,17 @@ class ExpensesTable
                     ->label('Deskripsi')
                     ->limit(50)
                     ->searchable(),
+
+                TextColumn::make('fund_source')
+                    ->label('Sumber Dana')
+                    ->formatStateUsing(fn($state) => Expense::getFundSources()[$state] ?? $state)
+                    ->badge()
+                    ->color(fn($state) => match($state) {
+                        Expense::FUND_SOURCE_CASHIER => 'success',
+                        Expense::FUND_SOURCE_PETTY_CASH => 'info',
+                        Expense::FUND_SOURCE_TRANSFER => 'warning',
+                        default => 'gray',
+                    }),
                 
                 TextColumn::make('amount')
                     ->label('Jumlah')
@@ -92,6 +104,10 @@ class ExpensesTable
                     ->label('Total Pengeluaran')),
             ])
             ->filters([
+                SelectFilter::make('fund_source')
+                    ->label('Sumber Dana')
+                    ->options(Expense::getFundSources()),
+
                 SelectFilter::make('expense_category_id')
                     ->label('Kategori')
                     ->relationship('category', 'name')

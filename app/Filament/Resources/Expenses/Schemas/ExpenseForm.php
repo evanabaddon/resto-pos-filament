@@ -34,21 +34,22 @@ class ExpenseForm
                     ])
                     ->columns(2),
 
-                Section::make('Metode Pembayaran & Penerima')
+                Section::make('Sumber Dana & Penerima')
                     ->schema([
-                        Select::make('payment_method_id')
-                            ->label('Metode Pembayaran')
+                        Select::make('fund_source')
+                            ->label('Sumber Dana')
                             ->required()
-                            ->relationship('paymentMethod', 'name')
-                            ->searchable()
-                            ->preload(),
+                            ->options(Expense::getFundSources())
+                            ->default(Expense::FUND_SOURCE_CASHIER)
+                            ->reactive(),
                         
                         TextInput::make('recipient')
                             ->label('Penerima')
                             ->maxLength(255)
-                            ->placeholder('Nama penerima pembayaran'),
+                            ->placeholder('Nama penerima pembayaran')
+                            ->columnSpanFull(),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make('Detail Pengeluaran')
                     ->schema([
@@ -81,8 +82,6 @@ class ExpenseForm
                             ->step(1000),
                     ])->columnSpanFull(),
                 
-                
-                
                 Section::make('Status & Catatan')
                     ->schema([
                         Select::make('status')
@@ -94,8 +93,8 @@ class ExpenseForm
                                 'approved' => 'Disetujui',
                                 'rejected' => 'Ditolak',
                             ])
-                            ->default('pending'),
-                            // ->disabled(fn($operation) => $operation === 'edit' && !auth()->user()->hasRole('admin')),
+                            ->default('pending')
+                            ->reactive(),
                         
                         Textarea::make('notes')
                             ->label('Catatan')
