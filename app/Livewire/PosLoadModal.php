@@ -8,8 +8,13 @@ use App\Models\SaleItem;
 
 class PosLoadModal extends Component
 {
+    use \Livewire\WithPagination;
+
     public $show = false;
-    public $savedSales = [];
+    // public $savedSales = []; // Replaced by pagination in render
+    public $search = '';
+    public $activeTab = 'draft'; // 'draft', 'paid', 'completed', 'split', 'all'
+    
     public $showSplitBillModal = false;
     public $selectedSaleForSplit = null;
     public $splitType = 'equal'; // 'equal', 'item', 'percentage'
@@ -19,28 +24,30 @@ class PosLoadModal extends Component
     public $percentageSplits = [];
     public $customerNames = [];
 
-    protected $listeners = ['openLoadModal'];
+    protected $listeners = ['openLoadModal', 'refreshSalesList' => '$refresh'];
 
     public function openLoadModal()
     {
-        // Ambil cash_session_id dari session
-        $cashSessionId = session('cash_session_id');
-        
-        if (!$cashSessionId) {
-            $this->savedSales = [];
-            $this->show = true;
-            return;
-        }
-
-        // Ambil semua transaksi pada cash session yang sama
-        $this->savedSales = Sale::where('cash_session_id', $cashSessionId)
-            ->withCount('items') // Ini akan menghasilkan 'items_count'
-            ->with(['items', 'paymentMethod']) // Load relationships untuk menghindari N+1 query
-            ->latest()
-            ->take(20)
-            ->get();
-
+        // Reset state when opening
+        $this->search = '';
+        $this->activeTab = 'draft'; // Default to draft for quick access to pending orders
         $this->show = true;
+        $this->resetPage();
+    }
+
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedActiveTab()
+    {
+        $this->resetPage();
+    }
+
+    public function setTab($tab)
+    {
+        $this->activeTab = $tab;
     }
 
     public function loadSale($saleId)
@@ -90,6 +97,28 @@ class PosLoadModal extends Component
         // Dispatch event ke PosPaymentModal untuk print struk
         $this->dispatch('openReceiptModal', saleId: $saleId);
         $this->show = false;
+    }
+
+    public function deleteSale($saleId)
+    {
+        try {
+            $sale = Sale::findOrFail($saleId);
+
+            if ($sale->status !== 'draft') {
+                $this->dispatch('showNotification', 'Hanya transaksi Draft yang bisa dihapus.', 'error');
+                return;
+            }
+
+            // Gunakan Service untuk hapus & restore stock
+            app(\App\Services\OrderService::class)->deleteSale($saleId);
+
+            $this->dispatch('showNotification', 'Transaksi berhasil dihapus dan stok dikembalikan.', 'success');
+            
+            // Refresh list (otomatis via render karena Livewire)
+        } catch (\Exception $e) {
+            \Log::error('Gagal menghapus transaksi: ' . $e->getMessage());
+            $this->dispatch('showNotification', 'Gagal menghapus transaksi: ' . $e->getMessage(), 'error');
+        }
     }
 
     // Fitur Split Bill - Item Based
@@ -199,6 +228,7 @@ class PosLoadModal extends Component
                     
                     $this->splitAssignments[$i]['items'][] = [
                         'name' => $item->product->name,
+                        'product_id' => $item->product_id,
                         'quantity' => $assignedQty,
                         'price' => $itemPrice,
                         'subtotal' => $assignedSubtotal
@@ -288,57 +318,18 @@ class PosLoadModal extends Component
         }
 
         try {
-            // Buat transaksi baru untuk setiap split
-            $originalSale = $this->selectedSaleForSplit;
-            $splitSales = [];
-
+            // Prepare data for service
+            $splits = [];
             foreach ($this->splitAssignments as $index => $split) {
                 if ($split['total'] > 0) {
-                    // Generate unique invoice number untuk setiap split
-                    $invoiceNumber = $this->generateUniqueSplitInvoiceNumber($originalSale->id, $index + 1);
-                    
-                    $newSale = new Sale();
-                    $newSale->cash_session_id = $originalSale->cash_session_id;
-                    $newSale->user_id = $originalSale->user_id;
-                    $newSale->invoice_number = $invoiceNumber; // Gunakan invoice number yang unique
-                    $newSale->customer_name = $this->customerNames[$index] ?? 'Customer ' . ($index + 1);
-                    $newSale->order_type = $originalSale->order_type;
-                    $newSale->subtotal = $split['subtotal'];
-                    $newSale->tax = $split['tax'];
-                    $newSale->discount = 0;
-                    $newSale->final_total = $split['total'];
-                    $newSale->total = $split['total'];
-                    $newSale->payment_method = '';
-                    $newSale->payment_method_id = null;
-                    $newSale->status = 'draft';
-                    $newSale->note = $originalSale->note;
-                    $newSale->split_from = $originalSale->id;
-                    $newSale->split_number = $index + 1;
-                    $newSale->save();
-
-                    // Create sale items untuk split ini
-                    foreach ($split['items'] as $itemData) {
-                        $productId = $this->findProductIdByName($itemData['name']);
-                        if ($productId) {
-                            SaleItem::create([
-                                'sale_id' => $newSale->id,
-                                'product_id' => $productId,
-                                'quantity' => $itemData['quantity'],
-                                'unit_price' => $itemData['price'],
-                                'subtotal' => $itemData['subtotal'],
-                            ]);
-                        }
-                    }
-
-                    $splitSales[] = $newSale;
+                    $split['customer_name'] = $this->customerNames[$index] ?? 'Customer ' . ($index + 1);
+                    $splits[] = $split;
                 }
             }
 
-            // Update original sale status menjadi split
-            $originalSale->update([
-                'status' => 'split',
-                'split_into' => count($splitSales)
-            ]);
+            // Call Service
+            $orderService = app(\App\Services\OrderService::class);
+            $newSales = $orderService->splitSale($this->selectedSaleForSplit->id, $splits);
 
             $this->showSplitBillModal = false;
             $this->selectedSaleForSplit = null;
@@ -347,7 +338,7 @@ class PosLoadModal extends Component
             $this->customerNames = [];
             
             $this->dispatch('showNotification', 
-                'Split bill berhasil! ' . count($splitSales) . ' transaksi baru telah dibuat.', 
+                'Split bill berhasil! ' . count($newSales) . ' transaksi baru telah dibuat.', 
                 'success'
             );
 
@@ -361,56 +352,6 @@ class PosLoadModal extends Component
                 'error'
             );
         }
-    }
-
-    // Tambahkan method debug di PosLoadModal.php
-    public function debugAssignments()
-    {
-        if (!$this->selectedSaleForSplit) return;
-        
-        $debugInfo = [];
-        foreach ($this->selectedSaleForSplit->items as $item) {
-            $totalAssigned = array_sum($this->itemAssignments[$item->id]);
-            $debugInfo[] = [
-                'item' => $item->product->name,
-                'quantity' => $item->quantity,
-                'type_quantity' => gettype($item->quantity),
-                'total_assigned' => $totalAssigned,
-                'type_assigned' => gettype($totalAssigned),
-                'assignments' => $this->itemAssignments[$item->id],
-                'is_equal' => $totalAssigned == $item->quantity
-            ];
-        }
-        
-        logger('Split Bill Debug:', $debugInfo);
-        
-        // Panggil method ini sebelum validasi di confirmSplitBill
-        $this->debugAssignments();
-    }
-
-    protected function findProductIdByName($productName)
-    {
-        // Cari product ID berdasarkan nama
-        // Dalam implementasi real, Anda mungkin perlu relationship yang lebih baik
-        foreach ($this->selectedSaleForSplit->items as $item) {
-            if ($item->product->name === $productName) {
-                return $item->product_id;
-            }
-        }
-        return null;
-    }
-
-    protected function generateUniqueSplitInvoiceNumber($originalSaleId, $splitNumber)
-    {
-        $date = now()->format('Ymd');
-        $random = strtoupper(\Illuminate\Support\Str::random(4));
-        
-        do {
-            $invoiceNumber = "#{$date}-{$random}-SPLIT{$splitNumber}";
-            $exists = Sale::where('invoice_number', $invoiceNumber)->exists();
-        } while ($exists);
-        
-        return $invoiceNumber;
     }
 
     public function closeSplitBillModal()
@@ -441,6 +382,32 @@ class PosLoadModal extends Component
     
     public function render()
     {
-        return view('livewire.pos-load-modal');
+        $sales = collect();
+        $cashSessionId = session('cash_session_id');
+
+        if ($this->show && $cashSessionId) {
+            $query = Sale::where('cash_session_id', $cashSessionId)
+                ->withCount('items')
+                ->with(['items', 'paymentMethod']);
+
+            // Apply Status Filter
+            if ($this->activeTab !== 'all') {
+                $query->where('status', $this->activeTab);
+            }
+
+            // Apply Search
+            if ($this->search) {
+                $query->where(function($q) {
+                    $q->where('invoice_number', 'like', '%' . $this->search . '%')
+                      ->orWhere('customer_name', 'like', '%' . $this->search . '%');
+                });
+            }
+
+            $sales = $query->latest()->paginate(9); // Grid 3x3
+        }
+
+        return view('livewire.pos-load-modal', [
+            'sales' => $sales
+        ]);
     }
 }

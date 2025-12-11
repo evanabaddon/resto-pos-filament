@@ -260,6 +260,12 @@ class ReceiptPrintService
         
         // Sale Info
         $content .= "No. Transaksi: " . $sale->invoice_number . "\n";
+        
+        // Show Split Info
+        if ($sale->split_number) {
+            $content .= "** SPLIT BILL #" . $sale->split_number . " **\n";
+        }
+        
         $content .= "Tanggal: " . $sale->created_at->format('d/m/Y H:i') . "\n";
         $content .= "Kasir: " . ($sale->user->name ?? 'System') . "\n";
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
@@ -477,6 +483,13 @@ class ReceiptPrintService
 
         $printer->setJustification(Printer::JUSTIFY_LEFT);
         $printer->text("No. Transaksi: " . $sale->invoice_number . "\n");
+        
+        if ($sale->split_number) {
+            $printer->setEmphasis(true);
+            $printer->text("** SPLIT BILL #" . $sale->split_number . " **\n");
+            $printer->setEmphasis(false);
+        }
+
         $printer->text("Tanggal: " . $sale->created_at->format('d/m/Y H:i') . "\n");
         $printer->text("Kasir: " . ($sale->user->name ?? 'System') . "\n");
         $printer->text("Customer: " . ($sale->customer_name ?? 'Umum') . "\n");

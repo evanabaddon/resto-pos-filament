@@ -77,9 +77,9 @@ class OrderPrintService
                 'printer_type' => $settings->printer_type ?? 'usb',
                 'usb_printer_mode' => $settings->usb_printer_mode ?? 'single',
                 'usb_printer_name' => $settings->usb_printer_name ?? 'BAR',
-                'usb_kitchen_printer_name' => $settings->usb_kitchen_printer_name ?? 'BAR',
-                'usb_bar_printer_name' => $settings->usb_bar_printer_name ?? 'BAR',
-                'usb_general_printer_name' => $settings->usb_general_printer_name ?? 'BAR',
+                'usb_kitchen_printer_name' => $settings->usb_kitchen_printer_name ?? ($settings->usb_printer_name ?? 'BAR'),
+                'usb_bar_printer_name' => $settings->usb_bar_printer_name ?? ($settings->usb_printer_name ?? 'BAR'),
+                'usb_general_printer_name' => $settings->usb_general_printer_name ?? ($settings->usb_printer_name ?? 'BAR'),
             ];
         } catch (\Exception $e) {
             Log::warning('PrinterSettings not loaded, using defaults: ' . $e->getMessage());
@@ -124,7 +124,13 @@ class OrderPrintService
 
             foreach ($sale->items as $item) {
                 $productType = $item->product->type ?? 'general';
+                $productName = $item->product->name ?? 'Unknown Script';
                 
+                Log::info("🔍 Classifying item: {$productName}", [
+                    'type' => $productType, 
+                    'product_id' => $item->product_id
+                ]);
+
                 switch ($productType) {
                     case 'produced':
                         $kitchenItems[] = $item;
@@ -134,6 +140,7 @@ class OrderPrintService
                         break;
                     default:
                         $generalItems[] = $item;
+                        Log::warning("⚠️ Item classified as General: {$productName} (Type: {$productType})");
                         break;
                 }
             }
@@ -232,6 +239,9 @@ class OrderPrintService
 
         foreach ($itemsByDivision as $division => $items) {
             if (!empty($items)) {
+                // 🔥 MERGE ITEMS (prevent duplicates lines)
+                $items = $this->mergeItemsByProduct($items);
+                
                 $content = $this->generateOrderContent($sale, $items, $division);
                 $printerName = $this->getPrinterNameForDivision($division);
                 
@@ -251,6 +261,9 @@ class OrderPrintService
 
         foreach ($itemsByDivision as $division => $items) {
             if (!empty($items)) {
+                // 🔥 MERGE ITEMS (prevent duplicates lines)
+                $items = $this->mergeItemsByProduct($items);
+
                 $content = $this->generateOrderContent($sale, $items, $division);
                 $printerName = $this->getPrinterNameForDivision($division);
                 
@@ -288,7 +301,9 @@ class OrderPrintService
                 'environment' => $this->isHostingEnvironment ? 'hosting' : 'local'
             ]);
 
+            // 🔥 RETRY LOGIC (3x Attempts)
             $response = Http::timeout(15)
+                ->retry(3, 1000) // Retry 3 kali, delay 1000ms
                 ->withOptions([
                     'verify' => false,
                 ])
@@ -328,6 +343,21 @@ class OrderPrintService
         } catch (\Exception $e) {
             Log::error("❌ Webhook print failed: " . $e->getMessage());
             
+            // 🔥 FALLBACK LOGIC: If specific printer fails, try MAIN printer
+            // Only if we haven't already tried printing to main printer
+            $mainPrinter = $this->printerConfig['usb_printer_name'] ?? 'BAR';
+            
+            if ($printer !== $mainPrinter) {
+                 Log::info("🔄 Fallback: Trying to print to Main Printer ({$mainPrinter})");
+                 try {
+                     // Recursive call but to main printer
+                     // We use a different division name to indicate fallback
+                     return $this->sendWebhookPrint($content, $mainPrinter, $division . ' (Fallback)');
+                 } catch (\Exception $ex) {
+                     Log::error("❌ Fallback print also failed: " . $ex->getMessage());
+                 }
+            }
+
             if ($this->isHostingEnvironment) {
                 return [
                     'success' => false,
@@ -666,12 +696,15 @@ class OrderPrintService
         $title = $divisionTitles[$division] ?? 'ORDER';
         $footer = $divisionFooters[$division] ?? '** ORDER **';
 
+        // Format 32 Characters (58mm standard)
+        $line = str_repeat('=', 32) . "\n";
+        $emptyLine = "\n";
+
         $content = "{$title}\n";
-        $content .= "========================\n";
+        $content .= $line;
         $content .= "No: {$sale->invoice_number}\n";
-        $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
-        $content .= "Time: " . now()->format('H:i:s') . "\n";
-        $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
+        $content .= "Cust: " . substr($sale->customer_name ?? 'Umum', 0, 24) . "\n";
+        $content .= "Time: " . now()->format('H:i') . " | " . ($sale->order_type ?? 'Dine In') . "\n";
 
         // ✅ TAMBAHKAN INFORMASI NOTES KESELURUHAN JIKA ADA
         $hasAnyNotes = false;
@@ -683,18 +716,34 @@ class OrderPrintService
         }
         
         if ($hasAnyNotes) {
-            $content .= "--- CATATAN KHUSUS ---\n";
+            $content .= str_repeat('-', 32) . "\n";
+            $content .= "📝 CATATAN KHUSUS\n";
         }
         
-        $content .= "========================\n";
+        $content .= $line;
         $content .= "ITEMS:\n";
+        $content .= $emptyLine;
         
         foreach ($items as $item) {
             $productName = $item->product->name ?? 'Unknown';
-            if (strlen($productName) > 20) {
-                $productName = substr($productName, 0, 17) . '...';
+            $qty = "x{$item->quantity}";
+            
+            // Layout: "Name (max 26) .... xQty"
+            // Total 32. Qty takes ~3-4 chars. Dots/Space takes min 2. Name takes rest.
+            $maxNameLen = 32 - strlen($qty) - 2; 
+            
+            if (strlen($productName) > $maxNameLen) {
+                // If name is too long, wrap it? Or truncate?
+                // Left aligned name, dots, right aligned qty
+                $content .= str_pad(substr($productName, 0, $maxNameLen) . " ", 32 - strlen($qty), ".", STR_PAD_RIGHT) . $qty . "\n";
+                // Print full name on next line if really needed? 
+                // For now, truncated name with dots is standard "List" view.
+                // Or:
+                // $content .= "{$productName}\n";
+                // $content .= str_pad("", 32 - strlen($qty), " ", STR_PAD_RIGHT) . $qty . "\n";
+            } else {
+                $content .= str_pad($productName . " ", 32 - strlen($qty), ".", STR_PAD_RIGHT) . $qty . "\n";
             }
-            $content .= "{$productName} x{$item->quantity}\n";
 
             // ✅ TAMBAHKAN NOTES JIKA ADA
             if (!empty($item->notes)) {
@@ -702,19 +751,21 @@ class OrderPrintService
                 foreach ($notesLines as $noteLine) {
                     $trimmedNote = trim($noteLine);
                     if (!empty($trimmedNote)) {
-                        $content .= "  📝 " . $trimmedNote . "\n";
+                        $content .= "  📝 " . substr($trimmedNote, 0, 28) . "\n";
                     }
                 }
             }
             
             if (!empty($item->note)) {
-                $content .= "  Note: {$item->note}\n";
+                $content .= "  Note: " . substr($item->note, 0, 24) . "\n";
             }
+            
+            $content .= $emptyLine; // Spacing per item
         }
         
-        $content .= "========================\n";
+        $content .= $line;
         $content .= "{$footer}\n";
-        $content .= "========================\n\n\n";
+        $content .= $line . "\n\n";
         
         return $content;
     }
@@ -824,12 +875,15 @@ class OrderPrintService
      */
     protected function generateNewItemsContent(Sale $sale, array $newItems, string $division): string
     {
-        $content = "TAMBAHAN ORDER {$division}\n";
-        $content .= "========================\n";
+        // Format 32 Characters
+        $line = str_repeat('=', 32) . "\n";
+        $emptyLine = "\n";
+        
+        $content = "TAMBAHAN {$division}\n";
+        $content .= $line;
         $content .= "No: {$sale->invoice_number}\n";
-        $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
-        $content .= "Time: " . now()->format('H:i:s') . "\n";
-        $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
+        $content .= "Cust: " . substr($sale->customer_name ?? 'Umum', 0, 24) . "\n";
+        $content .= "Time: " . now()->format('H:i') . "\n";
 
         // ✅ TAMBAHKAN INFORMASI NOTES KESELURUHAN JIKA ADA
         $hasAnyNotes = false;
@@ -841,18 +895,25 @@ class OrderPrintService
         }
         
         if ($hasAnyNotes) {
-            $content .= "--- CATATAN KHUSUS ---\n";
+            $content .= str_repeat('-', 32) . "\n";
+            $content .= "📝 CATATAN KHUSUS\n";
         }
         
-        $content .= "========================\n";
+        $content .= $line;
         $content .= "TAMBAHAN:\n";
+        $content .= $emptyLine;
         
         foreach ($newItems as $item) {
             $productName = $item->product->name ?? 'Unknown';
-            if (strlen($productName) > 20) {
-                $productName = substr($productName, 0, 17) . '...';
+            $qty = "x{$item->quantity}";
+
+            $maxNameLen = 30 - strlen($qty) - 2; // + prefix
+            
+            if (strlen($productName) > $maxNameLen) {
+                $content .= str_pad("+ " . substr($productName, 0, $maxNameLen) . " ", 32 - strlen($qty), ".", STR_PAD_RIGHT) . $qty . "\n";
+            } else {
+                $content .= str_pad("+ " . $productName . " ", 32 - strlen($qty), ".", STR_PAD_RIGHT) . $qty . "\n";
             }
-            $content .= "+ {$productName} x{$item->quantity}\n";
 
             // ✅ TAMBAHKAN NOTES JIKA ADA
             if (!empty($item->notes)) {
@@ -860,15 +921,15 @@ class OrderPrintService
                 foreach ($notesLines as $noteLine) {
                     $trimmedNote = trim($noteLine);
                     if (!empty($trimmedNote)) {
-                        $content .= "  📝 " . $trimmedNote . "\n";
+                        $content .= "  📝 " . substr($trimmedNote, 0, 28) . "\n";
                     }
                 }
             }
         }
         
-        $content .= "========================\n";
-        $content .= "*** TAMBAHAN ORDER ***\n";
-        $content .= "========================\n\n\n";
+        $content .= $line;
+        $content .= "*** UPDATE ORDER ***\n";
+        $content .= $line . "\n\n";
         
         return $content;
     }

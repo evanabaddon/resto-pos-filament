@@ -5,13 +5,13 @@
             <div class="absolute inset-0 backdrop-blur-md bg-opacity-75 transition-opacity" wire:click="closeModal"></div>
 
             {{-- Modal Box --}}
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-auto transform transition-all">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-auto transform transition-all flex flex-col max-h-[90vh]">
                 {{-- Header --}}
-                <div class="px-6 py-4 border-b border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200 flex-shrink-0">
                     <div class="flex items-center justify-between">
                         <div>
                             <h2 class="text-xl font-bold text-gray-900">Transaksi Tersimpan</h2>
-                            <p class="text-sm text-gray-500 mt-1">Pilih transaksi untuk dilanjutkan atau diproses pembayaran</p>
+                            <p class="text-sm text-gray-500 mt-1">Kelola transaksi draft, pembayaran, dan riwayat.</p>
                         </div>
                         <button wire:click="closeModal" 
                                 class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
@@ -22,140 +22,140 @@
                     </div>
                 </div>
 
+                {{-- Search & Filters --}}
+                <div class="px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0 z-10">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                        {{-- Search --}}
+                        <div class="relative w-full md:w-1/2">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <input wire:model.live.debounce.300ms="search" type="text" 
+                                class="pl-10 block w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm py-2" 
+                                placeholder="Cari Invoice (#...) atau Nama Pelanggan...">
+                        </div>
+                        
+                        {{-- Tabs --}}
+                        <div class="flex space-x-1 w-full md:w-auto overflow-x-auto pb-1 hide-scrollbar bg-gray-100 p-1 rounded-lg">
+                            @foreach(['draft' => 'Draft', 'paid' => 'Lunas', 'completed' => 'Selesai', 'split' => 'Split', 'all' => 'Semua'] as $key => $label)
+                                <button wire:click="setTab('{{ $key }}')"
+                                    class="px-4 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap
+                                    {{ $activeTab === $key 
+                                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-gray-200' 
+                                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200' }}">
+                                    {{ $label }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Content --}}
-                <div class="max-h-[60vh] overflow-y-auto">
-                    <div class="p-6">
-                        @forelse ($savedSales as $sale)
-                            <div class="bg-white border border-gray-200 rounded-lg p-4 mb-3 hover:shadow-md transition-shadow duration-200">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex-1">
-                                        <div class="flex items-center space-x-3 mb-2">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <div class="flex-1 overflow-y-auto bg-gray-50 p-4 relative min-h-[300px]">
+                    {{-- Loading State --}}
+                    <div wire:loading wire:target="search, setTab, previousPage, nextPage, gotoPage" 
+                         class="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 flex items-center justify-center rounded-lg transition-opacity">
+                        <div class="bg-white p-3 rounded-full shadow-lg">
+                            <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @forelse ($sales as $sale)
+                            <div class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-blue-300 transition-all duration-200 flex flex-col h-full relative group">
+                                {{-- Card Header --}}
+                                <div class="flex justify-between items-start mb-3">
+                                    <div class="flex flex-col">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs font-mono font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
                                                 {{ $sale->invoice_number }}
                                             </span>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                                @if($sale->order_type === 'Dine In') bg-green-100 text-green-800
-                                                @elseif($sale->order_type === 'take_away') bg-orange-100 text-orange-800
-                                                @else bg-gray-100 text-gray-800 @endif">
-                                                {{ $sale->order_type === 'Dine In' ? 'Makan di Tempat' : 
-                                                   ($sale->order_type === 'take_away' ? 'Bawa Pulang' : 'Delivery') }}
-                                            </span>
-                                            {{-- Status Badge --}}
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                                @if($sale->status === 'draft') bg-yellow-100 text-yellow-800
-                                                @elseif($sale->status === 'paid') bg-green-100 text-green-800
-                                                @elseif($sale->status === 'completed') bg-blue-100 text-blue-800
-                                                @elseif($sale->status === 'split') bg-purple-100 text-purple-800
-                                                @else bg-gray-100 text-gray-800 @endif">
-                                                {{ match($sale->status) {
-                                                    'draft' => 'Draft',
-                                                    'paid' => 'Lunas',
-                                                    'completed' => 'Selesai',
-                                                    'split' => 'Split Bill',
-                                                    default => $sale->status
-                                                } }}
-                                            </span>
-                                            @if($sale->split_from)
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                                    Split #{{ $sale->split_number }}
-                                                </span>
+                                            @if($sale->status === 'split')
+                                                <span class="text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded uppercase">SPLIT</span>
                                             @endif
                                         </div>
-                                        
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                            <div>
-                                                <p class="font-semibold text-gray-900">{{ $sale->customer_name ?? 'Pelanggan Umum' }}</p>
-                                                <p class="text-gray-500 text-xs">{{ $sale->created_at->translatedFormat('d F Y H:i') }}</p>
-                                            </div>
-                                            <div class="text-right">
-                                                <p class="text-lg font-bold text-gray-900">
-                                                    Rp{{ number_format($sale->final_total, 0, ',', '.') }}
-                                                </p>
-                                                <p class="text-xs text-gray-500">
-                                                    {{ $sale->items_count }} item
-                                                    @if($sale->paymentMethod)
-                                                        • {{ $sale->paymentMethod->name }}
-                                                    @endif
-                                                    @if($sale->split_into)
-                                                        • Split {{ $sale->split_into }} bill
-                                                    @endif
-                                                </p>
-                                            </div>
+                                        <h3 class="font-bold text-gray-900 mt-1 truncate w-40" title="{{ $sale->customer_name }}">
+                                            {{ $sale->customer_name ?? 'Umum' }}
+                                        </h3>
+                                        <span class="text-xs text-gray-500 flex items-center mt-0.5">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            {{ $sale->created_at->format('H:i') }}
+                                        </span>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold text-blue-600">
+                                            Rp{{ number_format($sale->final_total, 0, ',', '.') }}
+                                        </div>
+                                        <div class="text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded px-1.5 py-0.5 inline-block mt-1">
+                                            {{ $sale->items_count }} items
                                         </div>
                                     </div>
-                                    
-                                    <div class="flex flex-col space-y-2 ml-4">
-                                        {{-- Tombol Edit hanya untuk draft --}}
-                                        @if($sale->status === 'draft')
-                                            <button wire:click="loadSale({{ $sale->id }})"
-                                                class="cursor-pointer inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 hover:text-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                                ✏️ Edit
-                                            </button>
-                                        @else
-                                            <button disabled
-                                                class="cursor-not-allowed inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100">
-                                                ✏️ Edit
-                                            </button>
-                                        @endif
+                                </div>
 
-                                        {{-- Tombol Bayar hanya untuk draft --}}
-                                        @if($sale->status === 'draft')
-                                            <button wire:click="openPayment({{ $sale->id }})"
-                                                class="cursor-pointer inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                                💵 Bayar
-                                            </button>
-                                        @elseif($sale->status === 'completed')
-                                            {{-- Tombol Struk untuk transaksi completed --}}
-                                            <button wire:click="printReceipt({{ $sale->id }})"
-                                                class="cursor-pointer inline-flex items-center px-3 py-2 border border-purple-600 text-sm font-medium rounded-md text-purple-600 bg-white hover:bg-purple-50 hover:text-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
-                                                🖨️ Struk
-                                            </button>
-                                        @else
-                                            <button disabled
-                                                class="cursor-not-allowed inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-400">
-                                                {{ $sale->status === 'paid' ? 'Sudah Bayar' : ($sale->status === 'split' ? 'Split Bill' : 'Selesai') }}
-                                            </button>
-                                        @endif
+                                {{-- Badges --}}
+                                <div class="flex flex-wrap gap-1 mb-4">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide
+                                        {{ $sale->order_type == 'Dine In' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-orange-50 text-orange-700 border border-orange-100' }}">
+                                        {{ $sale->order_type }}
+                                    </span>
+                                    @if($sale->paymentMethod)
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-50 text-gray-600 border border-gray-100">
+                                            {{ $sale->paymentMethod->name }}
+                                        </span>
+                                    @endif
+                                </div>
 
-                                        {{-- Tombol Split Bill hanya untuk draft --}}
-                                        @if($sale->status === 'draft')
-                                            <button wire:click="openSplitBill({{ $sale->id }})"
-                                                class="cursor-pointer inline-flex items-center px-3 py-2 border border-orange-600 text-sm font-medium rounded-md text-orange-600 bg-white hover:bg-orange-50 hover:text-orange-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
-                                                🍴 Split Bill
-                                            </button>
-                                        @endif
-                                    </div>
+                                {{-- Action Buttons --}}
+                                <div class="grid grid-cols-2 gap-2 mt-auto pt-3 border-t border-gray-50">
+                                    @if($sale->status === 'draft')
+                                        <button wire:click="loadSale({{ $sale->id }})"
+                                            class="flex items-center justify-center px-3 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                                            ✏️ EDIT
+                                        </button>
+                                        <button wire:click="openPayment({{ $sale->id }})"
+                                            class="flex items-center justify-center px-3 py-2 text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors group-hover:bg-green-600 group-hover:text-white">
+                                            💵 BAYAR
+                                        </button>
+                                        <button wire:click="openSplitBill({{ $sale->id }})"
+                                            class="flex items-center justify-center px-3 py-1.5 text-[10px] font-medium text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors mt-1">
+                                            ✂️ Split
+                                        </button>
+                                        <button 
+                                            wire:click="deleteSale({{ $sale->id }})"
+                                            wire:confirm="Yakin ingin menghapus draft ini? Stok akan dikembalikan."
+                                            class="flex items-center justify-center px-3 py-1.5 text-[10px] font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors mt-1">
+                                            🗑️ Hapus
+                                        </button>
+                                    @elseif($sale->status === 'completed')
+                                        <button wire:click="printReceipt({{ $sale->id }})"
+                                            class="col-span-2 flex items-center justify-center px-3 py-2 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
+                                            🖨️ CETAK STRUK
+                                        </button>
+                                    @else
+                                        <button disabled class="col-span-2 py-2 text-xs font-medium text-gray-400 bg-gray-100 rounded cursor-not-allowed">
+                                            {{ strtoupper($sale->status) }}
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         @empty
-                            <div class="text-center py-8">
-                                <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                                </svg>
-                                <h3 class="mt-4 text-lg font-medium text-gray-900">Tidak ada transaksi tersimpan</h3>
-                                <p class="mt-1 text-sm text-gray-500">Semua transaksi dalam sesi kas ini akan muncul di sini.</p>
+                            <div class="col-span-1 md:col-span-2 lg:col-span-3 text-center py-12 flex flex-col items-center justify-center text-gray-400">
+                                <svg class="w-16 h-16 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                                <p class="text-lg font-medium text-gray-500">Tidak ada transaksi ditemukan.</p>
+                                <p class="text-sm mt-1">Coba ubah filter atau kata kunci pencarian.</p>
                             </div>
                         @endforelse
                     </div>
                 </div>
 
-                {{-- Footer --}}
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl">
-                    <div class="flex items-center justify-between">
-                        <p class="text-sm text-gray-500">
-                            Menampilkan <span class="font-medium">{{ count($savedSales) }}</span> transaksi
-                            @if(count($savedSales) > 0)
-                                - <span class="text-yellow-600">{{ $savedSales->where('status', 'draft')->count() }} draft</span>
-                                - <span class="text-green-600">{{ $savedSales->where('status', 'paid')->count() }} lunas</span>
-                                - <span class="text-blue-600">{{ $savedSales->where('status', 'completed')->count() }} selesai</span>
-                                - <span class="text-purple-600">{{ $savedSales->where('status', 'split')->count() }} split</span>
-                            @endif
-                        </p>
-                        <button wire:click="closeModal"
-                                class="cursor-pointer px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                            Tutup
-                        </button>
-                    </div>
+                {{-- Pagination Footer --}}
+                <div class="px-6 py-3 bg-white border-t border-gray-200 rounded-b-xl flex-shrink-0">
+                    {{ $sales->links() }}
                 </div>
             </div>
         </div>
@@ -165,10 +165,9 @@
                 from { opacity: 0; transform: scale(0.95); }
                 to { opacity: 1; transform: scale(1); }
             }
-            
-            .fixed.inset-0 {
-                animation: fade-in 0.2s ease-out;
-            }
+            .fixed.inset-0 { animation: fade-in 0.2s ease-out; }
+            .hide-scrollbar::-webkit-scrollbar { display: none; }
+            .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         </style>
     @endif
 

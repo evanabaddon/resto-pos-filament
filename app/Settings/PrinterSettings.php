@@ -21,6 +21,11 @@ class PrinterSettings extends Settings
     
     public ?string $general_printer_ip = null;
     public ?string $general_printer_port = null;
+    
+    // Webhook / Cloud Print Settings
+    public bool $use_webhook = false;
+    public ?string $webhook_url = null;
+    public ?string $print_secret = null;
 
     public static function group(): string
     {

@@ -89,8 +89,9 @@ Route::prefix('webhook')->group(function () {
         try {
             Log::info('📋 Getting pending print jobs');
             
-            // Validasi secret key
-            $expectedSecret = config('app.print_secret', 'default-print-secret-123');
+            // Validasi secret key (Prioritas Settings > Config)
+            $settings = app(\App\Settings\PrinterSettings::class);
+            $expectedSecret = $settings->print_secret ?? config('app.print_secret', 'default-print-secret-123');
             $receivedSecret = $request->header('X-Print-Secret');
             
             if ($receivedSecret !== $expectedSecret) {
@@ -136,8 +137,9 @@ Route::prefix('webhook')->group(function () {
     // Update job status setelah berhasil diprint
     Route::post('/print-job/{jobId}/complete', function ($jobId, Request $request) {
         try {
-            // Validasi secret key
-            $expectedSecret = config('app.print_secret', 'default-print-secret-123');
+            // Validasi secret key (Prioritas Settings > Config)
+            $settings = app(\App\Settings\PrinterSettings::class);
+            $expectedSecret = $settings->print_secret ?? config('app.print_secret', 'default-print-secret-123');
             $receivedSecret = $request->header('X-Print-Secret');
             
             if ($receivedSecret !== $expectedSecret) {

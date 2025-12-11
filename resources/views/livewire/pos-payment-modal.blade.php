@@ -1,529 +1,347 @@
 <div>
     @if ($show)
-        <div class="fixed inset-0 z-50 flex items-end justify-center p-2 sm:items-center sm:p-4">
-            {{-- Background overlay --}}
-            <div class="absolute inset-0 bg-gray-900 bg-opacity-75" wire:click="closeModal"></div>
+        <div class="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4">
+            {{-- Background Backdrop (Blur) --}}
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+                 wire:click="closeModal"></div>
 
-            {{-- Struk Container - Full height di mobile --}}
-            <div class="relative w-full max-w-sm mx-auto h-[95vh] sm:h-auto flex flex-col bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
-                {{-- Close button untuk mobile --}}
-                <div class="sm:hidden flex justify-center py-2 border-b border-gray-200 bg-white">
-                    <div class="w-12 h-1 bg-gray-300 rounded-full"></div>
+            {{-- Main Modal Container --}}
+            <div class="relative w-full max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-modal-pop">
+                
+                {{-- Header --}}
+                <div class="bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-4 flex items-center justify-between flex-shrink-0">
+                    <div>
+                        <h2 class="text-lg font-bold text-white tracking-wide">Selesaikan Pembayaran</h2>
+                        <p class="text-violet-100 text-xs mt-0.5 opacity-90">Transaction #{{ $invoiceNumber }}</p>
+                    </div>
+                    <button wire:click="closeModal" class="text-white/80 hover:text-white transition p-2 rounded-full hover:bg-white/10 touch-target">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
                 </div>
 
-                {{-- Struk Content - Scrollable on Mobile --}}
-                <div class="flex-1 overflow-y-auto">
-                    {{-- Header Struk --}}
-                    <div class="text-center border-b border-gray-300 py-3 sm:py-4 px-3 sm:px-4 bg-gray-50 sticky top-0 z-10">
-                        <h1 class="text-base sm:text-lg font-bold uppercase tracking-tight text-gray-900">STRUK PEMBAYARAN</h1>
-                        <p class="text-xs text-gray-600 mt-1 font-medium">{{ now()->format('d/m/Y H:i') }}</p>
-                    </div>
-
-                    {{-- Info Transaksi --}}
-                    <div class="py-2 sm:py-3 px-3 sm:px-4 border-b border-gray-200">
-                        <div class="space-y-1.5 text-xs sm:text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600 font-medium">No. Transaksi:</span>
-                                <span class="font-semibold text-gray-900 text-right max-w-[150px] truncate">{{ $invoiceNumber }}</span>
+                {{-- Scrollable Content --}}
+                <div class="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-6">
+                    
+                    {{-- 1. Total Tagihan (Hero Card) --}}
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 text-center relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500"></div>
+                        <p class="text-slate-500 text-sm font-medium uppercase tracking-wider mb-1">Total Tagihan</p>
+                        <h3 class="text-4xl font-black text-slate-800 tracking-tight">
+                            <span class="text-2xl text-slate-400 font-bold mr-1 align-top relative top-1">Rp</span>{{ number_format($finalTotal, 0, ',', '.') }}
+                        </h3>
+                        @if($customerName)
+                            <div class="mt-3 inline-flex items-center px-3 py-1 bg-violet-50 text-violet-700 rounded-full text-xs font-bold">
+                                <span class="mr-1">👤</span> {{ $customerName }}
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600 font-medium">Kasir:</span>
-                                <span class="font-semibold text-gray-900 text-right max-w-[120px] truncate">{{ auth()->user()->name }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600 font-medium">Customer:</span>
-                                <span class="font-semibold text-gray-900 text-right max-w-[120px] truncate">{{ $customerName ?? 'Umum' }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Daftar Produk --}}
-                    <div class="py-2 sm:py-3 px-3 sm:px-4 border-b border-gray-200">
-                        <div class="text-center font-bold text-sm mb-2 sm:mb-3 text-gray-900">DAFTAR PESANAN</div>
-                        <div class="space-y-2 text-xs sm:text-sm">
-                            @if($saleItems && count($saleItems) > 0)
-                                @foreach($saleItems as $item)
-                                    <div class="flex justify-between items-start">
-                                        <div class="flex-1 pr-2">
-                                            <div class="font-semibold text-gray-900 text-xs sm:text-[13px] leading-tight">
-                                                {{ $item['name'] }}
-                                            </div>
-                                            <div class="text-xs text-gray-500 mt-0.5">
-                                                {{ $item['quantity'] }} × Rp{{ number_format($item['price'], 0, ',', '.') }}
-                                            </div>
-                                        </div>
-                                        <div class="text-right font-semibold text-gray-900 whitespace-nowrap text-xs sm:text-sm">
-                                            Rp{{ number_format($item['subtotal'], 0, ',', '.') }}
-                                        </div>
-                                    </div>
-                                    @if(!$loop->last)
-                                        <div class="border-t border-dashed border-gray-100"></div>
-                                    @endif
-                                @endforeach
-                            @else
-                                <div class="text-center text-gray-500 text-xs sm:text-sm py-2 sm:py-3">
-                                    Tidak ada item dalam pesanan
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    {{-- Ringkasan Pembayaran --}}
-                    <div class="py-2 sm:py-3 px-3 sm:px-4 border-b border-gray-200">
-                        <div class="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Subtotal:</span>
-                                <span class="font-medium text-gray-900">Rp{{ number_format($subtotal ?? 0, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Pajak (10%):</span>
-                                <span class="font-medium text-gray-900">Rp{{ number_format($tax ?? 0, 0, ',', '.') }}</span>
-                            </div>
-                            @if(($discount ?? 0) > 0)
-                                <div class="flex justify-between text-green-600">
-                                    <span>Diskon:</span>
-                                    <span class="font-medium">- Rp{{ number_format($discount ?? 0, 0, ',', '.') }}</span>
-                                </div>
-                            @endif
-                            <div class="border-t border-gray-300 pt-2 mt-1">
-                                <div class="flex justify-between text-sm sm:text-base font-bold text-gray-900">
-                                    <span>TOTAL:</span>
-                                    <span>Rp{{ number_format($finalTotal, 0, ',', '.') }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Metode Pembayaran --}}
-                    <div class="py-2 sm:py-3 px-3 sm:px-4 border-b border-gray-200">
-                        <div class="text-center font-bold text-sm mb-2 sm:mb-3 text-gray-900">PEMBAYARAN</div>
-                        
-                        {{-- Pilihan Metode --}}
-                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs sm:text-sm mb-2 sm:mb-3">
-                            <span class="text-gray-600 font-medium">Metode:</span>
-                            <select wire:model.live="payment_method" 
-                                    class="border border-gray-300 rounded px-2 py-1.5 text-xs sm:text-sm font-medium focus:ring-1 focus:ring-green-500 focus:border-green-500 cursor-pointer bg-white w-full sm:w-auto">
-                                <option value="">Pilih Metode</option>
-                                @foreach($paymentMethods as $method)
-                                    <option value="{{ $method['id'] }}">{{ $method['name'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        {{-- Input Cash --}}
-                        @if($isCashPayment)
-                            <div class="space-y-2 bg-gray-50 p-2 sm:p-3 rounded border border-gray-200">
-                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs sm:text-sm">
-                                    <span class="text-gray-600 font-medium">Bayar:</span>
-                                    <div class="relative w-full sm:w-auto">
-                                        <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs sm:text-sm">Rp</span>
-                                        <input type="number" 
-                                               wire:model.live="amount_paid"
-                                               wire:keydown.enter="processPayment"
-                                               class="pl-7 pr-2 py-1.5 border border-gray-300 rounded text-right font-semibold w-full sm:w-28 focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white text-xs sm:text-sm"
-                                               placeholder="0"
-                                               min="{{ $finalTotal }}"
-                                               autofocus>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs sm:text-sm pt-2 border-t border-gray-200">
-                                    <span class="text-gray-600 font-medium">Kembali:</span>
-                                    <span class="font-bold text-sm sm:text-lg {{ $amount_paid < $finalTotal ? 'text-red-600' : 'text-green-600' }}">
-                                        Rp{{ number_format($this->change, 0, ',', '.') }}
-                                    </span>
-                                </div>
-
-                                @if($amount_paid < $finalTotal)
-                                    <div class="text-center text-xs text-red-600 font-medium bg-red-50 py-1.5 rounded border border-red-200 mt-2">
-                                        ⚠️ Jumlah bayar kurang!
-                                    </div>
-                                @endif
-                            </div>
-                        @else
-                            {{-- Non-cash payment --}}
-                            @if($selectedPaymentMethod)
-                                <div class="text-center bg-blue-50 border border-blue-200 rounded py-2 sm:py-3 text-xs sm:text-sm">
-                                    <div class="font-semibold text-blue-800 mb-1">
-                                        {{ strtoupper($selectedPaymentMethod['name']) }}
-                                    </div>
-                                    <div class="text-blue-600 font-medium">
-                                        Rp{{ number_format($finalTotal, 0, ',', '.') }}
-                                    </div>
-                                    <div class="text-blue-500 mt-1">
-                                        Jumlah bayar otomatis disesuaikan
-                                    </div>
-                                </div>
-                            @else
-                                <div class="text-center bg-yellow-50 border border-yellow-200 rounded py-2 sm:py-3 text-xs sm:text-sm">
-                                    <div class="text-yellow-700">
-                                        Pilih metode pembayaran terlebih dahulu
-                                    </div>
-                                </div>
-                            @endif
                         @endif
                     </div>
 
-                    {{-- Footer Struk --}}
-                    <div class="py-3 sm:py-4 px-3 sm:px-4 text-center bg-gray-50">
-                        <p class="text-xs text-gray-600 mb-1">Terima kasih atas kunjungan Anda</p>
-                        <p class="text-xs font-semibold text-gray-700">*** SELAMAT MENIKMATI ***</p>
+                    {{-- 2. Metode Pembayaran (Grid) --}}
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-3 ml-1">Pilih Metode Pembayaran</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            @foreach($paymentMethods as $method)
+                                <button 
+                                    wire:click="$set('payment_method', '{{ $method['id'] }}')"
+                                    class="group relative flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 touch-target
+                                    {{ $payment_method == $method['id'] 
+                                        ? 'bg-violet-50 border-violet-600 shadow-md transform -translate-y-0.5' 
+                                        : 'bg-white border-slate-200 hover:border-violet-300 hover:shadow-sm' }}">
+                                    
+                                    {{-- Radio Indicator --}}
+                                    <div class="absolute top-3 right-3 w-4 h-4 rounded-full border-2 flex items-center justify-center
+                                        {{ $payment_method == $method['id'] ? 'border-violet-600' : 'border-slate-300' }}">
+                                        @if($payment_method == $method['id'])
+                                            <div class="w-2 h-2 rounded-full bg-violet-600"></div>
+                                        @endif
+                                    </div>
+
+                                    <span class="text-2xl mb-2 grayscale group-hover:grayscale-0 transition-all duration-300">
+                                        @if(stripos($method['name'], 'cash') !== false) 💵
+                                        @elseif(stripos($method['name'], 'qris') !== false) 📱
+                                        @elseif(stripos($method['name'], 'card') !== false) 💳
+                                        @else 🪙
+                                        @endif
+                                    </span>
+                                    <span class="text-xs font-bold {{ $payment_method == $method['id'] ? 'text-violet-700' : 'text-slate-600' }} text-center leading-tight">
+                                        {{ $method['name'] }}
+                                    </span>
+                                </button>
+                            @endforeach
+                        </div>
                     </div>
+
+                    {{-- 3. Input Pembayaran (Contextual) --}}
+                    @if($isCashPayment)
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm animate-fade-in-up">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Nominal Diterima</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <span class="text-slate-400 text-xl font-bold">Rp</span>
+                                </div>
+                                <input type="number" 
+                                       wire:model.live="amount_paid"
+                                       wire:keydown.enter="processPayment"
+                                       class="block w-full pl-12 pr-4 py-4 text-3xl font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-violet-100 focus:border-violet-500 transition-all placeholder-slate-300"
+                                       placeholder="0"
+                                       autofocus>
+                            </div>
+
+                            {{-- Kembalian Display --}}
+                            <div class="mt-4 flex items-center justify-between p-4 bg-slate-50 rounded-xl border {{ $amount_paid >= $finalTotal ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-100' }}">
+                                <span class="text-sm font-semibold text-slate-600">Kembalian</span>
+                                <span class="text-xl font-black {{ $amount_paid >= $finalTotal ? 'text-emerald-600' : 'text-slate-400' }}">
+                                    Rp{{ number_format(max(0, $this->change), 0, ',', '.') }}
+                                </span>
+                            </div>
+                            
+                            @if($amount_paid > 0 && $amount_paid < $finalTotal)
+                                <p class="text-rose-500 text-xs font-bold mt-2 text-right">⚠️ Kurang Rp{{ number_format($finalTotal - $amount_paid, 0, ',', '.') }}</p>
+                            @endif
+                        </div>
+                    @else
+                         {{-- Non-Cash Feedback --}}
+                         @if($selectedPaymentMethod)
+                            <div class="bg-sky-50 rounded-2xl p-6 border border-sky-100 text-center animate-fade-in-up">
+                                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm text-3xl">
+                                    ✓
+                                </div>
+                                <h3 class="text-sky-800 font-bold text-lg mb-1">{{ $selectedPaymentMethod['name'] }} Selected</h3>
+                                <p class="text-sky-600 text-sm">Proceed to process exact amount: <span class="font-bold">Rp{{ number_format($finalTotal, 0, ',', '.') }}</span></p>
+                            </div>
+                        @else
+                            <div class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-slate-50/50">
+                                <p class="text-slate-400 font-medium text-sm">Silakan pilih metode pembayaran di atas</p>
+                            </div>
+                        @endif
+                    @endif
+
                 </div>
 
-                {{-- Tombol Action - Fixed di Mobile --}}
-                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 sm:p-4 border-t border-gray-200 bg-white safe-area-bottom">
+                {{-- Footer Actions --}}
+                <div class="p-6 bg-white border-t border-slate-100 flex gap-3 pb-safe z-20 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
                     <button wire:click="closeModal"
-                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 font-semibold text-sm cursor-pointer transition-colors rounded shadow-sm touch-target">
+                        class="flex-1 py-3.5 px-6 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition focus:scale-[0.98]">
                         BATAL
                     </button>
-                    <button wire:click="processPayment"
-                            wire:loading.attr="disabled"
-                            class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 font-semibold text-sm cursor-pointer transition-colors rounded shadow-sm disabled:opacity-50 disabled:cursor-not-allowed touch-target"
-                            {{ (!$payment_method || ($isCashPayment && $amount_paid < $finalTotal)) ? 'disabled' : '' }}>
-                        <span wire:loading.remove>💳 BAYAR</span>
-                        <span wire:loading>MEMPROSES...</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <style>
-            @keyframes struk-appear-mobile {
-                from { 
-                    opacity: 0; 
-                    transform: translateY(100%); 
-                }
-                to { 
-                    opacity: 1; 
-                    transform: translateY(0); 
-                }
-            }
-
-            @keyframes struk-appear-desktop {
-                from { 
-                    opacity: 0; 
-                    transform: scale(0.95) translateY(-10px); 
-                }
-                to { 
-                    opacity: 1; 
-                    transform: scale(1) translateY(0); 
-                }
-            }
-            
-            /* Animasi untuk mobile */
-            @media (max-width: 640px) {
-                .fixed.inset-0 {
-                    animation: struk-appear-mobile 0.3s ease-out;
-                }
-                
-                /* Sembunyikan bottom nav ketika modal terbuka */
-                .mobile-bottom-nav {
-                    display: none !important;
-                }
-            }
-            
-            /* Animasi untuk desktop */
-            @media (min-width: 641px) {
-                .fixed.inset-0 {
-                    animation: struk-appear-desktop 0.2s ease-out;
-                }
-            }
-
-            /* Mobile optimizations */
-            @media (max-width: 640px) {
-                .touch-target {
-                    min-height: 44px;
-                    min-width: 44px;
-                }
-                
-                /* Better scroll on mobile */
-                .overflow-y-auto {
-                    -webkit-overflow-scrolling: touch;
-                    scrollbar-width: none;
-                }
-                
-                .overflow-y-auto::-webkit-scrollbar {
-                    display: none;
-                }
-
-                /* Safe area untuk bottom buttons */
-                .safe-area-bottom {
-                    padding-bottom: max(12px, env(safe-area-inset-bottom));
-                }
-            }
-        </style>
-    @endif
-    
-    {{-- Modal Preview Struk - Responsif --}}
-    @if ($showReceiptPreview)
-        <div class="fixed inset-0 z-[60] flex items-end justify-center p-2 sm:items-center sm:p-4 backdrop-blur-sm bg-black bg-opacity-50">
-            <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-xl mx-auto h-[95vh] sm:h-auto max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
-                {{-- Close handle untuk mobile --}}
-                <div class="sm:hidden flex justify-center py-2 border-b border-gray-200 bg-white">
-                    <div class="w-12 h-1 bg-gray-300 rounded-full"></div>
-                </div>
-
-                {{-- Header --}}
-                <div class="flex justify-between items-center p-3 sm:p-4 border-b flex-shrink-0">
-                    <h3 class="text-base sm:text-lg font-bold">Preview Struk</h3>
-                    <button wire:click="closeReceiptPreview" class="text-gray-500 hover:text-gray-700 text-lg p-1 touch-target">
-                        ✕
-                    </button>
-                </div>
-
-                {{-- Content Struk - Scrollable --}}
-                <div class="flex-1 overflow-y-auto p-3 sm:p-4">
-                    <div class="receipt-preview text-xs sm:text-sm">
-                        {!! $receiptContent !!}
-                    </div>
-                </div>
-
-                {{-- Actions --}}
-                <div class="flex flex-col sm:flex-row gap-2 p-3 sm:p-4 border-t flex-shrink-0 bg-gray-50 safe-area-bottom">
-                    <button wire:click="closeReceiptPreview" 
-                            class="cursor-pointer flex-1 bg-gray-500 text-white py-3 rounded font-medium touch-target">
-                        TUTUP
-                    </button>
                     
-                    {{-- Tombol Cetak dengan Printer Thermal - MANUAL PRINT --}}
-                    <button wire:click="manualPrintReceipt" 
-                            wire:loading.attr="disabled"
-                            wire:target="manualPrintReceipt"
-                            class="cursor-pointer flex-1 bg-green-600 text-white py-3 rounded font-medium flex items-center justify-center gap-2 disabled:opacity-50 touch-target">
-                        <span wire:loading.remove wire:target="manualPrintReceipt">🖨️ CETAK STRUK</span>
-                        <span wire:loading wire:target="manualPrintReceipt" class="flex items-center gap-2">
-                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <button wire:click="processPayment"
+                        wire:loading.attr="disabled"
+                        class="flex-[2] py-3.5 px-6 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm shadow-lg shadow-violet-200 hover:shadow-xl hover:-translate-y-0.5 transition-all focus:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 group"
+                        {{ (!$payment_method || ($isCashPayment && $amount_paid < $finalTotal)) ? 'disabled' : '' }}>
+                        
+                        <span wire:loading.remove class="flex items-center gap-2">
+                            <span>PROSES BAYAR</span>
+                            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </span>
+                        
+                        <span wire:loading class="flex items-center gap-2">
+                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            MENCETAK...
+                            MEMPROSES...
                         </span>
                     </button>
                 </div>
-
-                {{-- Status Printing --}}
-                @if ($isPrinting)
-                <div class="px-3 sm:px-4 pb-3 sm:pb-4 flex-shrink-0">
-                    <div class="bg-blue-50 border border-blue-200 rounded p-3 text-center">
-                        <div class="flex items-center justify-center gap-2 text-blue-700 text-xs sm:text-sm">
-                            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span class="font-medium">
-                                @if(config('app.env') === 'production')
-                                    Mengirim ke printer via webhook...
-                                @else
-                                    Mencetak ke printer thermal...
-                                @endif
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                @endif
             </div>
         </div>
     @endif
-</div>
+    
+    {{-- Modal Preview Struk (Redesigned) --}}
+    @if ($showReceiptPreview)
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+             <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" wire:click="closeReceiptPreview"></div>
+            
+             <div class="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-modal-pop">
+                {{-- Receipt Header --}}
+                <div class="bg-slate-800 text-white px-5 py-3 flex justify-between items-center">
+                    <h3 class="font-bold text-sm uppercase tracking-wider">Preview Struk</h3>
+                    <button wire:click="closeReceiptPreview" class="text-slate-400 hover:text-white transition">✕</button>
+                </div>
+                
+                {{-- Paper Roll Effect Container --}}
+                <div class="flex-1 overflow-y-auto bg-slate-100 p-4">
+                    <div class="receipt-preview bg-white p-4 shadow-sm text-xs sm:text-sm font-mono border-t-8 border-slate-800/10 relative">
+                        {{-- Jagged Edge Top --}}
+                         <div class="absolute top-0 left-0 w-full h-2 bg-[linear-gradient(135deg,transparent_5px,#fff_5px),linear-gradient(225deg,transparent_5px,#fff_5px)] bg-[length:10px_10px] bg-repeat-x mt-[-10px]"></div>
+                        
+                        {!! $receiptContent !!}
+                        
+                         {{-- Jagged Edge Bottom --}}
+                         <div class="absolute bottom-0 left-0 w-full h-2 bg-[linear-gradient(45deg,transparent_5px,#fff_5px),linear-gradient(-45deg,transparent_5px,#fff_5px)] bg-[length:10px_10px] bg-repeat-x mb-[-10px]"></div>
+                    </div>
+                </div>
 
-<script>
-// Fungsi untuk mengontrol bottom nav bar
-function toggleBottomNav(show) {
-    const bottomNav = document.querySelector('.mobile-bottom-nav');
-    if (bottomNav) {
-        if (show) {
-            bottomNav.style.display = 'block';
-        } else {
-            bottomNav.style.display = 'none';
+                {{-- Action Buttons --}}
+                <div class="p-4 bg-white border-t border-slate-200 pb-safe flex gap-2">
+                    <button wire:click="manualPrintReceipt" 
+                            wire:loading.attr="disabled"
+                            class="flex-1 bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition active:scale-[0.98]">
+                        <span wire:loading.remove>🖨️ CETAK SEKARANG</span>
+                         <span wire:loading class="flex items-center gap-2">
+                            <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </span>
+                    </button>
+                </div>
+                 @if ($isPrinting)
+                    <div class="absolute bottom-20 left-4 right-4 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-center gap-3 animate-slide-up">
+                        <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span class="font-bold text-sm">Sedang mencetak...</span>
+                    </div>
+                 @endif
+             </div>
+        </div>
+    @endif
+    
+    <style>
+        /* Custom Animations */
+        @keyframes modal-pop {
+            0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-modal-pop { animation: modal-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes fade-in-up {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up { animation: fade-in-up 0.4s ease-out forwards; }
+        
+        @keyframes slide-up {
+            0% { transform: translateY(100%); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
+
+        /* Safe Area for iOS */
+        .pb-safe {
+            padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+        }
+    </style>
+
+    <script>
+    // Fungsi untuk mengontrol bottom nav bar
+    function toggleBottomNav(show) {
+        const bottomNav = document.querySelector('.mobile-bottom-nav');
+        if (bottomNav) {
+            bottomNav.style.display = show ? 'block' : 'none';
+            // Add padding to body if hidden to prevent layout jump
+            document.body.style.paddingBottom = show ? '80px' : '0'; 
         }
     }
-}
 
-function printReceipt() {
-    const receiptContent = document.querySelector('.receipt-preview').innerHTML;
-    
-    const printWindow = window.open('', '_blank', 'width=350,height=600');
-    
-    const printStyle = `
-        <style>
-            @media print {
-                body { 
-                    margin: 0; 
-                    padding: 10px; 
-                    font-family: 'Courier New', monospace;
-                    font-size: 12px;
+    function printReceipt() {
+        const receiptContent = document.querySelector('.receipt-preview').innerHTML;
+        
+        const printWindow = window.open('', '_blank', 'width=350,height=600');
+        
+        const printStyle = `
+            <style>
+                @media print {
+                    body { 
+                        margin: 0; 
+                        padding: 10px; 
+                        font-family: 'Courier New', monospace;
+                        font-size: 12px;
+                    }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: bold; }
+                    .text-lg { font-size: 14px; }
+                    .text-sm { font-size: 11px; }
+                    .text-xs { font-size: 10px; }
+                    .uppercase { text-transform: uppercase; }
+                    .flex { display: flex; }
+                    .justify-between { justify-content: space-between; }
+                    .items-start { align-items: flex-start; }
+                    .flex-1 { flex: 1; }
+                    .border-t { border-top: 1px solid #000; }
+                    .border-dashed { border-style: dashed; }
+                    .my-2 { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+                    .font-semibold { font-weight: 600; }
                 }
-                .text-center { text-align: center; }
-                .font-bold { font-weight: bold; }
-                .text-lg { font-size: 14px; }
-                .text-sm { font-size: 11px; }
-                .text-xs { font-size: 10px; }
-                .uppercase { text-transform: uppercase; }
-                .flex { display: flex; }
-                .justify-between { justify-content: space-between; }
-                .items-start { align-items: flex-start; }
-                .flex-1 { flex: 1; }
-                .border-t { border-top: 1px solid #000; }
-                .border-dashed { border-style: dashed; }
-                .my-2 { margin-top: 0.5rem; margin-bottom: 0.5rem; }
-                .font-semibold { font-weight: 600; }
-                .space-y-1 > * + * { margin-top: 0.25rem; }
-                .space-y-2 > * + * { margin-top: 0.5rem; }
-            }
-        </style>
-    `;
+            </style>
+        `;
 
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Struk Pembayaran</title>
-            ${printStyle}
-        </head>
-        <body>
-            ${receiptContent}
-            <script>
-                window.onload = function() {
-                    window.print();
-                    setTimeout(() => window.close(), 1000);
-                };
-            <\/script>
-        </body>
-        </html>
-    `);
-    
-    printWindow.document.close();
-}
-
-// Event listener untuk Livewire
-document.addEventListener('livewire:initialized', () => {
-    // Sembunyikan bottom nav ketika modal payment terbuka
-    Livewire.on('showModal', () => {
-        document.body.style.overflow = 'hidden';
-        toggleBottomNav(false);
-    });
-    
-    // Tampilkan kembali bottom nav ketika modal ditutup
-    Livewire.on('closeModal', () => {
-        document.body.style.overflow = '';
-        toggleBottomNav(true);
-    });
-
-    // Handle untuk receipt preview
-    Livewire.on('showReceiptPreview', () => {
-        toggleBottomNav(false);
-    });
-    
-    Livewire.on('closeReceiptPreview', () => {
-        toggleBottomNav(true);
-    });
-
-    Livewire.on('printReceiptDirect', (event) => {
-        printReceiptDirect(event.content);
-    });
-});
-
-// Fungsi untuk print langsung (opsional)
-function printReceiptDirect(content) {
-    const printWindow = window.open('', '_blank', 'width=1,height=1');
-    
-    const printStyle = `
-        <style>
-            @media print {
-                body { margin: 0; padding: 10px; font-family: 'Courier New', monospace; font-size: 12px; }
-                .text-center { text-align: center; }
-                .font-bold { font-weight: bold; }
-                .text-sm { font-size: 11px; }
-                .flex { display: flex; }
-                .justify-between { justify-content: space-between; }
-            }
-        </style>
-    `;
-
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head><title>Struk</title>${printStyle}</head>
-        <body onload="window.print(); setTimeout(() => window.close(), 500);">
-            ${content}
-        </body>
-        </html>
-    `);
-    
-    printWindow.document.close();
-}
-
-// Handle mobile viewport height dan bottom navigation
-function setupModalForMobile() {
-    if (window.innerWidth <= 640) {
-        // Set viewport height yang aman
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Struk Pembayaran</title>
+                ${printStyle}
+            </head>
+            <body>
+                ${receiptContent}
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(() => window.close(), 1000);
+                    };
+                <\/script>
+            </body>
+            </html>
+        `);
         
-        // Pastikan modal tidak tertutup bottom nav
-        const modalContainer = document.querySelector('.fixed.inset-0');
-        if (modalContainer) {
-            modalContainer.style.zIndex = '9999';
+        printWindow.document.close();
+    }
+
+    // Event listener untuk Livewire
+    document.addEventListener('livewire:initialized', () => {
+        // Sembunyikan bottom nav ketika modal payment terbuka
+        Livewire.on('showModal', () => {
+            document.body.style.overflow = 'hidden';
+            toggleBottomNav(false);
+        });
+        
+        // Tampilkan kembali bottom nav ketika modal ditutup
+        Livewire.on('closeModal', () => {
+            document.body.style.overflow = '';
+            toggleBottomNav(true);
+        });
+
+        // Handle untuk receipt preview
+        Livewire.on('showReceiptPreview', () => {
+            toggleBottomNav(false);
+        });
+        
+        Livewire.on('closeReceiptPreview', () => {
+            toggleBottomNav(true);
+        });
+
+        Livewire.on('printReceiptDirect', (event) => {
+            printReceiptDirect(event.content);
+        });
+        
+        // Listen untuk webhook print response
+        Livewire.on('webhookPrintResponse', (event) => {
+            if (event.success) {
+                // Optional: Toast message
+                console.log('✅ Print success');
+            } else {
+                console.error('❌ Print failed', event.error);
+                alert('Gagal mencetak: ' + event.error);
+            }
+        });
+    });
+
+    // Fungsi untuk print langsung (opsional)
+    function printReceiptDirect(content) {
+        const printWindow = window.open('', '_blank', 'width=1,height=1');
+        const printStyle = `<style>@media print { body { margin: 0; padding: 10px; font-family: 'Courier New', monospace; font-size: 12px; } .text-center { text-align: center; } .font-bold { font-weight: bold; } .text-sm { font-size: 11px; } .flex { display: flex; } .justify-between { justify-content: space-between; } }</style>`;
+        printWindow.document.write(`<html><head><title>Struk</title>${printStyle}</head><body onload="window.print(); setTimeout(() => window.close(), 500);">${content}</body></html>`);
+        printWindow.document.close();
+    }
+    
+    // Handle mobile viewport height dan bottom navigation
+    function setupModalForMobile() {
+        if (window.innerWidth <= 640) {
+            // Set viewport height yang aman
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
         }
     }
-}
-
-// Event listener untuk Livewire - Webhook Print Response
-document.addEventListener('livewire:initialized', () => {
-    // Listen untuk webhook print response
-    Livewire.on('webhookPrintResponse', (event) => {
-        console.log('Webhook print response:', event);
-        
-        if (event.success) {
-            // Show success notification
-            showNotification('success', 'Struk berhasil dicetak via webhook', 'Print berhasil dikirim ke printer');
-        } else {
-            // Show error notification
-            showNotification('error', 'Gagal mencetak struk', event.error || 'Terjadi kesalahan saat mencetak');
-        }
-    });
-
-    // Helper function untuk notification
-    function showNotification(type, title, message) {
-        // Anda bisa menggunakan library notification atau custom alert
-        if (type === 'success') {
-            alert(`✅ ${title}\n${message}`);
-        } else {
-            alert(`❌ ${title}\n${message}`);
-        }
-    }
-});
-
-// Fungsi untuk test webhook connection
-function testWebhookConnection() {
-    fetch('/api/test-webhook', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('✅ Webhook connection test successful');
-        } else {
-            alert('❌ Webhook connection test failed: ' + data.error);
-        }
-    })
-    .catch(error => {
-        alert('❌ Webhook connection test error: ' + error.message);
-    });
-}
-
-// Initialize and handle resize
-setupModalForMobile();
-window.addEventListener('resize', setupModalForMobile);
-window.addEventListener('orientationchange', setupModalForMobile);
-
-// Pastikan bottom nav muncul kembali saat halaman dimuat ulang
-document.addEventListener('DOMContentLoaded', function() {
-    toggleBottomNav(true);
-});
-</script>
+    
+    setupModalForMobile();
+    window.addEventListener('resize', setupModalForMobile);
+    </script>
+</div>

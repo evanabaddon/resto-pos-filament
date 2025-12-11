@@ -25,6 +25,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class Pos extends Page
 {
     use WithPagination;
+    use Concerns\HasCart;
+
     protected string $view = 'filament.pages.pos';
 
     // Gunakan layout custom
@@ -167,18 +169,8 @@ class Pos extends Page
         try {
             $sale = Sale::findOrFail($saleId);
 
-            $updateData = [
-                'is_paid' => true,
-                'payment_method_id' => $paymentMethodId, // Pastikan menggunakan payment_method_id
-                'amount_paid' => $amountPaid,
-                'paid_at' => now(),
-                'status' => 'completed',
-            ];
-
-            // DEBUG: Cek data sebelum update
-            // dd($updateData);
-
-            $sale->update($updateData);
+            // Use OrderService to mark as paid
+            app(\App\Services\OrderService::class)->markAsPaid($sale, $paymentMethodId, $amountPaid);
 
             // Auto print receipt setelah pembayaran berhasil
             $this->printReceipt($saleId);
@@ -324,9 +316,6 @@ class Pos extends Page
 
     public function getProductsProperty()
     {
-        // 1. Ambil semua product (bisa dicache query-nya saja kalau mau, tapi kita butuh eager loading)
-        // Kita tidak cache result akhir karena ada pagination dynamic
-        
         $query = Product::where('is_sellable', true)
             ->with(['recipes.ingredient.unit', 'recipes.unit', 'unit']) // Eager load unit
             ->where(function($q) {
@@ -350,38 +339,28 @@ class Pos extends Page
             }
         }
 
-        $allProducts = $query->orderBy('name', 'asc')->get();
+        // Use DB Pagination (Optimized)
+        return $query->orderBy('name', 'asc')->paginate(15);
+    }
+
+    /**
+     * Check if a product is available (stock > 0 or produced ingredients available)
+     * This is used for UI state only
+     */
+    public function checkProductAvailability($product)
+    {
+        // 1. Simple Stock
+        if (in_array($product->type, ['raw', 'retail'])) {
+            return $product->stock > 0;
+        }
         
-        // 2. Load Service (Load all units once)
-        $conversionService = app(UnitConversionService::class);
+        // 2. Produced / Bar items
+        if (in_array($product->type, ['produced', 'bar'])) {
+            // Use existing logic (or optimization service if needed)
+            return $this->isProducedProductAvailable($product, app(UnitConversionService::class));
+        }
 
-        // 3. Filter In-Memory (Optimized)
-        $filtered = $allProducts->filter(function ($product) use ($conversionService) {
-            if (in_array($product->type, ['raw', 'retail'])) {
-                return $product->stock > 0;
-            }
-            
-            if (in_array($product->type, ['produced', 'bar'])) {
-                return $this->isProducedProductAvailable($product, $conversionService);
-            }
-            
-            return true;
-        });
-
-        // 4. Manual Pagination
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $perPage = 15;
-        $currentItems = $filtered->slice(($currentPage - 1) * $perPage, $perPage)->all();
-        
-        $paginator = new LengthAwarePaginator(
-            $currentItems,
-            $filtered->count(),
-            $perPage,
-            $currentPage,
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
-
-        return $paginator;
+        return true;
     }
 
     /**
@@ -437,41 +416,7 @@ class Pos extends Page
         return asset('storage/' . $this->image);
     }
 
-    /**
-     * Optimized add product
-     */
-    public function addProduct($productId)
-    {
-        $product = Product::find($productId);
-        if (!$product) return;
 
-        $foundKey = null;
-        foreach ($this->items as $key => $item) {
-            if ($item['product_id'] == $productId) {
-                $foundKey = $key;
-                break;
-            }
-        }
-
-        if ($foundKey !== null) {
-            $this->items[$foundKey]['quantity'] += 1;
-            $this->items[$foundKey]['subtotal'] = $this->items[$foundKey]['price'] * $this->items[$foundKey]['quantity'];
-        } else {
-            $this->items[] = [
-                'product_id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->sell_price,
-                'quantity' => 1,
-                'subtotal' => $product->sell_price,
-                'notes' => '',
-            ];
-        }
-
-        $this->recalculateTotals();
-        
-        // Dispatch event untuk update cart badge secara real-time
-        $this->dispatch('cartUpdated', count: count($this->items));
-    }
 
     /**
      * Open edit notes modal untuk item tertentu
@@ -510,95 +455,11 @@ class Pos extends Page
         $this->dispatch('closeNotesModal');
     }
 
-    public function updateQuantity($index, $quantity)
-    {
-        if ($quantity < 1) {
-            unset($this->items[$index]);
-            $this->items = array_values($this->items);
-        } else {
-            $this->items[$index]['quantity'] = $quantity;
-            $this->items[$index]['subtotal'] = $this->items[$index]['price'] * $quantity;
-        }
-        
-        $this->recalculateTotals();
-    }
 
-    /**
-     * Optimized remove item
-     */
-    public function removeItem($index)
-    {
-        if (isset($this->items[$index])) {
-            unset($this->items[$index]);
-            $this->items = array_values($this->items);
-            $this->recalculateTotals();
-            
-            // Dispatch event untuk update cart badge
-            $this->dispatch('cartUpdated', count: count($this->items));
-        }
-    }
 
-    public function calculateTotals()
-    {
-        $this->subtotal = collect($this->items)->sum('subtotal');
-        $this->tax = $this->subtotal * 0.10; // misal pajak 10%
-        $this->finalTotal = max(0, $this->subtotal + $this->tax - $this->discount);
-    }
 
-    public function applyDiscountCode()
-    {
-        $code = trim($this->discountCodeInput);
 
-        if ($code === '') {
-            $this->discountMessage = 'Silakan masukkan kode diskon.';
-            $this->discountApplied = false;
-            return;
-        }
 
-        $discount = \App\Models\DiscountCode::where('code', $code)
-            ->where('is_active', true)
-            ->where(function ($q) {
-                $q->whereNull('valid_from')
-                ->orWhereDate('valid_from', '<=', now());
-            })
-            ->where(function ($q) {
-                $q->whereNull('valid_until')
-                ->orWhereDate('valid_until', '>=', now());
-            })
-            ->first();
-
-        if (! $discount) {
-            $this->discountMessage = 'Kode diskon tidak valid atau sudah kedaluwarsa.';
-            $this->discountApplied = false;
-            $this->discount = 0;
-            $this->calculateTotals();
-            return;
-        }
-
-        if ($discount->min_purchase && $this->total < $discount->min_purchase) {
-            $this->discountMessage = 'Transaksi belum memenuhi minimal pembelian Rp' . number_format($discount->min_purchase, 0, ',', '.');
-            $this->discountApplied = false;
-            $this->discount = 0;
-            $this->calculateTotals();
-            return;
-        }
-
-        // Hitung nilai diskon
-        $discountValue = 0;
-        if ($discount->type === 'percentage') {
-            $discountValue = $this->total * ($discount->value / 100);
-            if ($discount->max_discount && $discountValue > $discount->max_discount) {
-                $discountValue = $discount->max_discount;
-            }
-        } else {
-            $discountValue = $discount->value;
-        }
-
-        $this->discount = $discountValue;
-        $this->discountApplied = true;
-        $this->discountMessage = 'Kode diskon "' . $discount->code . '" berhasil diterapkan!';
-        $this->calculateTotals();
-    }
 
     // public function saveSale()
     // {
@@ -752,131 +613,39 @@ class Pos extends Page
         }
 
         try {
-            \DB::beginTransaction();
-
             $subtotal = $this->total ?? 0;
             $tax      = $this->tax ?? 0;
             $discount = $this->discount ?? 0;
             $final    = $this->finalTotal ?? ($subtotal + $tax - $discount);
 
-            // 🔹 PERBAIKAN: Validasi $this->saleId sebelum digunakan
             $isUpdate = !empty($this->saleId);
-            $sale = null;
+            $existingSale = $isUpdate ? Sale::find($this->saleId) : null;
 
-            if ($isUpdate) {
-                // 🔹 CARI SALE DENGAN TRY-CATCH
-                try {
-                    $sale = Sale::find($this->saleId);
-                    
-                    if (!$sale) {
-                        // Jika sale tidak ditemukan, anggap sebagai transaksi baru
-                        \Log::warning("⚠️ Sale ID {$this->saleId} not found, creating new sale");
-                        $isUpdate = false;
-                    }
-                } catch (\Exception $e) {
-                    \Log::error("❌ Error finding sale: " . $e->getMessage());
-                    $isUpdate = false;
-                }
+            // Consistency check
+            if ($isUpdate && !$existingSale) {
+                $isUpdate = false;
             }
 
+            $orderData = [
+                'cash_session_id' => $this->cashSessionId ?? session('cash_session_id'),
+                'user_id'         => auth()->id(),
+                'invoice_number'  => $isUpdate ? $existingSale->invoice_number : $this->generateOrderNumber(),
+                'customer_name'   => $this->customerName ?? 'Umum',
+                'order_type'      => $this->orderType,
+                'subtotal'        => $subtotal,
+                'tax'             => $tax,
+                'discount'        => $discount,
+                'final_total'     => $final,
+            ];
+
+            // Use Service
+            $orderService = app(\App\Services\OrderService::class);
+            $sale = $orderService->processOrder($orderData, $this->items, $isUpdate, $existingSale);
+            
+            // Set saleId if new
             if (!$isUpdate) {
-                // 🔹 CREATE: Transaksi baru dengan order number baru
-                $sale = Sale::create([
-                    'cash_session_id' => $this->cashSessionId ?? session('cash_session_id'),
-                    'user_id'         => auth()->id(),
-                    'invoice_number'  => $this->generateOrderNumber(),
-                    'customer_name'   => $this->customerName ?? 'Umum',
-                    'order_type'      => $this->orderType,
-                    'subtotal'        => $subtotal,
-                    'tax'             => $tax,
-                    'discount'        => $discount,
-                    'final_total'     => $final,
-                    'total'           => $final,
-                    'payment_method'  => '',
-                    'status'          => 'draft',
-                ]);
-
-                // Set saleId untuk transaksi baru
                 $this->saleId = $sale->id;
-                \Log::info("✅ New sale created", ['sale_id' => $sale->id, 'invoice' => $sale->invoice_number]);
-            } else {
-                // 🔹 UPDATE: Sale yang valid ditemukan
-                $sale->update([
-                    'customer_name' => $this->customerName ?? 'Umum',
-                    'order_type'    => $this->orderType,
-                    'subtotal'      => $subtotal,
-                    'tax'           => $tax,
-                    'discount'      => $discount,
-                    'final_total'   => $final,
-                    'total'         => $final,
-                    'updated_at'    => now(),
-                ]);
-
-                // Hapus item lama agar bisa simpan item baru
-                $sale->items()->delete();
-                \Log::info("✅ Existing sale updated", ['sale_id' => $sale->id, 'invoice' => $sale->invoice_number]);
             }
-
-            // 🔹 Simpan items (sama untuk kedua kasus)
-            foreach ($this->items as $item) {
-                $saleItem = \App\Models\SaleItem::create([
-                    'sale_id'    => $sale->id,
-                    'product_id' => $item['product_id'],
-                    'quantity'   => $item['quantity'],
-                    'unit_price' => $item['price'],
-                    'subtotal'   => $item['subtotal'],
-                    'notes'      => $item['notes'] ?? '', // ✅ TAMBAHKAN NOTES
-                ]);
-
-                \Log::info("💾 Saved sale item", [
-                    'sale_id' => $sale->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'notes' => $item['notes'] ?? ''
-                ]);
-
-                $product = Product::find($item['product_id']);
-
-                if (!$product) continue;
-
-                // 🔹 Kurangi stok (sama untuk kedua kasus)
-                if ($product->recipes()->exists()) {
-                    $recipes = $product->recipes()->with('ingredient')->get();
-
-                    foreach ($recipes as $recipe) {
-                        if (! $recipe->ingredient) continue;
-
-                        $recipeRate     = max($recipe->unit->conversion_rate ?? 1, 0.0001);
-                        $ingredientRate = max($recipe->ingredient->unit->conversion_rate ?? 1, 0.0001);
-
-                        $conversion = $ingredientRate / $recipeRate;
-                        $totalUsed = $recipe->quantity * $item['quantity'] * $conversion;
-
-                        $recipe->ingredient->decrement('stock', $totalUsed);
-
-                        \App\Models\StockMovement::create([
-                            'product_id' => $recipe->ingredient->id,
-                            'quantity'   => -$totalUsed,
-                            'type'       => 'decrease',
-                            'reason'     => 'POS Sale #' . $sale->invoice_number,
-                            'notes'      => 'Bahan untuk produk ' . $product->name . ' dijual (' . auth()->user()->name . ')',
-                        ]);
-                    }
-
-                } else {
-                    $product->decrement('stock', $item['quantity']);
-
-                    \App\Models\StockMovement::create([
-                        'product_id' => $product->id,
-                        'quantity'   => -$item['quantity'],
-                        'type'       => 'decrease',
-                        'reason'     => 'POS Sale #' . $sale->invoice_number,
-                        'notes'      => 'Penjualan langsung produk oleh ' . auth()->user()->name,
-                    ]);
-                }
-            }
-
-            \DB::commit();
 
             // 🔹 TENTUKAN APAKAH INI UPDATE
             if ($isUpdate) {
@@ -885,8 +654,6 @@ class Pos extends Page
                 
                 \Log::info('🔄 Update order detected', [
                     'sale_id' => $sale->id,
-                    'previous_items_count' => count($this->previousItems),
-                    'current_items_count' => count($this->items),
                     'new_items_count' => count($newItems)
                 ]);
 
@@ -935,17 +702,7 @@ class Pos extends Page
             $this->resetPos();
 
         } catch (\Exception $e) {
-            \DB::rollBack();
-            
-            // 🔹 DEBUG: Log error utama
-            \Log::error('💥 Gagal menyimpan penjualan: ' . $e->getMessage(), [
-                'customer_name' => $this->customerName,
-                'items_count' => count($this->items),
-                'saleId' => $this->saleId,
-                'isUpdate' => $isUpdate ?? false,
-                'error_trace' => $e->getTraceAsString()
-            ]);
-            
+            \Log::error('💥 Gagal menyimpan penjualan: ' . $e->getMessage());
             $this->dispatch('showNotification', 'Gagal menyimpan penjualan: ' . $e->getMessage(), 'error');
         }
     }
@@ -1697,267 +1454,38 @@ class Pos extends Page
      */
     public function processMergeBill()
     {
-        \Log::info('🔄 processMergeBill dipanggil', [
-            'selected_sales' => $this->selectedSalesToMerge,
-            'merge_target' => $this->mergeTargetSale,
-            'count_selected' => count($this->selectedSalesToMerge)
-        ]);
-
-        // Validasi
-        if (count($this->selectedSalesToMerge) < 2) {
+        \Log::info('🔄 Memulai proses merge bill');
+        
+        if (empty($this->selectedSalesToMerge) || count($this->selectedSalesToMerge) < 2) {
             $this->dispatch('showNotification', 'Pilih minimal 2 transaksi untuk digabung!', 'error');
             return;
         }
 
         if (!$this->mergeTargetSale) {
-            $this->dispatch('showNotification', 'Pilih transaksi tujuan untuk penggabungan!', 'error');
+            $this->dispatch('showNotification', 'Pilih transaksi tujuan!', 'error');
             return;
         }
 
         try {
-            \DB::beginTransaction();
+            $orderService = app(\App\Services\OrderService::class);
+            $targetSale = $orderService->mergeSales($this->mergeTargetSale, $this->selectedSalesToMerge);
 
-            // Ambil sale target
-            $targetSale = Sale::with('items')->findOrFail($this->mergeTargetSale);
+            \Log::info('✅ Merge bill berhasil', ['target_sale_id' => $targetSale->id]);
+
+            $this->dispatch('showNotification', 'Transaksi berhasil digabungkan ke #' . $targetSale->invoice_number, 'success');
             
-            \Log::info('🎯 Target sale ditemukan', [
-                'target_sale_id' => $targetSale->id,
-                'invoice_number' => $targetSale->invoice_number,
-                'items_count' => $targetSale->items->count(),
-                'existing_items' => $targetSale->items->map(function($item) {
-                    return [
-                        'product_id' => $item->product_id,
-                        'quantity' => $item->quantity,
-                        'price' => $item->unit_price
-                    ];
-                })->toArray()
-            ]);
-
-            // Ambil semua sale yang akan digabung
-            $salesToMerge = Sale::with('items')
-                ->whereIn('id', $this->selectedSalesToMerge)
-                ->where('id', '!=', $this->mergeTargetSale)
-                ->get();
-
-            \Log::info('📦 Sales to merge DETAIL', [
-                'count' => $salesToMerge->count(),
-                'sales' => $salesToMerge->map(function($sale) {
-                    return [
-                        'id' => $sale->id,
-                        'invoice_number' => $sale->invoice_number,
-                        'items_count' => $sale->items->count(),
-                        'items' => $sale->items->map(function($item) {
-                            return [
-                                'product_id' => $item->product_id,
-                                'quantity' => $item->quantity,
-                                'price' => $item->unit_price
-                            ];
-                        })->toArray()
-                    ];
-                })->toArray()
-            ]);
-
-            // Gabungkan semua item ke target sale
-            $allItems = [];
-            $totalItems = 0;
-            
-            foreach ($salesToMerge as $sale) {
-                \Log::info('📝 Processing sale to merge', [
-                    'sale_id' => $sale->id,
-                    'items_count' => $sale->items->count()
-                ]);
-                
-                foreach ($sale->items as $item) {
-                    $allItems[] = [
-                        'product_id' => $item->product_id,
-                        'quantity' => $item->quantity,
-                        'unit_price' => $item->unit_price,
-                        'subtotal' => $item->subtotal,
-                        'from_sale_id' => $sale->id,
-                    ];
-                    $totalItems += $item->quantity;
-                    
-                    \Log::info('📦 Item detail', [
-                        'product_id' => $item->product_id,
-                        'quantity' => $item->quantity,
-                        'price' => $item->unit_price
-                    ]);
-                }
-            }
-
-            \Log::info('📊 All items to merge', [
-                'total_items_count' => count($allItems),
-                'total_quantity' => $totalItems,
-                'items' => $allItems
-            ]);
-
-            // Hitung total dari target sale yang sudah ada
-            $existingTotalItems = $targetSale->items->sum('quantity');
-            \Log::info('🏷️ Existing target sale items', [
-                'total_quantity' => $existingTotalItems,
-                'items_count' => $targetSale->items->count()
-            ]);
-            
-            // Gabungkan item yang sama
-            $mergedItems = [];
-            foreach ($allItems as $item) {
-                $key = $item['product_id'] . '-' . $item['unit_price'];
-                
-                \Log::info('🔑 Checking item key: ' . $key, $item);
-                
-                if (isset($mergedItems[$key])) {
-                    $mergedItems[$key]['quantity'] += $item['quantity'];
-                    $mergedItems[$key]['subtotal'] += $item['subtotal'];
-                    $mergedItems[$key]['from_sales'][] = $item['from_sale_id'];
-                    \Log::info('➕ Item quantity added', [
-                        'key' => $key,
-                        'new_quantity' => $mergedItems[$key]['quantity']
-                    ]);
-                } else {
-                    $mergedItems[$key] = [
-                        'product_id' => $item['product_id'],
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $item['unit_price'],
-                        'subtotal' => $item['subtotal'],
-                        'from_sales' => [$item['from_sale_id']]
-                    ];
-                    \Log::info('🆕 New item added', [
-                        'key' => $key,
-                        'quantity' => $item['quantity']
-                    ]);
-                }
-            }
-
-            \Log::info('🔀 Merged items (before adding existing)', [
-                'count' => count($mergedItems),
-                'items' => $mergedItems
-            ]);
-
-            // Tambahkan item yang sudah ada di target sale
-            foreach ($targetSale->items as $existingItem) {
-                $key = $existingItem->product_id . '-' . $existingItem->unit_price;
-                
-                \Log::info('🏷️ Processing existing item: ' . $key, [
-                    'product_id' => $existingItem->product_id,
-                    'quantity' => $existingItem->quantity,
-                    'price' => $existingItem->unit_price
-                ]);
-                
-                if (isset($mergedItems[$key])) {
-                    $mergedItems[$key]['quantity'] += $existingItem->quantity;
-                    $mergedItems[$key]['subtotal'] += $existingItem->subtotal;
-                    \Log::info('➕ Existing item added to merge', [
-                        'key' => $key,
-                        'new_total_quantity' => $mergedItems[$key]['quantity']
-                    ]);
-                } else {
-                    $mergedItems[$key] = [
-                        'product_id' => $existingItem->product_id,
-                        'quantity' => $existingItem->quantity,
-                        'unit_price' => $existingItem->unit_price,
-                        'subtotal' => $existingItem->subtotal,
-                        'from_sales' => ['existing']
-                    ];
-                    \Log::info('🆕 Existing item as new in merge', ['key' => $key]);
-                }
-            }
-
-            \Log::info('🎯 Final merged items', [
-                'count' => count($mergedItems),
-                'items' => $mergedItems
-            ]);
-
-            // Hapus semua item lama dari target sale
-            \Log::info('🗑️ Deleting old items from target sale');
-            $deletedCount = $targetSale->items()->delete();
-            \Log::info('✅ Deleted ' . $deletedCount . ' old items');
-
-            // Simpan item yang sudah digabung
-            \Log::info('💾 Saving merged items to target sale');
-            foreach ($mergedItems as $mergedItem) {
-                $saleItem = SaleItem::create([
-                    'sale_id' => $targetSale->id,
-                    'product_id' => $mergedItem['product_id'],
-                    'quantity' => $mergedItem['quantity'],
-                    'unit_price' => $mergedItem['unit_price'],
-                    'subtotal' => $mergedItem['subtotal'],
-                ]);
-                
-                \Log::info('💿 Saved item', [
-                    'product_id' => $mergedItem['product_id'],
-                    'quantity' => $mergedItem['quantity'],
-                    'price' => $mergedItem['unit_price']
-                ]);
-            }
-
-            // Hitung ulang total untuk target sale
-            $newSubtotal = array_sum(array_column($mergedItems, 'subtotal'));
-            $newTax = $newSubtotal * 0.10;
-            $newFinalTotal = $newSubtotal + $newTax;
-            
-            \Log::info('🧮 Recalculating totals', [
-                'new_subtotal' => $newSubtotal,
-                'new_tax' => $newTax,
-                'new_final_total' => $newFinalTotal,
-                'old_final_total' => $targetSale->final_total
-            ]);
-            
-            $targetSale->update([
-                'subtotal' => $newSubtotal,
-                'tax' => $newTax,
-                'final_total' => $newFinalTotal,
-                'total' => $newFinalTotal,
-                'updated_at' => now(),
-            ]);
-
-            \Log::info('✅ Target sale updated', [
-                'invoice_number' => $targetSale->invoice_number,
-                'new_final_total' => $newFinalTotal
-            ]);
-
-            // Hapus sale yang sudah digabung (kecuali target sale)
-            \Log::info('🗑️ Deleting merged sales');
-            $deletedSales = Sale::whereIn('id', $this->selectedSalesToMerge)
-                ->where('id', '!=', $this->mergeTargetSale)
-                ->delete();
-                
-            \Log::info('✅ Deleted ' . $deletedSales . ' merged sales');
-
-            // Log activity
-            \Log::info('🎉 Bill merged SUCCESS', [
-                'user_id' => auth()->id(),
-                'target_sale_id' => $targetSale->id,
-                'merged_sale_ids' => array_diff($this->selectedSalesToMerge, [$this->mergeTargetSale]),
-                'total_items_merged' => $totalItems,
-                'existing_items' => $existingTotalItems,
-                'final_item_count' => count($mergedItems)
-            ]);
-
-            \DB::commit();
-
+            // Reset state
             $this->showMergeModal = false;
             $this->selectedSalesToMerge = [];
             $this->mergeTargetSale = null;
-            
-            $this->dispatch('showNotification', 
-                "✅ Berhasil menggabungkan " . count($salesToMerge) . " transaksi ke #" . $targetSale->invoice_number, 
-                'success'
-            );
-
-            // Refresh available sales list
-            $this->dispatch('refreshSalesList');
+            $this->dispatch('refreshSalesList'); // Important for UI update
 
         } catch (\Exception $e) {
-            \DB::rollBack();
-            \Log::error('❌ Gagal menggabungkan transaksi', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
-            ]);
-            $this->dispatch('showNotification', '❌ Gagal menggabungkan transaksi: ' . $e->getMessage(), 'error');
+            \Log::error('💥 Gagal merge bill: ' . $e->getMessage());
+            $this->dispatch('showNotification', 'Gagal menggabungkan transaksi: ' . $e->getMessage(), 'error');
         }
     }
+
 
     /**
      * Cancel merge process
