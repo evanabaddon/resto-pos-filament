@@ -1186,7 +1186,7 @@
         }
         
         .search-result-item {
-            animation: fadeInUp 0.3s ease forwards;
+            /* animation: fadeInUp 0.3s ease forwards; */
         }
     </style>
 
