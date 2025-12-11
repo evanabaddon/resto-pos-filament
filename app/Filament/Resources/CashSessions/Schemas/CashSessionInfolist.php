@@ -13,110 +13,101 @@ class CashSessionInfolist
     {
         return $schema
             ->components([
-                // 🧾 Header Informasi Sesi
-                Section::make('Informasi Sesi Kasir')
+                // 🧾 Header & Key Metrics
+                Section::make()
                     ->schema([
                         Grid::make(4)
                             ->schema([
                                 TextEntry::make('user.name')
                                     ->label('Kasir')
                                     ->icon('heroicon-o-user')
-                                    ->iconColor('primary'),
+                                    ->weight('bold'),
+
+                                TextEntry::make('status')
+                                    ->label('Status Sesi')
+                                    ->badge()
+                                    ->color(fn ($record) => $record->cash_out ? 'danger' : 'success')
+                                    ->formatStateUsing(fn ($record) => $record->cash_out ? 'Selesai (Closed)' : 'Aktif (Open)'),
 
                                 TextEntry::make('opened_at')
-                                    ->label('Dibuka')
-                                    ->dateTime('d/m/Y H:i')
-                                    ->icon('heroicon-o-clock')
-                                    ->iconColor('success'),
+                                    ->label('Waktu Buka')
+                                    ->dateTime('d M Y, H:i')
+                                    ->icon('heroicon-o-clock'),
 
                                 TextEntry::make('closed_at')
-                                    ->label('Ditutup')
-                                    ->formatStateUsing(fn ($state) => $state ? $state->format('d/m/Y H:i') : 'Masih Aktif')
-                                    ->icon('heroicon-o-clock')
-                                    ->iconColor(fn ($state) => $state ? 'danger' : 'warning'),
-
-                                TextEntry::make('transaction_count')
-                                    ->label('Total Transaksi')
-                                    ->icon('heroicon-o-document-text')
-                                    ->iconColor('info'),
-                            ]),
-                    ])->columnSpanFull(),
-
-                // 💰 Ringkasan Keuangan
-                Section::make('Ringkasan Keuangan')
-                    ->columnSpanFull()
-                    ->schema([
-                        Grid::make(3)
-                            ->schema([
-                                // 🧮 Kas
-                                Section::make('Kas')
-                                    ->schema([
-                                        TextEntry::make('cash_in_hand')
-                                            ->label('Kas Awal')
-                                            ->formatStateUsing(fn ($state) => self::formatCurrency($state)),
-
-                                        TextEntry::make('total_cash_sales')
-                                            ->label('Penjualan Cash')
-                                            ->formatStateUsing(fn ($state) => self::formatCurrency($state)),
-
-                                        TextEntry::make('total_cash_expenses')
-                                            ->label('Pengeluaran Cash')
-                                            ->formatStateUsing(fn ($state) => self::formatCurrency($state))
-                                            ->color('danger'),
-
-                                        TextEntry::make('expected_cash')
-                                            ->label('Total Uang di Laci (Seharusnya)')
-                                            ->formatStateUsing(fn ($state) => self::formatCurrency($state))
-                                            ->color('success'),
-
-                                        TextEntry::make('cash_out')
-                                            ->label('Kas Tutup (Aktual)')
-                                            ->formatStateUsing(fn ($state) => self::formatCurrency($state))
-                                            ->hidden(fn ($record) => $record->cash_out === null),
-
-                                        TextEntry::make('status')
-                                            ->label('Status')
-                                            ->formatStateUsing(fn ($record) => $record->cash_out ? 'Selesai' : 'Sesi Masih Berjalan')
-                                            ->color(fn ($record) => $record->cash_out ? 'danger' : 'warning'),
-
-                                        TextEntry::make('cash_difference')
-                                            ->label('Selisih')
-                                            ->formatStateUsing(function ($state) {
-                                                if (is_null($state)) return '-';
-                                                $formatted = self::formatCurrency(abs($state));
-                                                return $formatted . ' (' . ($state >= 0 ? 'LEBIH' : 'KURANG') . ')';
-                                            })
-                                            ->color(fn ($state) => is_null($state) ? 'gray' : ($state >= 0 ? 'success' : 'danger'))
-                                            ->weight('bold'),
-                                    ]),
-
-                                // 📊 Breakdown Penjualan
-                                Section::make('Breakdown Penjualan')
-                                    ->schema([
-                                        \Filament\Infolists\Components\ViewEntry::make('breakdown')
-                                            ->view('filament.infolists.cash-session-breakdown')
-                                            ->columnSpanFull(),
-                                    ]),
-
-                                // 📈 Statistik
-                                Section::make('Statistik')
-                                    ->schema([
-                                        Grid::make(2)
-                                            ->schema([
-                                                TextEntry::make('transaction_count')
-                                                    ->label('Total Transaksi')
-                                                    ->icon('heroicon-o-document-text')
-                                                    ->color('primary'),
-
-                                                TextEntry::make('average_transaction')
-                                                    ->label('Rata-rata per Transaksi')
-                                                    ->formatStateUsing(fn ($state) => self::formatCurrency($state))
-                                                    ->icon('heroicon-o-currency-dollar')
-                                                    ->color('success'),
-                                            ]),
-                                    ]),
+                                    ->label('Waktu Tutup')
+                                    ->dateTime('d M Y, H:i')
+                                    ->placeholder('Masih Berlangsung')
+                                    ->icon('heroicon-o-check-circle'),
                             ]),
                     ]),
+
+                // 💰 Financials
+                Grid::make(3)->schema([
+                    // LEFT COLUMN: Calculations
+                    Section::make('Arus Kas (Cash Flow)')
+                        ->icon('heroicon-o-banknotes')
+                        ->schema([
+                            Grid::make(2)
+                                ->schema([
+                                    TextEntry::make('cash_in_hand')
+                                        ->label('Modal Awal (Cash In Hand)')
+                                        ->money('IDR'),
+                                    
+                                    TextEntry::make('total_cash_sales')
+                                        ->label('(+) Penjualan Tunai')
+                                        ->money('IDR')
+                                        ->color('success'),
+
+                                    TextEntry::make('total_cash_expenses')
+                                        ->label('(-) Pengeluaran Tunai')
+                                        ->money('IDR')
+                                        ->color('danger'),
+                                    
+                                    TextEntry::make('expected_cash')
+                                        ->label('(=) Total Uang Seharusnya')
+                                        ->money('IDR')
+                                        ->weight('bold')
+                                        ->columnSpanFull()
+                                        ->separator(),
+                                    
+                                    TextEntry::make('cash_out')
+                                        ->label('Total Uang Fisik (Aktual)')
+                                        ->money('IDR')
+                                        ->hidden(fn ($record) => $record->cash_out === null),
+
+                                    TextEntry::make('cash_difference')
+                                        ->label('Selisih (Diff)')
+                                        ->money('IDR')
+                                        ->badge()
+                                        ->color(fn ($state) => $state >= 0 ? 'success' : 'danger')
+                                        ->hidden(fn ($record) => $record->cash_out === null),
+                                ]),
+                        ])->columnSpan(2),
+
+                    // RIGHT COLUMN: Breakdown & Stats
+                    Grid::make(1)->schema([
+                        Section::make('Rincian Pembayaran')
+                            ->icon('heroicon-o-chart-pie')
+                            ->schema([
+                                \Filament\Infolists\Components\ViewEntry::make('breakdown')
+                                    ->view('filament.infolists.cash-session-breakdown')
+                                    ->hiddenLabel(),
+                            ]),
+
+                        Section::make('Statistik')
+                            ->schema([
+                                TextEntry::make('transaction_count')
+                                    ->label('Total Transaksi')
+                                    ->inlineLabel(),
+                                
+                                TextEntry::make('average_transaction')
+                                    ->label('Rata-rata Order')
+                                    ->money('IDR')
+                                    ->inlineLabel(),
+                            ])->grow(false),
+                    ])->columnSpan(1),
+                ]),
             ]);
     }
 
