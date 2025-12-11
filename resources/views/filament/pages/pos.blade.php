@@ -161,10 +161,10 @@
                 @endforelse
             </div>
             
-            {{-- Pagination Links (Responsive Scrollable) --}}
+            {{-- Pagination Links (Responsive Custom) --}}
             <div class="mt-8 px-2 sm:px-4 pb-24 lg:pb-8 flex justify-center w-full">
-                <div class="bg-white/60 backdrop-blur-md rounded-full px-4 py-2 shadow-sm border border-slate-200/50 overflow-x-auto max-w-full no-scrollbar">
-                    {{ $products->onEachSide(1)->links() }}
+                <div class="w-full max-w-3xl">
+                    {{ $products->onEachSide(1)->links('livewire.pos-pagination') }}
                 </div>
             </div>
             
