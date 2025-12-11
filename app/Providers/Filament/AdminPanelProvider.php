@@ -85,7 +85,7 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 FilamentApexChartsPlugin::make(),
                 FilamentAwinTheme::make()
-                    ->primaryColor('#3b82f6'),
+                    ->primaryColor('#CF8B00'),
             ]);
     }
 }
