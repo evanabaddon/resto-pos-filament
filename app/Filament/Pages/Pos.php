@@ -137,7 +137,7 @@ class Pos extends Page
         $this->cashSessionId = $session->id;
         session(['cash_session_id' => $session->id]);
 
-        $this->dispatch('showNotification', 'Kas awal Rp ' . number_format($cashInHand, 0, ',', '.') . ' berhasil diset.', 'success');
+        $this->dispatch('show-notification', message: 'Kas awal Rp ' . number_format($cashInHand, 0, ',', '.') . ' berhasil diset.', type: 'success');
     }
 
     public function handleCashInCancelled()
@@ -176,7 +176,7 @@ class Pos extends Page
             // Auto print receipt setelah pembayaran berhasil
             $this->printReceipt($saleId);
 
-            $this->dispatch('showNotification', 'Pembayaran berhasil diproses.', 'success');
+            $this->dispatch('show-notification', message: 'Pembayaran berhasil diproses.', type: 'success');
             $this->showPaymentModal = false;
             $this->showLoadModal = false;
 
@@ -186,7 +186,7 @@ class Pos extends Page
             // DEBUG: Tampilkan error
             // dd($e->getMessage());
             
-            $this->dispatch('showNotification', 'Error: ' . $e->getMessage(), 'error');
+            $this->dispatch('show-notification', message: 'Error: ' . $e->getMessage(), type: 'error');
         }
     }
 
@@ -213,7 +213,7 @@ class Pos extends Page
 
         $this->showCashInModal = false;
 
-        $this->dispatch('showNotification', 'Kas awal Rp ' . number_format($this->cashInHand, 0, ',', '.') . ' berhasil diset.', 'success');
+        $this->dispatch('show-notification', message: 'Kas awal Rp ' . number_format($this->cashInHand, 0, ',', '.') . ' berhasil diset.', type: 'success');
     }
 
     public function cancelCashIn()
@@ -272,7 +272,7 @@ class Pos extends Page
     public function cancelSale(): void
     {
         $this->resetPos(); 
-        $this->dispatch('showNotification', 'Transaksi dibatalkan.', 'info');
+        $this->dispatch('show-notification', message: 'Transaksi dibatalkan.', type: 'info');
     }
 
     public function getNameUserLogin(): string
@@ -326,7 +326,7 @@ class Pos extends Page
     {
         $this->searchQuery = '';
         $this->resetPage();
-        $this->dispatch('showNotification', 'Pencarian dibersihkan', 'info');
+        $this->dispatch('show-notification', message: 'Pencarian dibersihkan', type: 'info');
     }
 
     public function getCategoriesProperty()
@@ -465,7 +465,7 @@ class Pos extends Page
             $this->itemNotes = '';
             
             $this->dispatch('closeNotesModal');
-            $this->dispatch('showNotification', 'Catatan berhasil disimpan!', 'success');
+            $this->dispatch('show-notification', message: 'Catatan berhasil disimpan!', type: 'success');
         }
     }
 
@@ -489,13 +489,13 @@ class Pos extends Page
     // {
     //     // 🔹 Cek keranjang kosong
     //     if (empty($this->items)) {
-    //         $this->dispatch('showNotification', 'Keranjang kosong!', 'error');
+    //         $this->dispatch('show-notification', message: 'Keranjang kosong!', type: 'error');
     //         return;
     //     }
 
     //     // 🔹 Cek nama pelanggan
     //     if (empty(trim($this->customerName))) {
-    //         $this->dispatch('showNotification', 'Nama pelanggan harus diisi!', 'error');
+    //         $this->dispatch('show-notification', message: 'Nama pelanggan harus diisi!', type: 'error');
     //         return;
     //     }
 
@@ -605,9 +605,9 @@ class Pos extends Page
 
     //         // 🔹 TAMPILKAN NOTIFIKASI BERBEDA
     //         if ($this->saleId) {
-    //             $this->dispatch('showNotification', 'Transaksi #' . $sale->invoice_number . ' berhasil diupdate!', 'success');
+    //             $this->dispatch('show-notification', message: 'Transaksi #' . $sale->invoice_number . ' berhasil diupdate!', type: 'success');
     //         } else {
-    //             $this->dispatch('showNotification', 'Transaksi baru #' . $sale->invoice_number . ' berhasil disimpan!', 'success');
+    //             $this->dispatch('show-notification', message: 'Transaksi baru #' . $sale->invoice_number . ' berhasil disimpan!', type: 'success');
     //         }
 
     //         $this->resetPos();
@@ -618,7 +618,7 @@ class Pos extends Page
 
     //     } catch (\Exception $e) {
     //         \DB::rollBack();
-    //         $this->dispatch('showNotification', 'Gagal menyimpan penjualan: ' . $e->getMessage(), 'error');
+    //         $this->dispatch('show-notification', message: 'Gagal menyimpan penjualan: ' . $e->getMessage(), type: 'error');
     //     }
     // }
 
@@ -626,13 +626,13 @@ class Pos extends Page
     {
         // 🔹 Cek keranjang kosong
         if (empty($this->items)) {
-            $this->dispatch('showNotification', 'Keranjang kosong!', 'error');
+            $this->dispatch('show-notification', message: 'Keranjang kosong!', type: 'error');
             return;
         }
 
         // 🔹 Cek nama pelanggan
         if (empty(trim($this->customerName))) {
-            $this->dispatch('showNotification', 'Nama pelanggan harus diisi!', 'error');
+            $this->dispatch('show-notification', message: 'Nama pelanggan harus diisi!', type: 'error');
             return;
         }
 
@@ -687,29 +687,23 @@ class Pos extends Page
                         $orderPrintService = new OrderPrintService();
                         $printResult = $orderPrintService->printNewItemsOnly($sale, $newItems);
                         
-                        $this->dispatch('showNotification', '✅ Item berhasil ditambah & tambahan order dicetak!', 'success');
+                        $this->dispatch('show-notification', message: '✅ Item berhasil ditambah & tambahan order dicetak!', type: 'success');
                         
                     } catch (\Exception $e) {
-                        $this->dispatch('showNotification', 
-                            '⚠️ Order tersimpan tapi gagal print tambahan: ' . $e->getMessage(), 
-                            'warning'
-                        );
+                        $this->dispatch('show-notification', message: '⚠️ Order tersimpan tapi gagal print tambahan: ' . $e->getMessage(), type: 'warning');
                     }
                 } else {
-                    $this->dispatch('showNotification', '✅ Order berhasil diupdate!', 'success');
+                    $this->dispatch('show-notification', message: '✅ Order berhasil diupdate!', type: 'success');
                 }
             } else {
                 // 🔹 NEW ORDER - PRINT SEMUA
                 try {
                     $orderPrintService = new OrderPrintService();
                     $printResult = $orderPrintService->printOrderByProductType($sale);
-                    $this->dispatch('showNotification', '✅ Order baru berhasil dikirim ke divisi!', 'success');
+                    $this->dispatch('show-notification', message: '✅ Order baru berhasil dikirim ke divisi!', type: 'success');
                     
                 } catch (\Exception $e) {
-                    $this->dispatch('showNotification', 
-                        '⚠️ Order tersimpan tapi gagal print: ' . $e->getMessage(), 
-                        'warning'
-                    );
+                    $this->dispatch('show-notification', message: '⚠️ Order tersimpan tapi gagal print: ' . $e->getMessage(), type: 'warning');
                 }
             }
 
@@ -718,16 +712,16 @@ class Pos extends Page
 
             // 🔹 TAMPILKAN NOTIFIKASI BERBEDA
             if ($isUpdate) {
-                $this->dispatch('showNotification', 'Transaksi #' . $sale->invoice_number . ' berhasil diupdate!', 'success');
+                $this->dispatch('show-notification', message: 'Transaksi #' . $sale->invoice_number . ' berhasil diupdate!', type: 'success');
             } else {
-                $this->dispatch('showNotification', 'Transaksi baru #' . $sale->invoice_number . ' berhasil disimpan!', 'success');
+                $this->dispatch('show-notification', message: 'Transaksi baru #' . $sale->invoice_number . ' berhasil disimpan!', type: 'success');
             }
 
             $this->resetPos();
 
         } catch (\Exception $e) {
             \Log::error('💥 Gagal menyimpan penjualan: ' . $e->getMessage());
-            $this->dispatch('showNotification', 'Gagal menyimpan penjualan: ' . $e->getMessage(), 'error');
+            $this->dispatch('show-notification', message: 'Gagal menyimpan penjualan: ' . $e->getMessage(), type: 'error');
         }
     }
 
@@ -793,7 +787,7 @@ class Pos extends Page
             $this->isPrinting = true;
             
             if (!$saleId) {
-                $this->dispatch('showNotification', 'Sale ID tidak valid untuk print.', 'error');
+                $this->dispatch('show-notification', message: 'Sale ID tidak valid untuk print.', type: 'error');
                 $this->isPrinting = false;
                 return;
             }
@@ -804,7 +798,7 @@ class Pos extends Page
             
             if (!$sale) {
                 logger('Sale not found:', ['saleId' => $saleId]);
-                $this->dispatch('showNotification', 'Transaksi tidak ditemukan untuk dicetak.', 'error');
+                $this->dispatch('show-notification', message: 'Transaksi tidak ditemukan untuk dicetak.', type: 'error');
                 $this->isPrinting = false;
                 return;
             }
@@ -986,7 +980,7 @@ class Pos extends Page
         $this->showPaymentModal = false;
         $this->showLoadModal = false;
         
-        $this->dispatch('showNotification', 'Pembayaran berhasil diproses.', 'success');
+        $this->dispatch('show-notification', message: 'Pembayaran berhasil diproses.', type: 'success');
         $this->resetPos();
     }
 
@@ -1255,7 +1249,7 @@ class Pos extends Page
         }
         
         if (empty(trim($this->customerName))) {
-            $this->dispatch('showNotification', 'Nama pelanggan harus diisi!', 'error');
+            $this->dispatch('show-notification', message: 'Nama pelanggan harus diisi!', type: 'error');
             return;
         }
         

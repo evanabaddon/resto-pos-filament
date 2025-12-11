@@ -77,6 +77,12 @@
     <main class="flex-1 overflow-hidden">
         {{ $slot }}
     </main>
+
+    {{-- ========================= --}}
+    {{-- 🔔 TOAST NOTIFICATIONS --}}
+    {{-- ========================= --}}
+    <livewire:pos-notification />
+
     {{-- Cash Summary Modal --}}
     <livewire:cash-summary-modal />
 
