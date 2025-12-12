@@ -39,7 +39,7 @@
                         
                         {{-- Tabs --}}
                         <div class="flex space-x-1 w-full md:w-auto overflow-x-auto pb-1 hide-scrollbar bg-gray-100 p-1 rounded-lg">
-                            @foreach(['draft' => 'Draft', 'paid' => 'Lunas', 'completed' => 'Selesai', 'split' => 'Split', 'all' => 'Semua'] as $key => $label)
+                            @foreach(['draft' => 'Draft', 'completed' => 'Selesai', 'split' => 'Split', 'all' => 'Semua'] as $key => $label)
                                 <button wire:click="setTab('{{ $key }}')"
                                     class="px-4 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap
                                     {{ $activeTab === $key 
@@ -114,22 +114,22 @@
                                 <div class="grid grid-cols-2 gap-2 mt-auto pt-3 border-t border-gray-50">
                                     @if($sale->status === 'draft')
                                         <button wire:click="loadSale({{ $sale->id }})"
-                                            class="flex items-center justify-center px-3 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                                            class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                                             ✏️ EDIT
                                         </button>
                                         <button wire:click="openPayment({{ $sale->id }})"
-                                            class="flex items-center justify-center px-3 py-2 text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors group-hover:bg-green-600 group-hover:text-white">
+                                            class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
                                             💵 BAYAR
                                         </button>
                                         <button wire:click="openSplitBill({{ $sale->id }})"
-                                            class="flex items-center justify-center px-3 py-1.5 text-[10px] font-medium text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors mt-1">
-                                            ✂️ Split
+                                            class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors">
+                                            ✂️ SPLIT
                                         </button>
                                         <button 
                                             wire:click="deleteSale({{ $sale->id }})"
                                             wire:confirm="Yakin ingin menghapus draft ini? Stok akan dikembalikan."
-                                            class="flex items-center justify-center px-3 py-1.5 text-[10px] font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors mt-1">
-                                            🗑️ Hapus
+                                            class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                            🗑️ HAPUS
                                         </button>
                                     @elseif($sale->status === 'completed')
                                         <button wire:click="printReceipt({{ $sale->id }})"

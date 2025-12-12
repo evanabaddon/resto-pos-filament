@@ -119,7 +119,7 @@
 
         {{-- Filter Kategori - Horizontal Scroll Mobile --}}
         <div class="px-4 py-3 bg-white/80 backdrop-blur-sm border-b border-gray-100 flex-shrink-0 sticky top-0 z-20">
-            <div class="flex space-x-2 overflow-x-auto hide-scrollbar pb-1">
+            <div class="flex space-x-2 hide-scrollbar pb-1">
                 @foreach ($categories as $category)
                     <button wire:click="setCategory('{{ $category }}')"
                         class="cursor-pointer flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border whitespace-nowrap touch-target
@@ -285,7 +285,7 @@
                         type="text" 
                         wire:model="customerName"
                         class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 bg-slate-50/50 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm mobile-text-sm font-medium"
-                        placeholder="Nama Pelanggan (Optional)">
+                        placeholder="Nama Pelanggan">
                 </div>
             </div>
         </div>
