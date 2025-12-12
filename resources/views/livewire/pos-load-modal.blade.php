@@ -55,7 +55,7 @@
                 {{-- Content --}}
                 <div class="flex-1 overflow-y-auto bg-gray-50 p-4 relative min-h-[300px]">
                     {{-- Loading State --}}
-                    <div wire:loading wire:target="search, setTab, previousPage, nextPage, gotoPage" 
+                    <div wire:loading wire:target="search, setTab, previousPage, nextPage, gotoPage, executeDelete, loadSale, openPayment, openSplitBill" 
                          class="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 flex items-center justify-center rounded-lg transition-opacity">
                         <div class="bg-white p-3 rounded-full shadow-lg">
                             <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -126,8 +126,7 @@
                                             ✂️ SPLIT
                                         </button>
                                         <button 
-                                            wire:click="deleteSale({{ $sale->id }})"
-                                            wire:confirm="Yakin ingin menghapus draft ini? Stok akan dikembalikan."
+                                            wire:click="confirmDelete({{ $sale->id }})"
                                             class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
                                             🗑️ HAPUS
                                         </button>
@@ -418,6 +417,39 @@
                                 class="cursor-pointer flex-1 px-4 py-2 bg-orange-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-orange-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                                 {{ collect($splitAssignments)->sum('total') != $selectedSaleForSplit->final_total ? 'disabled' : '' }}>
                             ✅ Konfirmasi Split Bill
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+
+    {{-- Delete Confirmation Modal --}}
+    @if ($showDeleteModal)
+        <div class="fixed inset-0 z-[70] flex items-center justify-center p-4 backdrop-blur-md bg-opacity-75">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-auto overflow-hidden transform transition-all">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-center text-gray-900 mb-2">Hapus Transaksi?</h3>
+                    <p class="text-sm text-center text-gray-500 mb-6">
+                        Apakah Anda yakin ingin menghapus transaksi ini? <br>
+                        <span class="font-medium text-red-600">Stok item akan dikembalikan ke inventory.</span>
+                    </p>
+
+                    <div class="flex space-x-3">
+                        <button wire:click="cancelDelete"
+                                class="cursor-pointer flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                            Batal
+                        </button>
+                        <button wire:click="executeDelete"
+                                class="cursor-pointer flex-1 px-4 py-2 bg-red-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm">
+                            Ya, Hapus
                         </button>
                     </div>
                 </div>

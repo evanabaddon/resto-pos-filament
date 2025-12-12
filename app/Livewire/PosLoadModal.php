@@ -14,7 +14,7 @@ class PosLoadModal extends Component
     // public $savedSales = []; // Replaced by pagination in render
     public $search = '';
     public $activeTab = 'draft'; // 'draft', 'paid', 'completed', 'split', 'all'
-    
+
     public $showSplitBillModal = false;
     public $selectedSaleForSplit = null;
     public $splitType = 'equal'; // 'equal', 'item', 'percentage'
@@ -23,6 +23,10 @@ class PosLoadModal extends Component
     public $itemAssignments = [];
     public $percentageSplits = [];
     public $customerNames = [];
+
+    // Delete Modal State
+    public $showDeleteModal = false;
+    public $saleToDeleteId = null;
 
     protected $listeners = ['openLoadModal', 'refreshSalesList' => '$refresh'];
 
@@ -53,11 +57,12 @@ class PosLoadModal extends Component
     public function loadSale($saleId)
     {
         $sale = Sale::find($saleId);
-        
+
         // Cek apakah transaksi masih bisa diedit (hanya draft)
         if ($sale->status !== 'draft') {
-            $this->dispatch('showNotification', 
-                'Transaksi ini sudah diproses dan tidak bisa diedit.', 
+            $this->dispatch(
+                'showNotification',
+                'Transaksi ini sudah diproses dan tidak bisa diedit.',
                 'warning'
             );
             return;
@@ -70,19 +75,21 @@ class PosLoadModal extends Component
     public function openPayment($saleId)
     {
         $sale = Sale::find($saleId);
-        
+
         // Cek status transaksi
         if ($sale->status === 'paid') {
-            $this->dispatch('showNotification', 
-                'Transaksi ini sudah dibayar.', 
+            $this->dispatch(
+                'showNotification',
+                'Transaksi ini sudah dibayar.',
                 'warning'
             );
             return;
         }
 
         if ($sale->status === 'completed') {
-            $this->dispatch('showNotification', 
-                'Transaksi ini sudah selesai.', 
+            $this->dispatch(
+                'showNotification',
+                'Transaksi ini sudah selesai.',
                 'warning'
             );
             return;
@@ -99,10 +106,25 @@ class PosLoadModal extends Component
         $this->show = false;
     }
 
-    public function deleteSale($saleId)
+    public function confirmDelete($saleId)
     {
+        $this->saleToDeleteId = $saleId;
+        $this->showDeleteModal = true;
+    }
+
+    public function cancelDelete()
+    {
+        $this->showDeleteModal = false;
+        $this->saleToDeleteId = null;
+    }
+
+    public function executeDelete()
+    {
+        if (!$this->saleToDeleteId)
+            return;
+
         try {
-            $sale = Sale::findOrFail($saleId);
+            $sale = Sale::findOrFail($this->saleToDeleteId);
 
             if ($sale->status !== 'draft') {
                 $this->dispatch('showNotification', 'Hanya transaksi Draft yang bisa dihapus.', 'error');
@@ -110,10 +132,13 @@ class PosLoadModal extends Component
             }
 
             // Gunakan Service untuk hapus & restore stock
-            app(\App\Services\OrderService::class)->deleteSale($saleId);
+            app(\App\Services\OrderService::class)->deleteSale($this->saleToDeleteId);
 
             $this->dispatch('showNotification', 'Transaksi berhasil dihapus dan stok dikembalikan.', 'success');
-            
+
+            $this->showDeleteModal = false;
+            $this->saleToDeleteId = null;
+
             // Refresh list (otomatis via render karena Livewire)
         } catch (\Exception $e) {
             \Log::error('Gagal menghapus transaksi: ' . $e->getMessage());
@@ -125,10 +150,11 @@ class PosLoadModal extends Component
     public function openSplitBill($saleId)
     {
         $sale = Sale::find($saleId);
-        
+
         if ($sale->status !== 'draft') {
-            $this->dispatch('showNotification', 
-                'Split bill hanya bisa dilakukan pada transaksi draft.', 
+            $this->dispatch(
+                'showNotification',
+                'Split bill hanya bisa dilakukan pada transaksi draft.',
                 'warning'
             );
             return;
@@ -143,7 +169,8 @@ class PosLoadModal extends Component
 
     public function initializeSplitAssignments()
     {
-        if (!$this->selectedSaleForSplit) return;
+        if (!$this->selectedSaleForSplit)
+            return;
 
         // Initialize customer names
         for ($i = 0; $i < $this->splitCount; $i++) {
@@ -176,10 +203,10 @@ class PosLoadModal extends Component
     {
         // Reset semua assignment untuk item ini terlebih dahulu
         $this->itemAssignments[$itemId] = array_fill(0, $this->splitCount, 0);
-        
+
         // Assign quantity ke customer yang dipilih
         $this->itemAssignments[$itemId][$customerIndex] = $quantity;
-        
+
         $this->calculateSplitTotals();
     }
 
@@ -188,15 +215,15 @@ class PosLoadModal extends Component
     {
         $maxQuantity = $this->selectedSaleForSplit->items
             ->find($itemId)->quantity;
-        
+
         // Cek total assignment tidak melebihi quantity tersedia
         $currentTotal = array_sum($this->itemAssignments[$itemId]);
         $available = $maxQuantity - $currentTotal + $this->itemAssignments[$itemId][$customerIndex];
-        
+
         if ($partialQuantity <= $available) {
             $this->itemAssignments[$itemId][$customerIndex] = $partialQuantity;
         }
-        
+
         $this->calculateSplitTotals();
     }
 
@@ -213,19 +240,19 @@ class PosLoadModal extends Component
         foreach ($this->selectedSaleForSplit->items as $item) {
             $itemPrice = $item->unit_price;
             $itemSubtotal = $item->subtotal;
-            
+
             for ($i = 0; $i < $this->splitCount; $i++) {
                 $assignedQty = $this->itemAssignments[$item->id][$i] ?? 0;
-                
+
                 if ($assignedQty > 0) {
                     $assignedSubtotal = ($itemSubtotal / $item->quantity) * $assignedQty;
                     $assignedTax = $assignedSubtotal * 0.10; // 10% tax
                     $assignedTotal = $assignedSubtotal + $assignedTax;
-                    
+
                     $this->splitAssignments[$i]['subtotal'] += $assignedSubtotal;
                     $this->splitAssignments[$i]['tax'] += $assignedTax;
                     $this->splitAssignments[$i]['total'] += $assignedTotal;
-                    
+
                     $this->splitAssignments[$i]['items'][] = [
                         'name' => $item->product->name,
                         'product_id' => $item->product_id,
@@ -244,26 +271,26 @@ class PosLoadModal extends Component
         foreach ($this->selectedSaleForSplit->items as $item) {
             $quantity = floatval($item->quantity);
             $splitCount = $this->splitCount;
-            
+
             // Untuk quantity float, kita perlu approach yang berbeda
             if (is_float($quantity) && floor($quantity) != $quantity) {
                 // Handle fractional quantities (misal: 2.5)
                 $integerPart = floor($quantity);
                 $fractionalPart = $quantity - $integerPart;
-                
+
                 // Assign integer parts
                 $perPersonInteger = floor($integerPart / $splitCount);
                 $remainderInteger = $integerPart - ($perPersonInteger * $splitCount);
-                
+
                 // Assign fractional part ke orang pertama
                 $fractionalAssignments = array_fill(0, $splitCount, $perPersonInteger);
                 for ($i = 0; $i < $remainderInteger; $i++) {
                     $fractionalAssignments[$i] += 1;
                 }
-                
+
                 // Tambahkan fractional part ke orang pertama
                 $fractionalAssignments[0] += $fractionalPart;
-                
+
                 for ($i = 0; $i < $splitCount; $i++) {
                     $this->itemAssignments[$item->id][$i] = $fractionalAssignments[$i];
                 }
@@ -272,7 +299,7 @@ class PosLoadModal extends Component
                 $quantity = intval($quantity);
                 $perPerson = floor($quantity / $splitCount);
                 $remainder = $quantity % $splitCount;
-                
+
                 for ($i = 0; $i < $splitCount; $i++) {
                     $assignedQty = $perPerson + ($i < $remainder ? 1 : 0);
                     $this->itemAssignments[$item->id][$i] = $assignedQty;
@@ -292,7 +319,8 @@ class PosLoadModal extends Component
     // comfirm split bill
     public function confirmSplitBill()
     {
-        if (!$this->selectedSaleForSplit) return;
+        if (!$this->selectedSaleForSplit)
+            return;
 
         // Validasi: semua item harus ter-assign
         $allItemsAssigned = true;
@@ -302,7 +330,7 @@ class PosLoadModal extends Component
             $totalAssigned = array_sum($this->itemAssignments[$item->id]);
             $itemQuantity = floatval($item->quantity);
             $totalAssignedFloat = floatval($totalAssigned);
-            
+
             if (abs($totalAssignedFloat - $itemQuantity) > 0.001) {
                 $allItemsAssigned = false;
                 $validationErrors[] = "Item {$item->product->name}: {$totalAssigned}/{$item->quantity} ter-assign";
@@ -310,8 +338,9 @@ class PosLoadModal extends Component
         }
 
         if (!$allItemsAssigned) {
-            $this->dispatch('showNotification', 
-                'Beberapa item belum ter-assign sepenuhnya: ' . implode(', ', $validationErrors), 
+            $this->dispatch(
+                'showNotification',
+                'Beberapa item belum ter-assign sepenuhnya: ' . implode(', ', $validationErrors),
                 'error'
             );
             return;
@@ -336,9 +365,10 @@ class PosLoadModal extends Component
             $this->splitAssignments = [];
             $this->itemAssignments = [];
             $this->customerNames = [];
-            
-            $this->dispatch('showNotification', 
-                'Split bill berhasil! ' . count($newSales) . ' transaksi baru telah dibuat.', 
+
+            $this->dispatch(
+                'showNotification',
+                'Split bill berhasil! ' . count($newSales) . ' transaksi baru telah dibuat.',
                 'success'
             );
 
@@ -347,8 +377,9 @@ class PosLoadModal extends Component
 
         } catch (\Exception $e) {
             logger('Split Bill Error: ' . $e->getMessage());
-            $this->dispatch('showNotification', 
-                'Gagal melakukan split bill: ' . $e->getMessage(), 
+            $this->dispatch(
+                'showNotification',
+                'Gagal melakukan split bill: ' . $e->getMessage(),
                 'error'
             );
         }
@@ -379,7 +410,7 @@ class PosLoadModal extends Component
     {
         $this->show = false;
     }
-    
+
     public function render()
     {
         $sales = collect();
@@ -397,9 +428,9 @@ class PosLoadModal extends Component
 
             // Apply Search
             if ($this->search) {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->where('invoice_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('customer_name', 'like', '%' . $this->search . '%');
+                        ->orWhere('customer_name', 'like', '%' . $this->search . '%');
                 });
             }
 
