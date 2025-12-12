@@ -83,9 +83,6 @@
             {{-- Tombol Cash Summary --}}
             <livewire:cash-summary-button />
 
-            {{-- Tombol Close Shift --}}
-            <livewire:close-shift-button />
-
             <div class="hidden sm:block pl-3 border-l border-slate-200">
                 <a href="{{ route('filament.admin.pages.dashboard') }}"
                     class="group bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 px-4 py-2 rounded-full text-sm font-bold cursor-pointer inline-flex items-center gap-2 transition-all active:scale-95">
@@ -117,21 +114,102 @@
     <livewire:cash-summary-modal />
 
     @livewireScripts
+    
     <script>
-        document.addEventListener('livewire:load', function () {
-            // Close Shift Button
-            const closeShiftBtn = document.getElementById('close-shift-btn');
-            if (closeShiftBtn) {
-                closeShiftBtn.addEventListener('click', function () {
-                    Livewire.emit('closeShiftFromLayout');
-                });
+        const PosSound = {
+            ctx: null,
+            
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            
+            play(type) {
+                // User gesture interaction is required to start audio context
+                this.init();
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+                
+                const now = this.ctx.currentTime;
+                
+                if (type === 'click') {
+                    this.playTone(800, 'sine', 0.1, 0.05);
+                } 
+                else if (type === 'add') {
+                     // Soft pop
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                    
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                    
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                }
+                else if (type === 'success') {
+                    // Success Chime (Major Arpeggio: C5 - E5 - G5)
+                    this.playTone(523.25, 'sine', 0.1, 0.1, 0);       // C5
+                    this.playTone(659.25, 'sine', 0.1, 0.1, 0.1);     // E5
+                    this.playTone(783.99, 'sine', 0.2, 0.1, 0.2);     // G5
+                }
+                else if (type === 'error') {
+                    // Error Buzz (Sawtooth drop)
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+                    
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                }
+            },
+            
+            playTone(freq, type, duration, volume, delay = 0) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                const now = this.ctx.currentTime + delay;
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                
+                gain.gain.setValueAtTime(volume, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+                
+                osc.start(now);
+                osc.stop(now + duration + 0.05);
             }
+        };
+        
+        window.PosSound = PosSound;
+    </script>
+    
+    <script>
+        document.addEventListener('livewire:init', function () {
+
 
             // Cash Summary Button
             const cashSummaryBtn = document.getElementById('cash-summary-btn');
             if (cashSummaryBtn) {
                 cashSummaryBtn.addEventListener('click', function () {
-                    Livewire.emit('openCashSummaryModal');
+                    Livewire.dispatch('openCashSummaryModal');
                 });
             }
         });

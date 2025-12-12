@@ -14,23 +14,8 @@
         }
     },
     playSound(type) {
-        try {
-            let soundFile = '/sounds/success.mp3'; // Default
-            if (type === 'error' || type === 'warning') {
-                soundFile = '/sounds/error.mp3';
-            }
-            // Fallback for different extensions if needed (e.g. .wav)
-            // Just trying .wav if .mp3 fails isn't easy in simple JS without check, 
-            // so we assume /sounds/success.wav or error.wav based on previous code.
-            // Previous code used .wav
-            if (type === 'success') soundFile = '/sounds/success.wav';
-            else soundFile = '/sounds/error.wav';
-
-            const audio = new Audio(soundFile);
-            audio.volume = 1;
-            audio.play().catch(e => console.warn('Audio playback failed:', e));
-        } catch (e) {
-            console.error('Sound error:', e);
+        if (typeof PosSound !== 'undefined') {
+            PosSound.play(type);
         }
     }
 }"

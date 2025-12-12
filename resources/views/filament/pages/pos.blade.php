@@ -2,6 +2,8 @@
 <div x-data="posLayout()"
          x-init="initLayout()"
          @resize.window.debounce.200ms="calculatePerPage()"
+         @keydown.window.prevent.f2="document.getElementById('product-search-input').focus()"
+         @keydown.window.prevent.f4="$wire.openPaymentModalMobile()"
          class="h-full flex flex-col lg:flex-row bg-gray-50 overflow-hidden min-h-0">
         
         <script>
@@ -101,7 +103,7 @@
                 {{-- Keyboard Shortcut Hint --}}
                 <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
                     <span class="text-xs text-gray-400 hidden sm:inline-block">
-                        <kbd class="px-1.5 py-0.5 bg-gray-100 rounded border border-gray-300 text-xs">/</kbd>
+                        <kbd class="px-1.5 py-0.5 bg-gray-100 rounded border border-gray-300 text-xs">F2</kbd>
                     </span>
                 </div>
             </div>
@@ -141,7 +143,7 @@
                     @php
                         $isAvailable = $this->checkProductAvailability($product);
                     @endphp
-                    <div @if($isAvailable) wire:click="quickAddProduct({{ $product->id }})" @endif
+                    <div @if($isAvailable) @click="animateFlyToCart($event); $wire.quickAddProduct({{ $product->id }})" @endif
                         class="group relative bg-white rounded-xl p-2 flex flex-col items-stretch transition-all duration-200 select-none touch-manipulation
                         {{ $isAvailable 
                             ? 'cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-slate-100 hover:border-violet-200' 
@@ -1371,6 +1373,79 @@
             .mobile-bottom-nav {
                 display: none !important; /* Force hide on desktop */
             }
+        }
+    </style>
+
+    <script>
+        function animateFlyToCart(event) {
+            // Get the card element
+            const card = event.currentTarget;
+            
+            // Find the image source
+            const imgEl = card.querySelector('img');
+            const src = imgEl ? imgEl.src : null;
+            
+            if (!src) return;
+
+            // Play Sound
+            if (typeof PosSound !== 'undefined') {
+                PosSound.play('add');
+            }
+            
+            // Create flying element
+            const flyer = document.createElement('img');
+            flyer.src = src;
+            flyer.classList.add('flying-img');
+            
+            // Initial position (relative to viewport)
+            const rect = card.getBoundingClientRect();
+            flyer.style.top = rect.top + 'px';
+            flyer.style.left = rect.left + 'px';
+            flyer.style.width = rect.width + 'px';
+            flyer.style.height = rect.height + 'px';
+            
+            document.body.appendChild(flyer);
+            
+            // Determine target
+            let target = null;
+            if (window.innerWidth < 1024) {
+                // Mobile: Fly to bottom nav cart button
+                target = document.querySelector('button[data-section="cart"]');
+            } else {
+                // Desktop: Fly to Cart Section (or header)
+                target = document.querySelector('#mobile-cart-section h1') || document.getElementById('mobile-cart-section');
+            }
+            
+            if (target) {
+                const targetRect = target.getBoundingClientRect();
+                
+                // Calculate center delta
+                // We want to scale down to 0 and move to center of target
+                const moveX = (targetRect.left + targetRect.width / 2) - (rect.left + rect.width / 2);
+                const moveY = (targetRect.top + targetRect.height / 2) - (rect.top + rect.height / 2);
+                
+                // Trigger animation
+                requestAnimationFrame(() => {
+                    flyer.style.transform = `translate(${moveX}px, ${moveY}px) scale(0.05)`;
+                    flyer.style.opacity = '0.7';
+                });
+            }
+            
+            // Cleanup
+            setTimeout(() => {
+                flyer.remove();
+            }, 600); // Match transition duration
+        }
+    </script>
+    
+    <style>
+        .flying-img {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            border-radius: 12px;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.6s ease;
         }
     </style>
 
