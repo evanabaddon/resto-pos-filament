@@ -764,9 +764,9 @@ class OrderPrintService
             $content .= $emptyLine; // Spacing per item
         }
 
-        $content .= $line;
+        // $content .= $line;
         // $content .= "{$footer}\n";
-        $content .= $line . "\n\n";
+        // $content .= $line . "\n\n";
 
         return $content;
     }
