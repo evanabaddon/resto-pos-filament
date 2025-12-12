@@ -66,13 +66,15 @@
     {{-- ========================= --}}
     <header
         class="flex-shrink-0 flex items-center justify-between bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-6 py-3 shadow-sm z-30 relative">
+        @inject('settings', 'GeneralSettings')
         <div class="flex items-center space-x-3">
             <div
                 class="h-9 w-9 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-200">
-                <span class="text-white font-black text-lg">P</span>
+                <span class="text-white font-black text-lg">{{ substr($settings->app_name ?? 'P', 0, 1) }}</span>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 leading-tight">POS System</h1>
+                <h1 class="text-lg font-bold text-slate-800 leading-tight">{{ $settings->app_name ?? 'POS System' }}
+                </h1>
                 <p class="text-[10px] text-slate-400 font-medium tracking-wide uppercase">Restaurant Edition</p>
             </div>
         </div>
