@@ -898,10 +898,11 @@
             </div>
         </div>
     @endif
-    {{-- Include Modal Components --}}
-    <livewire:pos-cash-in-modal />
-    <livewire:pos-load-modal />
-    <livewire:pos-payment-modal />
+    <div wire:ignore>
+        <livewire:pos-cash-in-modal wire:key="pos-cash-in-modal" />
+        <livewire:pos-load-modal wire:key="pos-load-modal" />
+        <livewire:pos-payment-modal wire:key="pos-payment-modal" />
+    </div>
     @livewire('pos-notification')
 
     {{-- SEACRH --}}

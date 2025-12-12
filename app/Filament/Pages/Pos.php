@@ -717,6 +717,9 @@ class Pos extends Page
                 $this->dispatch('show-notification', message: 'Transaksi baru #' . $sale->invoice_number . ' berhasil disimpan!', type: 'success');
             }
 
+            // 🔹 Refresh list di modal
+            $this->dispatch('refreshSalesList');
+
             $this->resetPos();
 
         } catch (\Exception $e) {
