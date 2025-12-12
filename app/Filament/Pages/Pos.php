@@ -21,6 +21,7 @@ use Filament\Support\Facades\FilamentAsset;
 use App\Services\UnitConversionService;
 use Livewire\WithPagination;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Livewire\PosLoadModal;
 
 class Pos extends Page
 {
@@ -151,6 +152,18 @@ class Pos extends Page
     public function handleSaleLoaded($saleId)
     {
         $this->loadSale($saleId);
+    }
+
+    /**
+     * Refresh Sales List trigger from Frontend after Offline Sync
+     */
+    public function refreshSalesList()
+    {
+        // Dispatch event to PosLoadModal to refresh its data
+        $this->dispatch('refreshSalesList')->to(PosLoadModal::class);
+        
+        // Notify user
+        $this->dispatch('show-notification', message: 'Data penjualan offline berhasil dimuat.', type: 'info');
     }
 
 

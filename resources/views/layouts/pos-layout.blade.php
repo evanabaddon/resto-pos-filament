@@ -9,6 +9,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#ffffff">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="manifest" href="/manifest.json">
     <title>{{ $title ?? 'POS System' }}</title>
     @vite('resources/css/app.css')
     @livewireStyles
@@ -201,6 +203,22 @@
         window.PosSound = PosSound;
     </script>
     
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered:', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed:', registrationError);
+                    });
+            });
+        }
+    </script>
+    
+    <script src="/js/offline-pos.js"></script>
+
     <script>
         document.addEventListener('livewire:init', function () {
 
