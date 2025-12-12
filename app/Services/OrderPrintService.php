@@ -20,10 +20,10 @@ class OrderPrintService
         $this->printerConfig = $this->loadPrinterConfig();
         $this->receiptPrintService = new ReceiptPrintService();
         $this->useWebhook = config('app.use_webhook_printing', false);
-        
+
         // Force environment detection di constructor
         $this->isHostingEnvironment = $this->detectHostingEnvironment();
-        
+
         Log::info("🖨️ OrderPrintService initialized", [
             'environment' => $this->isHostingEnvironment ? 'hosting' : 'local',
             'use_webhook' => $this->useWebhook,
@@ -42,27 +42,27 @@ class OrderPrintService
             Log::info("🔍 Environment detected: PRODUCTION - forcing webhook mode");
             return true;
         }
-        
+
         // Method 2: Check host/domain
         $host = request()->getHost() ?? parse_url(config('app.url'), PHP_URL_HOST) ?? '';
-        
+
         // Jika host mengandung domain (bukan localhost), consider sebagai hosting
-        $isLocal = in_array($host, ['localhost', '127.0.0.1', '::1', '0.0.0.0']) 
-                || str_contains($host, '.local')
-                || str_contains($host, '.test')
-                || str_contains($host, '192.168.')
-                || $host === 'localhost'
-                || empty($host);
-        
+        $isLocal = in_array($host, ['localhost', '127.0.0.1', '::1', '0.0.0.0'])
+            || str_contains($host, '.local')
+            || str_contains($host, '.test')
+            || str_contains($host, '192.168.')
+            || $host === 'localhost'
+            || empty($host);
+
         $isHosting = !$isLocal;
-        
+
         Log::info("🔍 Environment detection", [
             'host' => $host,
             'app_env' => config('app.env'),
             'is_local' => $isLocal,
             'is_hosting' => $isHosting
         ]);
-        
+
         return $isHosting;
     }
 
@@ -125,9 +125,9 @@ class OrderPrintService
             foreach ($sale->items as $item) {
                 $productType = $item->product->type ?? 'general';
                 $productName = $item->product->name ?? 'Unknown Script';
-                
+
                 Log::info("🔍 Classifying item: {$productName}", [
-                    'type' => $productType, 
+                    'type' => $productType,
                     'product_id' => $item->product_id
                 ]);
 
@@ -194,7 +194,7 @@ class OrderPrintService
                 'printer' => $printerName,
                 'environment' => 'hosting'
             ]);
-            
+
             return [
                 'success' => false,
                 'error' => $errorMsg,
@@ -211,14 +211,14 @@ class OrderPrintService
             ]);
 
             $this->receiptPrintService->printRawContent($content, $printerName);
-            
+
             return [
                 'success' => true,
                 'type' => 'direct',
                 'printer' => $printerName,
                 'division' => $division
             ];
-            
+
         } catch (\Exception $e) {
             Log::error("❌ {$division} direct print failed: " . $e->getMessage());
             return [
@@ -241,10 +241,10 @@ class OrderPrintService
             if (!empty($items)) {
                 // 🔥 MERGE ITEMS (prevent duplicates lines)
                 $items = $this->mergeItemsByProduct($items);
-                
+
                 $content = $this->generateOrderContent($sale, $items, $division);
                 $printerName = $this->getPrinterNameForDivision($division);
-                
+
                 $printResults[$division] = $this->sendToPrinter($content, $printerName, $division);
             }
         }
@@ -266,7 +266,7 @@ class OrderPrintService
 
                 $content = $this->generateOrderContent($sale, $items, $division);
                 $printerName = $this->getPrinterNameForDivision($division);
-                
+
                 $printResults[$division] = $this->sendWebhookPrint($content, $printerName, $division, $sale->id);
             }
         }
@@ -283,13 +283,13 @@ class OrderPrintService
             // GUNAKAN config yang benar
             $webhookUrl = config('app.webhook_print_url');
             $secretKey = config('app.print_secret');
-            
+
             Log::info("🔧 Webhook config check", [
                 'webhook_url' => $webhookUrl,
                 'secret_set' => !empty($secretKey),
                 'from_config' => 'app.webhook_print_url'
             ]);
-            
+
             if (!$webhookUrl) {
                 throw new \Exception('Webhook URL not configured in app.webhook_print_url');
             }
@@ -322,7 +322,7 @@ class OrderPrintService
 
             if ($response->successful()) {
                 $result = $response->json();
-                
+
                 if ($result['success'] ?? false) {
                     Log::info("✅ Webhook print queued: {$result['job_id']}");
                     return [
@@ -339,23 +339,23 @@ class OrderPrintService
             } else {
                 throw new \Exception("HTTP {$response->status()}: " . substr($response->body(), 0, 200));
             }
-            
+
         } catch (\Exception $e) {
             Log::error("❌ Webhook print failed: " . $e->getMessage());
-            
+
             // 🔥 FALLBACK LOGIC: If specific printer fails, try MAIN printer
             // Only if we haven't already tried printing to main printer
             $mainPrinter = $this->printerConfig['usb_printer_name'] ?? 'BAR';
-            
+
             if ($printer !== $mainPrinter) {
-                 Log::info("🔄 Fallback: Trying to print to Main Printer ({$mainPrinter})");
-                 try {
-                     // Recursive call but to main printer
-                     // We use a different division name to indicate fallback
-                     return $this->sendWebhookPrint($content, $mainPrinter, $division . ' (Fallback)');
-                 } catch (\Exception $ex) {
-                     Log::error("❌ Fallback print also failed: " . $ex->getMessage());
-                 }
+                Log::info("🔄 Fallback: Trying to print to Main Printer ({$mainPrinter})");
+                try {
+                    // Recursive call but to main printer
+                    // We use a different division name to indicate fallback
+                    return $this->sendWebhookPrint($content, $mainPrinter, $division . ' (Fallback)');
+                } catch (\Exception $ex) {
+                    Log::error("❌ Fallback print also failed: " . $ex->getMessage());
+                }
             }
 
             if ($this->isHostingEnvironment) {
@@ -381,12 +381,12 @@ class OrderPrintService
             // GUNAKAN config yang benar
             $webhookUrl = config('app.webhook_print_url');
             $secretKey = config('app.print_secret');
-            
+
             Log::info("🔧 Test Webhook Config", [
                 'webhook_url' => $webhookUrl,
                 'secret_set' => !empty($secretKey)
             ]);
-            
+
             if (!$webhookUrl) {
                 return [
                     'success' => false,
@@ -428,7 +428,7 @@ class OrderPrintService
                     'body' => substr($response->body(), 0, 200)
                 ];
             }
-            
+
         } catch (\Exception $e) {
             return [
                 'success' => false,
@@ -455,14 +455,14 @@ class OrderPrintService
             $connector = new \Mike42\Escpos\PrintConnectors\WindowsPrintConnector($printerName);
             $printer = new \Mike42\Escpos\Printer($connector);
             $printer->initialize();
-            
+
             // Print content
             $printer->text($content);
             $printer->cut();
-            
+
             Log::info("✅ Raw content printed successfully");
             return true;
-            
+
         } catch (\Exception $e) {
             Log::error("❌ Raw content print failed: " . $e->getMessage());
             throw $e;
@@ -484,13 +484,13 @@ class OrderPrintService
     {
         $mode = $this->printerConfig['usb_printer_mode'];
         $mainPrinter = $this->printerConfig['usb_printer_name'];
-        
+
         if ($mode === 'single') {
             return $mainPrinter; // Semua ke printer utama
         }
-        
+
         // Multiple printer mode
-        return match($division) {
+        return match ($division) {
             'kitchen' => $this->printerConfig['usb_kitchen_printer_name'],
             'bar' => $this->printerConfig['usb_bar_printer_name'],
             'general' => $this->printerConfig['usb_general_printer_name'],
@@ -519,13 +519,14 @@ class OrderPrintService
 
             foreach ($newItems as $itemData) {
                 $product = Product::find($itemData['product_id']);
-                if (!$product) continue;
+                if (!$product)
+                    continue;
 
-                $item = (object)[
+                $item = (object) [
                     'product' => $product,
                     'quantity' => $itemData['quantity'],
                     'product_id' => $itemData['product_id'],
-                    'notes' => $itemData['notes'] ?? '' 
+                    'notes' => $itemData['notes'] ?? ''
                 ];
 
                 switch ($product->type) {
@@ -588,7 +589,7 @@ class OrderPrintService
             if (!empty($items)) {
                 $content = $this->generateNewItemsContent($sale, $items, strtoupper($division));
                 $printerName = $this->getPrinterNameForDivision($division);
-                
+
                 $printResults[$division] = $this->sendWebhookPrint($content, $printerName, $division . ' Update', $sale->id);
             }
         }
@@ -608,7 +609,7 @@ class OrderPrintService
             if (!empty($items)) {
                 $content = $this->generateNewItemsContent($sale, $items, strtoupper($division));
                 $printerName = $this->getPrinterNameForDivision($division);
-                
+
                 $printResults[$division] = $this->sendToPrinter($content, $printerName, $division . ' Update');
             }
         }
@@ -647,7 +648,7 @@ class OrderPrintService
     {
         try {
             $sale->load('items');
-            
+
             $itemsWithNotes = [];
             foreach ($sale->items as $item) {
                 if (!empty($item->notes)) {
@@ -658,7 +659,7 @@ class OrderPrintService
                     ];
                 }
             }
-            
+
             return [
                 'sale_id' => $sale->id,
                 'invoice' => $sale->invoice_number,
@@ -666,7 +667,7 @@ class OrderPrintService
                 'items_with_notes' => $itemsWithNotes,
                 'items_with_notes_count' => count($itemsWithNotes)
             ];
-            
+
         } catch (\Exception $e) {
             return [
                 'error' => $e->getMessage()
@@ -683,7 +684,7 @@ class OrderPrintService
     {
         $divisionTitles = [
             'kitchen' => 'ORDER DAPUR',
-            'bar' => 'ORDER BAR', 
+            'bar' => 'ORDER BAR',
             'general' => 'ORDER UMUM'
         ];
 
@@ -714,24 +715,24 @@ class OrderPrintService
                 break;
             }
         }
-        
+
         if ($hasAnyNotes) {
             $content .= str_repeat('-', 32) . "\n";
             $content .= "📝 CATATAN KHUSUS\n";
         }
-        
+
         $content .= $line;
         $content .= "ITEMS:\n";
         $content .= $emptyLine;
-        
+
         foreach ($items as $item) {
             $productName = $item->product->name ?? 'Unknown';
             $qty = "x{$item->quantity}";
-            
+
             // Layout: "Name (max 26) .... xQty"
             // Total 32. Qty takes ~3-4 chars. Dots/Space takes min 2. Name takes rest.
-            $maxNameLen = 32 - strlen($qty) - 2; 
-            
+            $maxNameLen = 32 - strlen($qty) - 2;
+
             if (strlen($productName) > $maxNameLen) {
                 // If name is too long, wrap it? Or truncate?
                 // Left aligned name, dots, right aligned qty
@@ -755,18 +756,18 @@ class OrderPrintService
                     }
                 }
             }
-            
+
             if (!empty($item->note)) {
                 $content .= "  Note: " . substr($item->note, 0, 24) . "\n";
             }
-            
+
             $content .= $emptyLine; // Spacing per item
         }
-        
+
         $content .= $line;
-        $content .= "{$footer}\n";
+        // $content .= "{$footer}\n";
         $content .= $line . "\n\n";
-        
+
         return $content;
     }
 
@@ -781,26 +782,26 @@ class OrderPrintService
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
         $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
-        $content .= "========================\n";
+        // $content .= "========================\n";
         $content .= "ITEMS:\n";
-        
+
         foreach ($items as $item) {
             $productName = $item->product->name ?? 'Unknown';
             if (strlen($productName) > 20) {
                 $productName = substr($productName, 0, 17) . '...';
             }
             $content .= "{$productName} x{$item->quantity}\n";
-            
+
             // Tambah notes jika ada
             if (!empty($item->note)) {
                 $content .= "  Note: {$item->note}\n";
             }
         }
-        
-        $content .= "========================\n";
-        $content .= "*** HARAP DIPROSES ***\n";
-        $content .= "========================\n\n\n";
-        
+
+        // $content .= "========================\n";
+        // $content .= "*** HARAP DIPROSES ***\n";
+        // $content .= "========================\n\n\n";
+
         return $content;
     }
 
@@ -817,23 +818,23 @@ class OrderPrintService
         $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
         $content .= "========================\n";
         $content .= "MINUMAN:\n";
-        
+
         foreach ($items as $item) {
             $productName = $item->product->name ?? 'Unknown';
             if (strlen($productName) > 20) {
                 $productName = substr($productName, 0, 17) . '...';
             }
             $content .= "{$productName} x{$item->quantity}\n";
-            
+
             if (!empty($item->note)) {
                 $content .= "  Note: {$item->note}\n";
             }
         }
-        
-        $content .= "========================\n";
-        $content .= "*** READY TO SERVE ***\n";
-        $content .= "========================\n\n\n";
-        
+
+        // $content .= "========================\n";
+        // $content .= "*** READY TO SERVE ***\n";
+        // $content .= "========================\n\n\n";
+
         return $content;
     }
 
@@ -848,25 +849,25 @@ class OrderPrintService
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
         $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
-        $content .= "========================\n";
+        // $content .= "========================\n";
         $content .= "ITEMS:\n";
-        
+
         foreach ($items as $item) {
             $productName = $item->product->name ?? 'Unknown';
             if (strlen($productName) > 20) {
                 $productName = substr($productName, 0, 17) . '...';
             }
             $content .= "{$productName} x{$item->quantity}\n";
-            
+
             if (!empty($item->note)) {
                 $content .= "  Note: {$item->note}\n";
             }
         }
-        
+
         $content .= "========================\n";
         $content .= "** ITEM READY **\n";
         $content .= "========================\n\n\n";
-        
+
         return $content;
     }
 
@@ -878,7 +879,7 @@ class OrderPrintService
         // Format 32 Characters
         $line = str_repeat('=', 32) . "\n";
         $emptyLine = "\n";
-        
+
         $content = "TAMBAHAN {$division}\n";
         $content .= $line;
         $content .= "No: {$sale->invoice_number}\n";
@@ -893,22 +894,22 @@ class OrderPrintService
                 break;
             }
         }
-        
+
         if ($hasAnyNotes) {
             $content .= str_repeat('-', 32) . "\n";
             $content .= "📝 CATATAN KHUSUS\n";
         }
-        
+
         $content .= $line;
         $content .= "TAMBAHAN:\n";
         $content .= $emptyLine;
-        
+
         foreach ($newItems as $item) {
             $productName = $item->product->name ?? 'Unknown';
             $qty = "x{$item->quantity}";
 
             $maxNameLen = 30 - strlen($qty) - 2; // + prefix
-            
+
             if (strlen($productName) > $maxNameLen) {
                 $content .= str_pad("+ " . substr($productName, 0, $maxNameLen) . " ", 32 - strlen($qty), ".", STR_PAD_RIGHT) . $qty . "\n";
             } else {
@@ -926,11 +927,11 @@ class OrderPrintService
                 }
             }
         }
-        
+
         $content .= $line;
         $content .= "*** UPDATE ORDER ***\n";
         $content .= $line . "\n\n";
-        
+
         return $content;
     }
 
@@ -969,7 +970,7 @@ class OrderPrintService
     public function testEnvironment(): array
     {
         $host = request()->getHost() ?? parse_url(config('app.url'), PHP_URL_HOST);
-        
+
         return [
             'is_hosting' => $this->isHostingEnvironment,
             'app_env' => config('app.env'),
