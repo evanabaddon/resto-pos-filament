@@ -718,7 +718,7 @@ class OrderPrintService
 
         if ($hasAnyNotes) {
             $content .= str_repeat('-', 32) . "\n";
-            $content .= "📝 CATATAN KHUSUS\n";
+            $content .= "CATATAN KHUSUS\n";
         }
 
         $content .= $line;
@@ -752,7 +752,7 @@ class OrderPrintService
                 foreach ($notesLines as $noteLine) {
                     $trimmedNote = trim($noteLine);
                     if (!empty($trimmedNote)) {
-                        $content .= "  📝 " . substr($trimmedNote, 0, 28) . "\n";
+                        $content .= " : " . substr($trimmedNote, 0, 28) . "\n";
                     }
                 }
             }
