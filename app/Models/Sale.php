@@ -24,7 +24,7 @@ class Sale extends Model
         'status',
         'note',
         'split_from',
-        'split_number', 
+        'split_number',
         'split_into',
     ];
 

@@ -10,7 +10,7 @@ trait HasPrinting
 {
     // public $isPrinting = false; // Already defined in Pos.php or we can move it here if we want exclusive control
 
-    public function printReceipt($saleId)
+    public function printReceipt($saleId, $amountPaid = null)
     {
         // 🔹 CEK APAKAH SEDANG PRINT
         if ($this->isPrinting) {
@@ -36,6 +36,14 @@ trait HasPrinting
                 $this->dispatch('show-notification', message: 'Transaksi tidak ditemukan untuk dicetak.', type: 'error');
                 $this->isPrinting = false;
                 return;
+            }
+
+            // 🔹 INJECT TRANSIENT VALUES IF PROVIDED
+            if ($amountPaid !== null) {
+                $sale->amount_paid = (float) $amountPaid;
+                $sale->is_paid = true;
+                // We might also want to set payment method if passed, but amount is the critical missing piece
+                logger('Injection transient amount_paid:', ['amount' => $sale->amount_paid]);
             }
 
             logger('Sale found, proceeding to print:', ['invoice' => $sale->invoice_number]);
@@ -79,10 +87,10 @@ trait HasPrinting
     }
 
     // Handler untuk print receipt
-    public function handlePrintReceipt($saleId)
+    public function handlePrintReceipt($saleId, $amountPaid = null)
     {
-        logger('Handle Print Receipt - Sale ID:', ['saleId' => $saleId]);
-        $this->printReceipt($saleId);
+        logger('Handle Print Receipt - Sale ID:', ['saleId' => $saleId, 'amount' => $amountPaid]);
+        $this->printReceipt($saleId, $amountPaid);
     }
 
     // Handler untuk print completed
@@ -98,7 +106,7 @@ trait HasPrinting
         if ($this->saleId) {
             $this->printReceipt($this->saleId);
         } else {
-             $this->dispatch('show-notification', message: 'Tidak ada transaksi aktif untuk dicetak.', type: 'error');
+            $this->dispatch('show-notification', message: 'Tidak ada transaksi aktif untuk dicetak.', type: 'error');
         }
     }
 }

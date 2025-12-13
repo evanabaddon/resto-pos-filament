@@ -35,7 +35,7 @@ trait HasPayment
             app(OrderService::class)->markAsPaid($sale, $paymentMethodId, (float) $amountPaid);
 
             // Auto print receipt setelah pembayaran berhasil
-            $this->printReceipt($saleId);
+            $this->printReceipt($saleId, $amountPaid);
 
             $this->dispatch('show-notification', message: 'Pembayaran berhasil diproses.', type: 'success');
             $this->showPaymentModal = false;
