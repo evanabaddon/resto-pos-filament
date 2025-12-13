@@ -30,7 +30,8 @@ class ContractsTable
                     ->placeholder('Selamanya'),
                 ImageColumn::make('signature_path')
                     ->label('Tanda Tangan')
-                    ->disk('public'),
+                    ->checkFileExistence(false)
+                    ->getStateUsing(fn($record) => $record->signature_path ? asset('storage/' . $record->signature_path) : null),
                 TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime()

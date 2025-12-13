@@ -6,5 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class PayrollFormula extends Model
 {
-    protected $fillable = ['name', 'script'];
+    protected $fillable = ['name', 'script', 'settings'];
+
+    protected $casts = [
+        'settings' => 'array',
+    ];
 }
