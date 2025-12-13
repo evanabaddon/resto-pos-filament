@@ -56,6 +56,20 @@ class SalesTable
                             ->icon('heroicon-o-printer')
                             ->color('success')
                             ->action(function (Sale $record) {
+                                // 1. Cek Environment & Webhook
+                                $isLocal = in_array(request()->getHost(), ['localhost', '127.0.0.1', '::1']) || str_ends_with(request()->getHost(), '.test');
+                                if (!$isLocal) {
+                                    try {
+                                        (new \App\Services\ReceiptPrintService($record))->printReceipt();
+                                        \Filament\Notifications\Notification::make()
+                                            ->title('Print job sent to webhook')
+                                            ->success()
+                                            ->send();
+                                    } catch (\Exception $e) {
+                                        // Ignore or warn, but continue to browser print
+                                    }
+                                }
+
                                 return self::printReceiptDirect($record);
                             }),
                         Action::make('close')
@@ -71,6 +85,20 @@ class SalesTable
                     ->icon('heroicon-o-printer')
                     ->color('success')
                     ->action(function (Sale $record) {
+                        // 1. Cek Environment & Webhook
+                        $isLocal = in_array(request()->getHost(), ['localhost', '127.0.0.1', '::1']) || str_ends_with(request()->getHost(), '.test');
+                        if (!$isLocal) {
+                            try {
+                                (new \App\Services\ReceiptPrintService($record))->printReceipt();
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Print job sent to webhook')
+                                    ->success()
+                                    ->send();
+                            } catch (\Exception $e) {
+                                // Ignore or warn
+                            }
+                        }
+
                         return self::printReceiptDirect($record);
                     })
                     ->requiresConfirmation(),
