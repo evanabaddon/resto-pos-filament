@@ -22,6 +22,8 @@ class AttendanceResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
 
+    protected static ?string $navigationLabel = 'Absensi';
+
     protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
