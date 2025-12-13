@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Products\Tables;
 
 use Dom\Text;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Table;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
@@ -27,7 +29,7 @@ class ProductsTable
                     ->circular(true)
                     ->width(50)
                     ->disk('public'),
-                    
+
                 TextColumn::make('name')
                     ->label('Nama')
                     ->searchable(),
@@ -40,12 +42,12 @@ class ProductsTable
                     ->badge()
                     ->colors([
                         'info' => 'raw',
-                        'success' => 'retail', 
+                        'success' => 'retail',
                         'warning' => 'produced',
                         'danger' => 'bar',
                     ])
                     ->formatStateUsing(function ($state) {
-                        return match($state) {
+                        return match ($state) {
                             'raw' => 'Bahan Baku',
                             'retail' => 'Produk Jadi',
                             'produced' => 'Produk Kitchen',
@@ -60,7 +62,7 @@ class ProductsTable
                         $stock = number_format($record->stock ?? 0, 2);
 
                         $unit = $record->unit;
-                        if (! $unit) {
+                        if (!$unit) {
                             return "{$stock}";
                         }
 
@@ -81,7 +83,7 @@ class ProductsTable
                         return "{$stock} {$unitSymbol}";
                     })
                     ->html()
-                    ->sortable(query: fn ($query, $direction) => $query->orderBy('stock', $direction)),
+                    ->sortable(query: fn($query, $direction) => $query->orderBy('stock', $direction)),
 
 
                 TextColumn::make('base_price')
@@ -98,29 +100,30 @@ class ProductsTable
                     ->getStateUsing(function ($record) {
                         $basePrice = $record->base_price ?? 0;
                         $sellPrice = $record->sell_price ?? 0;
-                        
+
                         return $sellPrice - $basePrice;
                     })
                     ->color(function ($record) {
                         $basePrice = $record->base_price ?? 0;
                         $sellPrice = $record->sell_price ?? 0;
                         $profit = $sellPrice - $basePrice;
-                        
+
                         return $profit >= 0 ? 'success' : 'danger';
                     })
                     ->description(function ($record) {
                         $basePrice = $record->base_price ?? 0;
                         $sellPrice = $record->sell_price ?? 0;
-                        
+
                         if ($basePrice > 0) {
                             $profit = $sellPrice - $basePrice;
                             $margin = ($profit / $basePrice) * 100;
                             return number_format($margin, 1) . '%';
                         }
-                        
+
                         return '0%';
                     })
-                    ->sortable(query: fn ($query, $direction) => 
+                    ->sortable(
+                        query: fn($query, $direction) =>
                         $query->orderByRaw('(sell_price - base_price) ' . $direction)
                     ),
             ])
@@ -140,21 +143,27 @@ class ProductsTable
                     ->trueLabel('Stok < 10')
                     ->falseLabel('Stok ≥ 10')
                     ->queries(
-                        true: fn ($query) => $query->where('stock', '<', 10),
-                        false: fn ($query) => $query->where('stock', '>=', 10),
-                        blank: fn ($query) => $query
+                        true: fn($query) => $query->where('stock', '<', 10),
+                        false: fn($query) => $query->where('stock', '>=', 10),
+                        blank: fn($query) => $query
                     ),
             ])
             ->recordActions([
                 EditAction::make(),
+                ViewAction::make()
+                    ->label('Riwayat Stok')
+                    ->icon('heroicon-o-clock')
+                    ->color('info')
+                    ->modalSubmitAction(false)
+                    ->modalCancelAction(fn($action) => $action->label('Tutup')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
-                FilamentExportBulkAction::make('export')
-                    ->label('Export Selected')
-                    ->fileName('Daftar Produk')
-                    ->defaultFormat('xlsx'),
+                    FilamentExportBulkAction::make('export')
+                        ->label('Export Selected')
+                        ->fileName('Daftar Produk')
+                        ->defaultFormat('xlsx'),
                 ]),
             ]);
     }

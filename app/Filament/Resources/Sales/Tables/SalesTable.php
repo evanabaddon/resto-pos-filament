@@ -20,7 +20,7 @@ class SalesTable
             ->columns([
                 TextColumn::make('updated_at')
                     ->label('Tanggal')
-                    ->formatStateUsing(fn ($state) => $state->diffForHumans()),
+                    ->formatStateUsing(fn($state) => $state->diffForHumans()),
                 TextColumn::make('invoice_number')->label('Invoice Number')->searchable()->sortable(),
                 TextColumn::make('customer_name')->label('Customer Name')->searchable()->sortable(),
                 TextColumn::make('order_type')->label('Order Type')->searchable()->sortable(),
@@ -35,7 +35,7 @@ class SalesTable
             ])
             ->recordActions([
                 EditAction::make(),
-                
+
                 // Action untuk preview struk dengan modal
                 Action::make('previewReceipt')
                     ->label('Preview Struk')
@@ -45,7 +45,7 @@ class SalesTable
                     ->modalContent(function (Sale $record) {
                         // Load relationships
                         $sale = $record->load(['items.product', 'paymentMethod', 'user']);
-                        
+
                         return view('filament.components.receipt-preview-content', [
                             'sale' => $sale
                         ]);
@@ -73,7 +73,33 @@ class SalesTable
                     ->action(function (Sale $record) {
                         return self::printReceiptDirect($record);
                     })
-                    ->requiresConfirmation() 
+                    ->requiresConfirmation(),
+
+                // Action untuk cetak ulang order (Kitchen/Bar)
+                Action::make('reprintOrder')
+                    ->label('Cetak Ulang Order')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Cetak Ulang Order ke Dapur/Bar')
+                    ->modalDescription('Apakah Anda yakin ingin mencetak ulang pesanan ini? Print job akan dikirim kembali ke printer Dapur dan Bar.')
+                    ->action(function (Sale $record) {
+                        try {
+                            $service = new \App\Services\OrderPrintService();
+                            $service->printOrderByProductType($record);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Print job ulang berhasil dikirim')
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Gagal mencetak ulang')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    })
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -86,7 +112,7 @@ class SalesTable
     public static function printReceiptDirect(Sale $sale)
     {
         $receiptContent = self::generateReceiptContent($sale);
-        
+
         // Return JavaScript untuk print
         return <<<HTML
         <script>
@@ -149,16 +175,16 @@ class SalesTable
     protected static function generateReceiptContent(Sale $sale): string
     {
         $content = "";
-        
+
         // Header
         $content .= "<div class='text-center'>";
         $content .= "<h1 class='font-bold text-lg uppercase'>STRUK PEMBAYARAN</h1>";
         $content .= "<p class='text-sm'>" . config('app.name') . "</p>";
         $content .= "<p class='text-xs'>" . $sale->created_at->format('d/m/Y H:i') . "</p>";
         $content .= "</div>";
-        
+
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-        
+
         // Info Transaksi
         $content .= "<div class='space-y-1 text-sm'>";
         $content .= "<div class='flex justify-between'><span>No. Transaksi:</span><span class='font-semibold'>" . $sale->invoice_number . "</span></div>";
@@ -166,9 +192,9 @@ class SalesTable
         $content .= "<div class='flex justify-between'><span>Customer:</span><span>" . ($sale->customer_name ?? 'Umum') . "</span></div>";
         $content .= "<div class='flex justify-between'><span>Status:</span><span class='font-semibold'>" . strtoupper($sale->status) . "</span></div>";
         $content .= "</div>";
-        
+
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-        
+
         // Items
         $content .= "<div class='space-y-2'>";
         foreach ($sale->items as $item) {
@@ -181,9 +207,9 @@ class SalesTable
             $content .= "</div>";
         }
         $content .= "</div>";
-        
+
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-        
+
         // Summary
         $content .= "<div class='space-y-1 text-sm'>";
         $content .= "<div class='flex justify-between'><span>Subtotal:</span><span>Rp" . number_format($sale->subtotal, 0, ',', '.') . "</span></div>";
@@ -195,29 +221,29 @@ class SalesTable
         $content .= "<div class='flex justify-between font-bold'><span>TOTAL:</span><span>Rp" . number_format($sale->final_total, 0, ',', '.') . "</span></div>";
         $content .= "</div>";
         $content .= "</div>";
-        
+
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-        
+
         // Payment Info
         $content .= "<div class='space-y-1 text-sm'>";
         $content .= "<div class='flex justify-between'><span>Metode Bayar:</span><span class='font-semibold'>" . ($sale->paymentMethod->name ?? 'Cash') . "</span></div>";
         $content .= "<div class='flex justify-between'><span>Dibayar:</span><span>Rp" . number_format($sale->amount_paid, 0, ',', '.') . "</span></div>";
-        
+
         if (($sale->paymentMethod->code ?? 'cash') === 'cash') {
             $change = $sale->amount_paid - $sale->final_total;
             if ($change > 0) {
                 $content .= "<div class='flex justify-between'><span>Kembali:</span><span class='font-semibold'>Rp" . number_format($change, 0, ',', '.') . "</span></div>";
             }
         }
-        
+
         $paymentStatus = $sale->is_paid ? 'LUNAS' : 'BELUM LUNAS';
         $statusColor = $sale->is_paid ? 'text-green-600' : 'text-red-600';
         $content .= "<div class='flex justify-between {$statusColor}'><span>Status Bayar:</span><span class='font-semibold'>{$paymentStatus}</span></div>";
-        
+
         $content .= "</div>";
-        
+
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-        
+
         // Footer
         $content .= "<div class='text-center text-xs'>";
         $content .= "<p>Terima kasih atas kunjungan Anda</p>";
@@ -227,7 +253,7 @@ class SalesTable
             $content .= "<p class='font-semibold'>*** SELAMAT MENIKMATI ***</p>";
         }
         $content .= "</div>";
-        
+
         return $content;
     }
 }
