@@ -51,29 +51,25 @@ class SaleForm
                                 ->label('Tipe Pesanan')
                                 ->required()
                                 ->options([
-                                    'dine_in' => 'Dine In',
-                                    'take_away' => 'Take Away',
-                                    'delivery' => 'Delivery',
+                                    'Dine In' => 'Dine In',
+                                    'Take Away' => 'Take Away',
+                                    'Delivery' => 'Delivery',
                                 ])
                                 ->icons([
-                                    'dine_in' => 'heroicon-m-building-storefront',
-                                    'take_away' => 'heroicon-m-truck',
-                                    'delivery' => 'heroicon-m-home',
+                                    'Dine In' => 'heroicon-m-building-storefront',
+                                    'Take Away' => 'heroicon-m-truck',
+                                    'Delivery' => 'heroicon-m-home',
                                 ])
                                 ->inline()
-                                ->default('dine_in'),
+                                ->default('Dine In'),
                         ])->columns(2),
 
-                        // Select::make('cash_session_id')
-                        //     ->label('Sesi Kasir')
-                        //     ->relationship(
-                        //         'session',
-                        //         'id',
-                        //         fn(Builder $query) => $query->where('status', 'active')
-                        //     )
-                        //     ->searchable()
-                        //     ->preload()
-                        //     ->required(),
+                        Select::make('cash_session_id')
+                            ->label('Sesi Kasir')
+                            ->relationship('session', 'id')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
 
                         Textarea::make('note')
                             ->label('Catatan')
@@ -119,7 +115,6 @@ class SaleForm
                                     ->label('Harga Satuan')
                                     ->numeric()
                                     ->required()
-                                    ->minValue(0)
                                     ->prefix('Rp')
                                     ->live()
                                     ->afterStateUpdated(function ($state, $set, $get) {
@@ -234,7 +229,6 @@ class SaleForm
                         Select::make('payment_method_id')
                             ->label('Metode Pembayaran')
                             ->relationship('paymentMethod', 'name')
-                            ->required()
                             ->searchable()
                             ->preload()
                             ->live()
@@ -251,8 +245,8 @@ class SaleForm
                             ->label('Status')
                             ->required()
                             ->options([
-                                'pending' => 'Pending',
-                                'paid' => 'Dibayar',
+                                'draft' => 'Pending',
+                                'completed' => 'Dibayar',
                                 'cancelled' => 'Dibatalkan',
                                 'refunded' => 'Dikembalikan',
                             ])
@@ -293,7 +287,7 @@ class SaleForm
         $discount = floatval($get('discount') ?? 0);
         
         $itemTotal = ($quantity * $unitPrice) - $discount;
-        $set('item_total', max(0, $itemTotal));
+        $set('item_total', $itemTotal);
     }
 
     protected static function recalculateTotals($set, $get): void
@@ -308,7 +302,7 @@ class SaleForm
             $itemDiscount = floatval($item['discount'] ?? 0);
             
             $itemTotal = ($quantity * $unitPrice) - $itemDiscount;
-            $subtotal += max(0, $itemTotal);
+            $subtotal += $itemTotal;
         }
 
         $discountTotal = floatval($get('discount_total') ?? 0);

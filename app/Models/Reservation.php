@@ -9,6 +9,15 @@ use Carbon\Carbon;
 
 class Reservation extends Model implements Eventable
 {
+    public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ReservationItem::class);
+    }
+
+    public function deposits(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Sale::class)->where('status', '!=', 'cancelled'); // Assuming deposits are active sales
+    }
     protected $fillable = [
         'customer_name',
         'customer_phone', 
