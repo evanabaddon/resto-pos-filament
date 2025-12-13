@@ -452,9 +452,9 @@
                 <button wire:click="mobileSaveSale"
                     wire:loading.attr="disabled"
                     wire:loading.class="opacity-75 cursor-wait"
-                    class="cursor-pointer w-full bg-slate-100 text-slate-700 hover:bg-slate-200 py-3 rounded-xl font-bold text-sm transition touch-target flex justify-center items-center gap-2">
+                    class="cursor-pointer w-full bg-green-600 text-white hover:bg-green-700 py-3 rounded-xl font-bold text-sm transition touch-target flex justify-center items-center gap-2 shadow-lg shadow-green-200">
                     <svg wire:loading.remove wire:target="mobileSaveSale" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                    <svg wire:loading wire:target="mobileSaveSale" class="animate-spin h-5 w-5 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg wire:loading wire:target="mobileSaveSale" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
@@ -468,10 +468,10 @@
                 <div class="grid grid-cols-2 gap-3">
                     <button wire:click="saveSale"
                         wire:loading.attr="disabled"
-                        wire:loading.class="opacity-75 cursor-wait bg-slate-100"
-                        class="cursor-pointer w-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 py-3 rounded-xl font-bold text-sm shadow-sm transition flex items-center justify-center gap-2">
-                        <svg wire:loading.remove wire:target="saveSale" class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                        <svg wire:loading wire:target="saveSale" class="animate-spin h-5 w-5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        wire:loading.class="opacity-75 cursor-wait bg-green-700"
+                        class="cursor-pointer w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold text-sm shadow-sm transition flex items-center justify-center gap-2">
+                        <svg wire:loading.remove wire:target="saveSale" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                        <svg wire:loading wire:target="saveSale" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
@@ -481,7 +481,7 @@
                     <button wire:click="openPaymentModal({{ $saleId }})" 
                             wire:loading.attr="disabled"
                             wire:loading.class="opacity-75 cursor-wait"
-                            class="cursor-pointer w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-violet-200 transition flex items-center justify-center gap-2 hover:-translate-y-0.5"
+                            class="cursor-pointer w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-violet-200 transition flex items-center justify-center gap-2"
                             {{ !$saleId ? 'disabled' : '' }}>
                         <svg wire:loading.remove wire:target="openPaymentModal" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                         <svg wire:loading wire:target="openPaymentModal" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -521,7 +521,7 @@
                     </button>
                     
                     <button wire:click="cancelSale"
-                        class="cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1">
+                        class="cursor-pointer bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1 shadow-sm hover:shadow-md">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
