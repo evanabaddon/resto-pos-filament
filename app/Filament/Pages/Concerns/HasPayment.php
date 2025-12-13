@@ -23,10 +23,16 @@ trait HasPayment
     public function handlePaymentProcessed($saleId, $paymentMethodId, $amountPaid)
     {
         try {
+            Log::info('HasPayment: handlePaymentProcessed received', [
+                'sale_id' => $saleId,
+                'payment_method' => $paymentMethodId,
+                'amount_paid' => $amountPaid
+            ]);
+
             $sale = Sale::findOrFail($saleId);
 
             // Use OrderService to mark as paid
-            app(OrderService::class)->markAsPaid($sale, $paymentMethodId, $amountPaid);
+            app(OrderService::class)->markAsPaid($sale, $paymentMethodId, (float) $amountPaid);
 
             // Auto print receipt setelah pembayaran berhasil
             $this->printReceipt($saleId);
@@ -84,7 +90,7 @@ trait HasPayment
             // Jika tidak ada saleId, coba simpan dulu
             if (!empty($this->items)) {
                 $this->saveSale();
-                
+
                 // 🔹 Prevent continue if save failed (e.g. no customer name)
                 if (!$this->saleId) {
                     return;
@@ -337,7 +343,8 @@ trait HasPayment
     // Method untuk mendapatkan info target sale
     public function getTargetSaleInfoProperty()
     {
-        if (!$this->mergeTargetSale) return null;
+        if (!$this->mergeTargetSale)
+            return null;
         return Sale::find($this->mergeTargetSale);
     }
 
@@ -350,9 +357,9 @@ trait HasPayment
             ->orderBy('created_at', 'desc');
 
         if ($this->searchQuery) {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 $q->where('invoice_number', 'like', '%' . $this->searchQuery . '%')
-                  ->orWhere('customer_name', 'like', '%' . $this->searchQuery . '%');
+                    ->orWhere('customer_name', 'like', '%' . $this->searchQuery . '%');
             });
         }
 

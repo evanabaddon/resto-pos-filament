@@ -7,6 +7,7 @@ use Livewire\Component;
 use App\Models\PaymentMethod;
 use App\Services\ReceiptPrintService;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class PosPaymentModal extends Component
 {
@@ -145,15 +146,26 @@ class PosPaymentModal extends Component
         }
 
         // Process payment
+        $amountPaid = (float) $this->amount_paid;
+
+        Log::info('PosPaymentModal: Dispatching paymentProcessed', [
+            'sale_id' => $saleIdToPrint,
+            'payment_method' => $this->payment_method,
+            'amount_paid' => $amountPaid,
+            'final_total' => $this->finalTotal
+        ]);
+
         $this->dispatch(
             'paymentProcessed',
             saleId: $saleIdToPrint,
             paymentMethodId: $this->payment_method,
-            amountPaid: $this->amount_paid
+            amountPaid: $amountPaid
         );
 
         // Generate dan show receipt preview
-        $this->generateReceiptPreview();
+        // Pass current payment info explicitly because DB update might not have happened yet (handled by parent)
+        $selectedMethodName = $this->selectedPaymentMethod['name'] ?? 'Cash';
+        $this->generateReceiptPreview(null, $amountPaid, $selectedMethodName);
 
 
         $this->show = false;
@@ -165,7 +177,7 @@ class PosPaymentModal extends Component
         // $this->printReceiptDirect();
     }
 
-    protected function generateReceiptPreview(Sale $sale = null)
+    protected function generateReceiptPreview(Sale $sale = null, $overrideAmount = null, $overrideMethod = null)
     {
         if (!$sale) {
             $sale = Sale::with(['items.product', 'paymentMethod', 'user'])->find($this->saleId);
@@ -174,6 +186,13 @@ class PosPaymentModal extends Component
         if (!$sale) {
             return;
         }
+
+        // Use overrides if provided (for immediately showing receipt before DB update)
+        $amountPaid = $overrideAmount !== null ? $overrideAmount : $sale->amount_paid;
+        $methodName = $overrideMethod !== null ? $overrideMethod : ($sale->paymentMethod->name ?? 'Cash');
+        $isCash = $overrideMethod !== null
+            ? (stripos($methodName, 'cash') !== false)
+            : (($sale->paymentMethod->code ?? 'cash') === 'cash');
 
         $content = "<div class='text-center'>";
         $content .= "<h1 class='font-bold text-lg uppercase'>STRUK PEMBAYARAN</h1>";
@@ -223,10 +242,11 @@ class PosPaymentModal extends Component
 
         // Payment Info
         $content .= "<div class='space-y-1 text-sm'>";
-        $content .= "<div class='flex justify-between'><span>Metode:</span><span class='font-semibold'>" . ($sale->paymentMethod->name ?? 'Cash') . "</span></div>";
-        $content .= "<div class='flex justify-between'><span>Bayar:</span><span>Rp" . number_format($sale->amount_paid, 0, ',', '.') . "</span></div>";
-        if (($sale->paymentMethod->code ?? 'cash') === 'cash') {
-            $change = $sale->amount_paid - $sale->final_total;
+        $content .= "<div class='flex justify-between'><span>Metode:</span><span class='font-semibold'>" . $methodName . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>Bayar:</span><span>Rp" . number_format($amountPaid, 0, ',', '.') . "</span></div>";
+
+        if ($isCash) {
+            $change = $amountPaid - $sale->final_total;
             $content .= "<div class='flex justify-between'><span>Kembali:</span><span class='font-semibold'>Rp" . number_format($change, 0, ',', '.') . "</span></div>";
         }
         $content .= "</div>";
