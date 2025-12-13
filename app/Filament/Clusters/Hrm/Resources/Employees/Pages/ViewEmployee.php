@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Hrm\Resources\Employees\Pages;
 
 use App\Filament\Clusters\Hrm\Resources\Employees\EmployeeResource;
+use App\Filament\Clusters\Hrm\Resources\Employees\Widgets\EmployeeAttendanceStats;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -20,7 +21,7 @@ class ViewEmployee extends ViewRecord
     protected function getHeaderWidgets(): array
     {
         return [
-            \App\Filament\Widgets\EmployeeAttendanceStats::class,
+            EmployeeAttendanceStats::class,
         ];
     }
 }

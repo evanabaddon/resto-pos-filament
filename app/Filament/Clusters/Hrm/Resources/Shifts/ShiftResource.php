@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Filament\Clusters\Hrm\Resources;
+namespace App\Filament\Clusters\Hrm\Resources\Shifts;
 
 use App\Filament\Clusters\Hrm\HrmCluster;
 use App\Models\Shift;
 use BackedEnum;
+use UnitEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -18,9 +19,11 @@ class ShiftResource extends Resource
 {
     protected static ?string $model = Shift::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clock';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?string $cluster = HrmCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $navigationLabel = 'Jadwal Shift';
 

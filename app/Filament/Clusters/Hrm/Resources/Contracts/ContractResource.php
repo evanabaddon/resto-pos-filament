@@ -8,6 +8,7 @@ use App\Filament\Clusters\Hrm\Resources\Contracts\Schemas\ContractForm;
 use App\Filament\Clusters\Hrm\Resources\Contracts\Tables\ContractsTable;
 use App\Models\Contract;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -17,9 +18,11 @@ class ContractResource extends Resource
 {
     protected static ?string $model = Contract::class;
 
-    protected static ?string $cluster = HrmCluster::class;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentDuplicate;
+    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Kontrak Kerja';
 

@@ -5,6 +5,8 @@ namespace App\Filament\Clusters\Hrm\Resources\Contracts\Schemas;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ViewField;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -24,6 +26,17 @@ class ContractForm
                             ->relationship('employee', 'name')
                             ->required()
                             ->searchable(),
+                        Toggle::make('is_active')
+                            ->label('Kontrak Aktif')
+                            ->default(true)
+                            ->onIcon('heroicon-m-check')
+                            ->offIcon('heroicon-m-x-mark')
+                            ->columnSpanFull(),
+                        TextInput::make('nominal')
+                            ->label('Gaji Pokok')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->required(),
                         DatePicker::make('start_date')
                             ->label('Tanggal Mulai')
                             ->required(),

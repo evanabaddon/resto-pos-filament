@@ -40,6 +40,15 @@ class EmployeeForm
                             ])
                             ->required()
                             ->default('active'),
+                        Select::make('payroll_formula_id')
+                            ->label('Rumus Gaji')
+                            ->relationship('payrollFormula', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->createOptionForm([
+                                TextInput::make('name')->required(),
+                                Textarea::make('script')->required(),
+                            ]),
                         Select::make('shift_id')
                             ->label('Shift Kerja')
                             ->relationship('shift', 'name')

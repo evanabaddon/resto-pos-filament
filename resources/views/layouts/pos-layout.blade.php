@@ -68,7 +68,7 @@
     {{-- ========================= --}}
     <header
         class="flex-shrink-0 flex items-center justify-between bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-6 py-3 shadow-sm z-30 relative">
-        @inject('settings', 'GeneralSettings')
+        @inject('settings', 'App\Settings\GeneralSettings')
         <div class="flex items-center space-x-3">
             <div
                 class="h-9 w-9 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-200">
@@ -116,43 +116,43 @@
     <livewire:cash-summary-modal />
 
     @livewireScripts
-    
+
     <script>
         const PosSound = {
             ctx: null,
-            
+
             init() {
                 if (!this.ctx) {
                     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 }
             },
-            
+
             play(type) {
                 // User gesture interaction is required to start audio context
                 this.init();
                 if (this.ctx.state === 'suspended') {
                     this.ctx.resume();
                 }
-                
+
                 const now = this.ctx.currentTime;
-                
+
                 if (type === 'click') {
                     this.playTone(800, 'sine', 0.1, 0.05);
-                } 
+                }
                 else if (type === 'add') {
-                     // Soft pop
+                    // Soft pop
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
-                    
+
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(400, now);
                     osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
-                    
+
                     gain.gain.setValueAtTime(0.1, now);
                     gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
-                    
+
                     osc.start(now);
                     osc.stop(now + 0.15);
                 }
@@ -168,41 +168,41 @@
                     const gain = this.ctx.createGain();
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
-                    
+
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(150, now);
                     osc.frequency.linearRampToValueAtTime(100, now + 0.3);
-                    
+
                     gain.gain.setValueAtTime(0.2, now);
                     gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
-                    
+
                     osc.start(now);
                     osc.stop(now + 0.35);
                 }
             },
-            
+
             playTone(freq, type, duration, volume, delay = 0) {
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
-                
+
                 const now = this.ctx.currentTime + delay;
-                
+
                 osc.type = type;
                 osc.frequency.setValueAtTime(freq, now);
-                
+
                 gain.gain.setValueAtTime(volume, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-                
+
                 osc.start(now);
                 osc.stop(now + duration + 0.05);
             }
         };
-        
+
         window.PosSound = PosSound;
     </script>
-    
+
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -216,7 +216,7 @@
             });
         }
     </script>
-    
+
     <script src="/js/offline-pos.js"></script>
 
     <script>

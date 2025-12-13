@@ -14,6 +14,8 @@ class Contract extends Model
         'employee_id',
         'start_date',
         'end_date',
+        'nominal',
+        'is_active',
         'content',
         'signature_path',
     ];
@@ -21,6 +23,8 @@ class Contract extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'is_active' => 'boolean',
+        'nominal' => 'decimal:2',
     ];
 
     public function employee(): BelongsTo

@@ -8,6 +8,7 @@ use App\Filament\Clusters\Hrm\Resources\Employees\Schemas\EmployeeForm;
 use App\Filament\Clusters\Hrm\Resources\Employees\Tables\EmployeesTable;
 use App\Models\Employee;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
@@ -16,9 +17,11 @@ class EmployeeResource extends Resource
 {
     protected static ?string $model = Employee::class;
 
-    protected static ?string $cluster = HrmCluster::class;
-
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
+
+    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

@@ -2,7 +2,7 @@
 
 namespace App\Filament\Clusters\Hrm\Resources\Shifts\Pages;
 
-use App\Filament\Clusters\Hrm\Resources\ShiftResource;
+use App\Filament\Clusters\Hrm\Resources\Shifts\ShiftResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ManageRecords;
 

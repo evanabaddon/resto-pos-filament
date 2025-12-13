@@ -6,6 +6,7 @@ use App\Filament\Clusters\Hrm\HrmCluster;
 use App\Models\Attendance;
 use App\Models\Employee;
 use BackedEnum;
+use UnitEnum;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -16,7 +17,7 @@ class AttendanceMachine extends Page
 
     protected string $view = 'filament.clusters.hrm.pages.attendance-machine';
 
-    protected static ?string $cluster = HrmCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
 
     protected static ?string $navigationLabel = 'Mesin Absensi';
 
