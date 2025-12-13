@@ -143,7 +143,7 @@
                     @php
                         $isAvailable = $this->checkProductAvailability($product);
                     @endphp
-                    <div @if($isAvailable) @click="animateFlyToCart($event); $wire.quickAddProduct({{ $product->id }})" @endif
+                    <div wire:key="product-{{ $product->id }}" @if($isAvailable) @click="animateFlyToCart($event); $wire.quickAddProduct({{ $product->id }})" @endif
                         class="group relative bg-white rounded-xl p-2 flex flex-col items-stretch transition-all duration-200 select-none touch-manipulation
                         {{ $isAvailable 
                             ? 'cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-slate-100 hover:border-violet-200' 
@@ -295,7 +295,7 @@
         {{-- List Item --}}
         <div class="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 bg-slate-50/50">
             @forelse ($items as $index => $item)
-                <div class="group bg-white border border-slate-100/80 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden">
+                <div wire:key="cart-item-{{ $index }}" class="group bg-white border border-slate-100/80 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden">
                     {{-- Left Accent Strip --}}
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-violet-500 rounded-l-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
@@ -492,14 +492,14 @@
                         <span wire:loading wire:target="openPaymentModal">Memproses...</span>
                     </button>
                 </div>
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-2 gap-2">
                     {{-- TOMBOL MERGE BILL --}}
                     <button wire:click="openMergeModal"
                         class="cursor-pointer bg-fuchsia-600 hover:bg-fuchsia-700 text-white py-2 rounded-lg font-bold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                         </svg>
-                        Merge
+                        Gabung
                     </button>
                     
                     <button wire:click="openLoadModal"
@@ -507,7 +507,17 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
-                        List
+                        Daftar
+                    </button>
+
+                    <button wire:click="reprintOrder"
+                        wire:loading.attr="disabled"
+                        class="cursor-pointer bg-slate-700 hover:bg-slate-800 text-white py-2 rounded-lg font-bold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        {{ !$saleId ? 'disabled' : '' }}
+                        title="Cetak ulang order ke dapur/bar">
+                        <svg wire:loading.remove wire:target="reprintOrder" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <svg wire:loading wire:target="reprintOrder" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Cetak Order
                     </button>
                     
                     <button wire:click="cancelSale"
@@ -574,8 +584,6 @@
     @if($editingNotesIndex !== null && isset($items[$editingNotesIndex]))
     <!-- Modal container -->
     <div class="fixed inset-0 z-[9999] overflow-y-auto" 
-        x-data="{ open: true }"
-        x-show="open"
         style="position: fixed; z-index: 9999;">
         
         <!-- Overlay -->
@@ -900,7 +908,7 @@
             </div>
         </div>
     @endif
-    <div wire:ignore>
+    <div>
         <livewire:pos-cash-in-modal wire:key="pos-cash-in-modal" />
         <livewire:pos-load-modal wire:key="pos-load-modal" />
         <livewire:pos-payment-modal wire:key="pos-payment-modal" />

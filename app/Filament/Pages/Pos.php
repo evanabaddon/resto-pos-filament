@@ -89,6 +89,28 @@ class Pos extends Page
     public $searchQuery = '';
     public $perPage = 12; // Default per page
 
+    /**
+     * Cetak Ulang Order (Kitchen/Bar)
+     */
+    public function reprintOrder()
+    {
+        if (!$this->saleId) {
+            $this->dispatch('show-notification', message: 'Tidak ada transaksi aktif untuk dicetak ulang.', type: 'warning');
+            return;
+        }
+
+        try {
+            $sale = Sale::findOrFail($this->saleId);
+            $service = new OrderPrintService();
+            $service->printOrderByProductType($sale);
+
+            $this->dispatch('show-notification', message: 'Print job ulang berhasil dikirim ke Dapur/Bar.', type: 'success');
+        } catch (\Exception $e) {
+            \Log::error('Reprint failed: ' . $e->getMessage());
+            $this->dispatch('show-notification', message: 'Gagal mencetak ulang: ' . $e->getMessage(), type: 'error');
+        }
+    }
+
     public function mount()
     {
 
@@ -696,7 +718,7 @@ class Pos extends Page
 
         $this->recalculateTotals();
         $this->showLoadModal = false;
-        $this->dispatch('showNotification', 'Transaksi berhasil dimuat.', 'success');
+        $this->dispatch('show-notification', message: 'Transaksi berhasil dimuat.', type: 'success');
     }
 
 
@@ -780,12 +802,12 @@ class Pos extends Page
             $result = $orderPrintService->testWebhookConnection();
 
             if ($result['success']) {
-                $this->dispatch('showNotification', '✅ Webhook connection successful!', 'success');
+                $this->dispatch('show-notification', message: '✅ Webhook connection successful!', type: 'success');
             } else {
-                $this->dispatch('showNotification', '❌ Webhook connection failed: ' . $result['error'], 'error');
+                $this->dispatch('show-notification', message: '❌ Webhook connection failed: ' . $result['error'], type: 'error');
             }
         } catch (\Exception $e) {
-            $this->dispatch('showNotification', '❌ Webhook test error: ' . $e->getMessage(), 'error');
+            $this->dispatch('show-notification', message: '❌ Webhook test error: ' . $e->getMessage(), type: 'error');
         }
     }
 
