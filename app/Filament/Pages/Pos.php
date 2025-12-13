@@ -765,7 +765,7 @@ class Pos extends Page
         $content .= "<div class='flex justify-between'><span>Subtotal:</span><span>Rp" . number_format($sale->subtotal, 0, ',', '.') . "</span></div>";
         $content .= "<div class='flex justify-between'><span>Pajak (10%):</span><span>Rp" . number_format($sale->tax, 0, ',', '.') . "</span></div>";
         if ($sale->discount > 0) {
-            $content .= "<div class='flex justify-between text-green-600'><span>Diskon:</span><span>- Rp" . number_format($sale->discount, 0, ',', '.') . "</span></div>";
+            $content .= "<div class='flex justify-between text-green-600'><span>Potongan:</span><span>- Rp" . number_format($sale->discount, 0, ',', '.') . "</span></div>";
         }
         $content .= "<div class='border-t border-gray-300 pt-1'>";
         $content .= "<div class='flex justify-between font-bold'><span>TOTAL:</span><span>Rp" . number_format($sale->final_total, 0, ',', '.') . "</span></div>";

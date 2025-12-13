@@ -419,7 +419,7 @@
                 </div>
                 @if($discount > 0)
                     <div class="flex justify-between text-xs text-emerald-600 mobile-text-xs font-bold">
-                        <span>Diskon</span>
+                        <span>Potongan</span>
                         <span class="font-mono">- Rp{{ number_format($discount, 0, ',', '.') }}</span>
                     </div>
                 @endif

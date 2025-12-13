@@ -306,7 +306,7 @@ class ReceiptPrintService
         $content .= "Pajak (10%): " . $this->formatCurrency($sale->tax) . "\n";
         
         if ($sale->discount > 0) {
-            $content .= "Diskon: -" . $this->formatCurrency($sale->discount) . "\n";
+            $content .= "Potongan: -" . $this->formatCurrency($sale->discount) . "\n";
         }
         
         $content .= "TOTAL: " . $this->formatCurrency($sale->final_total) . "\n\n";
@@ -549,7 +549,7 @@ class ReceiptPrintService
         $printer->text("Pajak (10%): " . $this->formatCurrency($sale->tax) . "\n");
         
         if ($sale->discount > 0) {
-            $printer->text("Diskon: -" . $this->formatCurrency($sale->discount) . "\n");
+            $printer->text("Potongan: -" . $this->formatCurrency($sale->discount) . "\n");
         }
         
         $printer->setEmphasis(true);
