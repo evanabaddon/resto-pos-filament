@@ -230,6 +230,13 @@
                     Livewire.dispatch('openCashSummaryModal');
                 });
             }
+
+            // Listen for reload page event
+            Livewire.on('reload-page', () => {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            });
         });
     </script>
 </body>

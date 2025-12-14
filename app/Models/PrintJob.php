@@ -15,6 +15,7 @@ class PrintJob extends Model
     protected $fillable = [
         'job_id',
         'content',
+        'payload', // Add this
         'printer',
         'division',
         'sale_id',
@@ -27,5 +28,6 @@ class PrintJob extends Model
 
     protected $casts = [
         'completed_at' => 'datetime',
+        'payload' => 'array', // Add this
     ];
 }

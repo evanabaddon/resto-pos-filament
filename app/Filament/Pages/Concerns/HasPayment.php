@@ -23,13 +23,19 @@ trait HasPayment
     public function handlePaymentProcessed($saleId, $paymentMethodId, $amountPaid)
     {
         try {
+            Log::info('HasPayment: handlePaymentProcessed received', [
+                'sale_id' => $saleId,
+                'payment_method' => $paymentMethodId,
+                'amount_paid' => $amountPaid
+            ]);
+
             $sale = Sale::findOrFail($saleId);
 
             // Use OrderService to mark as paid
-            app(OrderService::class)->markAsPaid($sale, $paymentMethodId, $amountPaid);
+            app(OrderService::class)->markAsPaid($sale, $paymentMethodId, (float) $amountPaid);
 
             // Auto print receipt setelah pembayaran berhasil
-            $this->printReceipt($saleId);
+            $this->printReceipt($saleId, $amountPaid);
 
             $this->dispatch('show-notification', message: 'Pembayaran berhasil diproses.', type: 'success');
             $this->showPaymentModal = false;
@@ -84,7 +90,7 @@ trait HasPayment
             // Jika tidak ada saleId, coba simpan dulu
             if (!empty($this->items)) {
                 $this->saveSale();
-                
+
                 // 🔹 Prevent continue if save failed (e.g. no customer name)
                 if (!$this->saleId) {
                     return;
@@ -214,7 +220,8 @@ trait HasPayment
             // 🔹 Refresh list di modal
             $this->dispatch('refreshSalesList');
 
-            $this->resetPos();
+            //$this->resetPos();
+            $this->dispatch('reload-page');
 
         } catch (\Exception $e) {
             \Log::error('💥 Gagal menyimpan penjualan: ' . $e->getMessage());
@@ -337,7 +344,8 @@ trait HasPayment
     // Method untuk mendapatkan info target sale
     public function getTargetSaleInfoProperty()
     {
-        if (!$this->mergeTargetSale) return null;
+        if (!$this->mergeTargetSale)
+            return null;
         return Sale::find($this->mergeTargetSale);
     }
 
@@ -350,9 +358,9 @@ trait HasPayment
             ->orderBy('created_at', 'desc');
 
         if ($this->searchQuery) {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 $q->where('invoice_number', 'like', '%' . $this->searchQuery . '%')
-                  ->orWhere('customer_name', 'like', '%' . $this->searchQuery . '%');
+                    ->orWhere('customer_name', 'like', '%' . $this->searchQuery . '%');
             });
         }
 
@@ -369,15 +377,16 @@ trait HasPayment
         $this->availableSales = Sale::where('status', 'draft')
             ->where('cash_session_id', $sessionId)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->toArray();
 
         Log::info('Open Merge Modal', [
             'session_id' => $sessionId,
-            'found_sales' => $this->availableSales->count()
+            'found_sales' => count($this->availableSales)
         ]);
 
-        if ($this->availableSales->isEmpty()) {
-            $this->dispatch('showNotification', 'Tidak ada transaksi draft yang bisa digabung.', 'warning');
+        if (empty($this->availableSales)) {
+            $this->dispatch('show-notification', 'Tidak ada transaksi draft yang bisa digabung.', 'warning');
             return;
         }
 
@@ -419,12 +428,12 @@ trait HasPayment
         \Log::info('🔄 Memulai proses merge bill');
 
         if (empty($this->selectedSalesToMerge) || count($this->selectedSalesToMerge) < 2) {
-            $this->dispatch('showNotification', 'Pilih minimal 2 transaksi untuk digabung!', 'error');
+            $this->dispatch('show-notification', 'Pilih minimal 2 transaksi untuk digabung!', 'error');
             return;
         }
 
         if (!$this->mergeTargetSale) {
-            $this->dispatch('showNotification', 'Pilih transaksi tujuan!', 'error');
+            $this->dispatch('show-notification', 'Pilih transaksi tujuan!', 'error');
             return;
         }
 
@@ -434,7 +443,7 @@ trait HasPayment
 
             \Log::info('✅ Merge bill berhasil', ['target_sale_id' => $targetSale->id]);
 
-            $this->dispatch('showNotification', 'Transaksi berhasil digabungkan ke #' . $targetSale->invoice_number, 'success');
+            $this->dispatch('show-notification', 'Transaksi berhasil digabungkan ke #' . $targetSale->invoice_number, 'success');
 
             // Reset state
             $this->showMergeModal = false;
@@ -444,7 +453,7 @@ trait HasPayment
 
         } catch (\Exception $e) {
             \Log::error('💥 Gagal merge bill: ' . $e->getMessage());
-            $this->dispatch('showNotification', 'Gagal menggabungkan transaksi: ' . $e->getMessage(), 'error');
+            $this->dispatch('show-notification', 'Gagal menggabungkan transaksi: ' . $e->getMessage(), 'error');
         }
     }
 

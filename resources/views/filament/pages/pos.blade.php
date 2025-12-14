@@ -356,12 +356,47 @@
         {{-- Grid Produk - Modern Design --}}
         <div class="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-50 relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 content-start" id="product-grid-container">
             {{-- Compact Grid: Mobile 2, Tablet 3, Desktop 4/5, Large 6/7 --}}
-            {{-- ONLINE GRID --}}
-            <template x-if="isOnline">
-                <div class="contents">
-                    @forelse ($products as $product)
-                        <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col group h-full border border-slate-100 relative cursor-pointer active:scale-95 touch-target"
-                             @click="animateFlyToCart($event, '{{ $product->image_url }}'); $wire.quickAddProduct({{ $product->id }});">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 pb-24 lg:pb-0">
+                @forelse ($products as $index => $product)
+                    @php
+                        $isAvailable = $this->checkProductAvailability($product);
+                    @endphp
+                    <div wire:key="product-{{ $product->id }}" @if($isAvailable) @click="animateFlyToCart($event); $wire.quickAddProduct({{ $product->id }})" @endif
+                        class="group relative bg-white rounded-xl p-2 flex flex-col items-stretch transition-all duration-200 select-none touch-manipulation
+                        {{ $isAvailable 
+                            ? 'cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-slate-100 hover:border-violet-200' 
+                            : 'cursor-not-allowed opacity-60 grayscale bg-slate-50 border border-slate-100' }}">
+                        
+                        {{-- Stock Badge (Refined) --}}
+                        @if($product->type !== 'produced' && $product->type !== 'bar')
+                            <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
+                                    {{ $product->stock > 10 ? 'bg-white/90 text-emerald-700 border-emerald-100' : 
+                                        ($product->stock > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
+                                    {{ intval($product->stock) }}
+                                </span>
+                            </div>
+                        @endif
+
+                        {{-- OUT OF STOCK OVERLAY --}}
+                        @if(!$isAvailable)
+                            <div class="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-xl pointer-events-none">
+                                <span class="px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold rounded shadow-lg transform -rotate-6 tracking-wider">HABIS</span>
+                            </div>
+                        @endif
+                        
+                        {{-- Product Image (Compact 4:3) --}}
+                        <div class="aspect-[4/3] w-full mb-2 rounded-lg bg-slate-100 overflow-hidden relative shadow-inner">
+                            @if($product->image)
+                                <img src="{{ $product->image_url }}"
+                                    alt="{{ $product->name }}"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+                                    loading="lazy">
+                            @else
+                                <div class="w-full h-full flex items-center justify-center text-slate-300">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                </div>
+                            @endif
                             
                             {{-- Image/Icon --}}
                             <div class="aspect-[4/3] bg-slate-50 w-full relative overflow-hidden">
@@ -560,6 +595,16 @@
                                         Rp{{ number_format($item['subtotal'], 0, ',', '.') }}
                                     </p>
                                 </div>
+            @forelse ($items as $index => $item)
+                <div wire:key="cart-item-{{ $index }}" class="group bg-white border border-slate-100/80 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden">
+                    {{-- Left Accent Strip --}}
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-violet-500 rounded-l-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                    <div class="flex items-start justify-between mb-2 pl-2">
+                        <div class="flex-1 min-w-0 mr-2">
+                            <h3 class="font-bold text-slate-800 text-sm leading-snug break-words mobile-text-sm">{{ $item['name'] }}</h3>
+                            <div class="text-xs text-slate-400 mt-0.5 flex flex-wrap gap-2">
+                                <span>Rp{{ number_format($item['price'], 0, ',', '.') }}</span>
                             </div>
                             
                             {{-- NOTES SECTION --}}
@@ -723,6 +768,10 @@
                             <span class="font-mono">- Rp{{ number_format($discount, 0, ',', '.') }}</span>
                         </div>
                     </template>
+                    <div class="flex justify-between text-xs text-emerald-600 mobile-text-xs font-bold">
+                        <span>Potongan</span>
+                        <span class="font-mono">- Rp{{ number_format($discount, 0, ',', '.') }}</span>
+                    </div>
                 @endif
                 <div class="border-t border-dashed border-gray-200 pt-3 mt-2">
                     <div class="flex justify-between items-end">
@@ -757,9 +806,9 @@
                 <button wire:click="mobileSaveSale"
                     wire:loading.attr="disabled"
                     wire:loading.class="opacity-75 cursor-wait"
-                    class="cursor-pointer w-full bg-slate-100 text-slate-700 hover:bg-slate-200 py-3 rounded-xl font-bold text-sm transition touch-target flex justify-center items-center gap-2">
+                    class="cursor-pointer w-full bg-green-600 text-white hover:bg-green-700 py-3 rounded-xl font-bold text-sm transition touch-target flex justify-center items-center gap-2 shadow-lg shadow-green-200">
                     <svg wire:loading.remove wire:target="mobileSaveSale" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                    <svg wire:loading wire:target="mobileSaveSale" class="animate-spin h-5 w-5 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg wire:loading wire:target="mobileSaveSale" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
@@ -776,12 +825,22 @@
                         wire:loading.class="opacity-75 cursor-wait bg-slate-100"
                         class="cursor-pointer w-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 py-3 rounded-xl font-bold text-sm shadow-sm transition flex items-center justify-center gap-2">
                         <span x-text="!isOnline ? 'Simpan Offline' : 'Simpan'">Simpan</span>
+                        wire:loading.class="opacity-75 cursor-wait bg-green-700"
+                        class="cursor-pointer w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold text-sm shadow-sm transition flex items-center justify-center gap-2">
+                        <svg wire:loading.remove wire:target="saveSale" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                        <svg wire:loading wire:target="saveSale" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span wire:loading.remove wire:target="saveSale">Simpan</span>
+                        <span wire:loading wire:target="saveSale">Menyimpan...</span>
                     </button>
-                    <button wire:click="openPaymentModal({{ $saleId }})" 
+                    <button wire:click="openPaymentModal" 
                             wire:loading.attr="disabled"
                             wire:loading.class="opacity-75 cursor-wait"
                             :disabled="!isOnline"
                             class="cursor-pointer w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-violet-200 transition flex items-center justify-center gap-2 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="cursor-pointer w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-violet-200 transition flex items-center justify-center gap-2"
                             {{ !$saleId ? 'disabled' : '' }}>
                         <svg wire:loading.remove wire:target="openPaymentModal" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                         <svg wire:loading wire:target="openPaymentModal" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -792,7 +851,7 @@
                         <span wire:loading wire:target="openPaymentModal">Memproses...</span>
                     </button>
                 </div>
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-2 gap-2">
                     {{-- TOMBOL MERGE BILL --}}
                     <button wire:click="openMergeModal"
                         :disabled="!isOnline"
@@ -800,7 +859,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                         </svg>
-                        Merge
+                        Gabung
                     </button>
                     
                     <button @click="if(!isOnline) { openOfflineOrders(); return; } $wire.openLoadModal()"
@@ -809,11 +868,21 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
-                        List
+                        Daftar
+                    </button>
+
+                    <button wire:click="reprintOrder"
+                        wire:loading.attr="disabled"
+                        class="cursor-pointer bg-slate-700 hover:bg-slate-800 text-white py-2 rounded-lg font-bold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        {{ !$saleId ? 'disabled' : '' }}
+                        title="Cetak ulang order ke dapur/bar">
+                        <svg wire:loading.remove wire:target="reprintOrder" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <svg wire:loading wire:target="reprintOrder" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Cetak Order
                     </button>
                     
                     <button wire:click="cancelSale"
-                        class="cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1">
+                        class="cursor-pointer bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1 shadow-sm hover:shadow-md">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -876,8 +945,6 @@
     @if($editingNotesIndex !== null && isset($items[$editingNotesIndex]))
     <!-- Modal container -->
     <div class="fixed inset-0 z-[9999] overflow-y-auto" 
-        x-data="{ open: true }"
-        x-show="open"
         style="position: fixed; z-index: 9999;">
         
         <!-- Overlay -->
@@ -1202,7 +1269,7 @@
             </div>
         </div>
     @endif
-    <div wire:ignore>
+    <div>
         <livewire:pos-cash-in-modal wire:key="pos-cash-in-modal" />
         <livewire:pos-load-modal wire:key="pos-load-modal" />
         <livewire:pos-payment-modal wire:key="pos-payment-modal" />

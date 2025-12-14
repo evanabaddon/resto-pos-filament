@@ -20,6 +20,8 @@ class AppSettings extends SettingsPage
 
     protected static string|UnitEnum|null $navigationGroup = 'Settings';
 
+    protected static ?int $navigationSort = 99;
+
     protected static ?string $navigationLabel = 'General Settings';
 
     protected static string $settings = GeneralSettings::class;

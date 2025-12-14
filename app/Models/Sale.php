@@ -21,11 +21,15 @@ class Sale extends Model
         'payment_method',
         'payment_method_id', // new
         'cash_session_id',
+        'reservation_id',
         'status',
         'note',
         'split_from',
-        'split_number', 
+        'split_number',
         'split_into',
+        'amount_paid',
+        'is_paid',
+        'paid_at',
     ];
 
 
@@ -37,6 +41,11 @@ class Sale extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class);
     }
 
     public function session(): BelongsTo

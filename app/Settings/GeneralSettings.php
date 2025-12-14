@@ -23,3 +23,16 @@ class GeneralSettings extends Settings
         return 'app';
     }
 }
+
+    public static function defaults(): array
+    {
+        return [
+            'app_name' => config('app.name', 'Laravel'),
+            'app_website' => 'https://suralaya.id',
+            'app_instagram' => '',
+            'app_tiktok' => '',
+            'app_logo' => null,
+            'app_favicon' => null,
+        ];
+    }
+}

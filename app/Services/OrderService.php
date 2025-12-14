@@ -24,17 +24,17 @@ class OrderService
                 // CREATE
                 $sale = Sale::create([
                     'cash_session_id' => $data['cash_session_id'],
-                    'user_id'         => $data['user_id'],
-                    'invoice_number'  => $data['invoice_number'],
-                    'customer_name'   => $data['customer_name'] ?? 'Umum',
-                    'order_type'      => $data['order_type'],
-                    'subtotal'        => $data['subtotal'],
-                    'tax'             => $data['tax'],
-                    'discount'        => $data['discount'],
-                    'final_total'     => $data['final_total'],
-                    'total'           => $data['final_total'], // Assuming total == final_total logic from controller
-                    'payment_method'  => '',
-                    'status'          => 'draft',
+                    'user_id' => $data['user_id'],
+                    'invoice_number' => $data['invoice_number'],
+                    'customer_name' => $data['customer_name'] ?? 'Umum',
+                    'order_type' => $data['order_type'],
+                    'subtotal' => $data['subtotal'],
+                    'tax' => $data['tax'],
+                    'discount' => $data['discount'],
+                    'final_total' => $data['final_total'],
+                    'total' => $data['final_total'], // Assuming total == final_total logic from controller
+                    'payment_method' => '',
+                    'status' => 'draft',
                 ]);
                 Log::info("✅ New sale created", ['sale_id' => $sale->id, 'invoice' => $sale->invoice_number]);
             } else {
@@ -45,13 +45,13 @@ class OrderService
 
                 $sale->update([
                     'customer_name' => $data['customer_name'] ?? 'Umum',
-                    'order_type'    => $data['order_type'],
-                    'subtotal'      => $data['subtotal'],
-                    'tax'           => $data['tax'],
-                    'discount'      => $data['discount'],
-                    'final_total'   => $data['final_total'],
-                    'total'         => $data['final_total'],
-                    'updated_at'    => now(),
+                    'order_type' => $data['order_type'],
+                    'subtotal' => $data['subtotal'],
+                    'tax' => $data['tax'],
+                    'discount' => $data['discount'],
+                    'final_total' => $data['final_total'],
+                    'total' => $data['final_total'],
+                    'updated_at' => now(),
                 ]);
 
                 // Delete old items logic (as per original code) to replace with new ones
@@ -63,12 +63,12 @@ class OrderService
             // 2. Process Items & Stock
             foreach ($items as $item) {
                 SaleItem::create([
-                    'sale_id'    => $sale->id,
+                    'sale_id' => $sale->id,
                     'product_id' => $item['product_id'],
-                    'quantity'   => $item['quantity'],
+                    'quantity' => $item['quantity'],
                     'unit_price' => $item['price'],
-                    'subtotal'   => $item['subtotal'],
-                    'notes'      => $item['notes'] ?? '',
+                    'subtotal' => $item['subtotal'],
+                    'notes' => $item['notes'] ?? '',
                 ]);
 
                 $this->processStockDecrement($sale, $item);
@@ -85,15 +85,17 @@ class OrderService
     {
         $product = Product::find($item['product_id']);
 
-        if (!$product) return;
+        if (!$product)
+            return;
 
         if ($product->recipes()->exists()) {
             $recipes = $product->recipes()->with('ingredient.unit', 'unit')->get();
 
             foreach ($recipes as $recipe) {
-                if (! $recipe->ingredient) continue;
+                if (!$recipe->ingredient)
+                    continue;
 
-                $recipeRate     = max($recipe->unit->conversion_rate ?? 1, 0.0001);
+                $recipeRate = max($recipe->unit->conversion_rate ?? 1, 0.0001);
                 $ingredientRate = max($recipe->ingredient->unit->conversion_rate ?? 1, 0.0001);
 
                 $conversion = $ingredientRate / $recipeRate;
@@ -103,10 +105,10 @@ class OrderService
 
                 StockMovement::create([
                     'product_id' => $recipe->ingredient->id,
-                    'quantity'   => -$totalUsed,
-                    'type'       => 'decrease',
-                    'reason'     => 'POS Sale #' . $sale->invoice_number,
-                    'notes'      => 'Bahan untuk produk ' . $product->name . ' dijual (' . auth()->user()->name . ')',
+                    'quantity' => -$totalUsed,
+                    'type' => 'decrease',
+                    'reason' => 'POS Sale #' . $sale->invoice_number,
+                    'notes' => 'Bahan untuk produk ' . $product->name . ' dijual (' . auth()->user()->name . ')',
                 ]);
             }
         } else {
@@ -114,10 +116,10 @@ class OrderService
 
             StockMovement::create([
                 'product_id' => $product->id,
-                'quantity'   => -$item['quantity'],
-                'type'       => 'decrease',
-                'reason'     => 'POS Sale #' . $sale->invoice_number,
-                'notes'      => 'Penjualan langsung produk oleh ' . auth()->user()->name,
+                'quantity' => -$item['quantity'],
+                'type' => 'decrease',
+                'reason' => 'POS Sale #' . $sale->invoice_number,
+                'notes' => 'Penjualan langsung produk oleh ' . auth()->user()->name,
             ]);
         }
     }
@@ -128,7 +130,7 @@ class OrderService
     {
         return DB::transaction(function () use ($targetSaleId, $sourceSaleIds) {
             $targetSale = Sale::with('items')->findOrFail($targetSaleId);
-            
+
             $salesToMerge = Sale::with('items')
                 ->whereIn('id', $sourceSaleIds)
                 ->where('id', '!=', $targetSaleId)
@@ -146,17 +148,17 @@ class OrderService
             foreach ($salesToMerge as $sale) {
                 foreach ($sale->items as $item) {
                     $key = $item->product_id . '-' . $item->unit_price;
-                    
+
                     if (isset($mergedItems[$key])) {
                         $mergedItems[$key]['quantity'] += $item->quantity;
                         $mergedItems[$key]['subtotal'] += $item->subtotal;
                     } else {
                         $mergedItems[$key] = [
                             'product_id' => $item->product_id,
-                            'quantity'   => $item->quantity,
+                            'quantity' => $item->quantity,
                             'unit_price' => $item->unit_price,
-                            'subtotal'   => $item->subtotal,
-                            'notes'      => $item->notes ?? '', 
+                            'subtotal' => $item->subtotal,
+                            'notes' => $item->notes ?? '',
                         ];
                     }
                 }
@@ -171,12 +173,12 @@ class OrderService
                     $mergedItems[$key]['subtotal'] += $item->subtotal;
                     // Notes existing dipertahankan
                 } else {
-                     $mergedItems[$key] = [
+                    $mergedItems[$key] = [
                         'product_id' => $item->product_id,
-                        'quantity'   => $item->quantity,
+                        'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price,
-                        'subtotal'   => $item->subtotal,
-                        'notes'      => $item->notes ?? '', 
+                        'subtotal' => $item->subtotal,
+                        'notes' => $item->notes ?? '',
                     ];
                 }
             }
@@ -187,26 +189,26 @@ class OrderService
             // Insert merged items
             foreach ($mergedItems as $mergedItem) {
                 SaleItem::create([
-                    'sale_id'    => $targetSale->id,
+                    'sale_id' => $targetSale->id,
                     'product_id' => $mergedItem['product_id'],
-                    'quantity'   => $mergedItem['quantity'],
+                    'quantity' => $mergedItem['quantity'],
                     'unit_price' => $mergedItem['unit_price'],
-                    'subtotal'   => $mergedItem['subtotal'],
-                    'notes'      => $mergedItem['notes'],
+                    'subtotal' => $mergedItem['subtotal'],
+                    'notes' => $mergedItem['notes'],
                 ]);
             }
 
             // Hitung Ulang Total
             $newSubtotal = collect($mergedItems)->sum('subtotal');
-            $newTax      = $newSubtotal * 0.10; // 10% tax
-            $newFinal    = $newSubtotal + $newTax;
+            $newTax = $newSubtotal * 0.10; // 10% tax
+            $newFinal = $newSubtotal + $newTax;
 
             $targetSale->update([
-                'subtotal'    => $newSubtotal,
-                'tax'         => $newTax,
+                'subtotal' => $newSubtotal,
+                'tax' => $newTax,
                 'final_total' => $newFinal,
-                'total'       => $newFinal,
-                'updated_at'  => now(),
+                'total' => $newFinal,
+                'updated_at' => now(),
             ]);
 
             // Hapus source sales
@@ -234,32 +236,32 @@ class OrderService
                 // Create Header
                 $newSale = Sale::create([
                     'cash_session_id' => $originalSale->cash_session_id,
-                    'user_id'         => $originalSale->user_id,
-                    'invoice_number'  => $invoiceNumber,
-                    'customer_name'   => $splitData['customer_name'] ?? 'Customer ' . ($index + 1),
-                    'order_type'      => $originalSale->order_type,
-                    'subtotal'        => $splitData['subtotal'],
-                    'tax'             => $splitData['tax'],
-                    'discount'        => 0, // Assumption: No discount carry over for now
-                    'final_total'     => $splitData['total'],
-                    'total'           => $splitData['total'],
-                    'payment_method'  => '',
-                    'status'          => 'draft',
-                    'note'            => $originalSale->note,
-                    'split_from'      => $originalSale->id,
-                    'split_number'    => $index + 1,
+                    'user_id' => $originalSale->user_id,
+                    'invoice_number' => $invoiceNumber,
+                    'customer_name' => $splitData['customer_name'] ?? 'Customer ' . ($index + 1),
+                    'order_type' => $originalSale->order_type,
+                    'subtotal' => $splitData['subtotal'],
+                    'tax' => $splitData['tax'],
+                    'discount' => 0, // Assumption: No discount carry over for now
+                    'final_total' => $splitData['total'],
+                    'total' => $splitData['total'],
+                    'payment_method' => '',
+                    'status' => 'draft',
+                    'note' => $originalSale->note,
+                    'split_from' => $originalSale->id,
+                    'split_number' => $index + 1,
                 ]);
 
                 // Create Items
                 foreach ($splitData['items'] as $itemData) {
                     SaleItem::create([
-                        'sale_id'    => $newSale->id,
+                        'sale_id' => $newSale->id,
                         'product_id' => $itemData['product_id'],
-                        'quantity'   => $itemData['quantity'],
+                        'quantity' => $itemData['quantity'],
                         'unit_price' => $itemData['price'],
-                        'subtotal'   => $itemData['subtotal'],
+                        'subtotal' => $itemData['subtotal'],
                     ]);
-                    
+
                     // Note: Stock is ALREADY decremented for the original order.
                     // If we are splitting "Draft" orders, usually the stock is already held?
                     // Original code does NOT seem to touch stock in split (it just copies items).
@@ -275,10 +277,10 @@ class OrderService
 
             // Update original sale status
             $originalSale->update([
-                'status'     => 'split',
+                'status' => 'split',
                 'split_into' => count($newSales)
             ]);
-            
+
             // Note: If original sale held stock, we should ensure that stock is now conceptually "owned" by the new split sales.
             // Since we don't decrement stock here, we assume stock movement happened at initial SaveSale of original order.
             // Future refinement: if "split" status means "voided but linked", we are good.
@@ -301,11 +303,11 @@ class OrderService
             // Delete Sale (Items will be deleted via cascade or manual if needed, but here we do soft/hard delete)
             // Assuming Hard Delete for Drafts to keep it clean, or we can use SoftDeletes if model supports it.
             // Based on standard POS flow, voided draft usually disappears.
-            
+
             // Delete items first to be safe if no cascade
             $sale->items()->delete();
             $sale->delete();
-            
+
             Log::info("🗑️ Sale deleted and stock restored", ['sale_id' => $saleId, 'invoice' => $sale->invoice_number]);
         });
     }
@@ -317,15 +319,17 @@ class OrderService
     {
         foreach ($sale->items as $item) {
             $product = Product::find($item->product_id);
-            if (!$product) continue;
+            if (!$product)
+                continue;
 
             if ($product->recipes()->exists()) {
                 $recipes = $product->recipes()->with('ingredient.unit', 'unit')->get();
 
                 foreach ($recipes as $recipe) {
-                    if (! $recipe->ingredient) continue;
+                    if (!$recipe->ingredient)
+                        continue;
 
-                    $recipeRate     = max($recipe->unit->conversion_rate ?? 1, 0.0001);
+                    $recipeRate = max($recipe->unit->conversion_rate ?? 1, 0.0001);
                     $ingredientRate = max($recipe->ingredient->unit->conversion_rate ?? 1, 0.0001);
 
                     $conversion = $ingredientRate / $recipeRate;
@@ -335,10 +339,10 @@ class OrderService
 
                     StockMovement::create([
                         'product_id' => $recipe->ingredient->id,
-                        'quantity'   => $totalRestored,
-                        'type'       => 'increase',
-                        'reason'     => 'Void Sale #' . $sale->invoice_number,
-                        'notes'      => 'Pembatalan transaksi via POS',
+                        'quantity' => $totalRestored,
+                        'type' => 'increase',
+                        'reason' => 'Void Sale #' . $sale->invoice_number,
+                        'notes' => 'Pembatalan transaksi via POS',
                     ]);
                 }
             } else {
@@ -347,10 +351,10 @@ class OrderService
 
                 StockMovement::create([
                     'product_id' => $product->id,
-                    'quantity'   => $item->quantity,
-                    'type'       => 'increase',
-                    'reason'     => 'Void Sale #' . $sale->invoice_number,
-                    'notes'      => 'Pembatalan transaksi via POS',
+                    'quantity' => $item->quantity,
+                    'type' => 'increase',
+                    'reason' => 'Void Sale #' . $sale->invoice_number,
+                    'notes' => 'Pembatalan transaksi via POS',
                 ]);
             }
         }
@@ -362,26 +366,26 @@ class OrderService
     public function markAsPaid(Sale $sale, int $paymentMethodId, float $amountPaid): Sale
     {
         return DB::transaction(function () use ($sale, $paymentMethodId, $amountPaid) {
-            
+
             // Validation (Optional)
             if ($sale->status === 'completed' || $sale->status === 'paid') {
-                 // Or just return existing?
-                 // throw new \Exception("Transaksi sudah dibayar sebelumnya.");
+                // Or just return existing?
+                // throw new \Exception("Transaksi sudah dibayar sebelumnya.");
             }
 
             $updateData = [
-                'is_paid'           => true,
+                'is_paid' => true,
                 'payment_method_id' => $paymentMethodId,
-                'amount_paid'       => $amountPaid,
-                'paid_at'           => now(),
-                'status'            => 'completed',
+                'amount_paid' => $amountPaid,
+                'paid_at' => now(),
+                'status' => 'completed',
             ];
 
             $sale->update($updateData);
 
             Log::info("💰 Sale paid", [
-                'sale_id' => $sale->id, 
-                'invoice' => $sale->invoice_number, 
+                'sale_id' => $sale->id,
+                'invoice' => $sale->invoice_number,
                 'amount' => $amountPaid,
                 'method' => $paymentMethodId
             ]);

@@ -68,7 +68,7 @@
             </div>
             @if($sale->discount > 0)
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #059669;">
-                    <span>Diskon:</span>
+                    <span>Potongan:</span>
                     <span>- Rp{{ number_format($sale->discount, 0, ',', '.') }}</span>
                 </div>
             @endif

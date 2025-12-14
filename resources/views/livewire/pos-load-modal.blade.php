@@ -5,7 +5,7 @@
             <div class="absolute inset-0 backdrop-blur-md bg-opacity-75 transition-opacity" wire:click="closeModal"></div>
 
             {{-- Modal Box --}}
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-auto transform transition-all flex flex-col max-h-[90vh]">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-7xl mx-auto transform transition-all flex flex-col max-h-[90vh]">
                 {{-- Header --}}
                 <div class="px-6 py-4 border-b border-gray-200 flex-shrink-0">
                     <div class="flex items-center justify-between">
@@ -173,7 +173,7 @@
     {{-- Split Bill Modal - Item Based --}}
     @if ($showSplitBillModal && $selectedSaleForSplit)
         <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-md bg-opacity-75">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-auto max-h-[90vh] overflow-hidden">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-7xl mx-auto max-h-[90vh] overflow-hidden">
                 {{-- Header --}}
                 <div class="px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10">
                     <div class="flex items-center justify-between">

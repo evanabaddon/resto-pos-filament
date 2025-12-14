@@ -267,7 +267,23 @@ class OrderPrintService
                 $content = $this->generateOrderContent($sale, $items, $division);
                 $printerName = $this->getPrinterNameForDivision($division);
 
-                $printResults[$division] = $this->sendWebhookPrint($content, $printerName, $division, $sale->id);
+                // Serialize items for payload
+                $payload = [
+                    'sale_id' => $sale->id,
+                    'invoice' => $sale->invoice_number,
+                    'customer' => $sale->customer_name ?? 'Umum',
+                    'order_type' => $sale->order_type ?? 'Dine In',
+                    'table' => $sale->table_number ?? '-',
+                    'items' => array_map(function ($item) {
+                        return [
+                            'product_name' => $item->product->name ?? 'Unknown',
+                            'quantity' => $item->quantity,
+                            'notes' => $item->notes ?? '',
+                        ];
+                    }, $items)
+                ];
+
+                $printResults[$division] = $this->sendWebhookPrint($content, $printerName, $division, $sale->id, $payload);
             }
         }
 
@@ -277,7 +293,7 @@ class OrderPrintService
     /**
      * Send print job via webhook
      */
-    protected function sendWebhookPrint(string $content, string $printer, string $division, ?int $saleId = null): array
+    protected function sendWebhookPrint(string $content, string $printer, string $division, ?int $saleId = null, array $payload = []): array
     {
         try {
             // GUNAKAN config yang benar
@@ -314,6 +330,7 @@ class OrderPrintService
                 ])
                 ->post($webhookUrl, [
                     'content' => $content,
+                    'payload' => $payload, // Send payload
                     'printer' => $printer,
                     'division' => $division,
                     'sale_id' => $saleId,

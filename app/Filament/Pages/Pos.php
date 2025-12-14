@@ -90,6 +90,28 @@ class Pos extends Page
     public $searchQuery = '';
     public $perPage = 12; // Default per page
 
+    /**
+     * Cetak Ulang Order (Kitchen/Bar)
+     */
+    public function reprintOrder()
+    {
+        if (!$this->saleId) {
+            $this->dispatch('show-notification', message: 'Tidak ada transaksi aktif untuk dicetak ulang.', type: 'warning');
+            return;
+        }
+
+        try {
+            $sale = Sale::findOrFail($this->saleId);
+            $service = new OrderPrintService();
+            $service->printOrderByProductType($sale);
+
+            $this->dispatch('show-notification', message: 'Print job ulang berhasil dikirim ke Dapur/Bar.', type: 'success');
+        } catch (\Exception $e) {
+            \Log::error('Reprint failed: ' . $e->getMessage());
+            $this->dispatch('show-notification', message: 'Gagal mencetak ulang: ' . $e->getMessage(), type: 'error');
+        }
+    }
+
     public function mount()
     {
 
@@ -709,7 +731,7 @@ class Pos extends Page
 
         $this->recalculateTotals();
         $this->showLoadModal = false;
-        $this->dispatch('showNotification', 'Transaksi berhasil dimuat.', 'success');
+        $this->dispatch('show-notification', message: 'Transaksi berhasil dimuat.', type: 'success');
     }
 
 
@@ -756,7 +778,7 @@ class Pos extends Page
         $content .= "<div class='flex justify-between'><span>Subtotal:</span><span>Rp" . number_format($sale->subtotal, 0, ',', '.') . "</span></div>";
         $content .= "<div class='flex justify-between'><span>Pajak (10%):</span><span>Rp" . number_format($sale->tax, 0, ',', '.') . "</span></div>";
         if ($sale->discount > 0) {
-            $content .= "<div class='flex justify-between text-green-600'><span>Diskon:</span><span>- Rp" . number_format($sale->discount, 0, ',', '.') . "</span></div>";
+            $content .= "<div class='flex justify-between text-green-600'><span>Potongan:</span><span>- Rp" . number_format($sale->discount, 0, ',', '.') . "</span></div>";
         }
         $content .= "<div class='border-t border-gray-300 pt-1'>";
         $content .= "<div class='flex justify-between font-bold'><span>TOTAL:</span><span>Rp" . number_format($sale->final_total, 0, ',', '.') . "</span></div>";
@@ -793,12 +815,12 @@ class Pos extends Page
             $result = $orderPrintService->testWebhookConnection();
 
             if ($result['success']) {
-                $this->dispatch('showNotification', '✅ Webhook connection successful!', 'success');
+                $this->dispatch('show-notification', message: '✅ Webhook connection successful!', type: 'success');
             } else {
-                $this->dispatch('showNotification', '❌ Webhook connection failed: ' . $result['error'], 'error');
+                $this->dispatch('show-notification', message: '❌ Webhook connection failed: ' . $result['error'], type: 'error');
             }
         } catch (\Exception $e) {
-            $this->dispatch('showNotification', '❌ Webhook test error: ' . $e->getMessage(), 'error');
+            $this->dispatch('show-notification', message: '❌ Webhook test error: ' . $e->getMessage(), type: 'error');
         }
     }
 
@@ -811,7 +833,7 @@ class Pos extends Page
         config(['app.use_webhook_printing' => $newValue]);
 
         $status = $newValue ? 'ENABLED' : 'DISABLED';
-        $this->dispatch('showNotification', "🔄 Webhook printing {$status}", 'info');
+        $this->dispatch('show-notification', "🔄 Webhook printing {$status}", 'info');
     }
 
     protected function resetPos(): void
@@ -831,6 +853,12 @@ class Pos extends Page
         $this->discountApplied = false;
         $this->editingNotesIndex = null;
         $this->itemNotes = '';
+
+        // Reset Search & Pagination
+        $this->searchQuery = '';
+        $this->selectedCategory = 'Semua';
+        // $this->resetPage(); // Disabled to prevent Alpine/dom-morph error
+
         // jangan ubah $showCashInModal agar modal hanya dikontrol saat mount/cek session
     }
 
@@ -906,7 +934,7 @@ class Pos extends Page
         $itemName = $this->items[$index]['name'] ?? 'Item';
         $this->removeItem($index);
 
-        $this->dispatch('showNotification', $itemName . ' dihapus dari keranjang', 'info');
+        $this->dispatch('show-notification', $itemName . ' dihapus dari keranjang', 'info');
     }
 
     /**

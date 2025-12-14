@@ -7,6 +7,7 @@ use Livewire\Component;
 use App\Models\PaymentMethod;
 use App\Services\ReceiptPrintService;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class PosPaymentModal extends Component
 {
@@ -25,7 +26,7 @@ class PosPaymentModal extends Component
     public $showReceiptPreview = false;
     public $receiptContent = '';
     public $isPrinting = false;
-    public $currentSaleIdForPrint = null; 
+    public $currentSaleIdForPrint = null;
 
     protected $rules = [
         'amount_paid' => 'required|numeric|min:0',
@@ -33,7 +34,7 @@ class PosPaymentModal extends Component
     ];
 
     protected $listeners = [
-        'openPaymentModal', 
+        'openPaymentModal',
         'openReceiptModal',
         'printCompleted' => 'handlePrintCompleted',
         'printFailed' => 'handlePrintFailed',
@@ -57,7 +58,7 @@ class PosPaymentModal extends Component
     public function openPaymentModal($saleId)
     {
         $sale = Sale::with('items')->findOrFail($saleId);
-        
+
         $this->saleId = $sale->id;
         $this->currentSaleIdForPrint = $sale->id;
         $this->finalTotal = (float) ($sale->final_total ?? 0);
@@ -68,7 +69,7 @@ class PosPaymentModal extends Component
         $this->invoiceNumber = $sale->invoice_number;
         $this->amount_paid = $this->finalTotal;
         // $this->payment_method = 'cash';
-        
+
         // Load sale items untuk struk
         $this->saleItems = $sale->items->map(function ($item) {
             return [
@@ -84,7 +85,7 @@ class PosPaymentModal extends Component
 
     public function getChangeProperty()
     {
-        return max(0, (float)($this->amount_paid ?? 0) - (float)($this->finalTotal ?? 0));
+        return max(0, (float) ($this->amount_paid ?? 0) - (float) ($this->finalTotal ?? 0));
     }
 
     public function getSelectedPaymentMethodProperty()
@@ -134,7 +135,7 @@ class PosPaymentModal extends Component
         $this->currentSaleIdForPrint = $this->saleId;
 
         logger('Process Payment - Sale ID:', ['saleId' => $saleIdToPrint]);
-        
+
         if (!$saleIdToPrint) {
             Notification::make()
                 ->title('Error')
@@ -145,52 +146,71 @@ class PosPaymentModal extends Component
         }
 
         // Process payment
-        $this->dispatch('paymentProcessed', 
+        $amountPaid = (float) $this->amount_paid;
+
+        Log::info('PosPaymentModal: Dispatching paymentProcessed', [
+            'sale_id' => $saleIdToPrint,
+            'payment_method' => $this->payment_method,
+            'amount_paid' => $amountPaid,
+            'final_total' => $this->finalTotal
+        ]);
+
+        $this->dispatch(
+            'paymentProcessed',
             saleId: $saleIdToPrint,
             paymentMethodId: $this->payment_method,
-            amountPaid: $this->amount_paid
+            amountPaid: $amountPaid
         );
 
         // Generate dan show receipt preview
-        $this->generateReceiptPreview();
-        
+        // Pass current payment info explicitly because DB update might not have happened yet (handled by parent)
+        $selectedMethodName = $this->selectedPaymentMethod['name'] ?? 'Cash';
+        $this->generateReceiptPreview(null, $amountPaid, $selectedMethodName);
+
 
         $this->show = false;
         $this->showReceiptPreview = true;
 
         // Auto print setelah pembayaran berhasil
         // Auto print setelah pembayaran berhasil - kirim event ke Pos.php
-        $this->dispatch('printReceipt', saleId: $saleIdToPrint);
+        // $this->dispatch('printReceipt', saleId: $saleIdToPrint); // REMOVED to fix double print
         // $this->printReceiptDirect();
     }
 
-    protected function generateReceiptPreview(Sale $sale = null)
+    protected function generateReceiptPreview(Sale $sale = null, $overrideAmount = null, $overrideMethod = null)
     {
         if (!$sale) {
             $sale = Sale::with(['items.product', 'paymentMethod', 'user'])->find($this->saleId);
         }
-        
+
         if (!$sale) {
             return;
         }
+
+        // Use overrides if provided (for immediately showing receipt before DB update)
+        $amountPaid = $overrideAmount !== null ? $overrideAmount : $sale->amount_paid;
+        $methodName = $overrideMethod !== null ? $overrideMethod : ($sale->paymentMethod->name ?? 'Cash');
+        $isCash = $overrideMethod !== null
+            ? (stripos($methodName, 'cash') !== false)
+            : (($sale->paymentMethod->code ?? 'cash') === 'cash');
 
         $content = "<div class='text-center'>";
         $content .= "<h1 class='font-bold text-lg uppercase'>STRUK PEMBAYARAN</h1>";
         $content .= "<p class='text-sm'>" . config('app.name') . "</p>";
         $content .= "<p class='text-xs'>" . $sale->created_at->format('d/m/Y H:i') . "</p>";
         $content .= "</div>";
-        
+
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-        
+
         // Info Transaksi
         $content .= "<div class='space-y-1 text-sm'>";
         $content .= "<div class='flex justify-between'><span>No. Transaksi:</span><span class='font-semibold'>" . $sale->invoice_number . "</span></div>";
         $content .= "<div class='flex justify-between'><span>Kasir:</span><span>" . ($sale->user->name ?? 'System') . "</span></div>";
         $content .= "<div class='flex justify-between'><span>Customer:</span><span>" . ($sale->customer_name ?? 'Umum') . "</span></div>";
         $content .= "</div>";
-        
+
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-        
+
         // Items
         $content .= "<div class='space-y-2'>";
         foreach ($sale->items as $item) {
@@ -203,9 +223,9 @@ class PosPaymentModal extends Component
             $content .= "</div>";
         }
         $content .= "</div>";
-        
+
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-        
+
         // Summary
         $content .= "<div class='space-y-1 text-sm'>";
         $content .= "<div class='flex justify-between'><span>Subtotal:</span><span>Rp" . number_format($sale->subtotal, 0, ',', '.') . "</span></div>";
@@ -217,21 +237,22 @@ class PosPaymentModal extends Component
         $content .= "<div class='flex justify-between font-bold'><span>TOTAL:</span><span>Rp" . number_format($sale->final_total, 0, ',', '.') . "</span></div>";
         $content .= "</div>";
         $content .= "</div>";
-        
+
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-        
+
         // Payment Info
         $content .= "<div class='space-y-1 text-sm'>";
-        $content .= "<div class='flex justify-between'><span>Metode:</span><span class='font-semibold'>" . ($sale->paymentMethod->name ?? 'Cash') . "</span></div>";
-        $content .= "<div class='flex justify-between'><span>Bayar:</span><span>Rp" . number_format($sale->amount_paid, 0, ',', '.') . "</span></div>";
-        if (($sale->paymentMethod->code ?? 'cash') === 'cash') {
-            $change = $sale->amount_paid - $sale->final_total;
+        $content .= "<div class='flex justify-between'><span>Metode:</span><span class='font-semibold'>" . $methodName . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>Bayar:</span><span>Rp" . number_format($amountPaid, 0, ',', '.') . "</span></div>";
+
+        if ($isCash) {
+            $change = $amountPaid - $sale->final_total;
             $content .= "<div class='flex justify-between'><span>Kembali:</span><span class='font-semibold'>Rp" . number_format($change, 0, ',', '.') . "</span></div>";
         }
         $content .= "</div>";
-        
+
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-        
+
         // Footer
         $content .= "<div class='text-center text-xs'>";
         $content .= "<p>Terima kasih atas kunjungan Anda</p>";
@@ -246,13 +267,13 @@ class PosPaymentModal extends Component
     {
         // Gunakan currentSaleIdForPrint jika available, fallback ke saleId
         $saleIdToPrint = $this->currentSaleIdForPrint ?? $this->saleId;
-        
+
         logger('Manual Print Receipt - Sale ID:', [
             'currentSaleIdForPrint' => $this->currentSaleIdForPrint,
             'saleId' => $this->saleId,
             'saleIdToPrint' => $saleIdToPrint
         ]);
-        
+
         if (!$saleIdToPrint) {
             Notification::make()
                 ->title('Error')
@@ -263,7 +284,7 @@ class PosPaymentModal extends Component
         }
 
         $this->isPrinting = true;
-        
+
         // Kirim event print ke Pos.php dengan saleId yang valid
         $this->dispatch('printReceipt', saleId: $saleIdToPrint);
     }
@@ -273,7 +294,7 @@ class PosPaymentModal extends Component
     {
         logger('Print completed received in PosPaymentModal');
         $this->isPrinting = false;
-        
+
         Notification::make()
             ->title('Print Selesai')
             ->body('Struk berhasil dicetak.')
@@ -286,7 +307,7 @@ class PosPaymentModal extends Component
     {
         logger('Print failed received in PosPaymentModal');
         $this->isPrinting = false;
-        
+
         Notification::make()
             ->title('Print Gagal')
             ->body('Gagal mencetak struk. Periksa koneksi printer.')
@@ -299,21 +320,21 @@ class PosPaymentModal extends Component
     {
         try {
             $this->isPrinting = true;
-            
+
             $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->findOrFail($this->saleId);
-            
+
             $printService = new ReceiptPrintService($sale);
             $printService->printReceipt();
-            
+
             Notification::make()
                 ->title('Struk Berhasil Dicetak')
                 ->body('Struk telah dikirim ke printer thermal.')
                 ->success()
                 ->send();
-                
+
         } catch (\Exception $e) {
             logger('Print receipt failed: ' . $e->getMessage());
-            
+
             Notification::make()
                 ->title('Gagal Mencetak Struk')
                 ->body('Printer thermal tidak tersedia. Silakan cetak manual atau cek koneksi printer.')
@@ -327,14 +348,14 @@ class PosPaymentModal extends Component
     public function openReceiptModal($saleId)
     {
         $sale = Sale::with(['items.product', 'paymentMethod', 'user'])->findOrFail($saleId);
-        
+
         // Set saleId untuk print ulang
         $this->currentSaleIdForPrint = $saleId;
         $this->saleId = $saleId;
 
         // Generate receipt content
         $this->generateReceiptPreview($sale);
-        
+
         // Show receipt preview modal
         $this->showReceiptPreview = true;
     }
@@ -364,11 +385,11 @@ class PosPaymentModal extends Component
 
     public function render()
     {
-        return view('livewire.pos-payment-modal',[
+        return view('livewire.pos-payment-modal', [
             'isCashPayment' => $this->isCashPayment,
             'selectedPaymentMethod' => $this->selectedPaymentMethod,
         ]);
     }
 
-    
+
 }
