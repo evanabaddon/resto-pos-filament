@@ -1391,7 +1391,26 @@
             
             // Find the image source
             const imgEl = card.querySelector('img');
-            const src = imgEl ? imgEl.src : null;
+            let src = imgEl ? imgEl.src : null;
+            
+            if (!src) {
+                // Fallback: Check for SVG (Offline/No Image)
+                const svg = card.querySelector('svg');
+                if (svg) {
+                    try {
+                        const serializer = new XMLSerializer();
+                        let source = serializer.serializeToString(svg);
+                        
+                        // Ensure color is visible (replace currentColor with a concrete color)
+                        // Using slate-400 (#94a3b8) to match placeholder style
+                        source = source.replace(/stroke="currentColor"/g, 'stroke="#94a3b8"');
+                        
+                        src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source);
+                    } catch (e) {
+                         console.error('Animation Fallback Error', e);
+                    }
+                }
+            }
             
             if (!src) return;
 
@@ -1404,6 +1423,12 @@
             const flyer = document.createElement('img');
             flyer.src = src;
             flyer.classList.add('flying-img');
+            
+             // If using SVG data URI, adding specific style to ensure visibility/background
+            if (src.startsWith('data:image/svg+xml')) {
+                flyer.style.backgroundColor = '#f1f5f9'; // slate-100
+                flyer.style.padding = '10px';
+            }
             
             // Initial position (relative to viewport)
             const rect = card.getBoundingClientRect();
