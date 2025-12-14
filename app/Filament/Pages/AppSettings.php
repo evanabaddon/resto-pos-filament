@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use BackedEnum;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -80,6 +81,14 @@ class AppSettings extends SettingsPage
                                                 TextInput::make('app_website')
                                                     ->label('Website')
                                                     ->url(),
+                                                Select::make('printer_width')
+                                                    ->label('Ukuran Printer')
+                                                    ->options([
+                                                        '58mm' => '58mm (Standard)',
+                                                        '80mm' => '80mm (Large)',
+                                                    ])
+                                                    ->required()
+                                                    ->default('58mm'),
                                             ]),
 
                                         Section::make('Sosial Media')

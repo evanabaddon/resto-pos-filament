@@ -179,6 +179,7 @@ class PosPaymentModal extends Component
 
     protected function generateReceiptPreview(Sale $sale = null, $overrideAmount = null, $overrideMethod = null)
     {
+        // 1. Resolve Sale
         if (!$sale) {
             $sale = Sale::with(['items.product', 'paymentMethod', 'user'])->find($this->saleId);
         }
@@ -187,79 +188,52 @@ class PosPaymentModal extends Component
             return;
         }
 
-        // Use overrides if provided (for immediately showing receipt before DB update)
-        $amountPaid = $overrideAmount !== null ? $overrideAmount : $sale->amount_paid;
-        $methodName = $overrideMethod !== null ? $overrideMethod : ($sale->paymentMethod->name ?? 'Cash');
-        $isCash = $overrideMethod !== null
-            ? (stripos($methodName, 'cash') !== false)
-            : (($sale->paymentMethod->code ?? 'cash') === 'cash');
+        // 2. Apply Overrides (Clone to avoid side effects on actual model instance if needed, 
+        //    though here we want to display the modified state)
+        //    We use clone to be safe if $sale was passed in.
+        $previewSale = $sale;
 
-        $content = "<div class='text-center'>";
-        $content .= "<h1 class='font-bold text-lg uppercase'>STRUK PEMBAYARAN</h1>";
-        $content .= "<p class='text-sm'>" . config('app.name') . "</p>";
-        $content .= "<p class='text-xs'>" . $sale->created_at->format('d/m/Y H:i') . "</p>";
-        $content .= "</div>";
-
-        $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-
-        // Info Transaksi
-        $content .= "<div class='space-y-1 text-sm'>";
-        $content .= "<div class='flex justify-between'><span>No. Transaksi:</span><span class='font-semibold'>" . $sale->invoice_number . "</span></div>";
-        $content .= "<div class='flex justify-between'><span>Kasir:</span><span>" . ($sale->user->name ?? 'System') . "</span></div>";
-        $content .= "<div class='flex justify-between'><span>Customer:</span><span>" . ($sale->customer_name ?? 'Umum') . "</span></div>";
-        $content .= "</div>";
-
-        $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-
-        // Items
-        $content .= "<div class='space-y-2'>";
-        foreach ($sale->items as $item) {
-            $content .= "<div class='flex justify-between items-start'>";
-            $content .= "<div class='flex-1'>";
-            $content .= "<div class='font-semibold'>" . ($item->product->name ?? 'Produk') . "</div>";
-            $content .= "<div class='text-xs text-gray-600'>" . $item->quantity . " × Rp" . number_format($item->unit_price, 0, ',', '.') . "</div>";
-            $content .= "</div>";
-            $content .= "<div class='font-semibold'>Rp" . number_format($item->subtotal, 0, ',', '.') . "</div>";
-            $content .= "</div>";
+        if ($overrideAmount !== null) {
+            $previewSale->amount_paid = $overrideAmount;
         }
-        $content .= "</div>";
 
-        $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-
-        // Summary
-        $content .= "<div class='space-y-1 text-sm'>";
-        $content .= "<div class='flex justify-between'><span>Subtotal:</span><span>Rp" . number_format($sale->subtotal, 0, ',', '.') . "</span></div>";
-        $content .= "<div class='flex justify-between'><span>Pajak (10%):</span><span>Rp" . number_format($sale->tax, 0, ',', '.') . "</span></div>";
-        if ($sale->discount > 0) {
-            $content .= "<div class='flex justify-between text-green-600'><span>Diskon:</span><span>- Rp" . number_format($sale->discount, 0, ',', '.') . "</span></div>";
+        // 3. Handle Payment Method Override
+        // The View uses $sale->paymentMethod->name and ->code.
+        // If we have an overrideMethod (string name), we need to fake the relation.
+        if ($overrideMethod !== null) {
+            // Create a temporary object for the relation
+            $fakePaymentMethod = new \stdClass();
+            $fakePaymentMethod->name = $overrideMethod;
+            $fakePaymentMethod->code = stripos($overrideMethod, 'cash') !== false ? 'cash' : 'other';
+            
+            // We can't easily setRelation with stdClass on a real Eloquent model 
+            // without it expecting a Model instance usually.
+            // But we can try setting the attribute if the view checks that.
+            // Actually, best is to try to load the real payment method if we have ID.
+            
+            if ($this->payment_method) {
+                // If we have the ID, fetch real model
+                $pm = PaymentMethod::find($this->payment_method);
+                if ($pm) {
+                    $previewSale->setRelation('paymentMethod', $pm);
+                } else {
+                     // Fallback
+                     $previewSale->setRelation('paymentMethod', new PaymentMethod(['name' => $overrideMethod, 'code' => 'other']));
+                }
+            } else {
+                 // Fallback if no ID (shouldn't happen in processPayment)
+                 // Or if just name passed.
+                 $previewSale->setRelation('paymentMethod', new PaymentMethod(['name' => $overrideMethod, 'code' => 'other']));
+            }
         }
-        $content .= "<div class='border-t border-gray-300 pt-1'>";
-        $content .= "<div class='flex justify-between font-bold'><span>TOTAL:</span><span>Rp" . number_format($sale->final_total, 0, ',', '.') . "</span></div>";
-        $content .= "</div>";
-        $content .= "</div>";
 
-        $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-
-        // Payment Info
-        $content .= "<div class='space-y-1 text-sm'>";
-        $content .= "<div class='flex justify-between'><span>Metode:</span><span class='font-semibold'>" . $methodName . "</span></div>";
-        $content .= "<div class='flex justify-between'><span>Bayar:</span><span>Rp" . number_format($amountPaid, 0, ',', '.') . "</span></div>";
-
-        if ($isCash) {
-            $change = $amountPaid - $sale->final_total;
-            $content .= "<div class='flex justify-between'><span>Kembali:</span><span class='font-semibold'>Rp" . number_format($change, 0, ',', '.') . "</span></div>";
-        }
-        $content .= "</div>";
-
-        $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
-
-        // Footer
-        $content .= "<div class='text-center text-xs'>";
-        $content .= "<p>Terima kasih atas kunjungan Anda</p>";
-        $content .= "<p class='font-semibold'>*** SELAMAT MENIKMATI ***</p>";
-        $content .= "</div>";
-
-        $this->receiptContent = $content;
+        // 4. Render using Standard Blade View
+        $settings = app(\App\Settings\GeneralSettings::class);
+        
+        $this->receiptContent = view('filament.components.receipt-preview-content', [
+            'sale' => $previewSale,
+            'settings' => $settings
+        ])->render();
     }
 
     // Method untuk manual print dari tombol di modal preview

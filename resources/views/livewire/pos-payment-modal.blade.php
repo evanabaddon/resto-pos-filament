@@ -183,10 +183,10 @@
                      <div class="w-full h-2 bg-[linear-gradient(135deg,transparent_5px,#fff_5px),linear-gradient(225deg,transparent_5px,#fff_5px)] bg-[length:10px_10px] bg-repeat-x mt-[-5px] relative z-20"></div>
 
                     {{-- Receipt Content --}}
-                    <div class="bg-white px-6 py-6 pb-8">
-                         {{-- PRESERVE WHITESPACE AND USE MONOSPACE FONT IS CRITICAL FOR ALIGNMENT --}}
-                         <div class="font-mono text-[11px] leading-tight text-slate-800 whitespace-pre overflow-x-auto text-center">
-{!! $receiptContent !!}
+                    <div class="bg-white px-0 py-6 pb-8 flex justify-center w-full">
+                         {{-- Container for Receipt - Let the Component handle styles --}}
+                         <div class="receipt-preview w-full flex justify-center">
+                            {!! $receiptContent !!}
                          </div>
                     </div>
 
@@ -195,22 +195,30 @@
                 </div>
 
                 {{-- Action Buttons --}}
-                <div class="mt-6 flex gap-3 w-full max-w-xs">
-                     <button wire:click="closeReceiptPreview" 
-                            class="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 py-3 rounded-xl font-bold text-sm backdrop-blur-md transition">
-                        Tutup
-                    </button>
-                    <button wire:click="manualPrintReceipt" 
-                            wire:loading.attr="disabled"
-                            wire:target="manualPrintReceipt"
-                            class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition active:scale-[0.98] group">
-                        <span wire:loading.remove wire:target="manualPrintReceipt" class="flex items-center gap-2">
-                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                            CETAK
-                        </span>
-                         <span wire:loading wire:target="manualPrintReceipt" class="animate-spin">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        </span>
+                <div class="mt-6 flex flex-col gap-3 w-full max-w-xs">
+                    <div class="flex gap-3 w-full">
+                         <button wire:click="closeReceiptPreview" 
+                                class="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 py-3 rounded-xl font-bold text-sm backdrop-blur-md transition">
+                            Tutup
+                        </button>
+                        <button wire:click="manualPrintReceipt" 
+                                wire:loading.attr="disabled"
+                                wire:target="manualPrintReceipt"
+                                class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition active:scale-[0.98] group">
+                             <span wire:loading.remove wire:target="manualPrintReceipt" class="flex items-center gap-2">
+                                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                 CETAK
+                             </span>
+                              <span wire:loading wire:target="manualPrintReceipt" class="animate-spin">
+                                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                             </span>
+                        </button>
+                    </div>
+                    
+                    {{-- Secondary Option: Browser Print --}}
+                    <button onclick="printReceipt()" 
+                            class="w-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white py-2 rounded-xl font-bold text-xs transition border border-white/10">
+                        🖨️ Cetak via Browser
                     </button>
                 </div>
                 
@@ -246,6 +254,11 @@
 
     </style>
 
+    @inject('settings', 'App\Settings\GeneralSettings')
+    @php
+        $printerWidth = $settings->printer_width ?? '58mm';
+    @endphp
+
     <script>
     // Fungsi untuk mengontrol bottom nav bar
     function toggleBottomNav(show) {
@@ -258,33 +271,37 @@
     }
 
     function printReceipt() {
-        const receiptContent = document.querySelector('.receipt-preview').innerHTML;
+        const receiptContainer = document.querySelector('.receipt-preview');
+        if (!receiptContainer) {
+            alert('Receipt content not found!');
+            return;
+        }
+        const receiptContent = receiptContainer.innerHTML;
+        const width = '{{ $printerWidth }}';
         
-        const printWindow = window.open('', '_blank', 'width=350,height=600');
+        const printWindow = window.open('', '_blank', 'width=400,height=600');
         
         const printStyle = `
             <style>
                 @media print {
                     body { 
                         margin: 0; 
-                        padding: 10px; 
+                        padding: 0; 
                         font-family: 'Courier New', monospace;
-                        font-size: 12px;
+                        width: ${width}; 
                     }
-                    .text-center { text-align: center; }
-                    .font-bold { font-weight: bold; }
-                    .text-lg { font-size: 14px; }
-                    .text-sm { font-size: 11px; }
-                    .text-xs { font-size: 10px; }
-                    .uppercase { text-transform: uppercase; }
-                    .flex { display: flex; }
-                    .justify-between { justify-content: space-between; }
-                    .items-start { align-items: flex-start; }
-                    .flex-1 { flex: 1; }
-                    .border-t { border-top: 1px solid #000; }
-                    .border-dashed { border-style: dashed; }
-                    .my-2 { margin-top: 0.5rem; margin-bottom: 0.5rem; }
-                    .font-semibold { font-weight: 600; }
+                    @page {
+                        margin: 0;
+                        size: ${width} auto; 
+                    }
+                }
+                /* Screen styles if viewed in browser */
+                body {
+                    font-family: 'Courier New', monospace;
+                    padding: 20px;
+                    background: #f3f4f6;
+                    display: flex;
+                    justify-content: center;
                 }
             </style>
         `;
@@ -296,14 +313,8 @@
                 <title>Struk Pembayaran</title>
                 ${printStyle}
             </head>
-            <body>
+            <body onload="window.print(); setTimeout(() => window.close(), 1000);">
                 ${receiptContent}
-                <script>
-                    window.onload = function() {
-                        window.print();
-                        setTimeout(() => window.close(), 1000);
-                    };
-                <\/script>
             </body>
             </html>
         `);
@@ -313,6 +324,7 @@
 
     // Event listener untuk Livewire
     document.addEventListener('livewire:initialized', () => {
+        // ... (rest of the listeners)
         // Sembunyikan bottom nav ketika modal payment terbuka
         Livewire.on('showModal', () => {
             document.body.style.overflow = 'hidden';
@@ -352,10 +364,8 @@
 
     // Fungsi untuk print langsung (opsional)
     function printReceiptDirect(content) {
-        const printWindow = window.open('', '_blank', 'width=1,height=1');
-        const printStyle = `<style>@media print { body { margin: 0; padding: 10px; font-family: 'Courier New', monospace; font-size: 12px; } .text-center { text-align: center; } .font-bold { font-weight: bold; } .text-sm { font-size: 11px; } .flex { display: flex; } .justify-between { justify-content: space-between; } }</style>`;
-        printWindow.document.write(`<html><head><title>Struk</title>${printStyle}</head><body onload="window.print(); setTimeout(() => window.close(), 500);">${content}</body></html>`);
-        printWindow.document.close();
+        // ... (keep this as backup or remove if handled by new logic)
+        // For now, keeping as is but we are using the new printReceipt() above for the main button
     }
     
     // Handle mobile viewport height dan bottom navigation
@@ -370,4 +380,5 @@
     setupModalForMobile();
     window.addEventListener('resize', setupModalForMobile);
     </script>
+</div>
 </div>
