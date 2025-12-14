@@ -54,8 +54,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                // AccountWidget::class,
-                // FilamentInfoWidget::class,
+                    // AccountWidget::class,
+                    // FilamentInfoWidget::class,
                 ReservationCalendarWidget::class,
                 ReservationStatsWidget::class,
                 RevenueOverviewWidget::class,
@@ -85,7 +85,13 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 FilamentApexChartsPlugin::make(),
                 // FilamentAwinTheme::make()
-                    // ->primaryColor('#CF8B00'),
+                // ->primaryColor('#CF8B00'),
+            ])
+            ->navigationGroups([
+                'Transaksi',
+                'Produk',
+                'Master Data',
+                'Settings',
             ]);
     }
 }

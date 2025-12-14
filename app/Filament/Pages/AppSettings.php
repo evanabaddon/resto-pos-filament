@@ -16,8 +16,10 @@ class AppSettings extends SettingsPage
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    protected static string | UnitEnum | null $navigationGroup = 'Settings';
-    
+    protected static string|UnitEnum|null $navigationGroup = 'Settings';
+
+    protected static ?int $navigationSort = 99;
+
     protected static ?string $navigationLabel = 'General Settings';
 
     protected static string $settings = GeneralSettings::class;
@@ -30,31 +32,31 @@ class AppSettings extends SettingsPage
                     ->label('App Name')
                     ->required()
                     ->placeholder('Nama Restoran Anda'),
-                    
+
                 TextInput::make('app_website')
                     ->label('Website')
                     ->url()
                     ->placeholder('https://restoanda.com'),
-                    
+
                 TextInput::make('app_instagram')
                     ->label('Instagram')
                     ->url()
                     ->placeholder('username')
                     ->helperText('Masukkan username Instagram tanpa @'),
-                    
+
                 TextInput::make('app_tiktok')
                     ->label('TikTok')
                     ->url()
                     ->placeholder('@username')
                     ->helperText('Masukkan username TikTok dengan @'),
-                    
+
                 FileUpload::make('app_logo')
                     ->label('Logo')
                     ->image()
                     ->directory('settings/logo')
                     ->maxSize(2048)
                     ->helperText('Ukuran maksimal 2MB'),
-                    
+
                 FileUpload::make('app_favicon')
                     ->label('Favicon')
                     ->image()
