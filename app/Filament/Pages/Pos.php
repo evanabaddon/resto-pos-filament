@@ -840,6 +840,12 @@ class Pos extends Page
         $this->discountApplied = false;
         $this->editingNotesIndex = null;
         $this->itemNotes = '';
+
+        // Reset Search & Pagination
+        $this->searchQuery = '';
+        $this->selectedCategory = 'Semua';
+        // $this->resetPage(); // Disabled to prevent Alpine/dom-morph error
+
         // jangan ubah $showCashInModal agar modal hanya dikontrol saat mount/cek session
     }
 
