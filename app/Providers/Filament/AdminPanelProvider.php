@@ -40,9 +40,14 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        $settings = app(GeneralSettings::class);
-        $logo = $settings->app_logo ? \Illuminate\Support\Facades\Storage::url($settings->app_logo) : null;
-        $brandName = $settings->app_name ?? config('app.name');
+        try {
+            $settings = app(GeneralSettings::class);
+            $logo = $settings->app_logo ? \Illuminate\Support\Facades\Storage::url($settings->app_logo) : null;
+            $brandName = $settings->app_name ?? config('app.name');
+        } catch (\Throwable $e) {
+            $logo = null;
+            $brandName = config('app.name');
+        }
 
         return $panel
             ->default()
