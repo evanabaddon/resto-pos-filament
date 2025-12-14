@@ -277,7 +277,7 @@ class OrderPrintService
                     'items' => array_map(function ($item) {
                         return [
                             'product_name' => $item->product->name ?? 'Unknown',
-                            'quantity' => $item->quantity,
+                            'quantity' => $item->quantity + 0,
                             'notes' => $item->notes ?? '',
                         ];
                     }, $items)
@@ -744,7 +744,7 @@ class OrderPrintService
 
         foreach ($items as $item) {
             $productName = $item->product->name ?? 'Unknown';
-            $qty = "x{$item->quantity}";
+            $qty = "x" . ($item->quantity + 0);
 
             // Layout: "Name (max 26) .... xQty"
             // Total 32. Qty takes ~3-4 chars. Dots/Space takes min 2. Name takes rest.

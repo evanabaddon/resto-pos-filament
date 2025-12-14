@@ -101,6 +101,7 @@ class ReceiptPrintService
                 'items' => $sale->items->map(function ($item) {
                     $i = $item->toArray();
                     $i['product_name'] = $item->product->name ?? 'Unknown';
+                    $i['quantity'] = $item->quantity + 0;
                     return $i;
                 })->toArray(),
                 'store' => [
