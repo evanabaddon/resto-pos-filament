@@ -41,16 +41,20 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         $settings = app(GeneralSettings::class);
+        $appLogo = $settings->app_logo ? Storage::url($settings->app_logo) : null;
+        $appName = $settings->app_name;
+
         return $panel
             ->default()
-            ->brandLogo($settings->app_logo ? Storage::url($settings->app_logo) : null)
-            ->brandName($settings->app_name)
+            ->brandLogo($appLogo)
+            ->brandName($appName)
             ->id('admin')
             ->path('admin')
             ->login()
             ->colors([
                 'primary' => Color::Blue,
             ])
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->spa()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')
@@ -97,6 +101,7 @@ class AdminPanelProvider extends PanelProvider
                 'Transaksi',
                 'Produk',
                 'Master Data',
+                'Manajemen SDM',
                 'Settings',
             ]);
     }

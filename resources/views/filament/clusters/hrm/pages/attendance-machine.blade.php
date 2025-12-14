@@ -106,11 +106,11 @@
                     if (method === 'clockOut') this.allEmployees[empIndex].today_status = 'checked_out';
                 }
             }
-        }" class="flex flex-col items-center justify-start pt-10 p-4 min-h-screen">
+        }" class="flex flex-col items-center justify-center p-4">
         <!-- Header Section -->
         <div class="w-full max-w-5xl mb-6 text-center">
             <h1
-                class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-indigo-600 mb-2 tracking-tight">
+                class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2 tracking-tight">
                 Mesin Absensi
             </h1>
             <p class="text-sm md:text-lg text-gray-500 dark:text-gray-400 font-medium" x-text="message"></p>
@@ -120,7 +120,7 @@
             <!-- Video Section -->
             <div class="relative group order-first md:order-none">
                 <div
-                    class="absolute -inset-0.5 bg-gradient-to-r from-primary-500 to-indigo-500 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500">
+                    class="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500">
                 </div>
 
                 <div

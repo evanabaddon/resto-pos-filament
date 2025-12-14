@@ -18,6 +18,10 @@ class GeneralSettings extends Settings
     public ?string $company_phone;
     public ?string $company_email;
 
+    // Modules
+    public bool $enable_hrm;
+    public ?string $hrm_license_key;
+
     public static function group(): string
     {
         return 'app';
@@ -32,6 +36,8 @@ class GeneralSettings extends Settings
             'app_tiktok' => '',
             'app_logo' => null,
             'app_favicon' => null,
+            'enable_hrm' => false,
+            'hrm_license_key' => null,
         ];
     }
 }

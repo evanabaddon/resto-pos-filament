@@ -20,6 +20,11 @@ class AttendanceMachine extends Page
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return app(\App\Settings\GeneralSettings::class)->enable_hrm;
+    }
+
     protected static ?string $navigationLabel = 'Mesin Absensi';
 
     protected static ?string $title = 'Mesin Absensi Wajah';

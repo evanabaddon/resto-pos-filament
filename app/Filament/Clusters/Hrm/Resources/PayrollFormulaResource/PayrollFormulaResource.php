@@ -33,6 +33,11 @@ class PayrollFormulaResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return app(\App\Settings\GeneralSettings::class)->enable_hrm;
+    }
+
     protected static ?int $navigationSort = 6;
 
     protected static ?string $navigationLabel = 'Rumus Gaji';

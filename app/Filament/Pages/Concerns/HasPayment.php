@@ -220,8 +220,8 @@ trait HasPayment
             // 🔹 Refresh list di modal
             $this->dispatch('refreshSalesList');
 
-            //$this->resetPos();
-            $this->dispatch('reload-page');
+            $this->resetPos();
+            // $this->dispatch('reload-page');
 
         } catch (\Exception $e) {
             \Log::error('💥 Gagal menyimpan penjualan: ' . $e->getMessage());

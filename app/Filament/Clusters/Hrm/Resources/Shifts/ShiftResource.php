@@ -23,6 +23,11 @@ class ShiftResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return app(\App\Settings\GeneralSettings::class)->enable_hrm;
+    }
+
     protected static ?int $navigationSort = 4;
 
     protected static ?string $navigationLabel = 'Jadwal Shift';

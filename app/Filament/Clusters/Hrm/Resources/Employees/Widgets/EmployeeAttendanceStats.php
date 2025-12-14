@@ -15,7 +15,14 @@ class EmployeeAttendanceStats extends BaseWidget
 {
     public ?Model $record = null;
 
+    protected static ?string $pollingInterval = '30s';
+
     protected int|string|array $columnSpan = 'full';
+
+    public static function canView(): bool
+    {
+        return app(\App\Settings\GeneralSettings::class)->enable_hrm;
+    }
 
     protected static ?string $heading = 'Statistik Absensi Bulanan';
 

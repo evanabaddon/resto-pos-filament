@@ -3,8 +3,13 @@
 namespace App\Filament\Pages;
 
 use BackedEnum;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use UnitEnum;
 use App\Settings\GeneralSettings;
 use Filament\Schemas\Schema;
@@ -30,62 +35,108 @@ class AppSettings extends SettingsPage
     {
         return $schema
             ->components([
-                Grid::make(2)
+                Tabs::make('Settings')
                     ->columnSpanFull()
-                    ->schema([
-                        Section::make('Identitas Aplikasi')
-                            ->columnSpan(1)
-                            ->schema([
-                                TextInput::make('app_name')
-                                    ->label('App Name')
-                                    ->required()
-                                    ->placeholder('Nama Restoran Anda'),
-
-                                FileUpload::make('app_logo')
-                                    ->label('Logo')
-                                    ->image()
-                                    ->disk('public') // Ensure public visibility
-                                    ->directory('settings/logo')
-                                    ->maxSize(2048),
-
-                                FileUpload::make('app_favicon')
-                                    ->label('Favicon')
-                                    ->image()
-                                    ->disk('public') // Ensure public visibility
-                                    ->directory('settings/favicon')
-                                    ->maxSize(512),
-                            ]),
-
-                        Section::make('Informasi Perusahaan (Untuk Laporan/Struk)')
-                            ->columnSpan(1)
-                            ->schema([
-                                Textarea::make('company_address')
-                                    ->label('Alamat Perusahaan')
-                                    ->rows(3),
-                                TextInput::make('company_phone')
-                                    ->label('Telepon'),
-                                TextInput::make('company_email')
-                                    ->label('Email')
-                                    ->email(),
-                                TextInput::make('app_website')
-                                    ->label('Website')
-                                    ->url(),
-                            ]),
-
-                        Section::make('Sosial Media')
-                            ->columnSpan(2)
+                    ->tabs([
+                        // TAB: GENERAL
+                        Tab::make('General')
                             ->schema([
                                 Grid::make(2)
                                     ->schema([
-                                        TextInput::make('app_instagram')
-                                            ->label('Instagram')
-                                            ->prefix('instagram.com/'),
-                                        TextInput::make('app_tiktok')
-                                            ->label('TikTok')
-                                            ->prefix('tiktok.com/@'),
+                                        Section::make('Identitas Aplikasi')
+                                            ->columnSpan(1)
+                                            ->schema([
+                                                TextInput::make('app_name')
+                                                    ->label('App Name')
+                                                    ->required()
+                                                    ->placeholder('Nama Restoran Anda'),
+
+                                                FileUpload::make('app_logo')
+                                                    ->label('Logo')
+                                                    ->image()
+                                                    ->disk('public') // Ensure public visibility
+                                                    ->directory('settings/logo')
+                                                    ->maxSize(2048),
+
+                                                FileUpload::make('app_favicon')
+                                                    ->label('Favicon')
+                                                    ->image()
+                                                    ->disk('public') // Ensure public visibility
+                                                    ->directory('settings/favicon')
+                                                    ->maxSize(512),
+                                            ]),
+
+                                        Section::make('Informasi Perusahaan (Untuk Laporan/Struk)')
+                                            ->columnSpan(1)
+                                            ->schema([
+                                                Textarea::make('company_address')
+                                                    ->label('Alamat Perusahaan')
+                                                    ->rows(3),
+                                                TextInput::make('company_phone')
+                                                    ->label('Telepon'),
+                                                TextInput::make('company_email')
+                                                    ->label('Email')
+                                                    ->email(),
+                                                TextInput::make('app_website')
+                                                    ->label('Website')
+                                                    ->url(),
+                                            ]),
+
+                                        Section::make('Sosial Media')
+                                            ->columnSpan(2)
+                                            ->schema([
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        TextInput::make('app_instagram')
+                                                            ->label('Instagram')
+                                                            ->prefix('instagram.com/'),
+                                                        TextInput::make('app_tiktok')
+                                                            ->label('TikTok')
+                                                            ->prefix('tiktok.com/@'),
+                                                    ])
+                                            ])
+                                    ])
+                            ]),
+
+                        // TAB: MODULES
+                        Tab::make('Modules')
+                            ->schema([
+                                Section::make('HRM (Human Resource Management)')
+                                    ->description('Manage Employees, Attendance, and Payroll.')
+                                    ->schema([
+                                        TextInput::make('hrm_license_key')
+                                            ->label('License Key')
+                                            ->password() // Hide characters
+                                            ->revealable()
+                                            ->helperText('Masukkan lisensi, format: HRM-PRO-XXXX')
+                                            ->live(onBlur: true) // Validate on blur
+                                            ->afterStateUpdated(function ($state, Set $set) {
+                                                // Simple Logic: Key must start with HRM-PRO-
+                                                if ($state && str_starts_with($state, 'HRM-PRO-')) {
+                                                    // Valid
+                                                } else {
+                                                    // Invalid: Force disable toggle
+                                                    $set('enable_hrm', false);
+                                                }
+                                            }),
+
+                                        Toggle::make('enable_hrm')
+                                            ->label('Enable HRM Module')
+                                            ->inline(false)
+                                            ->disabled(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
+                                            )
+                                            ->helperText(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul SDM.'
+                                            ),
                                     ])
                             ])
                     ])
+
             ]);
     }
 }
