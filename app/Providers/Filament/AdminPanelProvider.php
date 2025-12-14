@@ -85,8 +85,8 @@ class AdminPanelProvider extends PanelProvider
             ->maxContentWidth(Width::Full)
             ->plugins([
                 FilamentApexChartsPlugin::make(),
-                FilamentAwinTheme::make()
-                    ->primaryColor('#CF8B00'),
+                // FilamentAwinTheme::make()
+                //     ->primaryColor('#CF8B00'),
             ]);
     }
 }
