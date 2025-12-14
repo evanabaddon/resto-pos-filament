@@ -9,22 +9,22 @@ Route::get('/', function () {
 });
 
 // Webhook routes
-require __DIR__.'/webhook.php';
+require __DIR__ . '/webhook.php';
 
 
 // routes/api.php atau routes/web.php
 Route::get('/test-webhook-debug', function () {
     $printService = new OrderPrintService();
-    
+
     $envTest = $printService->testEnvironment();
-    
+
     // Test webhook connection dengan debug
     try {
         $webhookUrl = config('app.webhook_print_url');
         $secretKey = config('app.print_secret');
-        
+
         Log::info("🔍 Testing webhook connection to: " . $webhookUrl);
-        
+
         $response = Http::timeout(10)
             ->withOptions(['verify' => false])
             ->withHeaders([
@@ -37,14 +37,14 @@ Route::get('/test-webhook-debug', function () {
                 'division' => 'Test',
                 'type' => 'test'
             ]);
-            
+
         $webhookTest = [
             'success' => $response->successful(),
             'status' => $response->status(),
             'headers' => $response->headers(),
             'body' => $response->successful() ? $response->json() : substr($response->body(), 0, 500)
         ];
-        
+
     } catch (\Exception $e) {
         $webhookTest = [
             'success' => false,
@@ -52,7 +52,7 @@ Route::get('/test-webhook-debug', function () {
             'trace' => $e->getTraceAsString()
         ];
     }
-    
+
     return response()->json([
         'environment_test' => $envTest,
         'webhook_test' => $webhookTest,
@@ -70,7 +70,7 @@ Route::get('/test-api-basic', function () {
         $response = Http::timeout(10)
             ->withOptions(['verify' => false])
             ->get('https://pos.suralaya.id/api/webhook/test');
-            
+
         return response()->json([
             'success' => $response->successful(),
             'status' => $response->status(),
@@ -87,14 +87,14 @@ Route::get('/test-api-basic', function () {
 // routes/web.php - tambahkan route debug
 Route::get('/debug-printing', function () {
     $printService = new OrderPrintService();
-    
+
     $envTest = $printService->testEnvironment();
     $webhookTest = $printService->testWebhookConnection();
-    
+
     // Check database untuk print jobs
     $pendingJobs = PrintJob::where('status', 'pending')->count();
     $totalJobs = PrintJob::count();
-    
+
     return response()->json([
         'environment' => $envTest,
         'webhook_test' => $webhookTest,
@@ -115,13 +115,13 @@ Route::get('/debug-printing', function () {
 // routes/web.php - temporary test routes
 Route::get('/test-api-routes', function () {
     $tests = [];
-    
+
     // Test 1: API test endpoint
     try {
         $response = Http::timeout(10)
             ->withOptions(['verify' => false])
             ->get('https://pos.suralaya.id/api/webhook/test');
-            
+
         $tests['api_test'] = [
             'success' => $response->successful(),
             'status' => $response->status(),
@@ -133,19 +133,27 @@ Route::get('/test-api-routes', function () {
             'error' => $e->getMessage()
         ];
     }
-    
+
     // Test 2: Config check
     $tests['config'] = [
         'webhook_print_url' => config('app.webhook_print_url'),
         'use_webhook_printing' => config('app.use_webhook_printing'),
         'print_secret' => config('app.print_secret') ? '***' . substr(config('app.print_secret'), -4) : 'not set'
     ];
-    
+
     // Test 3: Database check
     $tests['database'] = [
         'print_jobs_table' => \Schema::hasTable('print_jobs'),
         'pending_jobs' => \App\Models\PrintJob::where('status', 'pending')->count()
     ];
-    
+
     return response()->json($tests);
 });
+
+// HRM Payroll Print Route
+Route::get('/payroll/{record}/print', function (\App\Models\Payroll $record) {
+    if (!Auth::check()) {
+        abort(403);
+    }
+    return view('payroll.print', ['record' => $record]);
+})->name('payroll.print');

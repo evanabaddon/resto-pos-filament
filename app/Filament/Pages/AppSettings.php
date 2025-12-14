@@ -3,13 +3,15 @@
 namespace App\Filament\Pages;
 
 use BackedEnum;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use UnitEnum;
 use App\Settings\GeneralSettings;
 use Filament\Schemas\Schema;
 use Filament\Pages\SettingsPage;
 use Filament\Support\Icons\Heroicon;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
 
 class AppSettings extends SettingsPage
@@ -28,41 +30,62 @@ class AppSettings extends SettingsPage
     {
         return $schema
             ->components([
-                TextInput::make('app_name')
-                    ->label('App Name')
-                    ->required()
-                    ->placeholder('Nama Restoran Anda'),
+                Grid::make(2)
+                    ->columnSpanFull()
+                    ->schema([
+                        Section::make('Identitas Aplikasi')
+                            ->columnSpan(1)
+                            ->schema([
+                                TextInput::make('app_name')
+                                    ->label('App Name')
+                                    ->required()
+                                    ->placeholder('Nama Restoran Anda'),
 
-                TextInput::make('app_website')
-                    ->label('Website')
-                    ->url()
-                    ->placeholder('https://restoanda.com'),
+                                FileUpload::make('app_logo')
+                                    ->label('Logo')
+                                    ->image()
+                                    ->disk('public') // Ensure public visibility
+                                    ->directory('settings/logo')
+                                    ->maxSize(2048),
 
-                TextInput::make('app_instagram')
-                    ->label('Instagram')
-                    ->url()
-                    ->placeholder('username')
-                    ->helperText('Masukkan username Instagram tanpa @'),
+                                FileUpload::make('app_favicon')
+                                    ->label('Favicon')
+                                    ->image()
+                                    ->disk('public') // Ensure public visibility
+                                    ->directory('settings/favicon')
+                                    ->maxSize(512),
+                            ]),
 
-                TextInput::make('app_tiktok')
-                    ->label('TikTok')
-                    ->url()
-                    ->placeholder('@username')
-                    ->helperText('Masukkan username TikTok dengan @'),
+                        Section::make('Informasi Perusahaan (Untuk Laporan/Struk)')
+                            ->columnSpan(1)
+                            ->schema([
+                                Textarea::make('company_address')
+                                    ->label('Alamat Perusahaan')
+                                    ->rows(3),
+                                TextInput::make('company_phone')
+                                    ->label('Telepon'),
+                                TextInput::make('company_email')
+                                    ->label('Email')
+                                    ->email(),
+                                TextInput::make('app_website')
+                                    ->label('Website')
+                                    ->url(),
+                            ]),
 
-                FileUpload::make('app_logo')
-                    ->label('Logo')
-                    ->image()
-                    ->directory('settings/logo')
-                    ->maxSize(2048)
-                    ->helperText('Ukuran maksimal 2MB'),
-
-                FileUpload::make('app_favicon')
-                    ->label('Favicon')
-                    ->image()
-                    ->directory('settings/favicon')
-                    ->maxSize(512)
-                    ->helperText('Ukuran maksimal 512KB, format .ico atau .png'),
+                        Section::make('Sosial Media')
+                            ->columnSpan(2)
+                            ->schema([
+                                Grid::make(2)
+                                    ->schema([
+                                        TextInput::make('app_instagram')
+                                            ->label('Instagram')
+                                            ->prefix('instagram.com/'),
+                                        TextInput::make('app_tiktok')
+                                            ->label('TikTok')
+                                            ->prefix('tiktok.com/@'),
+                                    ])
+                            ])
+                    ])
             ]);
     }
 }

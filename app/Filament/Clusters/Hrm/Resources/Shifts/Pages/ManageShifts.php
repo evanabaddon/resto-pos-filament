@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Filament\Clusters\Hrm\Resources\Shifts\Pages;
+
+use App\Filament\Clusters\Hrm\Resources\Shifts\ShiftResource;
+use Filament\Actions;
+use Filament\Resources\Pages\ManageRecords;
+
+class ManageShifts extends ManageRecords
+{
+    protected static string $resource = ShiftResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\CreateAction::make(),
+        ];
+    }
+}

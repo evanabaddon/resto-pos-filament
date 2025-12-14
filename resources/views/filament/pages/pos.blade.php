@@ -11,9 +11,218 @@
                 return {
                     perPage: 12, // Default fallback
                     
-                    initLayout() {
-                        this.calculatePerPage();
-                    },
+                initLayout() {
+                    this.calculatePerPage();
+                    this.initOffline();
+                },
+                
+                // Offline Capability
+                isOnline: navigator.onLine,
+                isLoadingSync: false,
+                offlineProducts: [],
+                offlineCart: [],
+                offlineCustomerName: '',
+                
+                get offlineTotal() {
+                    return this.offlineCart.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
+                },
+                
+                addToOfflineCart(product) {
+                    const price = parseFloat(product.price);
+                    const existing = this.offlineCart.find(item => item.product_id === product.id);
+                    if(existing) {
+                        // Check stock?
+                        existing.quantity++;
+                        existing.subtotal = existing.quantity * price;
+                    } else {
+                        this.offlineCart.push({
+                            product_id: product.id,
+                            name: product.name,
+                            price: price, // Ensure number
+                            image: product.image,
+                            quantity: 1,
+                            subtotal: price,
+                            notes: ''
+                        });
+                    }
+                    window.dispatchEvent(new CustomEvent('notify', { detail: 'Added to Offline Cart' }));
+                },
+                
+                updateOfflineQty(index, change) {
+                    const item = this.offlineCart[index];
+                    if(!item) return;
+                    
+                    item.quantity += change;
+                    if(item.quantity <= 0) {
+                       this.offlineCart.splice(index, 1);
+                    } else {
+                       item.subtotal = item.quantity * item.price;
+                    }
+                },
+                
+                removeOfflineItem(index) {
+                    this.offlineCart.splice(index, 1);
+                },
+                
+                async checkoutOffline() {
+                    if(this.offlineCart.length === 0) return;
+                    
+                    const order = {
+                        items: JSON.parse(JSON.stringify(this.offlineCart)),
+                        total: this.offlineTotal,
+                        tax: Math.round(this.offlineTotal * 0.1),
+                        final_total: Math.round(this.offlineTotal * 1.1),
+                        customer_name: this.offlineCustomerName || 'Offline Customer',
+                        created_at: new Date().toISOString()
+                    };
+                    
+                    if(window.OfflinePOS) {
+                        try {
+                            await OfflinePOS.saveOfflineSale(order);
+                            this.offlineCart = [];
+                            this.offlineCustomerName = '';
+                            window.dispatchEvent(new CustomEvent('notify', { detail: 'Order Saved Offline! (Pending Sync)', type: 'success' }));
+                        } catch(e) {
+                            console.error(e);
+                            window.dispatchEvent(new CustomEvent('notify', { detail: 'Failed to save offline order', type: 'error' }));
+                        }
+                    }
+                },
+
+                async handleOfflineSearch(query) {
+                    if(!window.OfflinePOS) return;
+                    this.offlineProducts = await OfflinePOS.searchProducts(query);
+                },
+                
+                initOffline() {
+                    window.addEventListener('online', () => {
+                        this.isOnline = true;
+                        this.syncProductsFromAPI();
+                        this.syncOfflineOrders();
+                        window.dispatchEvent(new CustomEvent('notify', { detail: 'Back Online! Syncing...' }));
+                    });
+                    
+                    window.addEventListener('offline', () => {
+                        this.isOnline = false;
+                        this.handleOfflineSearch(''); // Load all products
+                        window.dispatchEvent(new CustomEvent('notify', { detail: 'You are OFFLINE' }));
+                    });
+                    
+                    // Init DB if script loaded
+                    if(window.OfflinePOS) {
+                        OfflinePOS.init().then(() => {
+                            if(this.isOnline) {
+                                setTimeout(() => {
+                                    this.syncProductsFromAPI();
+                                    this.syncOfflineOrders();
+                                }, 3000);
+                            } else {
+                                this.handleOfflineSearch('');
+                            }
+                        });
+                    }
+                },
+                
+
+                
+                showOfflineOrdersModal: false,
+                offlineOrdersList: [],
+                
+                async openOfflineOrders() {
+                    console.log('🔌 Opening Offline Orders... Online:', this.isOnline);
+                    if(!window.OfflinePOS) {
+                        console.error('❌ OfflinePOS not found!');
+                        window.dispatchEvent(new CustomEvent('notify', { detail: 'System Error: Offline Module missing', type: 'error' }));
+                        return;
+                    }
+                    
+                    try {
+                        this.offlineOrdersList = await OfflinePOS.getOfflineSalesWithKeys();
+                        console.log('📂 Found offline orders:', this.offlineOrdersList.length);
+                        
+                        if(this.offlineOrdersList.length === 0) {
+                            window.dispatchEvent(new CustomEvent('notify', { detail: 'Belum ada transaksi offline pending.', type: 'info' }));
+                            return;
+                        }
+                        this.showOfflineOrdersModal = true;
+                        console.log('✅ Modal state set to TRUE');
+                    } catch(e) {
+                        console.error('Error fetching offline orders:', e);
+                        window.dispatchEvent(new CustomEvent('notify', { detail: 'Error: ' + e.message, type: 'error' }));
+                    }
+                },
+                
+                closeOfflineOrders() {
+                    this.showOfflineOrdersModal = false;
+                },
+                
+                async resumeOfflineOrder(key, order) {
+                    if(!confirm('Edit/Lanjutkan transaksi ini? Item akan dimuat ke keranjang.')) return;
+                    
+                    // 1. Load Items to Cart
+                    this.offlineCart = JSON.parse(JSON.stringify(order.items)); // Deep copy
+                    this.offlineCustomerName = order.customer_name;
+                    
+                    // 2. Delete from DB (so it's not double synced)
+                    await OfflinePOS.deleteOfflineSale(key);
+                    
+                    this.showOfflineOrdersModal = false;
+                    window.dispatchEvent(new CustomEvent('notify', { detail: 'Transaksi dimuat! Silahkan edit atau bayar.', type: 'success' }));
+                },
+
+                async syncOfflineOrders() {
+                    if(!window.OfflinePOS) return;
+                    
+                    const orders = await OfflinePOS.getOfflineSales();
+                    if(orders.length === 0) return;
+                    
+                    window.dispatchEvent(new CustomEvent('notify', { detail: `Syncing ${orders.length} offline orders...` }));
+                    
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        const response = await fetch('/api/pos/sync-offline-sales', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': token
+                            },
+                            body: JSON.stringify({ orders: orders })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if(result.success) {
+                            await OfflinePOS.clearOfflineSales();
+                            window.dispatchEvent(new CustomEvent('notify', { detail: 'Offline orders synced!', type: 'success' }));
+                            this.$wire.dispatch('refreshSalesList'); // Optional: refresh recent sales logic if exists
+                        } else {
+                             window.dispatchEvent(new CustomEvent('notify', { detail: 'Sync failed: ' + (result.error || 'Unknown'), type: 'error' }));
+                        }
+                    } catch(e) {
+                        console.error(e);
+                        window.dispatchEvent(new CustomEvent('notify', { detail: 'Sync failed (Network)', type: 'error' }));
+                    }
+                },
+
+                async syncProductsFromAPI() {
+                    if(!this.isOnline || this.isLoadingSync) return;
+                    
+                    this.isLoadingSync = true;
+                    try {
+                        const res = await fetch('/api/pos/products-sync');
+                        if(res.ok) {
+                            const data = await res.json();
+                            if(data.products) {
+                                await OfflinePOS.saveProducts(data.products);
+                                console.log(`Synced ${data.products.length} products to offline DB`);
+                            }
+                        }
+                    } catch(e) {
+                        console.error('Sync failed', e);
+                    } finally {
+                        this.isLoadingSync = false;
+                    }
+                },
 
                     calculatePerPage() {
                         // 1. Get Available Height for Grid
@@ -61,7 +270,15 @@
         <div class="px-5 py-4 border-b border-gray-100 bg-white flex-shrink-0 z-10 relative">
             <div class="flex items-center justify-between">
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-xl font-bold text-gray-900 tracking-tight mobile-text-base">Menu Produk</h1>
+                    <h1 class="text-xl font-bold text-gray-900 tracking-tight mobile-text-base flex items-center gap-2">
+                        Menu Produk
+                        <span x-show="!isOnline" x-cloak class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-600 text-white animate-pulse">
+                            OFFLINE MODE
+                        </span>
+                        <span x-show="isOnline && isLoadingSync" x-cloak class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-600">
+                            SYNCING...
+                        </span>
+                    </h1>
                     <p class="text-xs text-slate-500 mt-0.5 truncate mobile-text-xs font-medium">Pilih produk untuk ditambahkan</p>
                 </div>
                 <div class="text-right ml-2 flex-shrink-0 pl-4 border-l border-gray-100">
@@ -78,6 +295,7 @@
                     id="product-search-input"
                     type="text"
                     wire:model.live.debounce.500ms="searchQuery"
+                    @input="!isOnline ? handleOfflineSearch($event.target.value) : null"
                     placeholder="Cari produk..."
                     class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-20 text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition shadow-sm mobile-text-sm font-medium placeholder-slate-400"
                     autocomplete="off">
@@ -136,7 +354,7 @@
 
         {{-- Grid Produk - Modern Design --}}
         {{-- Grid Produk - Modern Design --}}
-        <div class="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-50 relative" id="product-grid-container">
+        <div class="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-50 relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 content-start" id="product-grid-container">
             {{-- Compact Grid: Mobile 2, Tablet 3, Desktop 4/5, Large 6/7 --}}
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 pb-24 lg:pb-0">
                 @forelse ($products as $index => $product)
@@ -180,40 +398,102 @@
                                 </div>
                             @endif
                             
-                            {{-- Add Button Overlay (Mobile Visual Cue - Minimal) --}}
-                            @if($isAvailable)
-                            <div class="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div class="bg-violet-600/90 p-1 rounded-full shadow-sm text-white">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                            {{-- Image/Icon --}}
+                            <div class="aspect-[4/3] bg-slate-50 w-full relative overflow-hidden">
+                                @if ($product->image)
+                                    <img src="{{ Storage::url($product->image) }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100">
+                                        <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    </div>
+                                @endif
+                                
+                                {{-- Stock Badge --}}
+                                @if($product->stock !== null)
+                                    <div class="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm {{ $product->stock > 0 ? 'bg-white/90 text-slate-700' : 'bg-rose-500 text-white' }}">
+                                        {{ $product->stock > 0 ? $product->stock : 'Habis' }}
+                                    </div>
+                                @endif
+                                
+                                {{-- Hover Overlay --}}
+                                <div class="absolute inset-0 bg-violet-600/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <div class="bg-white text-violet-600 rounded-full p-2 shadow-lg transform scale-0 group-hover:scale-110 transition-transform duration-300">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                    </div>
                                 </div>
                             </div>
-                            @endif
-                        </div>
-
-                        {{-- Product Info (Compact) --}}
-                        <div class="flex-1 flex flex-col min-h-0">
-                            <h3 class="text-[11px] sm:text-xs font-bold text-slate-700 leading-tight line-clamp-2 mb-1 group-hover:text-violet-700 transition-colors">
-                                {{ $product->name }}
-                            </h3>
-                            <div class="mt-auto pt-0.5">
-                                <p class="text-xs sm:text-sm font-black text-violet-600 leading-none">
-                                    <span class="text-[9px] font-normal text-violet-400 mr-0.5">Rp</span>{{ number_format($product->sell_price, 0, ',', '.') }}
-                                </p>
+    
+                            {{-- Product Info --}}
+                            <div class="p-3 flex-1 flex flex-col min-h-0 bg-white">
+                                <h3 class="text-xs sm:text-xs font-bold text-slate-700 leading-tight line-clamp-2 mb-1 group-hover:text-violet-700 transition-colors">
+                                    {{ $product->name }}
+                                </h3>
+                                <div class="mt-auto pt-1 flex items-end justify-between">
+                                    <p class="text-xs sm:text-sm font-black text-violet-600 leading-none">
+                                        <span class="text-[10px] font-normal text-violet-400 mr-0.5">Rp</span>{{ number_format($product->price, 0, ',', '.') }}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                @empty
-                    <div class="col-span-full flex flex-col items-center justify-center py-12 text-center text-slate-400">
-                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
-                            <svg class="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
+                    @empty
+                        <div class="col-span-full flex flex-col items-center justify-center py-12 text-center text-slate-400">
+                             <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                                <svg class="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                             </div>
+                            <h3 class="text-sm font-bold text-slate-600">Produk tidak ditemukan</h3>
+                            <p class="text-xs mt-1">Coba kata kunci lain atau pilih kategori berbeda.</p>
                         </div>
-                        <h3 class="text-sm font-bold text-slate-600">Produk tidak ditemukan</h3>
-                        <p class="text-xs mt-1">Coba kata kunci lain atau pilih kategori berbeda.</p>
+                    @endforelse
+                </div>
+            </template>
+
+            {{-- OFFLINE GRID --}}
+            <template x-if="!isOnline">
+                <div class="contents">
+                    <template x-for="product in offlineProducts" :key="product.id">
+                        <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col group h-full border border-slate-100 relative cursor-pointer active:scale-95 touch-target"
+                             @click="animateFlyToCart($event); addToOfflineCart(product)">
+                            
+                            {{-- Image Placeholder --}}
+                            <div class="aspect-[4/3] bg-slate-50 w-full relative overflow-hidden">
+                                <template x-if="product.image">
+                                    <img :src="'/storage/' + product.image" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!product.image">
+                                    <div class="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100">
+                                        <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    </div>
+                                </template>
+
+                                {{-- Stock Badge --}}
+                                <template x-if="product.stock !== null">
+                                    <div class="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm"
+                                         :class="product.stock > 0 ? 'bg-white/90 text-slate-700' : 'bg-rose-500 text-white'"
+                                         x-text="product.stock > 0 ? product.stock : 'Habis'">
+                                    </div>
+                                </template>
+                            </div>
+    
+                            {{-- Product Info --}}
+                            <div class="p-3 flex-1 flex flex-col min-h-0 bg-white">
+                                <h3 class="text-xs sm:text-xs font-bold text-slate-700 leading-tight line-clamp-2 mb-1 group-hover:text-violet-700 transition-colors" x-text="product.name"></h3>
+                                <div class="mt-auto pt-1 flex items-end justify-between">
+                                    <p class="text-xs sm:text-sm font-black text-violet-600 leading-none" x-text="'Rp' + new Intl.NumberFormat('id-ID').format(product.price)"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    {{-- Empty State Offline --}}
+                    <div x-show="offlineProducts.length === 0" class="col-span-full flex flex-col items-center justify-center py-12 text-center text-slate-400">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                            <span class="text-2xl">🔌</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-slate-600">Tidak ada produk offline</h3>
+                        <p class="text-xs mt-1">Sinkronisasi data akan berjalan saat online.</p>
                     </div>
-                @endforelse
-            </div>
+                </div>
+            </template>
             
             {{-- Pagination Links (Responsive Custom) --}}
             <div class="mt-8 px-2 sm:px-4 pb-24 lg:pb-8 flex justify-center w-full">
@@ -286,6 +566,7 @@
                     <input 
                         type="text" 
                         wire:model="customerName"
+                        x-on:input="offlineCustomerName = $event.target.value"
                         class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 bg-slate-50/50 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm mobile-text-sm font-medium"
                         placeholder="Nama Pelanggan">
                 </div>
@@ -294,6 +575,26 @@
 
         {{-- List Item --}}
         <div class="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 bg-slate-50/50">
+            {{-- ONLINE CART --}}
+            <template x-if="isOnline">
+                <div class="contents">
+                    @forelse ($items as $index => $item)
+                        <div class="group bg-white border border-slate-100/80 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden">
+                            {{-- Left Accent Strip --}}
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-violet-500 rounded-l-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                            <div class="flex items-start justify-between mb-2 pl-2">
+                                <div class="flex-1 min-w-0 mr-2">
+                                    <h3 class="font-bold text-slate-800 text-sm leading-snug break-words mobile-text-sm">{{ $item['name'] }}</h3>
+                                    <div class="text-xs text-slate-400 mt-0.5 flex flex-wrap gap-2">
+                                        <span>Rp{{ number_format($item['price'], 0, ',', '.') }}</span>
+                                    </div>
+                                </div>
+                                <div class="text-right flex-shrink-0">
+                                    <p class="text-sm font-black text-violet-700 mobile-text-sm">
+                                        Rp{{ number_format($item['subtotal'], 0, ',', '.') }}
+                                    </p>
+                                </div>
             @forelse ($items as $index => $item)
                 <div wire:key="cart-item-{{ $index }}" class="group bg-white border border-slate-100/80 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden">
                     {{-- Left Accent Strip --}}
@@ -305,76 +606,119 @@
                             <div class="text-xs text-slate-400 mt-0.5 flex flex-wrap gap-2">
                                 <span>Rp{{ number_format($item['price'], 0, ',', '.') }}</span>
                             </div>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <p class="text-sm font-black text-violet-700 mobile-text-sm">
-                                Rp{{ number_format($item['subtotal'], 0, ',', '.') }}
-                            </p>
-                        </div>
-                    </div>
-                    
-                    {{-- NOTES SECTION --}}
-                    @if(!empty($item['notes']))
-                        <div class="mb-3 ml-2 p-2 bg-amber-50 border border-amber-100 rounded-lg flex items-start">
-                            <svg class="w-3 h-3 text-amber-500 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            <span class="text-xs text-amber-800 font-medium break-words leading-relaxed">{{ $item['notes'] }}</span>
-                        </div>
-                    @endif
-                    
-                    {{-- CONTROLS ROW --}}
-                    <div class="flex items-center justify-between pl-2">
-                        <div class="flex items-center bg-slate-100 rounded-lg p-1 shadow-inner">
-                             {{-- Decrement --}}
-                            <button wire:click="decrementQuantity({{ $index }})"
-                                class="w-7 h-7 flex items-center justify-center bg-white rounded-md text-slate-600 font-bold shadow-sm hover:text-rose-600 active:scale-95 transition touch-target">
-                                −
-                            </button>
                             
-                            {{-- Input --}}
-                            <input 
-                                type="number" 
-                                wire:model.lazy="items.{{ $index }}.quantity"
-                                wire:change="updateQuantityFromInput({{ $index }}, $event.target.value)"
-                                min="1"
-                                class="w-10 text-center bg-transparent border-none text-sm font-black text-slate-800 focus:ring-0 p-0 mx-1"
-                                onfocus="this.select()">
+                            {{-- NOTES SECTION --}}
+                            @if(!empty($item['notes']))
+                                <div class="mb-3 ml-2 p-2 bg-amber-50 border border-amber-100 rounded-lg flex items-start">
+                                    <svg class="w-3 h-3 text-amber-500 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    <span class="text-xs text-amber-800 font-medium break-words leading-relaxed">{{ $item['notes'] }}</span>
+                                </div>
+                            @endif
                             
-                             {{-- Increment --}}
-                            <button wire:click="incrementQuantity({{ $index }})"
-                                class="w-7 h-7 flex items-center justify-center bg-white rounded-md text-slate-600 font-bold shadow-sm hover:text-emerald-600 active:scale-95 transition touch-target">
-                                +
-                            </button>
-                        </div>
-                        
-                        <div class="flex items-center space-x-2">
-                             {{-- Note Button --}}
-                            <button wire:click="openEditNotes({{ $index }})"
-                                class="p-2 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 transition active:scale-95 touch-target"
-                                title="Edit Catatan">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            </button>
+                            {{-- CONTROLS ROW --}}
+                            <div class="flex items-center justify-between pl-2">
+                                <div class="flex items-center bg-slate-100 rounded-lg p-1 shadow-inner">
+                                     {{-- Decrement --}}
+                                    <button wire:click="decrementQuantity({{ $index }})"
+                                        class="w-7 h-7 flex items-center justify-center bg-white rounded-md text-slate-600 font-bold shadow-sm hover:text-rose-600 active:scale-95 transition touch-target">
+                                        −
+                                    </button>
+                                    
+                                    {{-- Input --}}
+                                    <input 
+                                        type="number" 
+                                        wire:model.lazy="items.{{ $index }}.quantity"
+                                        wire:change="updateQuantityFromInput({{ $index }}, $event.target.value)"
+                                        min="1"
+                                        class="w-10 text-center bg-transparent border-none text-sm font-black text-slate-800 focus:ring-0 p-0 mx-1"
+                                        onfocus="this.select()">
+                                    
+                                     {{-- Increment --}}
+                                    <button wire:click="incrementQuantity({{ $index }})"
+                                        class="w-7 h-7 flex items-center justify-center bg-white rounded-md text-slate-600 font-bold shadow-sm hover:text-emerald-600 active:scale-95 transition touch-target">
+                                        +
+                                    </button>
+                                </div>
+                                
+                                <div class="flex items-center space-x-2">
+                                     {{-- Note Button --}}
+                                    <button wire:click="openEditNotes({{ $index }})"
+                                        class="p-2 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 transition active:scale-95 touch-target"
+                                        title="Edit Catatan">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    </button>
 
-                             {{-- Delete Button --}}
-                            <button wire:click="removeItem({{ $index }})"
-                                class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition active:scale-95 touch-target"
-                                title="Hapus Item">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
+                                     {{-- Delete Button --}}
+                                    <button wire:click="removeItem({{ $index }})"
+                                        class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition active:scale-95 touch-target"
+                                        title="Hapus Item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+                    @empty
+                        <div class="flex flex-col items-center justify-center h-64 text-center text-slate-400 px-6 mt-4">
+                             <div class="relative w-24 h-24 mb-6 group">
+                                <div class="absolute inset-0 bg-violet-100 rounded-full opacity-50 blur-xl group-hover:scale-110 transition-transform duration-500"></div>
+                                <div class="relative w-full h-full bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-slate-50 group-hover:-translate-y-1 transition-transform duration-300">
+                                    <span class="text-4xl filter grayscale group-hover:grayscale-0 transition-all duration-300">🛍️</span>
+                                </div>
+                             </div>
+                             <h3 class="font-bold text-slate-700 text-base mb-2">Keranjang Belum Keisi Nih</h3>
+                             <p class="text-xs text-slate-400 leading-relaxed max-w-[200px]">Yuk pilih menu favorit pelanggan di sebelah kiri!</p>
+                        </div>
+                    @endforelse
+                </div>
+            </template>
+
+            {{-- OFFLINE CART --}}
+            <template x-if="!isOnline">
+                <div class="contents">
+                    <template x-for="(item, index) in offlineCart" :key="item.product_id">
+                        <div class="group bg-white border border-slate-100/80 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden mb-3">
+                            {{-- Offline Indicator Strip (Gray) --}}
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-500 rounded-l-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                            <div class="flex items-start justify-between mb-2 pl-2">
+                                <div class="flex-1 min-w-0 mr-2">
+                                    <h3 class="font-bold text-slate-800 text-sm leading-snug break-words mobile-text-sm" x-text="item.name"></h3>
+                                    <div class="text-xs text-slate-400 mt-0.5 flex flex-wrap gap-2">
+                                        <span x-text="'Rp' + new Intl.NumberFormat('id-ID').format(item.price)"></span>
+                                    </div>
+                                </div>
+                                <div class="text-right flex-shrink-0">
+                                    <p class="text-sm font-black text-violet-700 mobile-text-sm" x-text="'Rp' + new Intl.NumberFormat('id-ID').format(item.subtotal)"></p>
+                                </div>
+                            </div>
+                            
+                            {{-- Controls --}}
+                            <div class="flex items-center justify-between pl-2">
+                                <div class="flex items-center bg-slate-100 rounded-lg p-1 shadow-inner">
+                                    <button @click="updateOfflineQty(index, -1)"
+                                        class="w-7 h-7 flex items-center justify-center bg-white rounded-md text-slate-600 font-bold shadow-sm hover:text-rose-600 active:scale-95 transition touch-target">−</button>
+                                    
+                                    <span class="w-10 text-center text-sm font-black text-slate-800" x-text="item.quantity"></span>
+                                    
+                                    <button @click="updateOfflineQty(index, 1)"
+                                        class="w-7 h-7 flex items-center justify-center bg-white rounded-md text-slate-600 font-bold shadow-sm hover:text-emerald-600 active:scale-95 transition touch-target">+</button>
+                                </div>
+                                
+                                <button @click="removeOfflineItem(index)"
+                                    class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition active:scale-95 touch-target">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    {{-- Empty State Offline --}}
+                    <div x-show="offlineCart.length === 0" class="flex flex-col items-center justify-center h-64 text-center text-slate-400 px-6 mt-4">
+                         <h3 class="font-bold text-slate-700 text-base mb-2">Keranjang Offline Kosong</h3>
+                         <p class="text-xs text-slate-400">Mode Offline Aktif</p>
                     </div>
                 </div>
-            @empty
-                <div class="flex flex-col items-center justify-center h-64 text-center text-slate-400 px-6 mt-4">
-                     <div class="relative w-24 h-24 mb-6 group">
-                        <div class="absolute inset-0 bg-violet-100 rounded-full opacity-50 blur-xl group-hover:scale-110 transition-transform duration-500"></div>
-                        <div class="relative w-full h-full bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-slate-50 group-hover:-translate-y-1 transition-transform duration-300">
-                            <span class="text-4xl filter grayscale group-hover:grayscale-0 transition-all duration-300">🛍️</span>
-                        </div>
-                     </div>
-                     <h3 class="font-bold text-slate-700 text-base mb-2">Keranjang Belum Keisi Nih</h3>
-                     <p class="text-xs text-slate-400 leading-relaxed max-w-[200px]">Yuk pilih menu favorit pelanggan di sebelah kiri!</p>
-                </div>
-            @endforelse
+            </template>
             
             {{-- Spacer for Mobile Bottom Nav --}}
             <div class="h-20 lg:hidden"></div>
@@ -411,13 +755,19 @@
             <div class="p-5 space-y-1.5 bg-white">
                 <div class="flex justify-between text-xs text-slate-600 mobile-text-xs">
                     <span>Subtotal</span>
-                    <span class="font-mono">Rp{{ number_format($total, 0, ',', '.') }}</span>
+                    <span class="font-mono" x-text="isOnline ? 'Rp{{ number_format($total, 0, ',', '.') }}' : 'Rp' + new Intl.NumberFormat('id-ID').format(offlineTotal)">Rp{{ number_format($total, 0, ',', '.') }}</span>
                 </div>
                 <div class="flex justify-between text-xs text-slate-600 mobile-text-xs">
                     <span>Pajak (10%)</span>
-                    <span class="font-mono">Rp{{ number_format($tax, 0, ',', '.') }}</span>
+                    <span class="font-mono" x-text="isOnline ? 'Rp{{ number_format($tax, 0, ',', '.') }}' : 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(offlineTotal * 0.1))">Rp{{ number_format($tax, 0, ',', '.') }}</span>
                 </div>
                 @if($discount > 0)
+                    <template x-if="isOnline">
+                        <div class="flex justify-between text-xs text-emerald-600 mobile-text-xs font-bold">
+                            <span>Diskon</span>
+                            <span class="font-mono">- Rp{{ number_format($discount, 0, ',', '.') }}</span>
+                        </div>
+                    </template>
                     <div class="flex justify-between text-xs text-emerald-600 mobile-text-xs font-bold">
                         <span>Potongan</span>
                         <span class="font-mono">- Rp{{ number_format($discount, 0, ',', '.') }}</span>
@@ -426,19 +776,23 @@
                 <div class="border-t border-dashed border-gray-200 pt-3 mt-2">
                     <div class="flex justify-between items-end">
                         <span class="text-sm font-bold text-slate-800 mobile-text-sm">Total Tagihan</span>
-                        <span class="text-2xl font-black text-violet-600 mobile-text-lg leading-none">Rp{{ number_format($finalTotal, 0, ',', '.') }}</span>
+                        <span class="text-2xl font-black text-violet-600 mobile-text-lg leading-none" 
+                              x-text="isOnline ? 'Rp{{ number_format($finalTotal, 0, ',', '.') }}' : 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(offlineTotal * 1.1))">
+                            Rp{{ number_format($finalTotal, 0, ',', '.') }}
+                        </span>
                     </div>
                 </div>
             </div>
 
             {{-- Tombol Aksi untuk Mobile (FIXED BOTTOM ABOVE NAV) --}}
             <div class="lg:hidden p-4 space-y-3 bg-white border-t border-slate-100 pb-safe">
-                <button wire:click="openPaymentModalMobile" 
+                <button @click="!isOnline ? checkoutOffline() : $wire.openPaymentModalMobile()" 
                         wire:loading.attr="disabled"
                         wire:loading.class="opacity-75 cursor-wait"
                         class="cursor-pointer w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-violet-200 active:scale-[0.98] transition touch-target flex justify-center items-center gap-2 group"
+                        :disabled="!isOnline && offlineCart.length === 0"
                         {{ !$saleId ? 'disabled' : '' }}>
-                    <span wire:loading.remove wire:target="openPaymentModalMobile">💳 Bayar Sekarang</span>
+                    <span x-text="!isOnline ? 'Simpan Offline' : 'Bayar Sekarang'">💳 Bayar Sekarang</span>
                     <span wire:loading wire:target="openPaymentModalMobile" class="flex items-center gap-2">
                         <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -466,8 +820,11 @@
             {{-- Tombol Aksi untuk Desktop --}}
             <div class="hidden lg:block p-4 border-t border-gray-100 bg-slate-50/80 space-y-3">
                 <div class="grid grid-cols-2 gap-3">
-                    <button wire:click="saveSale"
+                    <button @click="!isOnline ? checkoutOffline() : $wire.saveSale()"
                         wire:loading.attr="disabled"
+                        wire:loading.class="opacity-75 cursor-wait bg-slate-100"
+                        class="cursor-pointer w-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 py-3 rounded-xl font-bold text-sm shadow-sm transition flex items-center justify-center gap-2">
+                        <span x-text="!isOnline ? 'Simpan Offline' : 'Simpan'">Simpan</span>
                         wire:loading.class="opacity-75 cursor-wait bg-green-700"
                         class="cursor-pointer w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold text-sm shadow-sm transition flex items-center justify-center gap-2">
                         <svg wire:loading.remove wire:target="saveSale" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
@@ -481,6 +838,8 @@
                     <button wire:click="openPaymentModal" 
                             wire:loading.attr="disabled"
                             wire:loading.class="opacity-75 cursor-wait"
+                            :disabled="!isOnline"
+                            class="cursor-pointer w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-violet-200 transition flex items-center justify-center gap-2 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                             class="cursor-pointer w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-violet-200 transition flex items-center justify-center gap-2"
                             {{ !$saleId ? 'disabled' : '' }}>
                         <svg wire:loading.remove wire:target="openPaymentModal" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
@@ -495,15 +854,17 @@
                 <div class="grid grid-cols-2 gap-2">
                     {{-- TOMBOL MERGE BILL --}}
                     <button wire:click="openMergeModal"
-                        class="cursor-pointer bg-fuchsia-600 hover:bg-fuchsia-700 text-white py-2 rounded-lg font-bold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1">
+                        :disabled="!isOnline"
+                        class="cursor-pointer bg-fuchsia-600 hover:bg-fuchsia-700 text-white py-2 rounded-lg font-bold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                         </svg>
                         Gabung
                     </button>
                     
-                    <button wire:click="openLoadModal"
-                        class="cursor-pointer bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg font-bold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1">
+                    <button @click="if(!isOnline) { openOfflineOrders(); return; } $wire.openLoadModal()"
+                            :class="{'opacity-50 cursor-not-allowed': false}"
+                        class="cursor-pointer bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg font-bold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
@@ -1456,5 +1817,58 @@
             transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.6s ease;
         }
     </style>
+
+    {{-- OFFLINE ORDERS MODAL --}}
+    <template x-if="showOfflineOrdersModal">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden relative"
+                 @click.away="closeOfflineOrders()">
+                
+                <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Pending Offline Orders
+                    </h3>
+                    <button @click="closeOfflineOrders()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                
+                <div class="max-h-[60vh] overflow-y-auto p-4 space-y-3">
+                    <template x-for="item in offlineOrdersList" :key="item.key">
+                        <div class="border border-gray-200 rounded-xl p-3 hover:border-violet-300 hover:bg-violet-50 transition-all group">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <div class="font-bold text-gray-800" x-text="item.data.customer_name || 'Guest'"></div>
+                                    <div class="text-xs text-gray-500" x-text="new Date(item.data.created_at).toLocaleString()"></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-violet-600" x-text="'Rp' + new Intl.NumberFormat('id-ID').format(item.data.total)"></div>
+                                    <div class="text-[10px] text-gray-400" x-text="item.data.items.length + ' items'"></div>
+                                </div>
+                            </div>
+                            
+                            <button @click="resumeOfflineOrder(item.key, item.data)" 
+                                    class="w-full mt-2 py-2 bg-white border border-violet-200 text-violet-700 font-bold rounded-lg text-sm hover:bg-violet-600 hover:text-white transition-colors flex items-center justify-center gap-1 shadow-sm">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                Resume / Edit
+                            </button>
+                        </div>
+                    </template>
+                </div>
+                
+                <div class="bg-gray-50 p-3 text-xs text-center text-gray-400">
+                    Data ini tersimpan di browser Anda
+                </div>
+            </div>
+        </div>
+    </template>
 
 </div>
