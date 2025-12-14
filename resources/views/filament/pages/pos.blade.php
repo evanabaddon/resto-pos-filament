@@ -478,7 +478,7 @@
                         <span wire:loading.remove wire:target="saveSale">Simpan</span>
                         <span wire:loading wire:target="saveSale">Menyimpan...</span>
                     </button>
-                    <button wire:click="openPaymentModal({{ $saleId }})" 
+                    <button wire:click="openPaymentModal" 
                             wire:loading.attr="disabled"
                             wire:loading.class="opacity-75 cursor-wait"
                             class="cursor-pointer w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-violet-200 transition flex items-center justify-center gap-2"

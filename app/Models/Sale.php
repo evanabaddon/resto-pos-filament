@@ -27,6 +27,9 @@ class Sale extends Model
         'split_from',
         'split_number',
         'split_into',
+        'amount_paid',
+        'is_paid',
+        'paid_at',
     ];
 
 

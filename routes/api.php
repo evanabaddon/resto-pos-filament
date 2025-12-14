@@ -49,7 +49,8 @@ Route::prefix('webhook')->group(function () {
                 'printer' => 'sometimes|string',
                 'division' => 'sometimes|string',
                 'sale_id' => 'sometimes|nullable|integer',
-                'type' => 'sometimes|string|in:receipt,order,test'
+                'type' => 'sometimes|string|in:receipt,order,test',
+                'payload' => 'sometimes|nullable|array' // Add validation
             ]);
 
             // Generate job ID
@@ -59,6 +60,7 @@ Route::prefix('webhook')->group(function () {
             $printJob = PrintJob::create([
                 'job_id' => $jobId,
                 'content' => $validated['content'],
+                'payload' => $validated['payload'] ?? null, // Save payload
                 'printer' => $validated['printer'] ?? 'BAR',
                 'division' => $validated['division'] ?? 'general',
                 'sale_id' => $validated['sale_id'] ?? null,
@@ -107,6 +109,7 @@ Route::prefix('webhook')->group(function () {
                     return [
                         'id' => $job->job_id,
                         'content' => $job->content,
+                        'payload' => $job->payload, // Include payload
                         'printer' => $job->printer,
                         'division' => $job->division,
                         'type' => $job->type,

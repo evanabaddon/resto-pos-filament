@@ -220,7 +220,8 @@ trait HasPayment
             // 🔹 Refresh list di modal
             $this->dispatch('refreshSalesList');
 
-            $this->resetPos();
+            //$this->resetPos();
+            $this->dispatch('reload-page');
 
         } catch (\Exception $e) {
             \Log::error('💥 Gagal menyimpan penjualan: ' . $e->getMessage());
@@ -376,15 +377,16 @@ trait HasPayment
         $this->availableSales = Sale::where('status', 'draft')
             ->where('cash_session_id', $sessionId)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->toArray();
 
         Log::info('Open Merge Modal', [
             'session_id' => $sessionId,
-            'found_sales' => $this->availableSales->count()
+            'found_sales' => count($this->availableSales)
         ]);
 
-        if ($this->availableSales->isEmpty()) {
-            $this->dispatch('showNotification', 'Tidak ada transaksi draft yang bisa digabung.', 'warning');
+        if (empty($this->availableSales)) {
+            $this->dispatch('show-notification', 'Tidak ada transaksi draft yang bisa digabung.', 'warning');
             return;
         }
 
@@ -426,12 +428,12 @@ trait HasPayment
         \Log::info('🔄 Memulai proses merge bill');
 
         if (empty($this->selectedSalesToMerge) || count($this->selectedSalesToMerge) < 2) {
-            $this->dispatch('showNotification', 'Pilih minimal 2 transaksi untuk digabung!', 'error');
+            $this->dispatch('show-notification', 'Pilih minimal 2 transaksi untuk digabung!', 'error');
             return;
         }
 
         if (!$this->mergeTargetSale) {
-            $this->dispatch('showNotification', 'Pilih transaksi tujuan!', 'error');
+            $this->dispatch('show-notification', 'Pilih transaksi tujuan!', 'error');
             return;
         }
 
@@ -441,7 +443,7 @@ trait HasPayment
 
             \Log::info('✅ Merge bill berhasil', ['target_sale_id' => $targetSale->id]);
 
-            $this->dispatch('showNotification', 'Transaksi berhasil digabungkan ke #' . $targetSale->invoice_number, 'success');
+            $this->dispatch('show-notification', 'Transaksi berhasil digabungkan ke #' . $targetSale->invoice_number, 'success');
 
             // Reset state
             $this->showMergeModal = false;
@@ -451,7 +453,7 @@ trait HasPayment
 
         } catch (\Exception $e) {
             \Log::error('💥 Gagal merge bill: ' . $e->getMessage());
-            $this->dispatch('showNotification', 'Gagal menggabungkan transaksi: ' . $e->getMessage(), 'error');
+            $this->dispatch('show-notification', 'Gagal menggabungkan transaksi: ' . $e->getMessage(), 'error');
         }
     }
 

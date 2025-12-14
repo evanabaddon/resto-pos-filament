@@ -820,7 +820,7 @@ class Pos extends Page
         config(['app.use_webhook_printing' => $newValue]);
 
         $status = $newValue ? 'ENABLED' : 'DISABLED';
-        $this->dispatch('showNotification', "🔄 Webhook printing {$status}", 'info');
+        $this->dispatch('show-notification', "🔄 Webhook printing {$status}", 'info');
     }
 
     protected function resetPos(): void
@@ -921,7 +921,7 @@ class Pos extends Page
         $itemName = $this->items[$index]['name'] ?? 'Item';
         $this->removeItem($index);
 
-        $this->dispatch('showNotification', $itemName . ' dihapus dari keranjang', 'info');
+        $this->dispatch('show-notification', $itemName . ' dihapus dari keranjang', 'info');
     }
 
     /**
