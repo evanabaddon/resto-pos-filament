@@ -66,7 +66,7 @@
     {{-- ========================= --}}
     <header
         class="flex-shrink-0 flex items-center justify-between bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-6 py-3 shadow-sm z-30 relative">
-        @inject('settings', 'GeneralSettings')
+        @inject('settings', 'App\Settings\GeneralSettings')
         <div class="flex items-center space-x-3">
             <div
                 class="h-9 w-9 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-200">

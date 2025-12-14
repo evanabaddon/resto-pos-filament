@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Settings\GeneralSettings;
 use Filament\Panel;
 use Livewire\Livewire;
 use Filament\PanelProvider;
@@ -12,6 +13,7 @@ use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Navigation\NavigationItem;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Storage;
 use Filament\Widgets\FilamentInfoWidget;
 use Filament\Http\Middleware\Authenticate;
 use App\Filament\Widgets\LowStockAlertWidget;
@@ -38,8 +40,11 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        $settings = app(GeneralSettings::class);
         return $panel
             ->default()
+            ->brandLogo($settings->app_logo ? Storage::url($settings->app_logo) : null)
+            ->brandName($settings->app_name)
             ->id('admin')
             ->path('admin')
             ->login()

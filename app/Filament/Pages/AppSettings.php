@@ -4,7 +4,7 @@ namespace App\Filament\Pages;
 
 use BackedEnum;
 use UnitEnum;
-use GeneralSettings;
+use App\Settings\GeneralSettings;
 use Filament\Schemas\Schema;
 use Filament\Pages\SettingsPage;
 use Filament\Support\Icons\Heroicon;
