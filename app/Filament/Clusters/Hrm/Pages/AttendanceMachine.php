@@ -10,6 +10,7 @@ use UnitEnum;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Filament\Notifications\Notification;
 
 class AttendanceMachine extends Page
 {
@@ -65,6 +66,7 @@ class AttendanceMachine extends Page
 
         if (!$employee) {
             $this->dispatch('attendance-error', message: 'Wajah tidak dikenali!');
+            Notification::make()->title('Wajah tidak dikenali!')->danger()->send();
             return;
         }
 
@@ -74,7 +76,9 @@ class AttendanceMachine extends Page
             ->first();
 
         if ($existing) {
-            $this->dispatch('attendance-error', message: "Halo {$employee->name}, Anda sudah melakukan absen hari ini pukul " . $existing->clock_in->format('H:i'));
+            $msg = "Halo {$employee->name}, Anda sudah melakukan absen hari ini pukul " . $existing->clock_in->format('H:i');
+            $this->dispatch('attendance-error', message: $msg);
+            Notification::make()->title('Gagal Clock In')->body($msg)->warning()->send();
             return;
         }
 
@@ -121,7 +125,9 @@ class AttendanceMachine extends Page
             'snapshot_path' => $fileName,
         ]);
 
-        $this->dispatch('attendance-success', message: "Berhasil Clock In: {$employee->name}{$statusMessage}");
+        $msg = "Berhasil Clock In: {$employee->name}{$statusMessage}";
+        $this->dispatch('attendance-success', message: $msg);
+        Notification::make()->title('Clock In Berhasil')->body($msg)->success()->send();
     }
 
     public function clockOut($faceDescriptor, $snapshot)
@@ -130,6 +136,7 @@ class AttendanceMachine extends Page
 
         if (!$employee) {
             $this->dispatch('attendance-error', message: 'Wajah tidak dikenali!');
+            Notification::make()->title('Wajah tidak dikenali!')->danger()->send();
             return;
         }
 
@@ -141,6 +148,7 @@ class AttendanceMachine extends Page
 
         if (!$attendance) {
             $this->dispatch('attendance-error', message: 'Anda belum Clock In atau sudah Clock Out!');
+            Notification::make()->title('Gagal Clock Out')->body('Anda belum Clock In atau sudah Clock Out!')->danger()->send();
             return;
         }
 
@@ -176,7 +184,9 @@ class AttendanceMachine extends Page
             'overtime_minutes' => $overtimeMinutes,
         ]);
 
-        $this->dispatch('attendance-success', message: "Berhasil Clock Out: {$employee->name}{$statusMessage}");
+        $msg = "Berhasil Clock Out: {$employee->name}{$statusMessage}";
+        $this->dispatch('attendance-success', message: $msg);
+        Notification::make()->title('Clock Out Berhasil')->body($msg)->success()->send();
     }
 
     protected function findEmployeeByFace($descriptor)

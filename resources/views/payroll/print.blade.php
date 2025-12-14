@@ -78,6 +78,28 @@
             <div>
                 <span class="block text-xs text-gray-500">Kehadiran</span>
                 <span class="block font-bold text-gray-800">{{ $record->total_attendance_days }} Hari</span>
+                @php
+                    $d = is_array($record->details) ? $record->details : json_decode(json_encode($record->details), true);
+                    $sick = $d['sick_days'] ?? 0;
+                    $perm = $d['permission_days'] ?? 0;
+                    $paidL = $d['paid_leave_days'] ?? 0;
+                @endphp
+                @if($sick > 0 || $perm > 0 || $paidL > 0)
+                    <div class="mt-2 text-xs text-gray-600 bg-blue-50 rounded p-2 text-left space-y-1">
+                        @if($sick > 0)
+                            <div class="flex justify-between"><span>Sakit:</span> <span class="font-semibold">{{ $sick }}
+                                    hari</span></div>
+                        @endif
+                        @if($perm > 0)
+                            <div class="flex justify-between"><span>Izin:</span> <span class="font-semibold">{{ $perm }}
+                                    hari</span> <span class="text-xxs text-red-500">(Unpaid)</span></div>
+                        @endif
+                        @if($paidL > 0)
+                            <div class="flex justify-between"><span>Cuti:</span> <span class="font-semibold">{{ $paidL }}
+                                    hari</span></div>
+                        @endif
+                    </div>
+                @endif
             </div>
             <div>
                 <span class="block text-xs text-gray-500">Lembur</span>
@@ -108,23 +130,32 @@
                 <h3 class="text-sm font-bold text-red-700 uppercase border-b border-gray-300 pb-2 mb-3">Potongan</h3>
                 @php
                     $details = $record->details;
-                    // Ensure details is an array
                     if (!is_array($details)) {
                         $details = json_decode(json_encode($details), true) ?? [];
                     }
+                    $breakdown = $details['deduction_details'] ?? [];
                 @endphp
 
-                @if(data_get($details, 'late_count', 0) > 0)
-                    <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
-                        <span class="text-gray-600">Keterlambatan ({{ data_get($details, 'late_count') }}x)</span>
-                        <span class="text-red-500 text-xs italic">(Di Total)</span>
-                    </div>
-                @endif
-                @if(data_get($details, 'early_leave_count', 0) > 0)
-                    <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
-                        <span class="text-gray-600">Pulang Cepat ({{ data_get($details, 'early_leave_count') }}x)</span>
-                        <span class="text-red-500 text-xs italic">(Di Total)</span>
-                    </div>
+                @if(!empty($breakdown) && count($breakdown) > 0)
+                    @foreach($breakdown as $name => $amount)
+                        <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
+                            <span class="text-gray-600">{{ $name }}</span>
+                            <span class="text-red-500 font-medium">- Rp {{ number_format($amount, 0, ',', '.') }}</span>
+                        </div>
+                    @endforeach
+                @else
+                    @if(data_get($details, 'late_count', 0) > 0)
+                        <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
+                            <span class="text-gray-600">Keterlambatan ({{ data_get($details, 'late_count') }}x)</span>
+                            <span class="text-red-500 text-xs italic">(Di Total)</span>
+                        </div>
+                    @endif
+                    @if(data_get($details, 'early_leave_count', 0) > 0)
+                        <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
+                            <span class="text-gray-600">Pulang Cepat ({{ data_get($details, 'early_leave_count') }}x)</span>
+                            <span class="text-red-500 text-xs italic">(Di Total)</span>
+                        </div>
+                    @endif
                 @endif
 
                 <div class="flex justify-between py-2 border-b border-gray-100">

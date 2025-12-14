@@ -16,4 +16,12 @@ class EditPayrollFormula extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if (empty($data['settings']['is_advanced'])) {
+            $data['script'] = PayrollFormulaResource::calculateScript($data['settings']);
+        }
+
+        return $data;
+    }
 }

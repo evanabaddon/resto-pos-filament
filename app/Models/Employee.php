@@ -51,4 +51,9 @@ class Employee extends Model
     {
         return $this->belongsTo(PayrollFormula::class);
     }
+
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
 }
