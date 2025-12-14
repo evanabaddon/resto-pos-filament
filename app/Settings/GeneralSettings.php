@@ -22,7 +22,6 @@ class GeneralSettings extends Settings
     {
         return 'app';
     }
-}
 
     public static function defaults(): array
     {
