@@ -1,9 +1,12 @@
 <x-filament-panels::page>
     <div x-data="{ 
-            // ... (keep existing data structure)
             video: null,
+            stream: null,
             isLoaded: false,
+            isCameraOpen: false,
+            modelLoaded: false,
             message: 'Memuat sistem...',
+            
             detectedName: 'Mendeteksi...',
             matchedEmployeeId: null,
             matchedEmployeeStatus: 'none', 
@@ -14,19 +17,35 @@
             init() {
                 const script = document.createElement('script');
                 script.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
-                script.onload = () => this.startCamera();
+                script.onload = () => this.loadModels();
                 document.head.appendChild(script);
             },
 
+            async loadModels() {
+                this.message = 'Memuat model AI di background...';
+                try {
+                    await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+                    await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+                    await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+                    await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+                    
+                    this.modelLoaded = true;
+                    this.message = 'Sistem Siap. Silakan buka kamera untuk absen.';
+                } catch (e) {
+                    this.message = 'Gagal memuat model AI: ' + e;
+                }
+            },
+
             async startCamera() {
-                this.message = 'Memuat model AI...';
-                await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-                await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-                await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
-                await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
-                
+                if (!this.modelLoaded) {
+                    alert('Mohon tunggu sebentar, model AI sedang dimuat...');
+                    return;
+                }
+
                 this.message = 'Menyiapkan data wajah...';
-                if (this.allEmployees && this.allEmployees.length > 0) {
+                
+                // Prepare Matcher
+                if (this.allEmployees && this.allEmployees.length > 0 && !this.faceMatcher) {
                     const labeledDescriptors = this.allEmployees.map(emp => {
                         const descriptors = emp.descriptors.map(d => new Float32Array(d));
                         return new faceapi.LabeledFaceDescriptors(emp.id + '|' + emp.name + '|' + emp.today_status, descriptors);
@@ -35,20 +54,37 @@
                 }
                 
                 this.message = 'Membuka kamera...';
-                this.video = this.$refs.video;
                 
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-                    this.video.srcObject = stream;
+                    this.stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                    this.video = this.$refs.video;
+                    this.video.srcObject = this.stream;
+                    this.isCameraOpen = true;
                     this.isLoaded = true;
-                    this.message = 'Siap. Silakan berdiri di depan kamera.';
+                    this.message = 'Kamera Aktif. Silakan berdiri di depan kamera.';
+                    
                     this.detectFace();
                 } catch (err) {
                     this.message = 'Gagal akses kamera: ' + err;
+                    alert('Gagal membuka kamera: ' + err);
                 }
             },
 
+            stopCamera() {
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                    this.stream = null;
+                }
+                this.isCameraOpen = false;
+                this.message = 'Kamera dimatikan.';
+                this.detectedName = '...';
+                this.matchedEmployeeId = null;
+                this.matchedEmployeeStatus = 'none';
+            },
+
             async detectFace() {
+                if (!this.isCameraOpen) return;
+                
                 if (!this.video.paused && !this.video.ended) {
                     const detections = await faceapi.detectAllFaces(this.video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
                     
@@ -73,11 +109,14 @@
                          }
                     } else {
                          this.detectedName = '...';
-                         this.matchedEmployeeId = null;
-                         this.matchedEmployeeStatus = 'none';
+                         // Keep last detected for a bit or clear? Clear is safer.
+                         // this.matchedEmployeeId = null;
+                         // this.matchedEmployeeStatus = 'none';
                     }
                 }
-                setTimeout(() => this.detectFace(), 500);
+                if (this.isCameraOpen) {
+                    setTimeout(() => this.detectFace(), 500);
+                }
             },
 
             async performClockIn() {
@@ -104,6 +143,9 @@
                 if (empIndex !== -1) {
                     if (method === 'clockIn') this.allEmployees[empIndex].today_status = 'checked_in';
                     if (method === 'clockOut') this.allEmployees[empIndex].today_status = 'checked_out';
+                    
+                    // Update matcher label if status changed to reflect visually immediately? 
+                    // Complex to re-init matcher. UI status update is handled by matchedEmployeeStatus reactively.
                 }
             }
         }" class="flex flex-col items-center justify-center p-4">
@@ -124,17 +166,45 @@
                 </div>
 
                 <div
-                    class="relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-xl aspect-video md:aspect-[4/3] border border-gray-100 dark:border-gray-700">
-                    <video x-ref="video" autoplay muted playsinline
+                    class="relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-xl aspect-video md:aspect-[4/3] border border-gray-100 dark:border-gray-700 flex items-center justify-center">
+
+                    <!-- Pre-Camera State -->
+                    <template x-if="!isCameraOpen">
+                        <div class="text-center p-6">
+                            <div class="mb-4 text-gray-400">
+                                <x-heroicon-o-video-camera class="w-16 h-16 mx-auto mb-2 opacity-50" />
+                                <p class="text-sm"
+                                    x-text="modelLoaded ? 'Sistem Siap Digunakan' : 'Memuat Resource...'"></p>
+                            </div>
+
+                            <button @click="startCamera" :disabled="!modelLoaded"
+                                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-wait transition-all">
+                                <x-heroicon-m-play class="w-5 h-5 mr-2" />
+                                <span x-text="modelLoaded ? 'Buka Kamera Absensi' : 'Tunggu Sebentar...'"></span>
+                            </button>
+                        </div>
+                    </template>
+
+                    <!-- Camera Active State -->
+                    <video x-ref="video" autoplay muted playsinline x-show="isCameraOpen"
                         class="w-full h-full object-cover transform scale-x-[-1]"></video>
 
-                    <!-- Overlay Name Badge -->
-                    <div class="absolute bottom-4 left-0 right-0 flex justify-center">
+                    <!-- Overlay Name Badge (Only show when camera is active) -->
+                    <div class="absolute bottom-4 left-0 right-0 flex justify-center" x-show="isCameraOpen">
                         <div class="bg-black/40 backdrop-blur-md border border-white/10 px-6 py-2 rounded-full text-white font-semibold shadow-lg transition-all duration-300"
                             :class="detectedName !== '...' && detectedName !== 'Wajah tidak dikenal' ? 'scale-100 opacity-100' : 'scale-95 opacity-0'">
                             <span class="text-lg md:text-xl tracking-wide" x-text="detectedName"></span>
                         </div>
                     </div>
+                </div>
+
+                <!-- Close Button (Outside the video box for easier access) -->
+                <div class="relative z-10 mt-4 text-center" x-show="isCameraOpen">
+                    <button @click="stopCamera"
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <x-heroicon-m-stop class="w-4 h-4 mr-2" />
+                        Tutup Kamera
+                    </button>
                 </div>
             </div>
 
@@ -147,7 +217,8 @@
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Status Karyawan</p>
 
                     <template x-if="!matchedEmployeeId">
-                        <h2 class="text-2xl font-bold text-gray-400">Menunggu Wajah...</h2>
+                        <h2 class="text-2xl font-bold text-gray-400"
+                            x-text="isCameraOpen ? 'Menunggu Wajah...' : 'Kamera Mati'"></h2>
                     </template>
 
                     <template x-if="matchedEmployeeId">
