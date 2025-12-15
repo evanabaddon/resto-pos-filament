@@ -17,12 +17,13 @@
             init() {
                 const script = document.createElement('script');
                 script.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
-                script.onload = () => this.loadModels();
+                // script.onload = () => this.loadModels(); // DEFER LOADING
                 document.head.appendChild(script);
+                this.message = 'Sistem Siap. Klik tombol untuk memulai.';
             },
 
             async loadModels() {
-                this.message = 'Memuat model AI di background...';
+                this.message = 'Sedang memuat model AI (ini mungkin memakan waktu)...';
                 try {
                     await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
                     await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
@@ -30,16 +31,21 @@
                     await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
                     
                     this.modelLoaded = true;
-                    this.message = 'Sistem Siap. Silakan buka kamera untuk absen.';
                 } catch (e) {
                     this.message = 'Gagal memuat model AI: ' + e;
+                    throw e;
                 }
             },
 
             async startCamera() {
+                // Determine if we need to load models
                 if (!this.modelLoaded) {
-                    alert('Mohon tunggu sebentar, model AI sedang dimuat...');
-                    return;
+                    try {
+                        await this.loadModels();
+                    } catch (e) {
+                        alert('Gagal memuat model: ' + e);
+                        return;
+                    }
                 }
 
                 this.message = 'Menyiapkan data wajah...';
@@ -177,10 +183,10 @@
                                     x-text="modelLoaded ? 'Sistem Siap Digunakan' : 'Memuat Resource...'"></p>
                             </div>
 
-                            <button @click="startCamera" :disabled="!modelLoaded"
+                            <button @click="startCamera"
                                 class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-wait transition-all">
                                 <x-heroicon-m-play class="w-5 h-5 mr-2" />
-                                <span x-text="modelLoaded ? 'Buka Kamera Absensi' : 'Tunggu Sebentar...'"></span>
+                                <span x-text="modelLoaded ? 'Buka Kamera Absensi' : 'Memuat & Buka Kamera'"></span>
                             </button>
                         </div>
                     </template>
