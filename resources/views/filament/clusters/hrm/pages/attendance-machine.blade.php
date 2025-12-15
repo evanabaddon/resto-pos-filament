@@ -62,7 +62,17 @@
                 this.message = 'Membuka kamera...';
                 
                 try {
-                    this.stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                    // Mobile Optimization: Prefer Front Camera & Lower Resolution
+                    // Lower resolution (640x480) makes FaceAPI much faster on mobile
+                    const constraints = {
+                        video: {
+                            facingMode: 'user',
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        }
+                    };
+
+                    this.stream = await navigator.mediaDevices.getUserMedia(constraints);
                     this.video = this.$refs.video;
                     this.video.srcObject = this.stream;
                     this.isCameraOpen = true;
@@ -71,8 +81,9 @@
                     
                     this.detectFace();
                 } catch (err) {
-                    this.message = 'Gagal akses kamera: ' + err;
-                    alert('Gagal membuka kamera: ' + err);
+                    console.error(err);
+                    this.message = 'Gagal akses kamera: ' + err.name + ' - ' + err.message;
+                    alert('Gagal membuka kamera: ' + err.message + '\nPastikan izin kamera diberikan dan akses via HTTPS.');
                 }
             },
 
