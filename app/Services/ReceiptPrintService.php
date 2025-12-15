@@ -4,87 +4,19 @@ namespace App\Services;
 
 use App\Models\Sale;
 use Mike42\Escpos\Printer;
-use App\Settings\PrinterSettings;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
-use Mike42\Escpos\PrintConnectors\FilePrintConnector;
-use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
-use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
+use App\Settings\GeneralSettings; // Added import
 
 class ReceiptPrintService
 {
-    protected $printer;
-    protected $sale;
-    protected $connector;
-    protected $printerInitialized = false;
-    protected $printerSettings;
-    protected $useWebhook;
-    protected $isHostingEnvironment;
+    // ... (existing properties)
 
-    public function __construct(?Sale $sale = null)
-    {
-        $this->sale = $sale;
-        $this->printerSettings = app(PrinterSettings::class);
-        $this->useWebhook = config('app.use_webhook_printing', false);
-        $this->isHostingEnvironment = $this->detectHostingEnvironment();
+    // ... (existing methods)
 
-        Log::info("🖨️ ReceiptPrintService initialized", [
-            'environment' => $this->isHostingEnvironment ? 'hosting' : 'local',
-            'use_webhook' => $this->useWebhook
-        ]);
-    }
-
-    /**
-     * Deteksi apakah running di hosting environment
-     */
-    protected function detectHostingEnvironment(): bool
-    {
-        if (config('app.env') === 'production') {
-            return true;
-        }
-
-        $host = request()->getHost() ?? parse_url(config('app.url'), PHP_URL_HOST) ?? '';
-
-        $isLocal = in_array($host, ['localhost', '127.0.0.1', '::1', '0.0.0.0'])
-            || str_contains($host, '.local')
-            || str_contains($host, '.test')
-            || str_contains($host, '192.168.')
-            || $host === 'localhost'
-            || empty($host);
-
-        return !$isLocal;
-    }
-
-    /**
-     * Print receipt untuk customer - WITH WEBHOOK SUPPORT
-     */
-    public function printReceipt(): bool
-    {
-        if (!$this->sale) {
-            throw new \Exception('Sale data is required for receipt printing');
-        }
-
-        // **STRATEGI PRINT BERDASARKAN ENVIRONMENT**
-        if ($this->isHostingEnvironment) {
-            // DI HOSTING: PAKAI WEBHOOK
-            return $this->printReceiptViaWebhook();
-        } else {
-            // DI LOCAL: PILIH WEBHOOK ATAU DIRECT
-            if ($this->useWebhook) {
-                return $this->printReceiptViaWebhook();
-            } else {
-                return $this->printReceiptDirect();
-            }
-        }
-    }
-
-    /**
-     * Print receipt via webhook (untuk hosting)
-     */
     protected function printReceiptViaWebhook(): bool
     {
         try {
             $sale = $this->sale->load(['items.product', 'user', 'paymentMethod']);
+            $settings = app(GeneralSettings::class); // Retrieve settings
 
             Log::info('🌐 Sending receipt print via webhook', [
                 'sale_id' => $sale->id,
@@ -105,9 +37,9 @@ class ReceiptPrintService
                     return $i;
                 })->toArray(),
                 'store' => [
-                    'name' => config('app.name', 'Resto POS'),
-                    'address' => 'Jl. Contoh No. 123',
-                    'phone' => '08123456789'
+                    'name' => $settings->app_name ?? config('app.name', 'Resto POS'),
+                    'address' => $settings->company_address ?? '-',
+                    'phone' => $settings->company_phone ?? '-'
                 ]
             ];
 
@@ -270,9 +202,11 @@ class ReceiptPrintService
         $content .= "========================\n\n";
 
         // Store Info
-        $content .= config('app.name', 'Toko Saya') . "\n";
-        $content .= "Telp: 08123456789\n";
-        $content .= "Alamat: Jl. Contoh No. 123\n";
+        // Store Info
+        $settings = app(GeneralSettings::class);
+        $content .= ($settings->app_name ?? config('app.name', 'Resto POS')) . "\n";
+        $content .= "Telp: " . ($settings->company_phone ?? '-') . "\n";
+        $content .= "Alamat: " . ($settings->company_address ?? '-') . "\n";
         $content .= "========================\n\n";
 
         // Sale Info
@@ -486,9 +420,10 @@ class ReceiptPrintService
         }
 
         $printer->setJustification(Printer::JUSTIFY_LEFT);
-        $printer->text(config('app.name', 'Toko Saya') . "\n");
-        $printer->text("Telp: 08123456789\n");
-        $printer->text("Alamat: Jl. Contoh No. 123\n");
+        $settings = app(GeneralSettings::class);
+        $printer->text(($settings->app_name ?? config('app.name', 'Resto POS')) . "\n");
+        $printer->text("Telp: " . ($settings->company_phone ?? '-') . "\n");
+        $printer->text("Alamat: " . ($settings->company_address ?? '-') . "\n");
         $printer->text("========================\n");
         $printer->feed();
     }
