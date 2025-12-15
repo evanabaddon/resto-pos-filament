@@ -4,13 +4,85 @@ namespace App\Services;
 
 use App\Models\Sale;
 use Mike42\Escpos\Printer;
-use App\Settings\GeneralSettings; // Added import
+use App\Settings\GeneralSettings;
+use App\Settings\PrinterSettings;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use Mike42\Escpos\PrintConnectors\FilePrintConnector;
+use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
+use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 
 class ReceiptPrintService
 {
-    // ... (existing properties)
+    protected $printer;
+    protected $sale;
+    protected $connector;
+    protected $printerInitialized = false;
+    protected $printerSettings;
+    protected $useWebhook;
+    protected $isHostingEnvironment;
 
-    // ... (existing methods)
+    public function __construct(?Sale $sale = null)
+    {
+        $this->sale = $sale;
+        $this->printerSettings = app(GeneralSettings::class); // Changed to GeneralSettings or keeping as is? 
+        // Wait, line 7 imported GeneralSettings, but line 27 used PrinterSettings originally. 
+        // Let's check imports. original imports had PrinterSettings.
+        // I should stick to original design or fix it.
+        // Let's assume PrinterSettings is still needed for printer name.
+        $this->printerSettings = app(\App\Settings\PrinterSettings::class);
+        $this->useWebhook = config('app.use_webhook_printing', false);
+        $this->isHostingEnvironment = $this->detectHostingEnvironment();
+
+        Log::info("🖨️ ReceiptPrintService initialized", [
+            'environment' => $this->isHostingEnvironment ? 'hosting' : 'local',
+            'use_webhook' => $this->useWebhook
+        ]);
+    }
+
+    /**
+     * Deteksi apakah running di hosting environment
+     */
+    protected function detectHostingEnvironment(): bool
+    {
+        if (config('app.env') === 'production') {
+            return true;
+        }
+
+        $host = request()->getHost() ?? parse_url(config('app.url'), PHP_URL_HOST) ?? '';
+
+        $isLocal = in_array($host, ['localhost', '127.0.0.1', '::1', '0.0.0.0'])
+            || str_contains($host, '.local')
+            || str_contains($host, '.test')
+            || str_contains($host, '192.168.')
+            || $host === 'localhost'
+            || empty($host);
+
+        return !$isLocal;
+    }
+
+    /**
+     * Print receipt untuk customer - WITH WEBHOOK SUPPORT
+     */
+    public function printReceipt(): bool
+    {
+        if (!$this->sale) {
+            throw new \Exception('Sale data is required for receipt printing');
+        }
+
+        // **STRATEGI PRINT BERDASARKAN ENVIRONMENT**
+        if ($this->isHostingEnvironment) {
+            // DI HOSTING: PAKAI WEBHOOK
+            return $this->printReceiptViaWebhook();
+        } else {
+            // DI LOCAL: PILIH WEBHOOK ATAU DIRECT
+            if ($this->useWebhook) {
+                return $this->printReceiptViaWebhook();
+            } else {
+                return $this->printReceiptDirect();
+            }
+        }
+    }
 
     protected function printReceiptViaWebhook(): bool
     {
