@@ -72,65 +72,69 @@
         </div>
 
         {{-- 🔍 & 📂 COMBINED TOOLBAR (Sticky) --}}
-        <div class="px-3 py-2 bg-white/90 backdrop-blur-sm border-b border-gray-100 flex-shrink-0 sticky top-0 z-20 flex gap-3 items-center">
+        <div class="px-3 py-3 bg-white/90 backdrop-blur-sm border-b border-gray-100 flex-shrink-0 sticky top-0 z-20 flex gap-3 items-center shadow-sm">
+        {{-- Search Input (Wider) --}}
+        <div class="relative w-full sm:w-80 shrink-0 group transition-all duration-300">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400 group-focus-within:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <input wire:model.live.debounce.300ms="searchQuery" 
+                id="product-search-input"
+                type="text" 
+                class="pl-10 block w-full bg-slate-50 border-gray-200 rounded-xl focus:ring-violet-500 focus:border-violet-500 text-sm py-2.5 transition-all shadow-sm" 
+                placeholder="Cari menu... (Ctrl+K)"
+                autocomplete="off">
             
-            {{-- Search Input (Compact) --}}
-            <div class="relative w-40 sm:w-56 shrink-0 group transition-all duration-300 focus-within:w-64">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-violet-500 transition-colors">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-                <input 
-                    id="product-search-input"
-                    type="text"
-                    wire:model.live.debounce.500ms="searchQuery"
-                    placeholder="Cari..."
-                    class="block w-full pl-9 pr-8 py-2 border border-slate-200 bg-slate-50/50 rounded-lg text-sm leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm font-medium mobile-text-sm"
-                    autocomplete="off">
-                
-                @if(!empty($searchQuery))
-                    <button 
-                        wire:click="clearSearch"
-                        class="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                @endif
-            </div>
-
-            {{-- Separator --}}
-            <div class="h-6 w-px bg-slate-200 shrink-0"></div>
-
-            {{-- Category Filter (Horizontal Scroll) --}}
-            <div class="flex-1 overflow-x-auto hide-scrollbar flex space-x-2 py-1 items-center mask-image-r">
-                <button wire:click="setCategory('Semua')"
-                        class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 touch-target {{ $selectedCategory === 'Semua' ? 'bg-violet-600 text-white border-violet-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
-                    Semua
+            {{-- Search Clear Button --}}
+            @if($searchQuery)
+                <button wire:click="$set('searchQuery', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
-                @foreach ($categories as $category)
-                    @if($category !== 'Semua')
-                    <button wire:click="setCategory('{{ $category }}')"
-                        class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 touch-target
-                            {{ $selectedCategory === $category 
-                                ? 'bg-violet-600 text-white border-violet-600 shadow-sm' 
-                                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
-                        {{ $category }}
-                    </button>
-                    @endif
-                @endforeach
-            </div>
+            @endif
         </div>
 
-        {{-- Grid Produk - Modern Design --}}
-        {{-- Grid Produk - Modern Design --}}
-        <div class="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-50 relative" id="product-grid-container">
-            
-            {{-- Loading Skeleton --}}
-            <div wire:loading wire:target="searchQuery, selectedCategory, updatePerPage, setCategory, resetPage" 
-                 class="absolute inset-0 z-50 bg-slate-50/80 backdrop-blur-[2px] flex flex-col items-center justify-center">
-                <div class="flex justify-center mb-4">
-                     <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-600"></div>
-                </div>
-                <p class="text-sm font-bold text-violet-600 animate-pulse">Memuat Produk...</p>
+        {{-- Separator --}}
+        <div class="h-8 w-px bg-slate-200 shrink-0 hidden sm:block"></div>
+
+        {{-- Category Filter (Horizontal Scroll with Fade) --}}
+        <div class="flex-1 overflow-x-auto hide-scrollbar flex space-x-2 py-1 items-center mask-image-r relative">
+             {{-- Fade Effect (Right) --}}
+            <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10 sm:hidden"></div>
+
+            <button wire:click="setCategory('Semua')"
+                    class="whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border shrink-0 touch-target {{ $selectedCategory === 'Semua' ? 'bg-violet-600 text-white border-violet-600 shadow-md transform scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                Semua
+            </button>
+            @foreach ($categories as $category)
+                @if($category !== 'Semua')
+                <button wire:click="setCategory('{{ $category }}')"
+                    class="whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border shrink-0 touch-target
+                        {{ $selectedCategory === $category 
+                            ? 'bg-violet-600 text-white border-violet-600 shadow-md transform scale-105' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                    {{ $category }}
+                </button>
+                @endif
+            @endforeach
+        </div>
+    </div>
+
+    {{-- Grid Produk - Modern Design --}}
+    <div class="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-50 relative" id="product-grid-container">
+        
+        {{-- Loading Skeleton (Refined) --}}
+        <div wire:loading wire:target="searchQuery, selectedCategory, updatePerPage, setCategory, resetPage" 
+             class="absolute inset-0 z-50 bg-slate-50/60 backdrop-blur-sm flex flex-col items-center justify-center transition-all duration-300">
+            <div class="bg-white p-4 rounded-2xl shadow-xl flex flex-col items-center animate-in zoom-in-95 duration-200">
+                <svg class="animate-spin h-8 w-8 text-violet-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-xs font-bold text-slate-600 tracking-wide">MEMUAT...</p>
             </div>
+        </div>
 
             {{-- Compact Grid: Mobile 2, Tablet 3, Desktop 4/5, Large 6/7 --}}
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 pb-24 lg:pb-0">
