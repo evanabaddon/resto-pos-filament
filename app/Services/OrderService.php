@@ -27,6 +27,7 @@ class OrderService
                     'user_id' => $data['user_id'],
                     'invoice_number' => $data['invoice_number'],
                     'customer_name' => $data['customer_name'] ?? 'Umum',
+                    'table_number' => $data['table_number'] ?? '', // ✅ Save table number
                     'order_type' => $data['order_type'],
                     'subtotal' => $data['subtotal'],
                     'tax' => $data['tax'],
@@ -45,6 +46,7 @@ class OrderService
 
                 $sale->update([
                     'customer_name' => $data['customer_name'] ?? 'Umum',
+                    'table_number' => $data['table_number'] ?? '', // ✅ Update table number
                     'order_type' => $data['order_type'],
                     'subtotal' => $data['subtotal'],
                     'tax' => $data['tax'],

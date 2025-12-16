@@ -69,7 +69,7 @@ class Pos extends Page
     public $orderType = 'Dine In';
     public $orderNumber = '';
     public $customerName = '';
-    public $selectedCategory = 'Semua';
+    public $selectedCategory = 'SEMUA';
     public $discountCodeInput = '';
     public $discountMessage = '';
     public $discountApplied = false;
@@ -343,7 +343,7 @@ class Pos extends Page
     {
         // Ambil semua kategori dari DB + tambah "Semua"
         $categories = Category::pluck('name')->toArray();
-        array_unshift($categories, 'Semua');
+        array_unshift($categories, 'SEMUA');
         return $categories;
     }
 
@@ -365,7 +365,7 @@ class Pos extends Page
         }
 
         // Filter Kategori
-        if ($this->selectedCategory !== 'Semua') {
+        if ($this->selectedCategory !== 'SEMUA') {
             $category = Category::where('name', $this->selectedCategory)->first();
             if ($category) {
                 $query->where('category_id', $category->id);
@@ -488,153 +488,6 @@ class Pos extends Page
         $this->itemNotes = '';
         $this->dispatch('closeNotesModal');
     }
-
-
-
-
-
-
-
-    // public function saveSale()
-    // {
-    //     // 🔹 Cek keranjang kosong
-    //     if (empty($this->items)) {
-    //         $this->dispatch('show-notification', message: 'Keranjang kosong!', type: 'error');
-    //         return;
-    //     }
-
-    //     // 🔹 Cek nama pelanggan
-    //     if (empty(trim($this->customerName))) {
-    //         $this->dispatch('show-notification', message: 'Nama pelanggan harus diisi!', type: 'error');
-    //         return;
-    //     }
-
-    //     try {
-    //         \DB::beginTransaction();
-
-    //         $subtotal = $this->total ?? 0;
-    //         $tax      = $this->tax ?? 0;
-    //         $discount = $this->discount ?? 0;
-    //         $final    = $this->finalTotal ?? ($subtotal + $tax - $discount);
-
-    //         // 🔹 LOGIKA YANG BENAR:
-    //         // - Jika $this->saleId ADA → UPDATE sale yang diload
-    //         // - Jika $this->saleId NULL → CREATE sale baru
-
-    //         if ($this->saleId) {
-    //             // 🔹 UPDATE: Sale yang diload dari modal
-    //             $sale = Sale::findOrFail($this->saleId);
-
-    //             $sale->update([
-    //                 'customer_name' => $this->customerName ?? 'Umum',
-    //                 'order_type'    => $this->orderType,
-    //                 'subtotal'      => $subtotal,
-    //                 'tax'           => $tax,
-    //                 'discount'      => $discount,
-    //                 'final_total'   => $final,
-    //                 'total'         => $final,
-    //                 'updated_at'    => now(),
-    //             ]);
-
-    //             // Hapus item lama agar bisa simpan item baru
-    //             $sale->items()->delete();
-
-    //         } else {
-    //             // 🔹 CREATE: Transaksi baru dengan order number baru
-    //             $sale = Sale::create([
-    //                 'cash_session_id' => $this->cashSessionId ?? session('cash_session_id'),
-    //                 'user_id'         => auth()->id(),
-    //                 'invoice_number'  => $this->generateOrderNumber(),
-    //                 'customer_name'   => $this->customerName ?? 'Umum',
-    //                 'order_type'      => $this->orderType,
-    //                 'subtotal'        => $subtotal,
-    //                 'tax'             => $tax,
-    //                 'discount'        => $discount,
-    //                 'final_total'     => $final,
-    //                 'total'           => $final,
-    //                 'payment_method'  => '',
-    //                 'status'          => 'draft',
-    //             ]);
-
-    //             // Set saleId untuk transaksi baru
-    //             $this->saleId = $sale->id;
-    //         }
-
-    //         // 🔹 Simpan items (sama untuk kedua kasus)
-    //         foreach ($this->items as $item) {
-    //             $saleItem = SaleItem::create([
-    //                 'sale_id'    => $sale->id,
-    //                 'product_id' => $item['product_id'],
-    //                 'quantity'   => $item['quantity'],
-    //                 'unit_price' => $item['price'],
-    //                 'subtotal'   => $item['subtotal'],
-    //             ]);
-
-    //             $product = Product::find($item['product_id']);
-
-    //             if (!$product) continue;
-
-    //             // 🔹 Kurangi stok (sama untuk kedua kasus)
-    //             if ($product->recipes()->exists()) {
-    //                 $recipes = $product->recipes()->with('ingredient')->get();
-
-    //                 foreach ($recipes as $recipe) {
-    //                     if (! $recipe->ingredient) continue;
-
-    //                     $recipeRate     = max($recipe->unit->conversion_rate ?? 1, 0.0001);
-    //                     $ingredientRate = max($recipe->ingredient->unit->conversion_rate ?? 1, 0.0001);
-
-    //                     $conversion = $ingredientRate / $recipeRate;
-    //                     $totalUsed = $recipe->quantity * $item['quantity'] * $conversion;
-
-    //                     $recipe->ingredient->decrement('stock', $totalUsed);
-
-    //                     StockMovement::create([
-    //                         'product_id' => $recipe->ingredient->id,
-    //                         'quantity'   => -$totalUsed,
-    //                         'type'       => 'decrease',
-    //                         'reason'     => 'POS Sale #' . $sale->invoice_number,
-    //                         'notes'      => 'Bahan untuk produk ' . $product->name . ' dijual (' . auth()->user()->name . ')',
-    //                     ]);
-    //                 }
-
-    //             } else {
-    //                 $product->decrement('stock', $item['quantity']);
-
-    //                 StockMovement::create([
-    //                     'product_id' => $product->id,
-    //                     'quantity'   => -$item['quantity'],
-    //                     'type'       => 'decrease',
-    //                     'reason'     => 'POS Sale #' . $sale->invoice_number,
-    //                     'notes'      => 'Penjualan langsung produk oleh ' . auth()->user()->name,
-    //                 ]);
-    //             }
-    //         }
-
-    //         \DB::commit();
-
-    //         // 🔹 TAMPILKAN NOTIFIKASI BERBEDA
-    //         if ($this->saleId) {
-    //             $this->dispatch('show-notification', message: 'Transaksi #' . $sale->invoice_number . ' berhasil diupdate!', type: 'success');
-    //         } else {
-    //             $this->dispatch('show-notification', message: 'Transaksi baru #' . $sale->invoice_number . ' berhasil disimpan!', type: 'success');
-    //         }
-
-    //         $this->resetPos();
-
-    //         // 🔹 PENTING: JANGAN resetPos() setelah save!
-    //         // Biarkan saleId tetap ada agar jika user tambah menu lagi, akan update sale yang sama
-    //         // Hanya reset jika memang ingin mulai transaksi baru
-
-    //     } catch (\Exception $e) {
-    //         \DB::rollBack();
-    //         $this->dispatch('show-notification', message: 'Gagal menyimpan penjualan: ' . $e->getMessage(), type: 'error');
-    //     }
-    // }
-
-
-
-
 
     /**
      * Decrement quantity dengan debounce
@@ -891,6 +744,7 @@ class Pos extends Page
         $this->orderType = 'Dine In';
         $this->generateOrderNumber();
         $this->customerName = '';
+        $this->tableNumber = '';
         $this->discountCodeInput = '';
         $this->discountMessage = '';
         $this->discountApplied = false;
@@ -899,7 +753,7 @@ class Pos extends Page
 
         // Reset Search & Pagination
         $this->searchQuery = '';
-        $this->selectedCategory = 'Semua';
+        $this->selectedCategory = 'SEMUA';
         // $this->resetPage(); // Disabled to prevent Alpine/dom-morph error
 
         // jangan ubah $showCashInModal agar modal hanya dikontrol saat mount/cek session

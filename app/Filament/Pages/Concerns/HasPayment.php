@@ -155,7 +155,7 @@ trait HasPayment
                 'user_id' => auth()->id(),
                 'invoice_number' => $isUpdate ? $existingSale->invoice_number : $this->generateOrderNumber(),
                 'customer_name' => $this->customerName ?? 'Umum',
-                'table_number' => $this->tableNumber,
+                'table_number' => $this->tableNumber ?? '', // ✅ Pass table number
                 'order_type' => $this->orderType,
                 'subtotal' => $subtotal,
                 'tax' => $tax,
