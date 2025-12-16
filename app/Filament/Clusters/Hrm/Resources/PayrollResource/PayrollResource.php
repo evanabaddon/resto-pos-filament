@@ -378,19 +378,19 @@ class PayrollResource extends Resource
                             $leaves = $employee->leaveRequests()
                                 ->where('status', 'approved')
                                 ->where(function ($q) use ($startOfMonth, $endOfMonth) {
-                                    $q->whereBetween('start_date', [$startOfMonth, $endOfMonth])
-                                        ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
-                                        ->orWhere(function ($sub) use ($startOfMonth, $endOfMonth) {
-                                            $sub->where('start_date', '<', $startOfMonth)
-                                                ->where('end_date', '>', $endOfMonth);
-                                        });
-                                })
+                                $q->whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                                    ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
+                                    ->orWhere(function ($sub) use ($startOfMonth, $endOfMonth) {
+                                        $sub->where('start_date', '<', $startOfMonth)
+                                            ->where('end_date', '>', $endOfMonth);
+                                    });
+                            })
                                 ->get();
 
                             $sickDays = 0;
                             $permissionDays = 0; // Izin (Unpaid)
                             $paidLeaveDays = 0; // Cuti Tahunan (Paid usually)
-
+            
                             foreach ($leaves as $leave) {
                                 // Calculate days falling in this month
                                 $s = Carbon::parse($leave->start_date);
@@ -417,7 +417,7 @@ class PayrollResource extends Resource
                             // Sakit -> Paid (Add to attendance)
                             // Izin -> Unpaid (Do nothing, day is missing from attendance)
                             // Cuti Tahunan -> Paid (Add to attendance)
-
+            
                             $attendanceDays = $attendances->count() + $sickDays + $paidLeaveDays;
 
                             // DYNAMIC FORMULA CHECK
@@ -450,9 +450,9 @@ class PayrollResource extends Resource
                                         // Otherwise prepend return (for simple expressions)
                                         $result = null;
                                         if (str_contains($script, 'return')) {
-                                            $result = eval($script);
+                                            $result = eval ($script);
                                         } else {
-                                            $result = eval("return $script;");
+                                            $result = eval ("return $script;");
                                         }
 
                                         if (is_array($result)) {
@@ -496,7 +496,7 @@ class PayrollResource extends Resource
                             $deductions += $totalLoanDeduction;
                             $totalPayout -= $totalLoanDeduction;
                             // --------------------
-
+            
                             Log::info("Total Payout Calculated: {$totalPayout}");
 
                             Payroll::create([
@@ -533,6 +533,37 @@ class PayrollResource extends Resource
     {
         return $schema
             ->schema([
+                Section::make('Pegawai & Periode')
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('employee.name')
+                            ->label('Nama Pegawai'),
+                        TextEntry::make('month_year')
+                            ->label('Periode'),
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn(string $state): string => match ($state) {
+                                'draft' => 'gray',
+                                'paid' => 'success',
+                            }),
+                    ]),
+
+                Section::make('Rincian Pendapatan')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('base_salary')
+                            ->label('Gaji Pokok')
+                            ->money('IDR'),
+                        TextEntry::make('total_attendance_days')
+                            ->label('Total Hadir (Hari)'),
+                        TextEntry::make('total_overtime_minutes')
+                            ->label('Total Lembur (Menit)'),
+                        TextEntry::make('overtime_amount')
+                            ->label('Nominal Lembur')
+                            ->money('IDR'),
+                    ]),
+
                 Section::make('Rincian Potongan & Total')
                     ->schema([
                         TextEntry::make('deduction_details')
