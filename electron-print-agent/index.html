@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Resto POS Print Agent</title>
+    <!-- Use Phosphor Icons for modern look -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338ca;
+            --bg: #F3F4F6;
+            --surface: #ffffff;
+            --text: #1F2937;
+            --text-secondary: #6B7280;
+            --border: #E5E7EB;
+            --success: #10B981;
+            --danger: #EF4444;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-items {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 0 10px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item:hover {
+            background: #F9FAFB;
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: #EEF2FF;
+            color: var(--primary);
+        }
+
+        .status-badge {
+            margin: 20px;
+            padding: 10px;
+            background: #F9FAFB;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9CA3AF;
+        }
+
+        .status-dot.run {
+            background: var(--success);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+
+        .status-dot.stop {
+            background: var(--danger);
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .content-area {
+            display: none;
+        }
+
+        .content-area.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        /* Initial Setup Helper */
+        .helper-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn.secondary {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn.secondary:hover {
+            background: #F9FAFB;
+        }
+
+        .btn.danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn.danger:hover {
+            background: #DC2626;
+        }
+
+        .btn.full {
+            width: 100%;
+            justify-content: center;
+            margin-top: 20px;
+            padding: 12px;
+        }
+
+        /* Logo Chooser */
+        .logo-preview-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 15px;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            background: #F9FAFB;
+        }
+
+        .logo-preview {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            border-radius: 4px;
+            background: white;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9CA3AF;
+        }
+
+        .logo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            background: #F9FAFB;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Toggle */
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-label input {
+            width: auto;
+            margin: 0;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+        }
+
+        /* Logs */
+        .log-container {
+            background: #111827;
+            color: #10B981;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #374151;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            border-bottom: 1px solid #1F2937;
+            padding-bottom: 2px;
+        }
+
+        .log-time {
+            color: #6B7280;
+            margin-right: 8px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            background: #e5e5e5;
+            /* Contrast for paper */
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Thermal Simulation */
+        .thermal-paper {
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            color: black;
+            width: 300px;
+            /* Default ~80mm simulation */
+            transition: width 0.3s;
+        }
+
+        .thermal-paper.w58 {
+            width: 220px;
+        }
+
+        /* ~58mm simulation */
+
+        .tp-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+
+        .tp-center {
+            text-align: center;
+            display: block;
+        }
+
+        .tp-right {
+            text-align: right;
+        }
+
+        .tp-divider {
+            border-top: 1px dashed black;
+            margin: 8px 0;
+        }
+
+        .tp-dots {
+            flex: 1;
+            border-bottom: 1px dashed black;
+            margin: 0 5px;
+            position: relative;
+            top: -5px;
+        }
+
+        .tp-box {
+            border: 2px solid black;
+            padding: 5px;
+            text-align: center;
+            margin: 5px 0;
+            font-weight: bold;
+        }
+
+        /* Font Size Simulation */
+        .tp-size-1-1 {
+            font-size: 1em;
+        }
+
+        .tp-size-1-2 {
+            font-size: 1em;
+            transform: scaleY(2);
+            transform-origin: left top;
+            display: inline-block;
+            margin-bottom: 0.5em;
+        }
+
+        .tp-size-2-1 {
+            font-size: 1em;
+            transform: scaleX(2);
+            transform-origin: left top;
+            display: inline-block;
+            margin-right: 0.5em;
+        }
+
+        .tp-size-2-2 {
+            font-size: 2em;
+            line-height: 1.1;
+            font-weight: bold;
+        }
+
+        .tp-size-3-3 {
+            font-size: 3em;
+            line-height: 1.1;
+            font-weight: bold;
+        }
+
+        /* Perbaiki class untuk preview */
+        .tp-bold {
+            font-weight: bold;
+        }
+
+        .tp-invert {
+            background: black;
+            color: white;
+            display: inline-block;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1><i class="ph ph-printer"></i> Print Agent</h1>
+        </div>
+
+        <div class="nav-items">
+            <button class="nav-item active" onclick="switchTab('general', this)">
+                <i class="ph ph-sliders"></i> General
+            </button>
+            <button class="nav-item" onclick="switchTab('printers', this)">
+                <i class="ph ph-plugs"></i> Printers
+            </button>
+            <button class="nav-item" onclick="switchTab('templates', this)">
+                <i class="ph ph-file-text"></i> Templates
+            </button>
+            <button class="nav-item" onclick="switchTab('logs', this)">
+                <i class="ph ph-scroll"></i> Validations
+            </button>
+        </div>
+
+        <div class="status-badge">
+            <div id="status-dot" class="status-dot stop"></div>
+            <div style="display:flex; flex-direction:column;">
+                <span id="status-text">Stopped</span>
+                <span id="last-check"
+                    style="font-size:0.75rem; color:var(--text-secondary); font-weight:normal;">-</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+
+        <!-- GENERAL TAB -->
+        <div id="general" class="content-area active">
+            <div class="card">
+                <h2>Server Connection</h2>
+                <div class="form-group">
+                    <label>Webhook URL</label>
+                    <input type="text" id="webhookUrl" placeholder="https://pos.domain.com/api/webhook">
+                    <p class="helper-text">Enter the specific print webhook URL from your POS settings.</p>
+                </div>
+                <div class="form-group">
+                    <label>Secret Key</label>
+                    <input type="password" id="secretKey" placeholder="•••••••••••••••">
+                </div>
+                <div class="form-group">
+                    <label>Printer Width (Paper Size)</label>
+                    <select id="printerWidth">
+                        <option value="32">58mm (32 Characters) - Default</option>
+                        <option value="42">80mm (42 Characters)</option>
+                        <option value="48">80mm (48 Characters - Small Font)</option>
+                    </select>
+                    <p class="helper-text">Adjust this if text wrapping is incorrect.</p>
+                </div>
+                <div class="form-group">
+                    <label>Printer Width (Paper Size)</label>
+                    <select id="printerWidth">
+                        <option value="32">58mm (32 Characters) - Default</option>
+                        <option value="42">80mm (42 Characters)</option>
+                        <option value="48">80mm (48 Characters - Small Font)</option>
+                    </select>
+                    <p class="helper-text">Adjust this if text wrapping is incorrect.</p>
+                </div>
+                <div class="form-group">
+                    <label>Print Job Delay (ms)</label>
+                    <input type="number" id="printerDelay" placeholder="4000" min="500" step="500">
+                    <p class="helper-text">Delay between jobs to prevent overlapping on Windows (Default:
+                        4000ms).</p>
+                </div>
+            </div>
+
+            <button class="btn full" onclick="saveConfig()">
+                <i class="ph ph-floppy-disk"></i> Save & Restart Service
+            </button>
+        </div>
+
+        <!-- PRINTERS TAB -->
+        <div id="printers" class="content-area">
+            <div class="card">
+                <h2>Printer Mapping</h2>
+                <p class="helper-text" style="margin-bottom: 20px;">
+                    Map the logical printer names (Kitchen, Bar, etc) to physical devices.
+                </p>
+
+                <table id="mappingTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%">POS Name</th>
+                            <th style="width: 35%">Physical Printer</th>
+                            <th style="width: 25%">Width (Paper)</th>
+                            <th style="width: 15%; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div style="padding-top: 15px;">
+                    <button class="btn secondary" onclick="addMappingRow()">
+                        <i class="ph ph-plus"></i> Add Mapping
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn full" onclick="saveConfig(this)">
+                <i class="ph ph-floppy-disk"></i> Save & Restart Service
+            </button>
+        </div>
+
+        <!-- TEMPLATES TAB -->
+        <div id="templates" class="content-area">
+            <div class="card">
+                <h2>Receipt (Pembayaran)</h2>
+
+                <div class="form-group">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="tpl_receipt_showLogo"> Enable Logo
+                    </label>
+                </div>
+
+                <div class="form-group" id="logo-group">
+                    <label>Store Logo</label>
+                    <div class="logo-preview-container">
+                        <div class="logo-preview" id="logoPreviewBox">
+                            <i class="ph ph-image"></i>
+                        </div>
+                        <div style="flex:1">
+                            <input type="hidden" id="logoPath">
+                            <button class="btn secondary" onclick="selectLogo()">
+                                <i class="ph ph-upload-simple"></i> Choose Image...
+                            </button>
+                            <p class="helper-text">Recommended: Black & White, 300px width.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Store Name (Header)</label>
+                    <input type="text" id="tpl_receipt_storeName"
+                        placeholder="Override Store Name (Leave empty to use Payload)">
+                </div>
+
+                <div class="form-group">
+                    <label>Store Address</label>
+                    <textarea id="tpl_receipt_storeAddress" rows="2"
+                        placeholder="Override Address (Leave empty to use Payload)"></textarea>
+                </div> <!-- Added missing closing tag -->
+
+                <div class="form-group">
+                    <label>Store Phone</label>
+                    <input type="text" id="tpl_receipt_storePhone" placeholder="Override Phone">
+                </div>
+
+                <div class="form-group">
+                    <label>Custom Footer Message</label>
+                    <textarea id="tpl_receipt_footer" rows="2" placeholder="Example: Password Wifi: 123456"></textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Kitchen / Bar Order</h2>
+
+                <div class="form-group">
+                    <label>Product Name Size</label>
+                    <select id="tpl_order_productSize">
+                        <option value="1,1">Normal (1x1)</option>
+                        <option value="1,1_BOLD">Normal Bold</option>
+                        <option value="1,2">Double Height (1x2)</option>
+                        <option value="2,1">Double Width (2x1)</option>
+                        <option value="2,2">Double Size (2x2)</option>
+                        <option value="3,3">Triple Size (3x3)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Quantity Size</label>
+                    <select id="tpl_order_qtySize">
+                        <option value="1,1">Normal (1x1)</option>
+                        <option value="2,2">Double Size (2x2)</option>
+                        <option value="3,3">Triple Size (3x3)</option>
+                        <option value="4,4">Quadruple Size (4x4)</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="tpl_order_showHeader">
+                            <span>Show Header (e.g. KITCHEN)</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="tpl_order_showTime">
+                            <span>Show Time</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="tpl_order_showCust">
+                            <span>Show Customer</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="tpl_order_showTable">
+                            <span>Show Table</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <button class="btn secondary full" onclick="previewTemplate('order')">
+                        <i class="ph ph-eye"></i> Preview Order
+                    </button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; margin-top: 20px;">
+                <button class="btn secondary full" style="margin-top:0;" onclick="previewReceipt()">
+                    <i class="ph ph-eye"></i> Preview Receipt
+                </button>
+                <button class="btn full" style="margin-top:0;" onclick="saveConfig(this)">
+                    <i class="ph ph-floppy-disk"></i> Save Config
+                </button>
+            </div>
+        </div>
+
+        <!-- PREVIEW MODAL -->
+        <div id="previewModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Receipt Preview</h3>
+                    <button class="btn secondary" style="padding: 4px 8px;" onclick="closeModal()">
+                        <i class="ph ph-x"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="thermalInfo" class="thermal-paper">
+                        <!-- Config Content -->
+                    </div>
+                </div>
+                <div
+                    style="padding: 15px; border-top: 1px solid var(--border); display:flex; gap:10px; justify-content:center;">
+                    <button class="btn secondary" onclick="togglePreviewWidth(32)">58mm</button>
+                    <button class="btn secondary" onclick="togglePreviewWidth(42)">80mm</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOGS TAB -->
+        <div id="logs" class="content-area">
+            <div class="card"
+                style="height: calc(100vh - 100px); padding: 0; display: flex; flex-direction:column; border:none; box-shadow:none; background:transparent;">
+                <h2 style="border:none; padding-bottom: 10px;">Activity Log</h2>
+                <div class="log-container" id="logBox">
+                    <div class="log-entry"><span class="log-time">System</span> Ready to start...</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        let systemPrinters = [];
+
+        // Tab Switching
+        function switchTab(areaId, btn) {
+            document.querySelectorAll('.content-area').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(areaId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // Init
+        (async () => {
+            systemPrinters = await ipcRenderer.invoke('get-printers');
+            ipcRenderer.send('get-config');
+            ipcRenderer.send('get-status'); // Check status on load
+        })();
+
+        // LOGO SELECTION
+        async function selectLogo() {
+            const newPath = await ipcRenderer.invoke('select-logo');
+            if (newPath) {
+                document.getElementById('logoPath').value = newPath;
+                updateLogoPreview(newPath);
+            }
+        }
+
+        function updateLogoPreview(path) {
+            const box = document.getElementById('logoPreviewBox');
+            if (path) {
+                box.innerHTML = `<img src="${path}" alt="Logo">`;
+            } else {
+                box.innerHTML = '<i class="ph ph-image"></i>';
+            }
+        }
+
+        // LOAD CONFIG
+        ipcRenderer.on('config-data', (event, config) => {
+            // General
+            document.getElementById('webhookUrl').value = config.webhookUrl || '';
+            document.getElementById('secretKey').value = config.secretKey || '';
+            document.getElementById('printerWidth').value = config.printerWidth || '32';
+            document.getElementById('printerDelay').value = config.printerDelay || 4000;
+            document.getElementById('logoPath').value = config.logoPath || '';
+            updateLogoPreview(config.logoPath);
+
+            document.getElementById('tpl_receipt_showLogo').checked = config.tpl_receipt_showLogo !== false;
+            document.getElementById('tpl_receipt_storeName').value = config.tpl_receipt_storeName || '';
+            document.getElementById('tpl_receipt_storeAddress').value = config.tpl_receipt_storeAddress || '';
+            document.getElementById('tpl_receipt_storePhone').value = config.tpl_receipt_storePhone || '';
+            document.getElementById('tpl_receipt_footer').value = config.tpl_receipt_footer || '';
+
+            // Order Template
+            document.getElementById('tpl_order_productSize').value = config.tpl_order_productSize || '1,1_BOLD';
+            document.getElementById('tpl_order_qtySize').value = config.tpl_order_qtySize || '2,2';
+
+            document.getElementById('tpl_order_showHeader').checked = config.tpl_order_showHeader !== false;
+            document.getElementById('tpl_order_showTime').checked = config.tpl_order_showTime !== false;
+            document.getElementById('tpl_order_showCust').checked = config.tpl_order_showCust !== false;
+            document.getElementById('tpl_order_showTable').checked = config.tpl_order_showTable !== false;
+
+            // Printers
+            renderMapping(config.printerMapping || {});
+        });
+
+        function renderMapping(mapping) {
+            const tbody = document.querySelector('#mappingTable tbody');
+            tbody.innerHTML = '';
+
+            if (Object.keys(mapping).length === 0) {
+                addMappingRow('KASIR', '', '');
+                addMappingRow('DAPUR', '', '');
+            } else {
+                for (const [serverName, mapData] of Object.entries(mapping)) {
+                    // Handle legacy string mapping vs new object
+                    let localName = mapData;
+                    let width = '';
+                    if (typeof mapData === 'object') {
+                        localName = mapData.device;
+                        width = mapData.width || '';
+                    }
+                    addMappingRow(serverName, localName, width);
+                }
+            }
+        }
+
+        function addMappingRow(serverName = '', localName = '', width = '') {
+            const tbody = document.querySelector('#mappingTable tbody');
+            const tr = document.createElement('tr');
+
+            let options = '<option value="">-- Select Device --</option>';
+            systemPrinters.forEach(p => {
+                const selected = p === localName ? 'selected' : '';
+                options += `<option value="${p}" ${selected}>${p}</option>`;
+            });
+
+            // Width options
+            const wDefault = width === '' ? 'selected' : '';
+            const w32 = width == '32' ? 'selected' : '';
+            const w42 = width == '42' ? 'selected' : '';
+            const w48 = width == '48' ? 'selected' : '';
+
+            tr.innerHTML = `
+                <td><input type="text" class="server-name" value="${serverName}" placeholder="e.g. KITCHEN"></td>
+                <td>
+                    <select class="local-name">
+                        ${options}
+                    </select>
+                </td>
+                <td>
+                    <select class="printer-width">
+                        <option value="" ${wDefault}>Global Default</option>
+                        <option value="32" ${w32}>58mm (Receipt)</option>
+                        <option value="42" ${w42}>80mm (Standard)</option>
+                        <option value="48" ${w48}>80mm (Small Font)</option>
+                    </select>
+                </td>
+                <td style="text-align:right; white-space: nowrap;">
+                    <button class="btn secondary" style="padding: 8px 12px;" onclick="testPrinter(this)" title="Test Print">
+                        <i class="ph ph-printer"></i>
+                    </button>
+                    <button class="btn danger" style="padding: 8px 12px;" onclick="this.closest('tr').remove()" title="Remove">
+                        <i class="ph ph-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        async function testPrinter(btn) {
+            const tr = btn.closest('tr');
+            const printerName = tr.querySelector('.local-name').value;
+            const width = tr.querySelector('.printer-width').value; // Get width for testing
+
+            if (!printerName) {
+                alert('Please select a printer first');
+                return;
+            }
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
+            btn.disabled = true;
+
+            try {
+                // Pass width to test-print handler
+                const result = await ipcRenderer.invoke('test-print', printerName, width);
+                if (result.success) {
+                    // Visual feedback
+                    btn.style.color = 'var(--success)';
+                    setTimeout(() => btn.style.color = '', 2000);
+                } else {
+                    alert('Test Failed: ' + result.error);
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // PREVIEW LOGIC
+        const DUMMY_DATA = {
+            sale: {
+                invoice_number: "#20251215-97D4",
+                customer_name: "shopeefood andy dwi",
+                final_total: "16500.00",
+                amount_paid: "20000.00",
+                payment_method: { name: "Qris" },
+                // table_name: "Meja 4"
+            },
+            items: [
+                { quantity: 1, product_name: "SEGA GORENG", unit_price: "15000.00", subtotal: "15000.00", notes: "PEDAS" },
+                { quantity: 1, product_name: "ES TEH MANIS", unit_price: "5000.00", subtotal: "5000.00" }
+            ]
+        };
+
+        function previewReceipt() {
+            previewTemplate('receipt');
+        }
+
+        function previewTemplate(type) {
+            const config = {
+                // Receipt Config
+                tpl_receipt_showLogo: document.getElementById('tpl_receipt_showLogo').checked,
+                tpl_receipt_storeName: document.getElementById('tpl_receipt_storeName').value,
+                tpl_receipt_storeAddress: document.getElementById('tpl_receipt_storeAddress').value,
+                tpl_receipt_storePhone: document.getElementById('tpl_receipt_storePhone').value,
+                tpl_receipt_footer: document.getElementById('tpl_receipt_footer').value,
+
+                // Order Config
+                tpl_order_productSize: document.getElementById('tpl_order_productSize').value,
+                tpl_order_qtySize: document.getElementById('tpl_order_qtySize').value,
+                tpl_order_showHeader: document.getElementById('tpl_order_showHeader').checked,
+                tpl_order_showTime: document.getElementById('tpl_order_showTime').checked,
+                tpl_order_showCust: document.getElementById('tpl_order_showCust').checked,
+                tpl_order_showTable: document.getElementById('tpl_order_showTable').checked,
+            };
+
+            let html = '';
+            let title = 'Preview';
+            if (type === 'receipt') {
+                html = generatePreviewHTML(DUMMY_DATA, config);
+                title = 'Receipt Preview';
+            } else {
+                html = generatePreviewOrderHTML(DUMMY_DATA, config);
+                title = 'Order Ticket Preview';
+            }
+
+            document.getElementById('thermalInfo').innerHTML = html;
+            document.querySelector('#previewModal h3').innerText = title;
+
+            // Set initial width based on config
+            const currentWidth = document.getElementById('printerWidth').value;
+            togglePreviewWidth(currentWidth);
+
+            document.getElementById('previewModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('previewModal').classList.remove('active');
+        }
+
+        function togglePreviewWidth(w) {
+            const paper = document.getElementById('thermalInfo');
+            if (w == 32) {
+                paper.classList.add('w58');
+            } else {
+                paper.classList.remove('w58');
+            }
+        }
+
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('id-ID').format(parseFloat(amount) || 0);
+        }
+
+        function generatePreviewHTML(data, config) {
+            let html = '';
+
+            // Logo Placeholder
+            if (config.tpl_receipt_showLogo) {
+                html += `<div class="tp-center" style="margin-bottom:10px;">[ LOGO IMAGE ]</div>`;
+            }
+
+            // Store Info
+            const name = config.tpl_receipt_storeName || "RESTORAN %SAME%PLE";
+            const addr = config.tpl_receipt_storeAddress || "Jl. Contoh No. 123";
+            const phone = config.tpl_receipt_storePhone || "0812-3456-7890";
+
+            html += `<div class="tp-center tp-bold" style="font-size:1.1em;">${name}</div>`;
+            if (addr) html += `<div class="tp-center">${addr.replace(/\n/g, '<br>')}</div>`; // Split \n
+            if (phone) html += `<div class="tp-center">${phone}</div>`;
+
+            html += `<div class="tp-divider"></div>`;
+
+            // Meta
+            html += `<div class="tp-line"><span>Invoice:</span> <span>${data.sale.invoice_number}</span></div>`;
+            html += `<div class="tp-line"><span>Date:</span> <span>${new Date().toLocaleString('id-ID')}</span></div>`;
+
+            // Customer & Table (Moved to Top)
+            if (data.sale.customer_name) {
+                html += `<div class="tp-line"><span>Cust:</span> <span>${data.sale.customer_name}</span></div>`;
+            }
+            if (data.sale.table_name) {
+                html += `<div class="tp-line"><span>Table:</span> <span>${data.sale.table_name}</span></div>`;
+            }
+
+            html += `<div class="tp-divider"></div>`;
+            // ... items loop ...
+
+            // Items
+            data.items.forEach(item => {
+                html += `<div>${item.product_name}</div>`;
+                if (item.notes) html += `<div style="font-size:0.9em; margin-left:10px;">(${item.notes})</div>`;
+
+                html += `<div class="tp-line">
+                    <span>${item.quantity} x ${formatMoney(item.unit_price)}</span>
+                    <span class="tp-dots"></span>
+                    <span>${formatMoney(item.subtotal)}</span>
+                </div>`;
+            });
+
+            html += `<div class="tp-divider"></div>`;
+            // Totals...
+            // (Reusing existing logic below, just ensuring context logic is correct)
+            // Wait, I am replacing a big block, I need to be careful to include the rest of generatePreviewHTML or just replace the changed parts?
+            // "ReplacementContent" must be complete drop-in relative to start/end line.
+
+            const total = parseFloat(data.sale.final_total);
+            const paid = parseFloat(data.sale.amount_paid);
+            const change = paid - total;
+
+            html += `<div class="tp-line tp-bold"><span>Total:</span> <span>${formatMoney(total)}</span></div>`;
+            html += `<div class="tp-line"><span>Bayar:</span> <span>${formatMoney(paid)}</span></div>`;
+            html += `<div class="tp-line"><span>Kembali:</span> <span>${formatMoney(change)}</span></div>`;
+
+            // Payment
+            html += `<br>`;
+            html += `<div class="tp-center">Payment: ${data.sale.payment_method.name}</div>`;
+
+            // Footer
+            html += `<br><div class="tp-center">`;
+            if (config.tpl_receipt_footer) {
+                html += config.tpl_receipt_footer.replace(/\n/g, '<br>');
+            } else {
+                html += "Terima Kasih";
+            }
+            html += `</div>`;
+
+            return html;
+        }
+
+        function generatePreviewOrderHTML(data, config) {
+            let html = '';
+
+            // Helper untuk mendapatkan class CSS
+            const getSizeClass = (setting) => {
+                const [dim, extra] = setting.split('_');
+                const [w, h] = dim.split(',').map(x => parseInt(x));
+
+                // Map ke class CSS: tp-size-width-height
+                let sizeClass = `tp-size-${w}-${h}`;
+                if (extra === 'BOLD') sizeClass += ' tp-bold';
+                return sizeClass;
+            };
+
+            const qtyClass = getSizeClass(config.tpl_order_qtySize);
+            const prodClass = getSizeClass(config.tpl_order_productSize);
+
+            // 1. Header
+            if (config.tpl_order_showHeader) {
+                html += `<div class="tp-center tp-invert tp-size-2-2" style="margin-bottom:10px;"> KITCHEN </div>`;
+            }
+
+            // 2. Meta
+            if (config.tpl_order_showTime) {
+                html += `<div>Time: ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</div>`;
+            }
+
+            if (config.tpl_order_showCust && data.sale.customer_name) {
+                html += `<div class="tp-bold" style="margin-top:5px;">CUST: ${data.sale.customer_name}</div>`;
+            }
+
+            if (config.tpl_order_showTable && data.sale.table_name) {
+                html += `<div class="tp-bold">TABLE: ${data.sale.table_name}</div>`;
+            }
+
+            html += `<div class="tp-divider"></div>`;
+
+            // 3. Items - tampilkan dengan ukuran yang berbeda
+            data.items.forEach(item => {
+                html += `<div style="display: flex; align-items: baseline; margin-bottom: 5px;">`;
+
+                // Quantity dengan ukuran besar
+                html += `<div class="${qtyClass}" style="flex-shrink: 0; margin-right: 5px; min-width: 30px;">${item.quantity}</div>`;
+
+                // Product name dengan ukuran yang dipilih
+                html += `<div class="${prodClass}" style="flex: 1;">${item.product_name}</div>`;
+
+                html += `</div>`;
+
+                // Note
+                if (item.notes) {
+                    html += `<div style="margin-left: 35px; margin-top:2px; font-size:0.9em;">
+                        <span class="tp-invert">NOTE: ${item.notes}</span>
+                    </div>`;
+                }
+            });
+
+            html += `<div class="tp-divider"></div>`;
+            return html;
+        }
+
+        // SAVE
+        function saveConfig(btnElement) {
+            const mapping = {};
+            document.querySelectorAll('#mappingTable tbody tr').forEach(tr => {
+                const serverName = tr.querySelector('.server-name').value.trim();
+                const localName = tr.querySelector('.local-name').value;
+                const width = tr.querySelector('.printer-width').value;
+
+                if (serverName && localName) {
+                    // Store as object
+                    mapping[serverName] = {
+                        device: localName,
+                        width: width ? parseInt(width) : null
+                    };
+                }
+            });
+
+            const config = {
+                webhookUrl: document.getElementById('webhookUrl').value,
+                secretKey: document.getElementById('secretKey').value,
+                printerWidth: parseInt(document.getElementById('printerWidth').value) || 32,
+                printerDelay: parseInt(document.getElementById('printerDelay').value) || 4000,
+
+                logoPath: document.getElementById('logoPath').value,
+                tpl_receipt_showLogo: document.getElementById('tpl_receipt_showLogo').checked,
+                tpl_receipt_storeName: document.getElementById('tpl_receipt_storeName').value,
+                tpl_receipt_storeAddress: document.getElementById('tpl_receipt_storeAddress').value,
+                tpl_receipt_storePhone: document.getElementById('tpl_receipt_storePhone').value,
+                tpl_receipt_footer: document.getElementById('tpl_receipt_footer').value,
+
+                // New Order Settings
+                tpl_order_productSize: document.getElementById('tpl_order_productSize').value,
+                tpl_order_qtySize: document.getElementById('tpl_order_qtySize').value,
+
+                tpl_order_showHeader: document.getElementById('tpl_order_showHeader').checked,
+                tpl_order_showTime: document.getElementById('tpl_order_showTime').checked,
+                tpl_order_showCust: document.getElementById('tpl_order_showCust').checked,
+                tpl_order_showTable: document.getElementById('tpl_order_showTable').checked,
+
+                printerMapping: mapping
+            };
+
+            // Loading UI (Dynamic Button)
+            let btn = btnElement;
+            if (!btn) {
+                // Fallback for logic if not passed
+                btn = document.querySelector('button[onclick="saveConfig(this)"]');
+            }
+
+            let originalText = "";
+            if (btn) {
+                originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Saving...';
+                btn.disabled = true;
+            }
+
+            ipcRenderer.send('save-config', config);
+
+            // Listen for one-time success
+            ipcRenderer.once('config-saved', () => {
+                if (btn) {
+                    btn.innerHTML = '<i class="ph ph-check"></i> Saved!';
+                    const oldBg = btn.style.backgroundColor;
+                    const oldClass = btn.className; // keep ref if needed
+
+                    btn.style.backgroundColor = 'var(--success)';
+
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        btn.style.backgroundColor = oldBg;
+                    }, 2000);
+                }
+            });
+            btn.innerHTML = '<i class="ph ph-check"></i> Saved!';
+            btn.classList.remove('primary');
+            btn.classList.add('success'); // Assuming success class exists or just green style
+            btn.style.backgroundColor = 'var(--success)';
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                btn.style.backgroundColor = '';
+                btn.classList.add('primary');
+            }, 2000);
+        };
+
+
+        // STATUS & LOGS
+        ipcRenderer.on('status-update', (event, status) => {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+            text.innerText = status;
+
+            if (status === 'Running') {
+                dot.className = 'status-dot run';
+                text.style.color = 'var(--success)';
+            } else {
+                dot.className = 'status-dot stop';
+                text.style.color = 'var(--text-secondary)';
+                document.getElementById('last-check').innerText = '-';
+            }
+        });
+
+        ipcRenderer.on('heartbeat', (event, time) => {
+            document.getElementById('last-check').innerText = `Checked: ${time}`;
+        });
+
+        ipcRenderer.on('log-update', (event, message) => {
+            const container = document.getElementById('logBox');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        });
+    </script>
+    <footer
+        style="position: fixed; bottom: 0; width: 100%; background: #f1f5f9; text-align: center; padding: 10px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
+        © 2025 RestoPOS. Developed with ❤️ by SRLY.</footer>
+</body>
+
+</html>
