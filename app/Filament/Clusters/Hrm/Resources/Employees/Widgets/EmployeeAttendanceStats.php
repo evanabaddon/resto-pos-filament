@@ -29,8 +29,8 @@ class EmployeeAttendanceStats extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(
-                Attendance::query()
+            ->query(function () {
+                $sub = Attendance::query()
                     ->where('employee_id', $this->record->id)
                     ->select(
                         DB::raw('MAX(id) as id'),
@@ -40,9 +40,13 @@ class EmployeeAttendanceStats extends BaseWidget
                         DB::raw('sum(case when is_early_leave = 1 then 1 else 0 end) as total_early'),
                         DB::raw('sum(overtime_minutes) as total_overtime_minutes')
                     )
-                    ->groupBy('month_year')
-                    ->orderBy('month_year', 'desc')
-            )
+                    ->groupBy('month_year');
+
+                return Attendance::query()
+                    ->fromSub($sub, 'attendances')
+                    ->select('*');
+            })
+            ->defaultSort('month_year', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('month_year')
                     ->label('Bulan')

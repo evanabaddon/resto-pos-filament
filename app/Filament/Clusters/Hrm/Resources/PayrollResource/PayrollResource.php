@@ -16,15 +16,15 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
+use Filament\Support\Enums\TextSize;
 use Filament\Tables;
-use Filament\Tables\Actions;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Log;
@@ -183,7 +183,7 @@ class PayrollResource extends Resource
                         'paid' => 'success',
                     }),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('mark_paid')
                     ->label('Tandai Lunas')
                     ->icon('heroicon-o-check-circle')
@@ -195,6 +195,36 @@ class PayrollResource extends Resource
                     ->visible(fn(Payroll $record) => $record->status !== 'paid')
                     ->action(function (Payroll $record) {
                         $record->update(['status' => 'paid']);
+
+                        // Process Loan Payments if any
+                        if (isset($record->details['deduction_details'])) {
+                            foreach ($record->details['deduction_details'] as $key => $amount) {
+                                // Check if key matches "Cicilan Pinjaman (Ref #ID)"
+                                if (preg_match('/Ref #(\d+)/', $key, $matches)) {
+                                    $loanId = $matches[1];
+                                    $loan = \App\Models\Loan::find($loanId);
+                                    if ($loan) {
+                                        // Create Payment
+                                        \App\Models\LoanPayment::create([
+                                            'loan_id' => $loan->id,
+                                            'payroll_id' => $record->id,
+                                            'amount' => $amount,
+                                            'paid_at' => now(),
+                                            'note' => "Potong Gaji Periode " . $record->month_year,
+                                        ]);
+
+                                        // Update Loan Balance
+                                        $loan->remaining_amount -= $amount;
+                                        if ($loan->remaining_amount <= 0) {
+                                            $loan->remaining_amount = 0;
+                                            $loan->status = 'paid';
+                                        }
+                                        $loan->save();
+                                    }
+                                }
+                            }
+                        }
+
                         Notification::make()->title('Gaji ditandai LUNAS')->success()->send();
                     }),
 
@@ -208,6 +238,21 @@ class PayrollResource extends Resource
                     ->modalSubmitActionLabel('Batal Lunas')
                     ->visible(fn(Payroll $record) => $record->status === 'paid')
                     ->action(function (Payroll $record) {
+
+                        // Revert Loan Payments
+                        $payments = \App\Models\LoanPayment::where('payroll_id', $record->id)->get();
+                        foreach ($payments as $payment) {
+                            $loan = $payment->loan;
+                            if ($loan) {
+                                $loan->remaining_amount += $payment->amount;
+                                if ($loan->status === 'paid' && $loan->remaining_amount > 0) {
+                                    $loan->status = 'approved';
+                                }
+                                $loan->save();
+                            }
+                            $payment->delete();
+                        }
+
                         $record->update(['status' => 'draft']);
                         Notification::make()->title('Status dikembalikan ke Draft')->success()->send();
                     }),
@@ -333,19 +378,19 @@ class PayrollResource extends Resource
                             $leaves = $employee->leaveRequests()
                                 ->where('status', 'approved')
                                 ->where(function ($q) use ($startOfMonth, $endOfMonth) {
-                                $q->whereBetween('start_date', [$startOfMonth, $endOfMonth])
-                                    ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
-                                    ->orWhere(function ($sub) use ($startOfMonth, $endOfMonth) {
-                                        $sub->where('start_date', '<', $startOfMonth)
-                                            ->where('end_date', '>', $endOfMonth);
-                                    });
-                            })
+                                    $q->whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                                        ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
+                                        ->orWhere(function ($sub) use ($startOfMonth, $endOfMonth) {
+                                            $sub->where('start_date', '<', $startOfMonth)
+                                                ->where('end_date', '>', $endOfMonth);
+                                        });
+                                })
                                 ->get();
 
                             $sickDays = 0;
                             $permissionDays = 0; // Izin (Unpaid)
                             $paidLeaveDays = 0; // Cuti Tahunan (Paid usually)
-            
+
                             foreach ($leaves as $leave) {
                                 // Calculate days falling in this month
                                 $s = Carbon::parse($leave->start_date);
@@ -372,10 +417,12 @@ class PayrollResource extends Resource
                             // Sakit -> Paid (Add to attendance)
                             // Izin -> Unpaid (Do nothing, day is missing from attendance)
                             // Cuti Tahunan -> Paid (Add to attendance)
-            
+
                             $attendanceDays = $attendances->count() + $sickDays + $paidLeaveDays;
 
                             // DYNAMIC FORMULA CHECK
+                            $deduction_details = [];
+
                             if ($employee->payroll_formula_id && $employee->payrollFormula) {
                                 $script = $employee->payrollFormula->script;
                                 $formula = $employee->payrollFormula->name;
@@ -403,9 +450,9 @@ class PayrollResource extends Resource
                                         // Otherwise prepend return (for simple expressions)
                                         $result = null;
                                         if (str_contains($script, 'return')) {
-                                            $result = eval ($script);
+                                            $result = eval($script);
                                         } else {
-                                            $result = eval ("return $script;");
+                                            $result = eval("return $script;");
                                         }
 
                                         if (is_array($result)) {
@@ -416,7 +463,6 @@ class PayrollResource extends Resource
                                         } else {
                                             $totalPayout = $result;
                                         }
-
                                     } catch (\Throwable $e) {
                                         Log::error("Formula Error: " . $e->getMessage());
                                         $totalPayout = $baseSalary;
@@ -430,6 +476,26 @@ class PayrollResource extends Resource
                                 $deductions = $lateCount * 50000; // 50k penalty per late
                                 $totalPayout = $baseSalary + $overtimeAmount - $deductions;
                             }
+
+                            // --- LOAN SECTION ---
+                            // Check for active loans
+                            $activeLoans = \App\Models\Loan::where('employee_id', $employee->id)
+                                ->where('status', 'approved')
+                                ->where('remaining_amount', '>', 0)
+                                ->where('start_month_year', '<=', $period)
+                                ->get();
+
+                            $totalLoanDeduction = 0;
+                            foreach ($activeLoans as $loan) {
+                                // Potong sebesar installment, tapi tidak melebihi sisa
+                                $toDeduct = min($loan->installment_amount, $loan->remaining_amount);
+                                $totalLoanDeduction += $toDeduct;
+                                $deduction_details["Cicilan Pinjaman (Ref #{$loan->id})"] = $toDeduct;
+                            }
+
+                            $deductions += $totalLoanDeduction;
+                            $totalPayout -= $totalLoanDeduction;
+                            // --------------------
 
                             Log::info("Total Payout Calculated: {$totalPayout}");
 
@@ -460,6 +526,47 @@ class PayrollResource extends Resource
                             ->success()
                             ->send();
                     })
+            ]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->schema([
+                Section::make('Rincian Potongan & Total')
+                    ->schema([
+                        TextEntry::make('deduction_details')
+                            ->label('Detail Potongan')
+                            ->html()
+                            ->state(function ($record) {
+                                if (!$record || !$record->details)
+                                    return '-';
+
+                                $details = $record->details;
+                                $breakdown = $details['deduction_details'] ?? [];
+
+                                if (!empty($breakdown) && is_array($breakdown)) {
+                                    $lines = [];
+                                    foreach ($breakdown as $name => $amount) {
+                                        $formatted = number_format($amount, 0, ',', '.');
+                                        $lines[] = "<div class='flex justify-between'><span class='font-medium'>$name:</span> <span>Rp $formatted</span></div>";
+                                    }
+                                    return new \Illuminate\Support\HtmlString(implode('', $lines));
+                                }
+
+                                return 'Tidak ada potongan spesifik';
+                            }),
+                        TextEntry::make('deductions')
+                            ->label('Total Potongan')
+                            ->money('IDR')
+                            ->color('danger'),
+                        TextEntry::make('total_payout')
+                            ->label('Take Home Pay')
+                            ->money('IDR')
+                            ->weight('bold')
+                            ->color('success')
+                            ->size(TextSize::Large),
+                    ])
             ]);
     }
 

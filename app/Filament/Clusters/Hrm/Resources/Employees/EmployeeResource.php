@@ -23,14 +23,12 @@ class EmployeeResource extends Resource
 
     protected static ?string $navigationLabel = 'Karyawan';
 
-    // protected static ?string $cluster = \App\Filament\Clusters\Hrm\HrmCluster::class;
+    protected static ?int $navigationSort = 1;
 
     public static function shouldRegisterNavigation(): bool
     {
         return app(\App\Settings\GeneralSettings::class)->enable_hrm;
     }
-
-    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

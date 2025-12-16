@@ -22,12 +22,12 @@ class ContractResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
 
+    protected static ?int $navigationSort = 2;
+
     public static function shouldRegisterNavigation(): bool
     {
         return app(\App\Settings\GeneralSettings::class)->enable_hrm;
     }
-
-    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Kontrak Kerja';
 
