@@ -75,21 +75,21 @@
         <div class="px-3 py-3 bg-white/90 backdrop-blur-sm border-b border-gray-100 flex-shrink-0 sticky top-0 z-20 flex gap-3 items-center shadow-sm">
         {{-- Search Input (Wider) --}}
         <div class="relative w-full sm:w-80 shrink-0 group transition-all duration-300">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400 group-focus-within:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                <svg class="h-5 w-5 text-slate-400 group-focus-within:text-violet-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
             </div>
             <input wire:model.live.debounce.300ms="searchQuery" 
                 id="product-search-input"
                 type="text" 
-                class="pl-10 block w-full bg-slate-50 border-gray-200 rounded-xl focus:ring-violet-500 focus:border-violet-500 text-sm py-2.5 transition-all shadow-sm" 
+                class="pl-10 block w-full bg-slate-100 border-transparent focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 rounded-xl text-sm py-2.5 transition-all shadow-inner focus:shadow-lg placeholder-slate-400 text-slate-700" 
                 placeholder="Cari menu... (Ctrl+K)"
                 autocomplete="off">
             
             {{-- Search Clear Button --}}
             @if($searchQuery)
-                <button wire:click="$set('searchQuery', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer">
+                <button wire:click="$set('searchQuery', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer z-10">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             @endif
@@ -99,7 +99,7 @@
         <div class="h-8 w-px bg-slate-200 shrink-0 hidden sm:block"></div>
 
         {{-- Category Filter (Horizontal Scroll with Fade) --}}
-        <div class="flex-1 overflow-x-auto hide-scrollbar flex space-x-2 py-1 items-center mask-image-r relative">
+        <div class="flex-1 hide-scrollbar flex space-x-2 py-1 items-center mask-image-r relative">
              {{-- Fade Effect (Right) --}}
             <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10 sm:hidden"></div>
 
