@@ -81,6 +81,14 @@ class AppSettings extends SettingsPage
                                                 TextInput::make('app_website')
                                                     ->label('Website')
                                                     ->url(),
+                                            ]),
+
+                                        Section::make('Konfigurasi POS')
+                                            ->columnSpan(1)
+                                            ->schema([
+                                                Toggle::make('enable_table_number')
+                                                    ->label('Aktifkan Nomor Meja')
+                                                    ->helperText('Tampilkan input nomor meja saat transaksi Dine In'),
                                                 Select::make('printer_width')
                                                     ->label('Ukuran Printer')
                                                     ->options([

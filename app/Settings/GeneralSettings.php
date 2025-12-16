@@ -22,6 +22,7 @@ class GeneralSettings extends Settings
     public bool $enable_hrm;
     public ?string $hrm_license_key;
     public string $printer_width;
+    public bool $enable_table_number;
 
     public static function group(): string
     {
@@ -40,6 +41,7 @@ class GeneralSettings extends Settings
             'enable_hrm' => false,
             'hrm_license_key' => null,
             'printer_width' => '58mm',
+            'enable_table_number' => false,
         ];
     }
 }

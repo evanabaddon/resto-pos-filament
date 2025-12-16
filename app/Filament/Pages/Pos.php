@@ -55,6 +55,7 @@ class Pos extends Page
         'mergeConfirmed' => 'handleMergeConfirmed',
         'mergeCancelled' => 'handleMergeCancelled',
         'refreshSalesList' => 'refreshSalesList',
+        'applyManualDiscount' => 'applyManualDiscount',
     ];
 
     public $showCashInModal = true;
@@ -88,7 +89,11 @@ class Pos extends Page
     public $editingNotesIndex = null;
     public $itemNotes = '';
     public $searchQuery = '';
-    public $perPage = 12; // Default per page
+    public $perPage = 12; // Restore to original 12 if that was the intent, or keep 10. Let's use 12 as per previous context.
+    // New Properties
+    public $tableNumber = '';
+    public $discountType = 'fixed'; // fixed or percentage
+    public $manualDiscountValue = 0;
 
     /**
      * Cetak Ulang Order (Kitchen/Bar)
@@ -137,6 +142,11 @@ class Pos extends Page
         } else {
             $this->dispatch('openCashInModal');
         }
+
+        // Load Table Number Setting
+        $settings = new \App\Settings\GeneralSettings();
+        // $this->showTableNumber = $settings->enable_table_number; // Logic moved to view for simplicity
+
     }
 
     protected function getAssets(): array
@@ -183,7 +193,7 @@ class Pos extends Page
     {
         // Dispatch event to PosLoadModal to refresh its data
         $this->dispatch('refreshSalesList')->to(PosLoadModal::class);
-        
+
         // Notify user
         $this->dispatch('show-notification', message: 'Data penjualan offline berhasil dimuat.', type: 'info');
     }
@@ -683,7 +693,39 @@ class Pos extends Page
         // Gunakan array_sum untuk performance lebih baik
         $this->total = array_sum(array_column($this->items, 'subtotal'));
         $this->tax = $this->total * 0.10;
-        $this->finalTotal = $this->total + $this->tax - $this->discount;
+
+        // Final Total Calculation with discount validation
+        $final = $this->total + $this->tax - $this->discount;
+        $this->finalTotal = max(0, $final);
+    }
+
+    /**
+     * Apply Manual Discount from Modal
+     */
+    public function applyManualDiscount($type, $value, $reason = null)
+    {
+        $this->discountType = $type;
+        $this->manualDiscountValue = $value;
+        $discountAmount = 0;
+
+        if ($type === 'percentage') {
+            $percentage = min(100, max(0, $value));
+            $discountAmount = $this->total * ($percentage / 100);
+            $this->discountMessage = "Diskon Manual: {$percentage}%" . ($reason ? " ({$reason})" : "");
+        } else {
+            $discountAmount = min($this->total, max(0, $value));
+            $this->discountMessage = "Diskon Manual: Rp " . number_format($discountAmount, 0, ',', '.') . ($reason ? " ({$reason})" : "");
+        }
+
+        $this->discount = $discountAmount;
+        $this->discountApplied = true;
+        // Reset Code Input to avoid confusion
+        $this->discountCodeInput = '';
+
+        $this->recalculateTotals();
+
+        $this->dispatch('close-modal', id: 'manual-discount-modal');
+        $this->dispatch('show-notification', message: 'Diskon manual berhasil diterapkan.', type: 'success');
     }
 
     public function openLoadModal()
@@ -704,6 +746,7 @@ class Pos extends Page
         $this->saleId = $sale->id;
         $this->orderNumber = $sale->invoice_number;
         $this->customerName = $sale->customer_name ?? '';
+        $this->tableNumber = $sale->table_number ?? '';
         $this->orderType = $sale->order_type ?? 'Dine In';
         $this->discount = $sale->discount ?? 0;
 

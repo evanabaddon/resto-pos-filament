@@ -117,9 +117,10 @@
                                             class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                                             ✏️ EDIT
                                         </button>
-                                        <button wire:click="openPayment({{ $sale->id }})"
-                                            class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
-                                            💵 BAYAR
+                                        <button wire:click="reprintOrder({{ $sale->id }})"
+                                            class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                                            title="Cetak ulang order ke dapur">
+                                            🖨️ CETAK
                                         </button>
                                         <button wire:click="openSplitBill({{ $sale->id }})"
                                             class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors">
@@ -129,6 +130,10 @@
                                             wire:click="confirmDelete({{ $sale->id }})"
                                             class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
                                             🗑️ HAPUS
+                                        </button>
+                                        <button wire:click="openPayment({{ $sale->id }})"
+                                            class="col-span-2 cursor-pointer flex items-center justify-center px-3 py-3 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-all shadow-md hover:shadow-lg transform active:scale-95">
+                                            💵 BAYAR SEKARANG
                                         </button>
                                     @elseif($sale->status === 'completed')
                                         <button wire:click="printReceipt({{ $sale->id }})"

@@ -146,6 +146,20 @@ class PosLoadModal extends Component
         }
     }
 
+    public function reprintOrder($saleId)
+    {
+        try {
+            $sale = Sale::findOrFail($saleId);
+            $service = new \App\Services\OrderPrintService();
+            $service->printOrderByProductType($sale);
+
+            $this->dispatch('showNotification', 'Print job ulang berhasil dikirim ke Dapur/Bar.', 'success');
+        } catch (\Exception $e) {
+            \Log::error('Reprint failed: ' . $e->getMessage());
+            $this->dispatch('showNotification', 'Gagal mencetak ulang: ' . $e->getMessage(), 'error');
+        }
+    }
+
     // Fitur Split Bill - Item Based
     public function openSplitBill($saleId)
     {

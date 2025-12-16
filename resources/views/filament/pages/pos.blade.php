@@ -71,65 +71,50 @@
             </div>
         </div>
 
-        {{-- 🔍 SEARCH BAR --}}
-        <div class="px-3 py-2 bg-white border-b border-gray-100 flex-shrink-0">
-            <div class="relative">
+        {{-- 🔍 & 📂 COMBINED TOOLBAR (Sticky) --}}
+        <div class="px-3 py-2 bg-white/90 backdrop-blur-sm border-b border-gray-100 flex-shrink-0 sticky top-0 z-20 flex gap-3 items-center">
+            
+            {{-- Search Input (Compact) --}}
+            <div class="relative w-40 sm:w-56 shrink-0 group transition-all duration-300 focus-within:w-64">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-violet-500 transition-colors">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
                 <input 
                     id="product-search-input"
                     type="text"
                     wire:model.live.debounce.500ms="searchQuery"
-                    placeholder="Cari produk..."
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-20 text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition shadow-sm mobile-text-sm font-medium placeholder-slate-400"
+                    placeholder="Cari..."
+                    class="block w-full pl-9 pr-8 py-2 border border-slate-200 bg-slate-50/50 rounded-lg text-sm leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm font-medium mobile-text-sm"
                     autocomplete="off">
                 
-                {{-- Search Icon --}}
-                <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                </div>
-                
-                {{-- Clear Button (tampil jika ada query) --}}
                 @if(!empty($searchQuery))
                     <button 
-                        wire:click="$set('searchQuery', '')"
-                        class="absolute right-10 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600 transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
+                        wire:click="clearSearch"
+                        class="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 @endif
-                
-                {{-- Keyboard Shortcut Hint --}}
-                <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <span class="text-xs text-gray-400 hidden sm:inline-block">
-                        <kbd class="px-1.5 py-0.5 bg-gray-100 rounded border border-gray-300 text-xs">F2</kbd>
-                    </span>
-                </div>
             </div>
-            
-            {{-- Search status --}}
-            @if(!empty($searchQuery))
-                <div class="mt-1 text-xs text-gray-500">
-                    <span>Mencari: </span>
-                    <span class="font-semibold text-blue-600">{{ $searchQuery }}</span>
-                    <span class="mx-2">•</span>
-                    <span>{{ count($products) }} hasil ditemukan</span>
-                </div>
-            @endif
-        </div>
 
-        {{-- Filter Kategori - Horizontal Scroll Mobile --}}
-        <div class="px-4 py-3 bg-white/80 backdrop-blur-sm border-b border-gray-100 flex-shrink-0 sticky top-0 z-20">
-            <div class="flex space-x-2 hide-scrollbar pb-1">
+            {{-- Separator --}}
+            <div class="h-6 w-px bg-slate-200 shrink-0"></div>
+
+            {{-- Category Filter (Horizontal Scroll) --}}
+            <div class="flex-1 overflow-x-auto hide-scrollbar flex space-x-2 py-1 items-center mask-image-r">
+                <button wire:click="setCategory('Semua')"
+                        class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 touch-target {{ $selectedCategory === 'Semua' ? 'bg-violet-600 text-white border-violet-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                    Semua
+                </button>
                 @foreach ($categories as $category)
+                    @if($category !== 'Semua')
                     <button wire:click="setCategory('{{ $category }}')"
-                        class="cursor-pointer flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border whitespace-nowrap touch-target
+                        class="whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 touch-target
                             {{ $selectedCategory === $category 
-                                ? 'bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-200 transform scale-105' 
-                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300' }}">
+                                ? 'bg-violet-600 text-white border-violet-600 shadow-sm' 
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
                         {{ $category }}
                     </button>
+                    @endif
                 @endforeach
             </div>
         </div>
@@ -137,6 +122,16 @@
         {{-- Grid Produk - Modern Design --}}
         {{-- Grid Produk - Modern Design --}}
         <div class="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-50 relative" id="product-grid-container">
+            
+            {{-- Loading Skeleton --}}
+            <div wire:loading wire:target="searchQuery, selectedCategory, updatePerPage, setCategory, resetPage" 
+                 class="absolute inset-0 z-50 bg-slate-50/80 backdrop-blur-[2px] flex flex-col items-center justify-center">
+                <div class="flex justify-center mb-4">
+                     <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-600"></div>
+                </div>
+                <p class="text-sm font-bold text-violet-600 animate-pulse">Memuat Produk...</p>
+            </div>
+
             {{-- Compact Grid: Mobile 2, Tablet 3, Desktop 4/5, Large 6/7 --}}
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 pb-24 lg:pb-0">
                 @forelse ($products as $index => $product)
@@ -278,16 +273,33 @@
                     </button>
                 </div>
 
-                {{-- Nama Customer --}}
-                <div class="relative group">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-violet-500 transition-colors">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <div class="flex gap-2">
+                    {{-- Nama Customer --}}
+                    <div class="relative group flex-1">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-violet-500 transition-colors">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                        <input 
+                            type="text" 
+                            wire:model="customerName"
+                            class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 bg-slate-50/50 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm mobile-text-sm font-medium"
+                            placeholder="Nama Pelanggan">
                     </div>
-                    <input 
-                        type="text" 
-                        wire:model="customerName"
-                        class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 bg-slate-50/50 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm mobile-text-sm font-medium"
-                        placeholder="Nama Pelanggan">
+
+                    {{-- Table Number (Configurable) --}}
+                    @inject('params', 'App\Settings\GeneralSettings')
+                    @if($params->enable_table_number && $orderType === 'Dine In')
+                    <div class="relative group animate-fade-in-up w-28 shrink-0">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-violet-500 transition-colors">
+                            <span class="text-xs font-bold">No.</span>
+                        </div>
+                        <input 
+                            type="text" 
+                            wire:model="tableNumber"
+                            class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 bg-slate-50/50 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm mobile-text-sm font-medium"
+                            placeholder="Meja">
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -295,71 +307,60 @@
         {{-- List Item --}}
         <div class="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 bg-slate-50/50">
             @forelse ($items as $index => $item)
-                <div wire:key="cart-item-{{ $index }}" class="group bg-white border border-slate-100/80 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden">
-                    {{-- Left Accent Strip --}}
-                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-violet-500 rounded-l-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div wire:key="cart-item-{{ $index }}" class="group bg-white border-b border-slate-100 last:border-0 p-3 hover:bg-slate-50 transition-colors relative">
+                     {{-- Accent Strip --}}
+                    <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-                    <div class="flex items-start justify-between mb-2 pl-2">
-                        <div class="flex-1 min-w-0 mr-2">
-                            <h3 class="font-bold text-slate-800 text-sm leading-snug break-words mobile-text-sm">{{ $item['name'] }}</h3>
-                            <div class="text-xs text-slate-400 mt-0.5 flex flex-wrap gap-2">
-                                <span>Rp{{ number_format($item['price'], 0, ',', '.') }}</span>
-                            </div>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <p class="text-sm font-black text-violet-700 mobile-text-sm">
-                                Rp{{ number_format($item['subtotal'], 0, ',', '.') }}
-                            </p>
-                        </div>
-                    </div>
-                    
-                    {{-- NOTES SECTION --}}
-                    @if(!empty($item['notes']))
-                        <div class="mb-3 ml-2 p-2 bg-amber-50 border border-amber-100 rounded-lg flex items-start">
-                            <svg class="w-3 h-3 text-amber-500 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            <span class="text-xs text-amber-800 font-medium break-words leading-relaxed">{{ $item['notes'] }}</span>
-                        </div>
-                    @endif
-                    
-                    {{-- CONTROLS ROW --}}
-                    <div class="flex items-center justify-between pl-2">
-                        <div class="flex items-center bg-slate-100 rounded-lg p-1 shadow-inner">
-                             {{-- Decrement --}}
-                            <button wire:click="decrementQuantity({{ $index }})"
-                                class="w-7 h-7 flex items-center justify-center bg-white rounded-md text-slate-600 font-bold shadow-sm hover:text-rose-600 active:scale-95 transition touch-target">
-                                −
+                    <div class="flex items-start gap-2">
+                         {{-- 1. Qty Controls (Compact Vertical or Horizontal) --}}
+                        <div class="flex flex-col items-center bg-slate-50 rounded-lg border border-slate-200 shrink-0">
+                            <button wire:click="incrementQuantity({{ $index }})" class="p-1 hover:text-emerald-600 hover:bg-emerald-50 rounded-t-lg transition touch-target">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"/></svg>
                             </button>
-                            
-                            {{-- Input --}}
                             <input 
                                 type="number" 
                                 wire:model.lazy="items.{{ $index }}.quantity"
                                 wire:change="updateQuantityFromInput({{ $index }}, $event.target.value)"
-                                min="1"
-                                class="w-10 text-center bg-transparent border-none text-sm font-black text-slate-800 focus:ring-0 p-0 mx-1"
-                                onfocus="this.select()">
-                            
-                             {{-- Increment --}}
-                            <button wire:click="incrementQuantity({{ $index }})"
-                                class="w-7 h-7 flex items-center justify-center bg-white rounded-md text-slate-600 font-bold shadow-sm hover:text-emerald-600 active:scale-95 transition touch-target">
-                                +
+                                class="w-8 text-center bg-transparent border-none text-xs font-bold p-0 focus:ring-0 appearance-none"
+                                onclick="this.select()">
+                             <button wire:click="decrementQuantity({{ $index }})" class="p-1 hover:text-rose-600 hover:bg-rose-50 rounded-b-lg transition touch-target">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                         </div>
-                        
-                        <div class="flex items-center space-x-2">
-                             {{-- Note Button --}}
-                            <button wire:click="openEditNotes({{ $index }})"
-                                class="p-2 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 transition active:scale-95 touch-target"
-                                title="Edit Catatan">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            </button>
 
-                             {{-- Delete Button --}}
-                            <button wire:click="removeItem({{ $index }})"
-                                class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition active:scale-95 touch-target"
-                                title="Hapus Item">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
+                        {{-- 2. Item Details --}}
+                        <div class="flex-1 min-w-0 pt-0.5">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-bold text-slate-700 text-xs leading-tight mb-0.5 line-clamp-2 cursor-pointer hover:text-violet-600 transition-colors" wire:click="openEditNotes({{ $index }})">
+                                    {{ $item['name'] }}
+                                </h3>
+                                <p class="font-black text-violet-700 text-xs text-right whitespace-nowrap ml-2">
+                                    Rp{{ number_format($item['subtotal'], 0, ',', '.') }}
+                                </p>
+                            </div>
+                            
+                            <div class="flex justify-between items-end mt-1">
+                                <div class="text-[10px] text-slate-400">
+                                    @ Rp{{ number_format($item['price'], 0, ',', '.') }}
+                                </div>
+                                
+                                {{-- Actions --}}
+                                <div class="flex gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button wire:click="openEditNotes({{ $index }})" class="text-[10px] font-medium text-amber-500 hover:text-amber-600 hover:underline">
+                                        {{ !empty($item['notes']) ? 'Edit Catatan' : '+ Catatan' }}
+                                    </button>
+                                     <button wire:click="removeItem({{ $index }})" class="text-[10px] font-medium text-rose-400 hover:text-rose-600 hover:underline">
+                                        Hapus
+                                    </button>
+                                </div>
+                            </div>
+
+                             {{-- Notes Display --}}
+                            @if(!empty($item['notes']))
+                                <div class="mt-1.5 p-1.5 bg-amber-50 border border-amber-100 rounded text-[10px] text-amber-800 leading-tight">
+                                    <span class="font-bold mr-1">📝</span> {{ $item['notes'] }}
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -382,21 +383,34 @@
 
         {{-- Ringkasan & Aksi --}}
          <div class="border-t border-gray-200 bg-white flex-shrink-0 z-20 pb-safe shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
-            {{-- Input Diskon --}}
-            <div class="p-4 border-b border-gray-100 bg-slate-50/50">
-                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 mobile-text-xs">Kode Diskon / Voucher</label>
-                <div class="flex space-x-2">
-                    <input 
-                        type="text" 
-                        wire:model.defer="discountCodeInput"
-                        class="flex-1 bg-white border border-slate-300 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition min-w-0 mobile-text-sm"
-                        placeholder="Masukkan kode...">
+            {{-- Input Diskon & Manual --}}
+            <div class="p-3 border-b border-gray-100 bg-slate-50/50">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 mobile-text-xs">Diskon / Voucher</label>
+                <div class="flex gap-2">
+                    {{-- Code Input --}}
+                    <div class="flex-1 flex gap-2">
+                         <input 
+                            type="text" 
+                            wire:model.defer="discountCodeInput"
+                            class="flex-1 bg-white border border-slate-300 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition min-w-0 mobile-text-sm"
+                            placeholder="Kode Voucher...">
+                        <button 
+                            wire:click="applyDiscountCode"
+                            class="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:shadow-md transition whitespace-nowrap shrink-0 touch-target active:scale-95">
+                            Pakai
+                        </button>
+                    </div>
+
+                    {{-- Manual Button --}}
                     <button 
-                        wire:click="applyDiscountCode"
-                        class="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:shadow-md transition whitespace-nowrap flex-shrink-0 touch-target active:scale-95">
-                        Pakai
+                        wire:click="$dispatch('openManualDiscountModal')"
+                        class="shrink-0 text-[10px] font-bold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 px-3 py-2 rounded-lg transition border border-violet-100 flex items-center gap-1.5 touch-target"
+                        title="Diskon Manual">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                        <span class="hidden sm:inline">Manual</span>
                     </button>
                 </div>
+
                 @if ($discountMessage)
                     <p class="text-xs mt-2 font-medium {{ $discountApplied ? 'text-emerald-600' : 'text-rose-600' }} mobile-text-xs flex items-center">
                         @if($discountApplied)
@@ -408,25 +422,25 @@
             </div>
 
             {{-- Ringkasan Harga --}}
-            <div class="p-5 space-y-1.5 bg-white">
-                <div class="flex justify-between text-xs text-slate-600 mobile-text-xs">
+            <div class="px-4 py-3 space-y-1 bg-white">
+                <div class="flex justify-between text-[11px] text-slate-500 mobile-text-xs">
                     <span>Subtotal</span>
-                    <span class="font-mono">Rp{{ number_format($total, 0, ',', '.') }}</span>
+                    <span class="font-mono font-medium">Rp{{ number_format($total, 0, ',', '.') }}</span>
                 </div>
-                <div class="flex justify-between text-xs text-slate-600 mobile-text-xs">
+                <div class="flex justify-between text-[11px] text-slate-500 mobile-text-xs">
                     <span>Pajak (10%)</span>
-                    <span class="font-mono">Rp{{ number_format($tax, 0, ',', '.') }}</span>
+                    <span class="font-mono font-medium">Rp{{ number_format($tax, 0, ',', '.') }}</span>
                 </div>
                 @if($discount > 0)
-                    <div class="flex justify-between text-xs text-emerald-600 mobile-text-xs font-bold">
+                    <div class="flex justify-between text-[11px] text-emerald-600 mobile-text-xs font-bold">
                         <span>Potongan</span>
                         <span class="font-mono">- Rp{{ number_format($discount, 0, ',', '.') }}</span>
                     </div>
                 @endif
-                <div class="border-t border-dashed border-gray-200 pt-3 mt-2">
+                <div class="border-t border-dashed border-gray-200 pt-2 mt-1">
                     <div class="flex justify-between items-end">
-                        <span class="text-sm font-bold text-slate-800 mobile-text-sm">Total Tagihan</span>
-                        <span class="text-2xl font-black text-violet-600 mobile-text-lg leading-none">Rp{{ number_format($finalTotal, 0, ',', '.') }}</span>
+                        <span class="text-xs font-bold text-slate-800 mobile-text-sm">Total Tagihan</span>
+                        <span class="text-xl font-black text-violet-600 mobile-text-lg leading-none">Rp{{ number_format($finalTotal, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
@@ -464,67 +478,61 @@
             </div>
 
             {{-- Tombol Aksi untuk Desktop --}}
-            <div class="hidden lg:block p-4 border-t border-gray-100 bg-slate-50/80 space-y-3">
-                <div class="grid grid-cols-2 gap-3">
+            <div class="hidden lg:block p-3 pt-0 border-t border-gray-100 bg-slate-50/80 space-y-2">
+                {{-- 1. Primary Action: PAY --}}
+                 <button wire:click="openPaymentModal" 
+                        wire:loading.attr="disabled"
+                        wire:loading.class="opacity-75 cursor-wait"
+                        class="cursor-pointer w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-lg font-bold text-base shadow-lg shadow-violet-200 transition transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center justify-center gap-2"
+                        {{ !$saleId ? 'disabled' : '' }}>
+                    <svg wire:loading.remove wire:target="openPaymentModal" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                    <svg wire:loading wire:target="openPaymentModal" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span wire:loading.remove wire:target="openPaymentModal">Bayar Sekarang</span>
+                    <span wire:loading wire:target="openPaymentModal">Memproses...</span>
+                </button>
+
+                {{-- 2. Secondary Actions: SAVE & PRINT --}}
+                <div class="grid grid-cols-2 gap-2">
                     <button wire:click="saveSale"
                         wire:loading.attr="disabled"
                         wire:loading.class="opacity-75 cursor-wait bg-green-700"
-                        class="cursor-pointer w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold text-sm shadow-sm transition flex items-center justify-center gap-2">
-                        <svg wire:loading.remove wire:target="saveSale" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                        <svg wire:loading wire:target="saveSale" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span wire:loading.remove wire:target="saveSale">Simpan</span>
+                        class="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5 touch-target">
+                        <svg wire:loading.remove wire:target="saveSale" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                        <span wire:loading.remove wire:target="saveSale">Simpan Order</span>
                         <span wire:loading wire:target="saveSale">Menyimpan...</span>
                     </button>
-                    <button wire:click="openPaymentModal" 
-                            wire:loading.attr="disabled"
-                            wire:loading.class="opacity-75 cursor-wait"
-                            class="cursor-pointer w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-violet-200 transition flex items-center justify-center gap-2"
-                            {{ !$saleId ? 'disabled' : '' }}>
-                        <svg wire:loading.remove wire:target="openPaymentModal" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                        <svg wire:loading wire:target="openPaymentModal" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span wire:loading.remove wire:target="openPaymentModal">Bayar</span>
-                        <span wire:loading wire:target="openPaymentModal">Memproses...</span>
-                    </button>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    {{-- TOMBOL MERGE BILL --}}
-                    <button wire:click="openMergeModal"
-                        class="cursor-pointer bg-fuchsia-600 hover:bg-fuchsia-700 text-white py-2 rounded-lg font-bold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                        </svg>
-                        Gabung
-                    </button>
                     
-                    <button wire:click="openLoadModal"
-                        class="cursor-pointer bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg font-bold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                        Daftar
-                    </button>
-
                     <button wire:click="reprintOrder"
                         wire:loading.attr="disabled"
-                        class="cursor-pointer bg-slate-700 hover:bg-slate-800 text-white py-2 rounded-lg font-bold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="cursor-pointer bg-slate-700 hover:bg-slate-800 text-white py-2 rounded-lg font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed touch-target"
                         {{ !$saleId ? 'disabled' : '' }}
-                        title="Cetak ulang order ke dapur/bar">
+                        title="Cetak ulang order ke dapur">
                         <svg wire:loading.remove wire:target="reprintOrder" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                         <svg wire:loading wire:target="reprintOrder" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        Cetak Order
+                        Cetak Dapur
+                    </button>
+                </div>
+
+                {{-- 3. Tertiary Actions: DRAFT LIST, MERGE, CANCEL --}}
+                <div class="grid grid-cols-3 gap-2 pt-1 border-t border-dashed border-gray-200">
+                    <button wire:click="openLoadModal"
+                        class="cursor-pointer bg-amber-100 hover:bg-amber-200 text-amber-700 py-1.5 rounded-lg font-bold text-[10px] transition flex items-center justify-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        Daftar Order
+                    </button>
+
+                    <button wire:click="openMergeModal"
+                        class="cursor-pointer bg-fuchsia-100 hover:bg-fuchsia-200 text-fuchsia-700 py-1.5 rounded-lg font-bold text-[10px] transition flex items-center justify-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                        Gabung Bill
                     </button>
                     
                     <button wire:click="cancelSale"
-                        class="cursor-pointer bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1 shadow-sm hover:shadow-md">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
+                        class="cursor-pointer bg-rose-50 hover:bg-rose-100 text-rose-600 py-1.5 rounded-lg font-bold text-[10px] transition flex items-center justify-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         Batal
                     </button>
                 </div>
@@ -1482,4 +1490,5 @@
         }
     </style>
 
+    @livewire('pos-manual-discount-modal')
 </div>
