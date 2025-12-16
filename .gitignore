@@ -42,4 +42,4 @@ python_print_client/requirements.txt
 python_print_client/RestoPosPrintClient.spec
 widowsclient/start-client.bat
 widowsclient/windows-print-client.php
-/electron-print-agent
+/electron-print-agent/node_modules
