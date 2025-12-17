@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#ffffff">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="{{ request()->is('kiosk') ? '/kiosk.webmanifest' : '/manifest.json' }}">
     <title>{{ $title ?? 'POS System' }}</title>
     @vite('resources/css/app.css')
     @livewireStyles
