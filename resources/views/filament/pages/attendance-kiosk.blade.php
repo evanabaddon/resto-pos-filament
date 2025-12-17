@@ -236,27 +236,34 @@
                 },
 
                 async loadModels() {
+                    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
                     this.message = 'Memuat TinyFace Detector...';
+                    await wait(100); // Force UI repaint
+
                     try {
                         const modelPath = '/models';
 
-                        // Load sequentially with UI updates
                         await faceapi.nets.tinyFaceDetector.loadFromUri(modelPath);
+                        this.message = 'TinyFace Loaded. Memuat Landrymarks...';
+                        await wait(100);
 
-                        this.message = 'Memuat Face Landmarks...';
                         await faceapi.nets.faceLandmark68Net.loadFromUri(modelPath);
+                        this.message = 'Landmarks Loaded. Memuat Recognition...';
+                        await wait(100);
 
-                        this.message = 'Memuat Recognition Net...';
                         await faceapi.nets.faceRecognitionNet.loadFromUri(modelPath);
-
-                        this.message = 'Memproses Data Wajah...';
+                        this.message = 'Recognition Loaded. Memproses Data...';
+                        await wait(100);
 
                         // Allow UI to update before heavy processing
-                        setTimeout(() => this.initMatcher(), 100);
+                        setTimeout(() => this.initMatcher(), 200);
 
                     } catch (e) {
-                        console.error(e);
-                        this.message = 'Gagal memuat model: ' + e;
+                        console.error("Model Error:", e);
+                        // Show detailed error on screen
+                        this.message = 'Error Load Model: ' + (e.message || e);
+                        alert('Error loading models: ' + (e.message || e)); // Alert for mobile debugging
                     }
                 },
 
