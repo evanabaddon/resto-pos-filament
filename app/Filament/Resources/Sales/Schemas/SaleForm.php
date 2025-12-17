@@ -140,7 +140,14 @@ class SaleForm
                                     ->dehydrated(false)
                                     ->numeric()
                                     ->prefix('Rp')
-                                    ->default(0),
+                                    ->default(0)
+                                    ->formatStateUsing(function ($state, $get) {
+                                        $quantity = floatval($get('quantity') ?? 0);
+                                        $unitPrice = floatval($get('unit_price') ?? 0);
+                                        $discount = floatval($get('discount') ?? 0);
+
+                                        return ($quantity * $unitPrice) - $discount;
+                                    }),
                             ])
                             ->columns(5)
                             ->defaultItems(1)
@@ -285,36 +292,54 @@ class SaleForm
         $quantity = floatval($get('quantity') ?? 0);
         $unitPrice = floatval($get('unit_price') ?? 0);
         $discount = floatval($get('discount') ?? 0);
-        
+
         $itemTotal = ($quantity * $unitPrice) - $discount;
         $set('item_total', $itemTotal);
     }
 
     protected static function recalculateTotals($set, $get): void
     {
-        // Hitung subtotal dari semua items
-        $items = $get('../../items') ?? [];
+        // Detect context: Are we inside the repeater or at root?
+        // Try to get items from parent (inside repeater)
+        $items = $get('../../items');
+        $isInsideRepeater = !is_null($items);
+
+        // If not found, try getting from root
+        if (!$isInsideRepeater) {
+            $items = $get('items') ?? [];
+        }
+
         $subtotal = 0;
 
         foreach ($items as $item) {
             $quantity = floatval($item['quantity'] ?? 0);
             $unitPrice = floatval($item['unit_price'] ?? 0);
             $itemDiscount = floatval($item['discount'] ?? 0);
-            
+
             $itemTotal = ($quantity * $unitPrice) - $itemDiscount;
             $subtotal += $itemTotal;
         }
 
-        $discountTotal = floatval($get('discount_total') ?? 0);
-        $taxPercentage = floatval($get('tax_percentage') ?? 0);
-        
+        // Determine path prefix for root fields
+        $pathPrefix = $isInsideRepeater ? '../../' : '';
+
+        // Get root-level values with prefix
+        $discountTotal = floatval($get($pathPrefix . 'discount_total') ?? 0);
+        $taxPercentage = floatval($get($pathPrefix . 'tax_percentage') ?? 0);
+
         $taxAmount = ($subtotal - $discountTotal) * ($taxPercentage / 100);
         $finalTotal = ($subtotal - $discountTotal) + $taxAmount;
 
-        $set('subtotal', $subtotal);
-        $set('tax_amount', $taxAmount);
-        $set('final_total', $finalTotal);
-        $set('total', $finalTotal);
+        // Set values using prefix
+        $set($pathPrefix . 'subtotal', $subtotal);
+        $set($pathPrefix . 'tax_amount', $taxAmount);
+        $set($pathPrefix . 'final_total', $finalTotal);
+        $set($pathPrefix . 'total', $finalTotal);
+
+        // Update Display Fields
+        $set($pathPrefix . 'subtotal_display', number_format($subtotal, 0, ',', '.'));
+        $set($pathPrefix . 'tax_amount_display', number_format($taxAmount, 0, ',', '.'));
+        $set($pathPrefix . 'final_total_display', number_format($finalTotal, 0, ',', '.'));
     }
 
     protected static function generateInvoiceNumber(): string
@@ -322,7 +347,7 @@ class SaleForm
         $prefix = 'INV';
         $date = now()->format('Ymd');
         $lastInvoice = Sale::where('invoice_number', 'like', "{$prefix}{$date}%")->latest()->first();
-        
+
         $sequence = 1;
         if ($lastInvoice) {
             $lastSequence = intval(substr($lastInvoice->invoice_number, -4));
