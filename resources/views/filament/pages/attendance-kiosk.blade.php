@@ -236,22 +236,50 @@
                 },
 
                 async loadModels() {
-                    this.message = 'Sedang memuat model AI...';
+                    this.message = 'Memuat TinyFace Detector...';
                     try {
-                        // Use base URL or public path
                         const modelPath = '/models';
+
+                        // Load sequentially with UI updates
                         await faceapi.nets.tinyFaceDetector.loadFromUri(modelPath);
+
+                        this.message = 'Memuat Face Landmarks...';
                         await faceapi.nets.faceLandmark68Net.loadFromUri(modelPath);
+
+                        this.message = 'Memuat Recognition Net...';
                         await faceapi.nets.faceRecognitionNet.loadFromUri(modelPath);
 
-                        this.modelLoaded = true;
-                        this.message = 'Sistem Siap. Klik START.';
+                        this.message = 'Memproses Data Wajah...';
 
-                        // Prep matcher
-                        this.initMatcher();
+                        // Allow UI to update before heavy processing
+                        setTimeout(() => this.initMatcher(), 100);
+
                     } catch (e) {
                         console.error(e);
                         this.message = 'Gagal memuat model: ' + e;
+                    }
+                },
+
+                initMatcher() {
+                    try {
+                        if (this.allEmployees && this.allEmployees.length > 0) {
+                            const labeledDescriptors = this.allEmployees
+                                .filter(emp => emp.descriptors && emp.descriptors.length > 0)
+                                .map(emp => {
+                                    const descriptors = emp.descriptors.map(d => new Float32Array(d));
+                                    return new faceapi.LabeledFaceDescriptors(emp.id.toString(), descriptors);
+                                });
+
+                            if (labeledDescriptors.length > 0) {
+                                this.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
+                            }
+                        }
+
+                        this.modelLoaded = true;
+                        this.message = 'Sistem Siap. Klik START.';
+                    } catch (err) {
+                        console.error(err);
+                        this.message = 'Gagal memproses data karyawan.';
                     }
                 },
 
@@ -351,8 +379,11 @@
                     }
 
                     if (this.isCameraOpen) {
-                        // Scan logic: requestAnimationFrame or timeout
-                        requestAnimationFrame(() => this.detectLoop());
+                        // Scan logic: Throttle to save battery/CPU on mobile
+                        // Wait 100ms before next frame
+                        setTimeout(() => {
+                            requestAnimationFrame(() => this.detectLoop());
+                        }, 100);
                     }
                 },
 
