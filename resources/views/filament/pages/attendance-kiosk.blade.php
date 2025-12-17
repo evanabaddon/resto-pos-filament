@@ -1,5 +1,5 @@
 <div x-data="kioskData()" x-init="initKiosk()"
-    class="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white relative overflow-hidden">
+    class="flex flex-col items-center justify-start md:justify-center min-h-screen bg-slate-900 text-white relative overflow-y-auto md:overflow-hidden pt-6 md:pt-0">
 
     {{-- Background Effect --}}
     <div class="absolute inset-0 bg-gradient-to-br from-indigo-900 via-slate-900 to-black opacity-80 z-0"></div>
@@ -7,29 +7,29 @@
         class="absolute inset-0 bg-[url('https://res.cloudinary.com/dflj4i4i4/image/upload/v1619717765/pattern-bg_z1.png')] opacity-10 z-0">
     </div>
 
-    <div class="relative z-10 text-center space-y-4 md:space-y-8 w-full max-w-6xl px-4 py-4 md:py-0">
+    <div class="relative z-10 text-center space-y-2 md:space-y-8 w-full max-w-6xl px-4 py-2 md:py-0">
 
         {{-- Header & Clock --}}
-        <div class="flex flex-col md:flex-row justify-between items-center w-full px-2 md:px-8 gap-4 md:gap-0">
+        <div class="flex flex-col md:flex-row justify-between items-center w-full px-2 md:px-8 gap-2 md:gap-0">
             <div class="text-center md:text-left">
                 <h1
-                    class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
+                    class="text-xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
                     Mesin Absensi AI
                 </h1>
-                <p class="text-slate-400 text-xs md:text-sm" x-text="message"></p>
+                <p class="text-slate-400 text-[10px] md:text-sm" x-text="message"></p>
             </div>
             <div class="text-center md:text-right">
-                <div class="text-sm md:text-xl font-light text-indigo-300 mb-1">{{ $currentDate }}</div>
-                <div class="text-4xl md:text-5xl font-black tracking-tighter text-white font-mono" x-text="time">
+                <div class="text-xs md:text-xl font-light text-indigo-300 mb-0.5">{{ $currentDate }}</div>
+                <div class="text-3xl md:text-5xl font-black tracking-tighter text-white font-mono" x-text="time">
                     {{ $currentTime }}
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 mt-4 md:mt-8 items-center h-full pb-20 md:pb-0">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-8 mt-2 md:mt-8 items-center h-full pb-10 md:pb-0">
 
             {{-- Left: Camera Feed --}}
-            <div class="relative group w-full max-w-xl mx-auto">
+            <div class="relative group w-full max-w-xs md:max-w-xl mx-auto">
                 <div
                     class="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-3xl blur opacity-30 group-hover:opacity-60 transition duration-500">
                 </div>
@@ -72,15 +72,15 @@
             </div>
 
             {{-- Right: Status & Actions --}}
-            <div class="flex flex-col justify-center space-y-4 md:space-y-6 max-w-md mx-auto w-full">
+            <div class="flex flex-col justify-center space-y-3 md:space-y-6 max-w-md mx-auto w-full">
 
                 {{-- Status Card --}}
                 <div
-                    class="bg-slate-800/50 backdrop-blur-sm p-4 md:p-8 rounded-3xl border border-slate-700/50 text-center min-h-[150px] md:min-h-[200px] flex flex-col justify-center">
+                    class="bg-slate-800/50 backdrop-blur-sm p-3 md:p-8 rounded-3xl border border-slate-700/50 text-center min-h-[110px] md:min-h-[200px] flex flex-col justify-center">
                     <template x-if="!matchedEmployeeId">
                         <div>
-                            <h2 class="text-slate-500 text-lg md:text-xl font-medium mb-2">Menunggu Wajah...</h2>
-                            <div class="flex justify-center mt-4 space-x-2">
+                            <h2 class="text-slate-500 text-base md:text-xl font-medium mb-1">Menunggu Wajah...</h2>
+                            <div class="flex justify-center mt-2 space-x-2">
                                 <div class="w-1.5 h-1.5 md:w-2 md:h-2 bg-slate-600 rounded-full animate-bounce"
                                     style="animation-delay: 0s"></div>
                                 <div class="w-1.5 h-1.5 md:w-2 md:h-2 bg-slate-600 rounded-full animate-bounce"
@@ -94,18 +94,18 @@
                     <template x-if="matchedEmployeeId">
                         <div class="animate-fade-in-up">
                             <div
-                                class="mx-auto w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden border-4 border-indigo-500/30 mb-4 bg-slate-700">
+                                class="mx-auto w-14 h-14 md:w-24 md:h-24 rounded-full overflow-hidden border-4 border-indigo-500/30 mb-2 md:mb-4 bg-slate-700">
                                 <img :src="matchedPhoto || `https://ui-avatars.com/api/?name=${detectedName}&background=random`"
                                     class="w-full h-full object-cover">
                             </div>
-                            <h2 class="text-2xl md:text-3xl font-bold text-white mb-2" x-text="detectedName"></h2>
-                            <div class="inline-flex items-center px-3 py-1 md:px-4 md:py-1.5 rounded-full text-xs md:text-sm font-bold shadow-sm"
+                            <h2 class="text-xl md:text-3xl font-bold text-white mb-1" x-text="detectedName"></h2>
+                            <div class="inline-flex items-center px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-sm font-bold shadow-sm"
                                 :class="{
                                     'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': matchedEmployeeStatus === 'checked_in',
                                     'bg-rose-500/20 text-rose-300 border border-rose-500/30': matchedEmployeeStatus === 'checked_out',
                                     'bg-slate-700 text-slate-400 border border-slate-600': matchedEmployeeStatus === 'none'
                                 }">
-                                <span class="mr-1.5 text-base md:text-lg">•</span>
+                                <span class="mr-1 md:mr-1.5 text-sm md:text-lg">•</span>
                                 <span x-text="getStatusLabel(matchedEmployeeStatus)"></span>
                             </div>
                         </div>
