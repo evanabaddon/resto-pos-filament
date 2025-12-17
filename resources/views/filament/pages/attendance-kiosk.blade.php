@@ -238,22 +238,14 @@
                 async loadModels() {
                     const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-                    this.message = 'Inisialisasi TensorFlow...';
+                    this.message = 'Inisialisasi TensorFlow (Force CPU)...';
                     await wait(100);
 
                     try {
-                        // Race condition for TF ready (WebGL can hang on some androids)
-                        const tfInit = faceapi.tf.ready();
-                        const tfTimeout = new Promise((resolve) => setTimeout(() => resolve('timeout'), 2500));
-
-                        const raceResult = await Promise.race([tfInit, tfTimeout]);
-
-                        if (raceResult === 'timeout') {
-                            this.message = 'WebGL Macet. Mengalihkan ke CPU...';
-                            console.warn('WebGL init timeout. Fallback to CPU.');
-                            await faceapi.tf.setBackend('cpu');
-                            await faceapi.tf.ready();
-                        }
+                        // Force CPU backend immediately to avoid WebGL hang on some mobile GPUs
+                        // This is safer/stable even if slightly slower
+                        await faceapi.tf.setBackend('cpu');
+                        await faceapi.tf.ready();
 
                         console.log('TF Backend Active:', faceapi.tf.getBackend());
                         this.message = 'Backend: ' + faceapi.tf.getBackend();
