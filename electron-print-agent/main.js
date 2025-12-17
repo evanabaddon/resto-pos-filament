@@ -662,6 +662,9 @@ async function printOrderTemplate(printer, data, division, config, width) {
 
     // 3. ITEMS - dengan ukuran teks yang sesuai
     if (Array.isArray(data.items)) {
+        // Gunakan ukuran yang sama dengan produk untuk notes agar jelas (atau bisa dibuat config sendiri)
+        const noteSize = config.tpl_order_noteSize || config.tpl_order_productSize || '1,1_BOLD';
+
         data.items.forEach(item => {
             // Print quantity dengan ukuran besar
             applyTextSize(printer, qtySize);
@@ -671,14 +674,15 @@ async function printOrderTemplate(printer, data, division, config, width) {
             applyTextSize(printer, prodSize);
             printer.println(item.product_name);
 
-            // Reset ke ukuran normal untuk notes
-            printer.setTextNormal();
-
-            // NOTES (Indented)
+            // Print NOTES dengan ukuran besar juga (tidak reset ke normal)
             if (item.notes) {
+                applyTextSize(printer, noteSize); // Apply size untuk note
                 printer.print("   "); // Indent note
                 printer.println(`NOTE: ${item.notes}`);
             }
+
+            // Reset ke normal hanya setelah item selesai (sebelum garis atau item berikutnya)
+            printer.setTextNormal();
             printer.drawLine();
         });
     } else {
