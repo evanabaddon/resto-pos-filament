@@ -296,7 +296,8 @@
                                 });
 
                             if (labeledDescriptors.length > 0) {
-                                this.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
+                                // Relaxed threshold to 0.50 (was 0.45) for faster/easier matching
+                                this.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.50);
                             }
                         }
 
@@ -343,7 +344,8 @@
                     if (!this.isCameraOpen || !this.video) return;
 
                     if (!this.video.paused && !this.video.ended && this.video.readyState === 4) {
-                        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+                        // OPTIMIZATION: Reduce inputSize to 160 for faster CPU inference
+                        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 });
                         const detection = await faceapi.detectSingleFace(this.video, options).withFaceLandmarks().withFaceDescriptor();
 
                         if (detection) {
@@ -390,11 +392,10 @@
                     }
 
                     if (this.isCameraOpen) {
-                        // Scan logic: Throttle to save battery/CPU on mobile
-                        // Wait 100ms before next frame
+                        // Scan logic: Reduced throttle to 30ms for smoother experience
                         setTimeout(() => {
                             requestAnimationFrame(() => this.detectLoop());
-                        }, 100);
+                        }, 30);
                     }
                 },
 
