@@ -430,10 +430,16 @@ class PosLoadModal extends Component
         $sales = collect();
         $cashSessionId = session('cash_session_id');
 
-        if ($this->show && $cashSessionId) {
-            $query = Sale::where('cash_session_id', $cashSessionId)
+        if ($this->show) {
+            $query = Sale::query()
                 ->withCount('items')
                 ->with(['items', 'paymentMethod']);
+
+            // Filter by Cash Session ONLY for completed transactions (Session History)
+            // For Drafts, we want to see ALL drafts (e.g. from yesterday)
+            if ($this->activeTab === 'completed' && $cashSessionId) {
+                $query->where('cash_session_id', $cashSessionId);
+            }
 
             // Apply Status Filter
             if ($this->activeTab !== 'all') {
