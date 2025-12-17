@@ -238,32 +238,45 @@
                 async loadModels() {
                     const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-                    this.message = 'Memuat TinyFace Detector...';
-                    await wait(100); // Force UI repaint
+                    this.message = 'Inisialisasi TensorFlow...';
+                    await wait(100);
 
                     try {
+                        // Ensure TF is ready and check backend
+                        await faceapi.tf.ready();
+                        console.log('TF Backend:', faceapi.tf.getBackend());
+                        this.message = 'Backend: ' + faceapi.tf.getBackend();
+                        await wait(500); // Let user see backend
+
                         const modelPath = '/models';
 
-                        await faceapi.nets.tinyFaceDetector.loadFromUri(modelPath);
-                        this.message = 'TinyFace Loaded. Memuat Landrymarks...';
-                        await wait(100);
+                        // Helper to load with timeout
+                        const loadWithTimeout = async (task, name) => {
+                            const timeout = new Promise((_, reject) =>
+                                setTimeout(() => reject(new Error(`Timeout memuat ${name}`)), 10000)
+                            );
+                            return Promise.race([task, timeout]);
+                        };
 
-                        await faceapi.nets.faceLandmark68Net.loadFromUri(modelPath);
-                        this.message = 'Landmarks Loaded. Memuat Recognition...';
+                        this.message = 'Memuat TinyFace (Timeout 10s)...';
                         await wait(100);
+                        await loadWithTimeout(faceapi.nets.tinyFaceDetector.loadFromUri(modelPath), 'TinyFace');
 
-                        await faceapi.nets.faceRecognitionNet.loadFromUri(modelPath);
-                        this.message = 'Recognition Loaded. Memproses Data...';
+                        this.message = 'TinyFace OK. Memuat Landmarks...';
                         await wait(100);
+                        await loadWithTimeout(faceapi.nets.faceLandmark68Net.loadFromUri(modelPath), 'Landmarks');
 
-                        // Allow UI to update before heavy processing
+                        this.message = 'Landmarks OK. Memuat Recog...';
+                        await wait(100);
+                        await loadWithTimeout(faceapi.nets.faceRecognitionNet.loadFromUri(modelPath), 'Recognition');
+
+                        this.message = 'Siap. Memproses...';
                         setTimeout(() => this.initMatcher(), 200);
 
                     } catch (e) {
                         console.error("Model Error:", e);
-                        // Show detailed error on screen
-                        this.message = 'Error Load Model: ' + (e.message || e);
-                        alert('Error loading models: ' + (e.message || e)); // Alert for mobile debugging
+                        this.message = 'Gagal: ' + (e.message || e);
+                        alert('Error: ' + (e.message || e) + '\nCoba refresh atau gunakan browser lain.');
                     }
                 },
 
