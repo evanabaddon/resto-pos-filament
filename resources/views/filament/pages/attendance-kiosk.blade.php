@@ -242,11 +242,22 @@
                     await wait(100);
 
                     try {
-                        // Ensure TF is ready and check backend
-                        await faceapi.tf.ready();
-                        console.log('TF Backend:', faceapi.tf.getBackend());
+                        // Race condition for TF ready (WebGL can hang on some androids)
+                        const tfInit = faceapi.tf.ready();
+                        const tfTimeout = new Promise((resolve) => setTimeout(() => resolve('timeout'), 2500));
+
+                        const raceResult = await Promise.race([tfInit, tfTimeout]);
+
+                        if (raceResult === 'timeout') {
+                            this.message = 'WebGL Macet. Mengalihkan ke CPU...';
+                            console.warn('WebGL init timeout. Fallback to CPU.');
+                            await faceapi.tf.setBackend('cpu');
+                            await faceapi.tf.ready();
+                        }
+
+                        console.log('TF Backend Active:', faceapi.tf.getBackend());
                         this.message = 'Backend: ' + faceapi.tf.getBackend();
-                        await wait(500); // Let user see backend
+                        await wait(500);
 
                         const modelPath = '/models';
 
