@@ -82,23 +82,25 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-3">
-            {{-- Tombol Cash Summary --}}
-            <livewire:cash-summary-button />
+        @unless(request()->is('kiosk'))
+            <div class="flex items-center gap-3">
+                {{-- Tombol Cash Summary --}}
+                <livewire:cash-summary-button />
 
-            <div class="hidden sm:block pl-3 border-l border-slate-200">
-                <a href="{{ route('filament.admin.pages.dashboard') }}"
-                    class="group bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 px-4 py-2 rounded-full text-sm font-bold cursor-pointer inline-flex items-center gap-2 transition-all active:scale-95">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    Dashboard
-                </a>
+                <div class="hidden sm:block pl-3 border-l border-slate-200">
+                    <a href="{{ route('filament.admin.pages.dashboard') }}"
+                        class="group bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 px-4 py-2 rounded-full text-sm font-bold cursor-pointer inline-flex items-center gap-2 transition-all active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Dashboard
+                    </a>
+                </div>
             </div>
-        </div>
+        @endunless
     </header>
 
     {{-- ========================= --}}
@@ -112,6 +114,7 @@
     {{-- 🔔 TOAST NOTIFICATIONS --}}
     {{-- ========================= --}}
     @include('livewire.pos-notification')
+    @livewire('notifications')
 
     {{-- Cash Summary Modal --}}
     <livewire:cash-summary-modal />

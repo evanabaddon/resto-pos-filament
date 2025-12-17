@@ -11,6 +11,8 @@ Route::get('/', function () {
 // Webhook routes
 require __DIR__ . '/webhook.php';
 
+Route::get('/kiosk', App\Livewire\AttendanceKiosk::class);
+
 
 // routes/api.php atau routes/web.php
 Route::get('/test-webhook-debug', function () {
