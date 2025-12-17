@@ -81,7 +81,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
             </div>
-            <input wire:model.live.debounce.300ms="searchQuery" 
+            <input wire:model.live.debounce.500ms="searchQuery" 
                 id="product-search-input"
                 type="text" 
                 class="pl-10 block w-full bg-slate-100 border-transparent focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 rounded-xl text-sm py-2.5 transition-all shadow-inner focus:shadow-lg placeholder-slate-400 text-slate-700" 
@@ -125,15 +125,15 @@
     {{-- Grid Produk - Modern Design --}}
     <div class="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-50 relative" id="product-grid-container">
         
-        {{-- Loading Skeleton (Refined) --}}
+        {{-- Loading Overlay (Non-blocking opacity) --}}
         <div wire:loading wire:target="searchQuery, selectedCategory, updatePerPage, setCategory, resetPage" 
-             class="absolute inset-0 z-50 bg-slate-50/60 backdrop-blur-sm flex flex-col items-center justify-center transition-all duration-300">
-            <div class="bg-white p-4 rounded-2xl shadow-xl flex flex-col items-center animate-in zoom-in-95 duration-200">
-                <svg class="animate-spin h-8 w-8 text-violet-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+             class="absolute inset-0 z-50 bg-slate-50/50 flex flex-col items-center justify-start pt-20 transition-all duration-300 pointer-events-none">
+            <div class="bg-white p-3 rounded-full shadow-lg flex items-center gap-2 animate-bounce">
+                <svg class="animate-spin h-5 w-5 text-violet-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <p class="text-xs font-bold text-slate-600 tracking-wide">MEMUAT...</p>
+                <span class="text-xs font-bold text-violet-600">Memuat...</span>
             </div>
         </div>
 
@@ -143,7 +143,12 @@
                     @php
                         $isAvailable = $this->checkProductAvailability($product);
                     @endphp
-                    <div wire:key="product-{{ $product->id }}" @if($isAvailable) @click="animateFlyToCart($event); $wire.quickAddProduct({{ $product->id }})" @endif
+                    <div wire:key="product-{{ $product->id }}" 
+                         @if($isAvailable) 
+                            @click="animateFlyToCart($event); $wire.quickAddProduct({{ $product->id }})" 
+                            wire:loading.class="opacity-50 cursor-wait"
+                            wire:target="quickAddProduct({{ $product->id }})"
+                         @endif
                         class="group relative bg-white rounded-xl p-2 flex flex-col items-stretch transition-all duration-200 select-none touch-manipulation
                         {{ $isAvailable 
                             ? 'cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-slate-100 hover:border-violet-200' 
