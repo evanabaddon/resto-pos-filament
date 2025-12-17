@@ -370,8 +370,8 @@
                                 } else {
                                     // Unknown
                                     this.unknownFrames++;
-                                    // Only switch to 'Unknown' if we have 5 consecutive unknown frames
-                                    if (this.unknownFrames > 5) {
+                                    // Only switch to 'Unknown' if we have 2 consecutive unknown frames (Faster response)
+                                    if (this.unknownFrames > 2) {
                                         this.detectedName = 'Wajah tidak dikenal';
                                         this.matchedEmployeeId = null;
                                         this.matchedEmployeeStatus = 'none';
@@ -383,7 +383,7 @@
                         } else {
                             // No face detected
                             this.noFaceFrames++;
-                            if (this.noFaceFrames > 10) {
+                            if (this.noFaceFrames > 2) { // 2 frames debounce for instant clear
                                 this.detectedName = '...';
                                 this.matchedEmployeeId = null;
                                 this.matchedEmployeeStatus = 'none';
