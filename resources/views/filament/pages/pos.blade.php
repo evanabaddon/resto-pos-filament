@@ -105,19 +105,17 @@
             <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10 sm:hidden"></div>
 
             <button wire:click="setCategory('SEMUA')"
-                    class="whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border shrink-0 touch-target {{ $selectedCategory === 'Semua' ? 'bg-violet-600 text-white border-violet-600 shadow-md transform scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                    class="whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border shrink-0 touch-target {{ $selectedCategory === 'SEMUA' ? 'bg-violet-600 text-white border-violet-600 shadow-md transform scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
                 SEMUA
             </button>
             @foreach ($categories as $category)
-                @if($category !== 'SEMUA')
-                <button wire:click="setCategory('{{ $category }}')"
+                <button wire:click="setCategory('{{ $category->id }}')"
                     class="whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border shrink-0 touch-target
-                        {{ $selectedCategory === $category 
+                        {{ $selectedCategory == $category->id 
                             ? 'bg-violet-600 text-white border-violet-600 shadow-md transform scale-105' 
                             : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
-                    {{ $category }}
+                    {{ $category->name }}
                 </button>
-                @endif
             @endforeach
         </div>
     </div>

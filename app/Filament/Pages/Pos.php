@@ -341,10 +341,8 @@ class Pos extends Page
 
     public function getCategoriesProperty()
     {
-        // Ambil semua kategori dari DB + tambah "Semua"
-        $categories = Category::pluck('name')->toArray();
-        array_unshift($categories, 'SEMUA');
-        return $categories;
+        // Return collection of ID and Name
+        return Category::select('id', 'name')->orderBy('name')->get();
     }
 
     public function getProductsProperty()
@@ -366,12 +364,8 @@ class Pos extends Page
 
         // Filter Kategori
         if ($this->selectedCategory !== 'SEMUA') {
-            $category = Category::where('name', $this->selectedCategory)->first();
-            if ($category) {
-                $query->where('category_id', $category->id);
-            }
+            $query->where('category_id', $this->selectedCategory);
         }
-
         // Use DB Pagination (Optimized)
         // Use DB Pagination (Optimized)
         return $query->orderBy('name', 'asc')->paginate($this->perPage);
@@ -768,9 +762,10 @@ class Pos extends Page
 
     }
 
-    public function setCategory($category)
+    public function setCategory($categoryId)
     {
-        $this->selectedCategory = $category;
+        $this->selectedCategory = $categoryId;
+        $this->resetPage(); // Critical for performance/correctness
     }
 
 
