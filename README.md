@@ -108,7 +108,31 @@ npm start
 
 ---
 
-## 🔄 Alur Kerja Sistem
+## �️ Roadmap Pengembangan
+
+### 🚀 Prioritas Selanjutnya (Next Phase)
+1. **🥡 Kitchen Display System (KDS)**
+   - Layar khusus di dapur untuk melihat pesanan masuk secara real-time.
+   - Status tracking: *Pending* ➝ *Cooking* ➝ *Ready*.
+   - Menggantikan atau melengkapi printer struk dapur.
+
+2. **🪑 Visual Table Management**
+   - Denah lantai (Floor Plan) interaktif.
+   - Indikator status meja: *Kosong, Terisi, Reserved*.
+   - Drag & drop untuk memindahkan pesanan atau menggabungkan meja.
+
+3. **🤝 Membership & Loyalty**
+   - **Simple Mode**: Cukup catat nama pelanggan (kebiasaan lokal), tanpa wajib No HP.
+   - **Full Mode**: Registrasi lengkap dengan No HP untuk mengumpulkan **Poin Loyalty**.
+   - Sistem penukaran poin dengan diskon atau produk gratis untuk mengikat pelanggan "Regular".
+
+### 🔮 Rencana Jangka Panjang (Future)
+- **📱 Self-Order Menu (QR Code)**: Pelanggan scan QR di meja untuk pesan mandiri.
+- **💳 Payment Gateway**: Integrasi QRIS otomatis (Midtrans/Xendit) untuk status pembayaran realtime.
+
+---
+
+## �🔄 Alur Kerja Sistem
 
 1. **Setup Data**: Buat Unit -> Bahan Baku -> Resep -> Produk Jadi.
 2. **HRM Setup**: Input data Karyawan -> Atur Shift & Formula Gaji.
