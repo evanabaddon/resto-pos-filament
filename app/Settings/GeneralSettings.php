@@ -21,6 +21,10 @@ class GeneralSettings extends Settings
     // Modules
     public bool $enable_hrm;
     public ?string $hrm_license_key;
+
+    public bool $enable_kds;
+    public ?string $kds_license_key;
+
     public string $printer_width;
     public bool $enable_table_number;
 
@@ -40,6 +44,8 @@ class GeneralSettings extends Settings
             'app_favicon' => null,
             'enable_hrm' => false,
             'hrm_license_key' => null,
+            'enable_kds' => false,
+            'kds_license_key' => null,
             'printer_width' => '58mm',
             'enable_table_number' => false,
         ];

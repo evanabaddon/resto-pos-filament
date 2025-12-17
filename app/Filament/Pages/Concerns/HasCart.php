@@ -48,7 +48,7 @@ trait HasCart
             $this->items[$index]['quantity'] = $quantity;
             $this->items[$index]['subtotal'] = $this->items[$index]['price'] * $quantity;
         }
-        
+
         $this->recalculateTotals();
     }
 
@@ -58,7 +58,7 @@ trait HasCart
             unset($this->items[$index]);
             $this->items = array_values($this->items);
             $this->recalculateTotals();
-            
+
             $this->dispatch('cartUpdated', count: count($this->items));
         }
     }
@@ -67,14 +67,14 @@ trait HasCart
     {
         // Calculate subtotal from items
         $this->total = collect($this->items)->sum('subtotal');
-        
+
         // Calculate Tax (Default 10% - logic should be configurable ideally)
-        $this->tax = $this->total * 0.10; 
-        
+        $this->tax = $this->total * 0.10;
+
         // Calculate Final
         $this->finalTotal = max(0, $this->total + $this->tax - $this->discount);
     }
-    
+
     // Alias to match existing calls if any
     public function recalculateTotals()
     {
@@ -95,11 +95,11 @@ trait HasCart
             ->where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('valid_from')
-                ->orWhereDate('valid_from', '<=', now());
+                    ->orWhereDate('valid_from', '<=', now());
             })
             ->where(function ($q) {
                 $q->whereNull('valid_until')
-                ->orWhereDate('valid_until', '>=', now());
+                    ->orWhereDate('valid_until', '>=', now());
             })
             ->first();
 
@@ -135,7 +135,7 @@ trait HasCart
         $this->discountMessage = 'Kode diskon "' . $discount->code . '" berhasil diterapkan!';
         $this->calculateTotals();
     }
-    
+
     public function clearCart()
     {
         $this->items = [];

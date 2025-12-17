@@ -147,8 +147,42 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul SDM.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul SDM.'
+                                            ),
+                                    ]),
+
+                                Section::make('KDS (Kitchen Display System)')
+                                    ->description('Manage Kitchen Display System Module.')
+                                    ->schema([
+                                        TextInput::make('kds_license_key')
+                                            ->label('License Key')
+                                            ->password() // Hide characters
+                                            ->revealable()
+                                            ->helperText('Masukkan lisensi, format: KDS-PRO-XXXX')
+                                            ->live(onBlur: true) // Validate on blur
+                                            ->afterStateUpdated(function ($state, Set $set) {
+                                                // Simple Logic: Key must start with KDS-PRO-
+                                                if ($state && str_starts_with($state, 'KDS-PRO-')) {
+                                                    // Valid
+                                                } else {
+                                                    // Invalid: Force disable toggle
+                                                    $set('enable_kds', false);
+                                                }
+                                            }),
+
+                                        Toggle::make('enable_kds')
+                                            ->label('Enable KDS Module')
+                                            ->inline(false)
+                                            ->disabled(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
+                                            )
+                                            ->helperText(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul KDS.'
                                             ),
                                     ])
                             ])

@@ -60,6 +60,7 @@
             }
         }
     </style>
+    @filamentStyles
 </head>
 
 <body class="bg-slate-50 flex flex-col h-screen overflow-hidden antialiased text-slate-800">
@@ -83,23 +84,26 @@
         </div>
 
         @unless(request()->is('kiosk'))
-            <div class="flex items-center gap-3">
-                {{-- Tombol Cash Summary --}}
-                <livewire:cash-summary-button />
+        <div class="flex items-center gap-3">
+            {{-- Custom POS Notifications --}}
+            <livewire:pos-notifications />
 
-                <div class="hidden sm:block pl-3 border-l border-slate-200">
-                    <a href="{{ route('filament.admin.pages.dashboard') }}"
-                        class="group bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 px-4 py-2 rounded-full text-sm font-bold cursor-pointer inline-flex items-center gap-2 transition-all active:scale-95">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                        Dashboard
-                    </a>
-                </div>
+            {{-- Tombol Cash Summary --}}
+            <livewire:cash-summary-button />
+
+            <div class="hidden sm:block pl-3 border-l border-slate-200">
+                <a href="{{ route('filament.admin.pages.dashboard') }}"
+                    class="group bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 px-4 py-2 rounded-full text-sm font-bold cursor-pointer inline-flex items-center gap-2 transition-all active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Dashboard
+                </a>
             </div>
+        </div>
         @endunless
     </header>
 
@@ -127,61 +131,66 @@
 
             init() {
                 if (!this.ctx) {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.ctx = new(window.AudioContext || window.webkitAudioContext)();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume().catch(e => console.warn('Audio resume failed', e));
                 }
             },
 
             play(type) {
-                // User gesture interaction is required to start audio context
-                this.init();
-                if (this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
+                try {
+                    this.init();
 
-                const now = this.ctx.currentTime;
+                    if (this.ctx.state !== 'running') {
+                        console.warn('AudioContext not running. User interaction needed.');
+                        return;
+                    }
 
-                if (type === 'click') {
-                    this.playTone(800, 'sine', 0.1, 0.05);
-                }
-                else if (type === 'add') {
-                    // Soft pop
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
+                    const now = this.ctx.currentTime;
 
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(400, now);
-                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                    if (type === 'click') {
+                        this.playTone(800, 'sine', 0.1, 0.05);
+                    } else if (type === 'add') {
+                        // Soft pop
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
 
-                    gain.gain.setValueAtTime(0.1, now);
-                    gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(400, now);
+                        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
 
-                    osc.start(now);
-                    osc.stop(now + 0.15);
-                }
-                else if (type === 'success') {
-                    // Success Chime (Major Arpeggio: C5 - E5 - G5)
-                    this.playTone(523.25, 'sine', 0.1, 0.1, 0);       // C5
-                    this.playTone(659.25, 'sine', 0.1, 0.1, 0.1);     // E5
-                    this.playTone(783.99, 'sine', 0.2, 0.1, 0.2);     // G5
-                }
-                else if (type === 'error') {
-                    // Error Buzz (Sawtooth drop)
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
 
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(150, now);
-                    osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+                        osc.start(now);
+                        osc.stop(now + 0.15);
+                    } else if (type === 'success') {
+                        // Success Chime (Major Arpeggio: C5 - E5 - G5)
+                        this.playTone(523.25, 'sine', 0.1, 0.1, 0); // C5
+                        this.playTone(659.25, 'sine', 0.1, 0.1, 0.1); // E5
+                        this.playTone(783.99, 'sine', 0.2, 0.1, 0.2); // G5
+                    } else if (type === 'error') {
+                        // Error Buzz (Sawtooth drop)
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
 
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(150, now);
+                        osc.frequency.linearRampToValueAtTime(100, now + 0.3);
 
-                    osc.start(now);
-                    osc.stop(now + 0.35);
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+
+                        osc.start(now);
+                        osc.stop(now + 0.35);
+                    }
+                } catch (e) {
+                    console.error('PosSound Error:', e);
                 }
             },
 
@@ -205,6 +214,19 @@
         };
 
         window.PosSound = PosSound;
+
+        // Auto-resume audio context on first user interaction
+        ['click', 'keydown', 'touchstart'].forEach(event => {
+            document.addEventListener(event, () => {
+                if (window.PosSound && window.PosSound.ctx && window.PosSound.ctx.state === 'suspended') {
+                    window.PosSound.ctx.resume();
+                } else if (window.PosSound && !window.PosSound.ctx) {
+                    window.PosSound.init();
+                }
+            }, {
+                once: true
+            });
+        });
     </script>
 
     <script>
@@ -224,13 +246,13 @@
     <script src="/js/offline-pos.js"></script>
 
     <script>
-        document.addEventListener('livewire:init', function () {
+        document.addEventListener('livewire:init', function() {
 
 
             // Cash Summary Button
             const cashSummaryBtn = document.getElementById('cash-summary-btn');
             if (cashSummaryBtn) {
-                cashSummaryBtn.addEventListener('click', function () {
+                cashSummaryBtn.addEventListener('click', function() {
                     Livewire.dispatch('openCashSummaryModal');
                 });
             }
@@ -243,6 +265,9 @@
             });
         });
     </script>
+    @filamentScripts
+    @vite('resources/js/app.js')
+    @livewire('notifications')
 </body>
 
 </html>

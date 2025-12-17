@@ -597,27 +597,37 @@ class Pos extends Page
         $this->orderType = $sale->order_type ?? 'Dine In';
         $this->discount = $sale->discount ?? 0;
 
-        // 🔹 SIMPAN ITEMS SEBELUMNYA untuk tracking (dengan notes)
-        $this->previousItems = $sale->items->map(function ($item) {
-            return [
-                'product_id' => $item->product_id,
-                'quantity' => $item->quantity,
-                'notes' => $item->notes ?? '' // ✅ TAMBAHKAN NOTES
-            ];
-        })->toArray();
+        // 🔹 GROUP ITEMS BY PRODUCT & NOTES (Merging DB splits for POS UI)
+        $groupedItems = $sale->items->groupBy(function ($item) {
+            return $item->product_id . '-' . ($item->notes ?? '');
+        });
 
-        // Map ulang items untuk tampilan
-        $this->items = $sale->items->map(function ($item) {
-            $product = $item->product;
+        // 🔹 SIMPAN ITEMS SEBELUMNYA untuk tracking (Merged)
+        $this->previousItems = $groupedItems->map(function ($group) {
+            $first = $group->first();
             return [
-                'product_id' => $item->product_id,
-                'name' => $product?->name ?? '(Produk dihapus)',
-                'quantity' => $item->quantity,
-                'price' => $item->unit_price,
-                'subtotal' => $item->subtotal,
-                'notes' => $item->notes ?? '', // ✅ TAMBAHKAN NOTES
+                'product_id' => $first->product_id,
+                'quantity' => $group->sum('quantity'),
+                'notes' => $first->notes ?? ''
             ];
-        })->toArray();
+        })->values()->toArray();
+
+        // Map ulang items untuk tampilan (Merged)
+        $this->items = $groupedItems->map(function ($group) {
+            $first = $group->first();
+            $product = $first->product;
+            $qty = $group->sum('quantity');
+            $price = $first->unit_price;
+
+            return [
+                'product_id' => $first->product_id,
+                'name' => $product?->name ?? '(Produk dihapus)',
+                'quantity' => $qty,
+                'price' => $price,
+                'subtotal' => $price * $qty,
+                'notes' => $first->notes ?? '',
+            ];
+        })->values()->toArray();
 
         $this->recalculateTotals();
         $this->showLoadModal = false;
@@ -759,7 +769,6 @@ class Pos extends Page
         // generate order number unik, random nomor dan tanggal saat ini
         $this->orderNumber = '#' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(2)));
         return $this->orderNumber;
-
     }
 
     public function setCategory($categoryId)
@@ -786,7 +795,6 @@ class Pos extends Page
     public function quickAddProduct($productId)
     {
         $this->addProduct($productId);
-
     }
 
     /**
