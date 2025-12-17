@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Sale;
+use Filament\Notifications\Notification;
 use Mike42\Escpos\Printer;
 use App\Settings\GeneralSettings;
 use App\Settings\PrinterSettings;

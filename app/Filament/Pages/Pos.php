@@ -50,7 +50,7 @@ class Pos extends Page
         'paymentProcessed' => 'handlePaymentProcessed',
         'printReceipt' => 'handlePrintReceipt',
         'printCompleted' => 'handlePrintCompleted',
-        'showSection' => 'handleShowSection',
+
         'openMergeModal' => 'openMergeModal',
         'mergeConfirmed' => 'handleMergeConfirmed',
         'mergeCancelled' => 'handleMergeCancelled',
@@ -773,31 +773,7 @@ class Pos extends Page
         $this->selectedCategory = $category;
     }
 
-    /**
-     * Handle section switching dari JavaScript
-     */
-    public function handleShowSection($section)
-    {
-        $this->switchToSection($section);
-    }
 
-    /**
-     * Switch section untuk mobile - FIXED
-     */
-    public function switchToSection($section)
-    {
-        // Validasi section yang diperbolehkan
-        $allowedSections = ['products', 'cart'];
-
-        if (!in_array($section, $allowedSections)) {
-            return;
-        }
-
-        // Update state jika diperlukan
-        $this->dispatch('updateMobileNav', section: $section);
-
-        \Log::info("Switching to section: {$section}");
-    }
 
     /**
      * Open load modal untuk tombol Order
@@ -816,11 +792,6 @@ class Pos extends Page
     {
         $this->addProduct($productId);
 
-        // Auto switch to cart section setelah add product
-        $this->switchToSection('cart');
-
-        // Show success feedback
-        // $this->dispatch('showNotification', 'Produk ditambahkan ke keranjang!', 'success');
     }
 
     /**

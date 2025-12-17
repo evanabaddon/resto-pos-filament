@@ -10,6 +10,7 @@
             function posLayout() {
                 return {
                     perPage: 12, // Default fallback
+                    mobileTab: 'products',
                     
                     initLayout() {
                         this.calculatePerPage();
@@ -56,7 +57,7 @@
         </script>
 
     {{-- 💰 PRODUK SECTION --}}
-    <div id="mobile-products-section" class="mobile-section lg:flex-1 lg:min-w-[60%] w-full h-full flex flex-col border-r border-gray-200 bg-white shadow-sm min-h-0 overflow-hidden">
+    <div id="mobile-products-section" :class="{'hidden': mobileTab !== 'products'}" class="mobile-section lg:flex-1 lg:min-w-[60%] w-full h-full flex flex-col border-r border-gray-200 bg-white shadow-sm min-h-0 overflow-hidden">
         {{-- Header Produk --}}
         <div class="px-5 py-4 border-b border-gray-100 bg-white flex-shrink-0 z-10 relative">
             <div class="flex items-center justify-between">
@@ -236,7 +237,7 @@
     </div>
 
     {{-- 🧺 KERANJANG SECTION - FIXED FOR DESKTOP & MOBILE --}}
-    <div id="mobile-cart-section" class="mobile-section lg:flex lg:w-[400px] xl:w-[450px] w-full h-full flex-col bg-white shadow-lg border-l border-gray-200 flex-shrink-0 min-h-0 overflow-hidden">
+    <div id="mobile-cart-section" :class="{'hidden': mobileTab !== 'cart'}" class="mobile-section lg:flex lg:w-[400px] xl:w-[450px] w-full h-full flex-col bg-white shadow-lg border-l border-gray-200 flex-shrink-0 min-h-0 overflow-hidden">
         {{-- Header Keranjang --}}
         <div class="p-5 bg-white/80 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-20 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
             <div class="flex items-center justify-between mb-4">
@@ -549,9 +550,9 @@
         <div class="grid grid-cols-3 h-16 max-w-md mx-auto relative group">
             
             {{-- Products Button --}}
-            <button onclick="switchSection('products')"
-                class="nav-button flex flex-col items-center justify-center h-full text-slate-400 hover:text-violet-600 transition-colors active:scale-95"
-                data-section="products">
+            <button @click="mobileTab = 'products'"
+                :class="{'text-violet-600': mobileTab === 'products', 'text-slate-400': mobileTab !== 'products'}"
+                class="nav-button flex flex-col items-center justify-center h-full hover:text-violet-600 transition-colors active:scale-95">
                 <div class="p-1 rounded-xl transition-all duration-200 nav-icon-bg">
                     <svg class="w-6 h-6 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
@@ -561,9 +562,9 @@
             </button>
             
             {{-- Cart Button --}}
-            <button onclick="switchSection('cart')"
-                class="nav-button flex flex-col items-center justify-center h-full text-slate-400 hover:text-violet-600 transition-colors active:scale-95"
-                data-section="cart">
+            <button @click="mobileTab = 'cart'"
+                :class="{'text-violet-600': mobileTab === 'cart', 'text-slate-400': mobileTab !== 'cart'}"
+                class="nav-button flex flex-col items-center justify-center h-full hover:text-violet-600 transition-colors active:scale-95">
                 <div class="relative p-1 rounded-xl transition-all duration-200 nav-icon-bg">
                     <svg class="w-6 h-6 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
@@ -925,7 +926,7 @@
         <livewire:pos-load-modal wire:key="pos-load-modal" />
         <livewire:pos-payment-modal wire:key="pos-payment-modal" />
     </div>
-    @livewire('pos-notification')
+
 
     {{-- SEACRH --}}
     <script>
@@ -1494,5 +1495,5 @@
         }
     </style>
 
-    @livewire('pos-manual-discount-modal')
+    <livewire:pos-manual-discount-modal wire:key="pos-manual-discount-modal" />
 </div>
