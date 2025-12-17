@@ -283,21 +283,7 @@
                     }
                 },
 
-                initMatcher() {
-                    if (this.allEmployees && this.allEmployees.length > 0) {
-                        const labeledDescriptors = this.allEmployees
-                            .filter(emp => emp.descriptors && emp.descriptors.length > 0)
-                            .map(emp => {
-                                const descriptors = emp.descriptors.map(d => new Float32Array(d));
-                                return new faceapi.LabeledFaceDescriptors(emp.id.toString(), descriptors);
-                            });
 
-                        if (labeledDescriptors.length > 0) {
-                            // Tighten threshold to 0.45 to reduce false positives
-                            this.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
-                        }
-                    }
-                },
 
                 async startCamera() {
                     if (!this.modelLoaded) return;
