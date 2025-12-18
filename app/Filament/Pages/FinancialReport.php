@@ -158,7 +158,7 @@ class FinancialReport extends Page implements HasForms
         foreach ($sales as $sale) {
             foreach ($sale->items as $item) {
                 if ($item->product) {
-                    $hpp = $item->product->computed_hpp ?? 0;
+                    $hpp = $item->product->base_price ?? 0;
                     $totalItemHpp = $hpp * $item->quantity;
                     $this->totalCogs += $totalItemHpp;
 
