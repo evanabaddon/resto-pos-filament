@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use Livewire\Attributes\Layout;
 use App\Models\Employee;
 use App\Services\AttendanceService;
 use Filament\Notifications\Notification;
@@ -192,9 +193,10 @@ class AttendanceKiosk extends Component
         return sqrt($sum);
     }
 
+    #[Layout('layouts.pos-layout', ['title' => 'Absensi Kiosk'])]
     public function render()
     {
         // Re-use the existing view
-        return view('filament.pages.attendance-kiosk')->layout('layouts.pos-layout', ['title' => 'Absensi Kiosk']);
+        return view('filament.pages.attendance-kiosk');
     }
 }

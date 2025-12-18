@@ -4,21 +4,14 @@ namespace App\Providers\Filament;
 
 use App\Settings\GeneralSettings;
 use Filament\Panel;
-use Livewire\Livewire;
 use Filament\PanelProvider;
 use Filament\Pages\Dashboard;
 use Filament\Support\Enums\Width;
 use Filament\Support\Colors\Color;
-use Filament\View\PanelsRenderHook;
-use Filament\Widgets\AccountWidget;
-use Filament\Navigation\NavigationItem;
-use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Storage;
-use Filament\Widgets\FilamentInfoWidget;
 use Filament\Http\Middleware\Authenticate;
 use App\Filament\Widgets\LowStockAlertWidget;
 use App\Filament\Widgets\BestSellingFoodChart;
-use Resma\FilamentAwinTheme\FilamentAwinTheme;
 use App\Filament\Widgets\BestSellingDrinkChart;
 use App\Filament\Widgets\RevenueOverviewWidget;
 use Illuminate\Session\Middleware\StartSession;
@@ -42,7 +35,7 @@ class AdminPanelProvider extends PanelProvider
     {
         try {
             $settings = app(GeneralSettings::class);
-            $logo = $settings->app_logo ? \Illuminate\Support\Facades\Storage::url($settings->app_logo) : null;
+            $logo = $settings->app_logo ? Storage::url($settings->app_logo) : null;
             $brandName = $settings->app_name ?? config('app.name');
         } catch (\Throwable $e) {
             $logo = null;

@@ -446,6 +446,14 @@ class Pos extends Page
 
 
 
+    public function getEditingItemProperty()
+    {
+        if ($this->editingNotesIndex !== null && isset($this->items[$this->editingNotesIndex])) {
+            return $this->items[$this->editingNotesIndex];
+        }
+        return null;
+    }
+
     /**
      * Open edit notes modal untuk item tertentu
      */

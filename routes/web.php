@@ -3,6 +3,8 @@
 use App\Models\PrintJob;
 use App\Services\OrderPrintService;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 Route::get('/', function () {
     return redirect('/admin');
@@ -40,6 +42,11 @@ Route::get('/test-webhook-debug', function () {
                 'type' => 'test'
             ]);
 
+        // Fix: If Guzzle returns a promise (async), wait for it and wrap in Laravel Response
+        if ($response instanceof \GuzzleHttp\Promise\PromiseInterface) {
+            $response = new \Illuminate\Http\Client\Response($response->wait());
+        }
+
         $webhookTest = [
             'success' => $response->successful(),
             'status' => $response->status(),
@@ -72,6 +79,10 @@ Route::get('/test-api-basic', function () {
         $response = Http::timeout(10)
             ->withOptions(['verify' => false])
             ->get('https://pos.suralaya.id/api/webhook/test');
+
+        if ($response instanceof \GuzzleHttp\Promise\PromiseInterface) {
+            $response = new \Illuminate\Http\Client\Response($response->wait());
+        }
 
         return response()->json([
             'success' => $response->successful(),
@@ -124,6 +135,10 @@ Route::get('/test-api-routes', function () {
             ->withOptions(['verify' => false])
             ->get('https://pos.suralaya.id/api/webhook/test');
 
+        if ($response instanceof \GuzzleHttp\Promise\PromiseInterface) {
+            $response = new \Illuminate\Http\Client\Response($response->wait());
+        }
+
         $tests['api_test'] = [
             'success' => $response->successful(),
             'status' => $response->status(),
@@ -145,8 +160,8 @@ Route::get('/test-api-routes', function () {
 
     // Test 3: Database check
     $tests['database'] = [
-        'print_jobs_table' => \Schema::hasTable('print_jobs'),
-        'pending_jobs' => \App\Models\PrintJob::where('status', 'pending')->count()
+        'print_jobs_table' => Schema::hasTable('print_jobs'),
+        'pending_jobs' => PrintJob::where('status', 'pending')->count()
     ];
 
     return response()->json($tests);

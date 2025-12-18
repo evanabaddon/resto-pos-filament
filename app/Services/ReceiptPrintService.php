@@ -174,6 +174,10 @@ class ReceiptPrintService
                     'type' => $type
                 ]);
 
+            if ($response instanceof \GuzzleHttp\Promise\PromiseInterface) {
+                $response = $response->wait();
+            }
+
             if ($response->successful()) {
                 $result = $response->json();
 
@@ -770,96 +774,6 @@ class ReceiptPrintService
         }
     }
 
-    /**
-     * Method untuk manual print dari tombol di modal preview
-     */
-    public function manualPrintReceipt()
-    {
-        // Gunakan currentSaleIdForPrint jika available, fallback ke saleId
-        $saleIdToPrint = $this->currentSaleIdForPrint ?? $this->saleId;
 
-        logger('Manual Print Receipt - Sale ID:', [
-            'currentSaleIdForPrint' => $this->currentSaleIdForPrint,
-            'saleId' => $this->saleId,
-            'saleIdToPrint' => $saleIdToPrint
-        ]);
-
-        if (!$saleIdToPrint) {
-            Notification::make()
-                ->title('Error')
-                ->body('Tidak ada transaksi yang dipilih untuk dicetak.')
-                ->danger()
-                ->send();
-            return;
-        }
-
-        $this->isPrinting = true;
-
-        try {
-            $sale = Sale::with(['items.product', 'user', 'paymentMethod'])->findOrFail($saleIdToPrint);
-
-            // Gunakan ReceiptPrintService yang sudah ada
-            $printService = new ReceiptPrintService($sale);
-
-            // Print receipt - service akan otomatis pilih webhook atau direct berdasarkan environment
-            $result = $printService->printReceipt();
-
-            if ($result) {
-                Notification::make()
-                    ->title('Struk Berhasil Dicetak')
-                    ->body('Struk telah dikirim ke printer.')
-                    ->success()
-                    ->send();
-
-                // Kirim event untuk update UI
-                $this->dispatch('printCompleted');
-            } else {
-                throw new \Exception('Print gagal tanpa error message');
-            }
-
-        } catch (\Exception $e) {
-            logger('Manual print receipt failed: ' . $e->getMessage());
-
-            Notification::make()
-                ->title('Gagal Mencetak Struk')
-                ->body($e->getMessage())
-                ->warning()
-                ->send();
-
-            $this->dispatch('printFailed');
-        } finally {
-            $this->isPrinting = false;
-        }
-    }
-
-    /**
-     * Handler ketika print selesai
-     */
-    public function handlePrintCompleted()
-    {
-        logger('Print completed received in PosPaymentModal');
-        $this->isPrinting = false;
-
-        Notification::make()
-            ->title('Print Selesai')
-            ->body('Struk berhasil dicetak.')
-            ->success()
-            ->send();
-    }
-
-    /**
-     * Handler ketika print gagal
-     */
-    public function handlePrintFailed()
-    {
-        logger('Print failed received in PosPaymentModal');
-        $this->isPrinting = false;
-
-        Notification::make()
-            ->title('Print Gagal')
-            ->body('Gagal mencetak struk. Periksa koneksi printer.')
-            ->danger()
-            ->send();
-    }
 
 }
