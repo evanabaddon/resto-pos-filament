@@ -147,8 +147,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul SDM.'
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul SDM.'
                                             ),
                                     ]),
 
@@ -181,11 +181,79 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul KDS.'
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul KDS.'
                                             ),
                                     ])
-                            ])
+                            ]),
+
+                        // TAB: FISCAL
+                        Tab::make('Fiscal / Pajak')
+                            ->icon('heroicon-o-calculator')
+                            ->schema([
+                                Section::make('Module Activation')
+                                    ->description('Aktifkan modul tambahan untuk fitur perencanaan fiskal & randomizer.')
+                                    ->schema([
+                                        TextInput::make('fiscal_license_key')
+                                            ->label('License Key')
+                                            ->password()
+                                            ->revealable()
+                                            ->helperText('Masukkan lisensi, format: FISCAL-PRO-XXXX')
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(function ($state, Set $set) {
+                                                if ($state && str_starts_with($state, 'FISCAL-PRO-')) {
+                                                    // Valid
+                                                } else {
+                                                    $set('enable_fiscal_planning', false);
+                                                }
+                                            }),
+
+                                        Toggle::make('enable_fiscal_planning')
+                                            ->label('Aktifkan Modul Perencanaan Fiskal')
+                                            ->inline(false)
+                                            ->disabled(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('fiscal_license_key') ?? '', 'FISCAL-PRO-')
+                                            )
+                                            ->helperText(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('fiscal_license_key') ?? '', 'FISCAL-PRO-')
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan fitur target omzet harian dan randomizer.'
+                                            ),
+                                    ]),
+
+                                Section::make('Excel Template Configuration')
+                                    ->description('Konfigurasi template laporan pajak (Excel).')
+                                    ->schema([
+                                        FileUpload::make('template_path')
+                                            ->label('File Template (Excel)')
+                                            ->disk('public')
+                                            ->directory('fiscal-templates')
+                                            ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']),
+
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('start_row')
+                                                    ->label('Baris Mulai Data')
+                                                    ->numeric()
+                                                    ->default(2)
+                                                    ->required(),
+                                                TextInput::make('date_column')
+                                                    ->label('Kolom Tanggal')
+                                                    ->default('A')
+                                                    ->required(),
+                                                TextInput::make('amount_column')
+                                                    ->label('Kolom Omzet (Total)')
+                                                    ->default('B')
+                                                    ->required(),
+                                                TextInput::make('tax_column')
+                                                    ->label('Kolom Pajak')
+                                                    ->default('C')
+                                                    ->required(),
+                                            ])
+                                    ])
+                            ]),
                     ])
 
             ]);

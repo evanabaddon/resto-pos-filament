@@ -28,6 +28,15 @@ class GeneralSettings extends Settings
     public string $printer_width;
     public bool $enable_table_number;
 
+    // Fiscal Settings
+    public ?string $template_path;
+    public int $start_row;
+    public string $date_column;
+    public string $amount_column; // Omzet
+    public string $tax_column;    // Pajak
+    public bool $enable_fiscal_planning;
+    public ?string $fiscal_license_key;
+
     public static function group(): string
     {
         return 'app';
@@ -48,6 +57,14 @@ class GeneralSettings extends Settings
             'kds_license_key' => null,
             'printer_width' => '58mm',
             'enable_table_number' => false,
+            // Fiscal Defaults
+            'template_path' => null,
+            'start_row' => 2,
+            'date_column' => 'A',
+            'amount_column' => 'B',
+            'tax_column' => 'C',
+            'enable_fiscal_planning' => false,
+            'fiscal_license_key' => null,
         ];
     }
 }

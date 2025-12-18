@@ -20,7 +20,7 @@ use Filament\Tables\Columns\ToggleColumn;
 use App\Models\Sale;
 use Illuminate\Support\Carbon;
 use Filament\Notifications\Notification;
-use App\Settings\FiscalSettings;
+use App\Settings\GeneralSettings;
 
 class FiscalReport extends Page implements HasForms, HasTable
 {
@@ -65,7 +65,7 @@ class FiscalReport extends Page implements HasForms, HasTable
 
     public function form(Schema $schema): Schema
     {
-        $settings = app(FiscalSettings::class);
+        $settings = app(GeneralSettings::class);
 
         return $schema
             ->schema([
@@ -93,7 +93,7 @@ class FiscalReport extends Page implements HasForms, HasTable
 
     public function table(Table $table): Table
     {
-        $settings = app(FiscalSettings::class);
+        $settings = app(GeneralSettings::class);
 
         return $table
             ->query(function () {
@@ -147,7 +147,7 @@ class FiscalReport extends Page implements HasForms, HasTable
 
     protected function getHeaderActions(): array
     {
-        $settings = app(FiscalSettings::class);
+        $settings = app(GeneralSettings::class);
 
         return [
             Action::make('export_recap')
