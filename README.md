@@ -37,6 +37,7 @@ Modul lengkap untuk menajemen karyawan:
 
 ### 📅 Reservasi (Reservations)
 - **Booking Table**: Kelola reservasi pelanggan.
+- **Pre-Order Menu**: Input pesanan menu di awal (terintegrasi dengan data Produk).
 - **Status Tracking**: Pending, Confirmed, Seated, Cancelled.
 - **Assign Table**: Menetapkan nomor meja untuk reservasi.
 
