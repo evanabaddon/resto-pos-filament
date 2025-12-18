@@ -7,7 +7,8 @@ Sistem manajemen restoran terpadu (All-in-One) yang mencakup Point of Sales (POS
 ## 🚀 Fitur Utama
 
 ### 🧾 Kasir & Penjualan (POS)
-- **Tampilan Kasir Baru**: Antarmuka modern dengan dukungan mobile/tablet.
+- **Tampilan Kasir Baru**: Antarmuka modern yang **Compact & Responsif** (Space-saving layout).
+- **Membership Integration**: Pilih member, lihat saldo poin, dan tukar reward langsung di layar kasir.
 - **Cash Sessions**: Fitur Buka/Tutup Kasir (Shift) untuk melacak uang tunai di laci.
 - **Draft Orders**: Simpan pesanan pending (belum bayar).
 - **Split Payment**: Dukungan pembayaran sebagian atau gabungan metode (Tunai, Transfer, Kartu).
@@ -35,6 +36,14 @@ Modul lengkap untuk menajemen karyawan:
 - **Pinjaman (Loans)**: Manajemen pinjaman karyawan dan cicilan potong gaji.
 - **Cuti (Leave Requests)**: Pengajuan dan persetujuan cuti.
 
+### 🤝 Membership & Loyalty (CRM) [BARU]
+- **Sistem Member**: Pencatatan data pelanggan dengan level membership (Tier).
+- **Poin Loyalty**:
+  - Pelanggan mendapatkan poin otomatis dari transaksi.
+  - **Tukar Poin**: Poin dapat ditukar dengan produk gratis (Reward).
+  - **Pay with Points**: Poin dapat digunakan sebagai potongan harga langsung di kasir (1 Poin = Rp 1, configurable).
+- **Tier Otomatis**: Kenaikan level member berdasarkan total belanja atau jumlah kunjungan.
+
 ### 📅 Reservasi (Reservations)
 - **Booking Table**: Kelola reservasi pelanggan.
 - **Pre-Order Menu**: Input pesanan menu di awal (terintegrasi dengan data Produk).
@@ -51,12 +60,18 @@ Modul lengkap untuk menajemen karyawan:
 - **Stock Movements**: Riwayat lengkap keluar masuk barang (Purchase, Sale, Adjustment, Production).
 - **Stock Adjustment**: Opname stok manual untuk penyesuaian selisih fisik.
 
-### 💰 Laporan Pajak (Fiscal)
-Fitur manajemen pelaporan fiskal yang terintegrasi:
-- **Target Omzet Harian**: Pengaturan parameter omzet harian untuk keperluan pelaporan fiskal.
-- **Automated Sampling**: Algoritma seleksi data transaksi secara otomatis dengan variasi natural (±15%) mendekati target.
-- **Export Template**: Download laporan langsung dalam format Excel pemerintah yang kolomnya bisa disesuaikan (Mapping Kolom).
-- **PDF Rekap Harian**: Ringkasan omzet dan pajak harian siap cetak dengan kolom tanda tangan.
+### � Dashboard & Analitik
+- **Realtime Dashboard**: Pantau omzet harian, tren penjualan, dan produk terlaris langsung dari halaman utama.
+- **Top Products**: Grafik menu paling laku (Makanan & Minuman).
+- **Peak Hours**: Heatmap untuk melihat jam-jam sibuk restoran.
+- **Revenue Overview**: Ringkasan pendapatan kotor per periode.
+
+### �💰 Laporan Pajak (Fiscal)
+Fitur manajemen pelaporan fiskal (Target Omzet) untuk keperluan perpajakan:
+- **Target Omzet Harian**: Pengaturan parameter omzet harian.
+- **Automated Sampling**: Seleksi data transaksi otomatis mendekati target.
+- **Export Template**: Download laporan pajak format Excel.
+- **PDF Rekap Harian**: Ringkasan omzet pajak harian siap cetak.
 
 ---
 
@@ -79,6 +94,7 @@ Fitur manajemen pelaporan fiskal yang terintegrasi:
 | **Production** | `SaleItems (KDS Status)` | Alur kerja dapur dan bar (KDS) |
 | **Inventory** | `purchases`, `stock_movements`, `recipes` | Stok masuk, resep, dan log pergerakan |
 | **HRM** | `employees`, `payrolls`, `attendances`, `shifts` | Karyawan, Gaji, Absensi, Jadwal |
+| **CRM (Loyalty)** | `members`, `loyalty_tiers`, `loyalty_rewards` | Member, Poin, Level, dan Tukar Hadiah |
 | **Reservations** | `reservations`, `reservation_items` | Booking meja dan pre-order menu |
 | **Finance** | `expenses`, `loans` | Pengeluaran operasional dan pinjaman karyawan |
 | **Settings** | `settings`, `print_jobs`, `payment_methods` | Konfigurasi sistem dan printer |
@@ -125,11 +141,6 @@ php artisan serve
    - Indikator status meja: *Kosong, Terisi, Reserved*.
    - Drag & drop untuk memindahkan pesanan atau menggabungkan meja.
 
-2. **🤝 Membership & Loyalty**
-   - **Simple Mode**: Cukup catat nama pelanggan (kebiasaan lokal), tanpa wajib No HP.
-   - **Full Mode**: Registrasi lengkap dengan No HP untuk mengumpulkan **Poin Loyalty**.
-   - Sistem penukaran poin dengan diskon atau produk gratis.
-
 ### 🔮 Rencana Jangka Panjang (Future)
 - **📱 Self-Order Menu (QR Code)**: Pelanggan scan QR di meja untuk pesan mandiri.
 - **💳 Payment Gateway**: Integrasi QRIS otomatis (Midtrans/Xendit) untuk status pembayaran realtime.
@@ -145,7 +156,7 @@ php artisan serve
    - Chef/Barista memproses di KDS ➝ Waiter mendapat **Notifikasi Siap**.
    - Waiter menyajikan ➝ Status pesanan selesai (Served).
 3. **End of Month**: 
-   - Tarik laporan Laba/Rugi.
+   - Review Dashboard & Export Laporan Penjualan.
    - Generate Payroll Karyawan (Otomatis hitung gaji).
 
 ---
