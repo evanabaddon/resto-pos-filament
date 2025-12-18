@@ -41,6 +41,7 @@ class AppSettings extends SettingsPage
                     ->tabs([
                         // TAB: GENERAL
                         Tab::make('General')
+                            ->icon('heroicon-o-cog-8-tooth')
                             ->schema([
                                 Grid::make(2)
                                     ->schema([
@@ -117,6 +118,7 @@ class AppSettings extends SettingsPage
 
                         // TAB: MODULES
                         Tab::make('Modules')
+                            ->icon('heroicon-o-sparkles')
                             ->schema([
                                 Section::make('HRM (Human Resource Management)')
                                     ->description('Manage Employees, Attendance, and Payroll.')
