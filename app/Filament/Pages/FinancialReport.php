@@ -41,6 +41,7 @@ class FinancialReport extends Page implements HasForms
     public float $totalGrossProfit = 0;
     public float $totalExpenses = 0;
     public float $netProfit = 0;
+    public float $grossMargin = 0;
 
     public array $expenseBreakdown = [];
 
@@ -143,7 +144,7 @@ class FinancialReport extends Page implements HasForms
 
         // 1. Revenue (Omzet) - Paid Sales only
         $sales = Sale::with(['items.product.recipes.ingredient', 'items.product.unit'])
-            ->where('status', 'paid')
+            ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->get();
 
@@ -164,6 +165,7 @@ class FinancialReport extends Page implements HasForms
 
         // 3. Gross Profit
         $this->totalGrossProfit = $this->totalRevenue - $this->totalCogs;
+        $this->grossMargin = $this->totalRevenue > 0 ? ($this->totalGrossProfit / $this->totalRevenue) * 100 : 0;
 
         // 4. Expenses (Biaya Operasional) - Approved only
         $expenses = Expense::with('category')

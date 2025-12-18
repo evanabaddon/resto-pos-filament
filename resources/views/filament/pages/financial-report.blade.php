@@ -1,6 +1,20 @@
 <x-filament-panels::page>
     {{ $this->form }}
 
+    {{-- Diagnosis Alert --}}
+    @if($totalRevenue > 0 && $grossMargin < 10)
+        <div class="mt-4 p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
+            <span class="font-medium">⚠️ Peringatan Data:</span> Margin Keuntungan Kotor hanya
+            <strong>{{ number_format($grossMargin, 1) }}%</strong> (Sangat Rendah).
+            <p class="mt-1">
+                Sistem mendeteksi selisih kecil antara Omzet dan HPP.
+                Kemungkinan besar <strong>Harga Pokok (HPP)</strong> di data Produk diinput sama dengan atau mendekati
+                <strong>Harga Jual</strong>.
+                Silakan cek menu <em>Produk -> Edit -> Harga Pokok</em>.
+            </p>
+        </div>
+    @endif
+
     {{-- Summary Cards --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
         {{-- Total Revenue --}}
