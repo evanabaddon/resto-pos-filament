@@ -36,6 +36,7 @@ class OrderService
                     'total' => $data['final_total'], // Assuming total == final_total logic from controller
                     'payment_method' => '',
                     'status' => 'draft',
+                    'member_id' => $data['member_id'] ?? null,
                 ]);
                 Log::info("✅ New sale created", ['sale_id' => $sale->id, 'invoice' => $sale->invoice_number]);
             } else {
@@ -53,6 +54,7 @@ class OrderService
                     'discount' => $data['discount'],
                     'final_total' => $data['final_total'],
                     'total' => $data['final_total'],
+                    'member_id' => $data['member_id'] ?? $sale->member_id,
                     'updated_at' => now(),
                 ]);
 
@@ -107,7 +109,8 @@ class OrderService
                         });
 
                         foreach ($sortedItems as $si) {
-                            if ($toRemove <= 0) break;
+                            if ($toRemove <= 0)
+                                break;
 
                             if ($si->quantity <= $toRemove) {
                                 $toRemove -= $si->quantity;
@@ -456,6 +459,65 @@ class OrderService
                 'paid_at' => now(),
                 'status' => 'completed',
             ];
+
+            // 🔹 1. Deduct Points for Redeemed Rewards
+            if ($sale->member_id) {
+                $member = \App\Models\Member::find($sale->member_id);
+                if ($member) {
+                    $totalPointsRedeemed = 0;
+
+                    foreach ($sale->items as $item) {
+                        // Check logic: Price 0 AND Note contains "Reward"
+                        if ($item->unit_price == 0 && str_contains($item->notes, 'Reward')) {
+                            // Find the reward cost based on product_id
+                            // Note: This assumes 1-to-1 mapping or we take the first active reward for this product
+                            $reward = \App\Models\LoyaltyReward::where('product_id', $item->product_id)
+                                ->where('is_active', true)
+                                ->first();
+
+                            if ($reward) {
+                                $pointsCost = $reward->points_required * $item->quantity;
+                                $totalPointsRedeemed += $pointsCost;
+                            }
+                        }
+
+                        // Check logic: Price < 0 (Discount) AND Note contains "Redeemed:"
+                        if ($item->unit_price < 0 && str_contains($item->notes, 'Redeemed:')) {
+                            // Parse points from note: "Redeemed: 5000 Pts"
+                            if (preg_match('/Redeemed: (\d+) Pts/', $item->notes, $matches)) {
+                                $totalPointsRedeemed += (int) $matches[1];
+                            }
+                        }
+                    }
+
+                    if ($totalPointsRedeemed > 0) {
+                        if ($member->redeemPoints($totalPointsRedeemed)) {
+                            Log::info("🎁 Points redeemed by member: {$member->name}", ['points' => $totalPointsRedeemed]);
+                        } else {
+                            Log::warning("⚠️ Member {$member->name} does not have enough points for redemption (Force processed)", ['required' => $totalPointsRedeemed, 'balance' => $member->points_balance]);
+                            // Force decrement or handle error? For now, we allow negative or just log warning.
+                            // Since POS verified it, we assume it's okay, but race condition possible.
+                            $member->decrement('points_balance', $totalPointsRedeemed);
+                        }
+                    }
+                }
+            }
+
+            // 🔹 2. Calculate Points for Member (Earned)
+            if ($sale->member_id) {
+                // Default: 1 point per 1000 IDR
+                $pointsEarned = floor($amountPaid / 1000);
+
+                $updateData['points_earned'] = $pointsEarned;
+
+                // Re-fetch member if needed, or use existing instance
+                $member = $member ?? \App\Models\Member::find($sale->member_id);
+                if ($member) {
+                    $member->addPoints($pointsEarned);
+                    $member->recordVisit($amountPaid);
+                    Log::info("🎁 Points awarded to member: {$member->name}", ['points' => $pointsEarned]);
+                }
+            }
 
             $sale->update($updateData);
 

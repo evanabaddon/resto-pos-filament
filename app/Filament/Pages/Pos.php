@@ -95,6 +95,14 @@ class Pos extends Page
     public $discountType = 'fixed'; // fixed or percentage
     public $manualDiscountValue = 0;
 
+    // Member Integration properties
+    public $memberId = null;
+    public $selectedMember = null;
+    public $memberSearchQuery = '';
+    public $foundMembers = [];
+    public $showRewardModal = false;
+    public $pointRedemptionAmount = 0;
+
     /**
      * Cetak Ulang Order (Kitchen/Bar)
      */
@@ -481,6 +489,196 @@ class Pos extends Page
         }
     }
 
+    // --- Member Integration Methods ---
+
+    /**
+     * Handle updating member search query
+     */
+    public function updatedMemberSearchQuery($value)
+    {
+        if (strlen($value) < 2) {
+            $this->foundMembers = [];
+            return;
+        }
+
+        $this->foundMembers = \App\Models\Member::where('name', 'like', "%{$value}%")
+            ->orWhere('phone', 'like', "%{$value}%")
+            ->orWhere('email', 'like', "%{$value}%")
+            ->with('tier')
+            ->limit(5)
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Select a member from search results
+     */
+    public function selectMember($memberId)
+    {
+        $member = \App\Models\Member::with('tier')->find($memberId);
+
+        if ($member) {
+            $this->memberId = $member->id;
+            $this->selectedMember = $member;
+
+            // Auto-fill customer name if empty or generic
+            if (empty(trim($this->customerName)) || $this->customerName === 'Umum') {
+                $this->customerName = $member->name;
+            }
+
+            $this->memberSearchQuery = '';
+            $this->foundMembers = [];
+
+            $this->dispatch('show-notification', message: "Member terpilih: {$member->name}", type: 'success');
+        }
+    }
+
+    /**
+     * Remove selected member
+     */
+    public function removeMember()
+    {
+        $this->memberId = null;
+        $this->selectedMember = null;
+        $this->customerName = ''; // Optional reset
+        $this->dispatch('show-notification', message: 'Member dihapus dari transaksi.', type: 'info');
+    }
+
+    public function getAvailableRewardsProperty()
+    {
+        return \App\Models\LoyaltyReward::where('is_active', true)
+            ->with('product')
+            ->get();
+    }
+
+    public function openRewardModal()
+    {
+        if (!$this->selectedMember) {
+            $this->dispatch('show-notification', message: 'Pilih member terlebih dahulu!', type: 'error');
+            return;
+        }
+        $this->showRewardModal = true;
+    }
+
+    public function redeemReward($rewardId)
+    {
+        if (!$this->selectedMember)
+            return;
+
+        $reward = \App\Models\LoyaltyReward::with('product')->find($rewardId);
+
+        if (!$reward || !$reward->product) {
+            $this->dispatch('show-notification', message: 'Reward tidak valid.', type: 'error');
+            return;
+        }
+
+        if ($this->selectedMember->points_balance < $reward->points_required) {
+            $this->dispatch('show-notification', message: 'Poin tidak mencukupi!', type: 'error');
+            return;
+        }
+
+        // Add to cart as free item
+        $this->addItemToCart($reward->product, 1, 0, "🎁 Reward: " . $reward->name);
+
+        $this->showRewardModal = false;
+        $this->dispatch('show-notification', message: 'Reward berhasil ditambahkan ke keranjang!', type: 'success');
+    }
+
+    public function redeemPointsForDiscount()
+    {
+        if (!$this->selectedMember)
+            return;
+
+        $pointsToRedeem = (int) $this->pointRedemptionAmount;
+
+        if ($pointsToRedeem <= 0) {
+            $this->dispatch('show-notification', message: 'Jumlah poin harus lebih dari 0.', type: 'error');
+            return;
+        }
+
+        // 1. Calculate points already used in cart
+        $existingPointsUsed = 0;
+        $existingDiscountIndex = null;
+
+        foreach ($this->items as $index => $item) {
+            if (($item['price'] < 0) && str_contains($item['notes'] ?? '', 'Redeemed:')) {
+                if (preg_match('/Redeemed: (\d+) Pts/', $item['notes'], $matches)) {
+                    $existingPointsUsed += (int) $matches[1];
+                    $existingDiscountIndex = $index; // Track the last discount item to merge
+                }
+            }
+        }
+
+        // 2. Validate total against balance
+        $totalPointsNeeded = $existingPointsUsed + $pointsToRedeem;
+        if ($this->selectedMember->points_balance < $totalPointsNeeded) {
+            $this->dispatch(
+                'show-notification',
+                message: "Poin tidak cukup! Sisa: " . ($this->selectedMember->points_balance - $existingPointsUsed),
+                type: 'error'
+            );
+            return;
+        }
+
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $pointValue = $settings->loyalty_point_value ?? 1;
+
+        // 3. Merge or Add
+        if ($existingDiscountIndex !== null) {
+            // Update existing item
+            $newTotalPoints = $existingPointsUsed + $pointsToRedeem;
+            $newTotalDiscount = $newTotalPoints * $pointValue;
+
+            $this->items[$existingDiscountIndex]['name'] = '✨ Diskon Poin (' . number_format($newTotalPoints) . ' Pts)';
+            $this->items[$existingDiscountIndex]['price'] = -$newTotalDiscount;
+            $this->items[$existingDiscountIndex]['subtotal'] = -$newTotalDiscount;
+            $this->items[$existingDiscountIndex]['notes'] = 'Redeemed: ' . $newTotalPoints . ' Pts';
+        } else {
+            // Add new item
+            $discountAmount = $pointsToRedeem * $pointValue;
+            $this->items[] = [
+                'product_id' => null,
+                'name' => '✨ Diskon Poin (' . number_format($pointsToRedeem) . ' Pts)',
+                'quantity' => 1,
+                'price' => -$discountAmount,
+                'subtotal' => -$discountAmount,
+                'notes' => 'Redeemed: ' . $pointsToRedeem . ' Pts',
+            ];
+        }
+
+        $this->recalculateTotals();
+        $this->showRewardModal = false;
+        $this->pointRedemptionAmount = 0;
+        $this->dispatch('show-notification', message: "Diskon berhasil ditambahkan!", type: 'success');
+    }
+
+    protected function addItemToCart($product, $qty, $price, $note = '')
+    {
+        // Check if item exists (with same note/price)
+        $existingIndex = null;
+        foreach ($this->items as $index => $item) {
+            if ($item['product_id'] == $product->id && ($item['notes'] ?? '') === $note && $item['price'] == $price) {
+                $existingIndex = $index;
+                break;
+            }
+        }
+
+        if ($existingIndex !== null) {
+            $this->items[$existingIndex]['quantity'] += $qty;
+            $this->items[$existingIndex]['subtotal'] = $this->items[$existingIndex]['quantity'] * $price;
+        } else {
+            $this->items[] = [
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'quantity' => $qty,
+                'price' => $price,
+                'subtotal' => $qty * $price,
+                'notes' => $note,
+            ];
+        }
+        $this->recalculateTotals();
+    }
+
     /**
      * Cancel edit notes
      */
@@ -596,14 +794,24 @@ class Pos extends Page
 
     public function loadSale($saleId)
     {
-        $sale = Sale::with('items.product')->findOrFail($saleId);
+        $sale = Sale::with(['items.product', 'member'])->findOrFail($saleId);
 
         $this->saleId = $sale->id;
         $this->orderNumber = $sale->invoice_number;
         $this->customerName = $sale->customer_name ?? '';
         $this->tableNumber = $sale->table_number ?? '';
         $this->orderType = $sale->order_type ?? 'Dine In';
+        $this->orderType = $sale->order_type ?? 'Dine In';
         $this->discount = $sale->discount ?? 0;
+
+        // Load Member
+        if ($sale->member_id) {
+            $this->memberId = $sale->member_id;
+            $this->selectedMember = $sale->member; // Relasi sudah ada di Sale model
+        } else {
+            $this->memberId = null;
+            $this->selectedMember = null;
+        }
 
         // 🔹 GROUP ITEMS BY PRODUCT & NOTES (Merging DB splits for POS UI)
         $groupedItems = $sale->items->groupBy(function ($item) {
@@ -761,7 +969,14 @@ class Pos extends Page
         $this->discountMessage = '';
         $this->discountApplied = false;
         $this->editingNotesIndex = null;
+        $this->editingNotesIndex = null;
         $this->itemNotes = '';
+
+        // Reset Member
+        $this->memberId = null;
+        $this->selectedMember = null;
+        $this->memberSearchQuery = '';
+        $this->foundMembers = [];
 
         // Reset Search & Pagination
         $this->searchQuery = '';

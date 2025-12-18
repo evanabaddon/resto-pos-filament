@@ -40,6 +40,7 @@ class GeneralSettings extends Settings
     // Loyalty Settings
     public string $loyalty_program_name;
     public int $loyalty_point_exchange_rate; // e.g. 10000 = 1 point
+    public int $loyalty_point_value; // e.g. 1 point = 1 IDR
 
     public static function group(): string
     {
@@ -72,6 +73,7 @@ class GeneralSettings extends Settings
             // Loyalty Defaults
             'loyalty_program_name' => 'Sedulur Suralaya',
             'loyalty_point_exchange_rate' => 10000,
+            'loyalty_point_value' => 1,
         ];
     }
 }
