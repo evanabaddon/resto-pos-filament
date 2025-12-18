@@ -107,6 +107,7 @@ class AdminPanelProvider extends PanelProvider
                 'Produk',
                 'Master Data',
                 'Manajemen SDM',
+                'Kemitraan (CRM)',
                 'Settings',
             ]);
     }

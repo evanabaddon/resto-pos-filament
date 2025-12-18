@@ -32,6 +32,8 @@ class Sale extends Model
         'is_paid',
         'paid_at',
         'is_tax_reported',
+        'member_id',
+        'points_earned',
     ];
 
 
@@ -58,6 +60,11 @@ class Sale extends Model
     public function paymentMethod(): BelongsTo
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
     }
 
     // Relationship ke parent sale (jika ini adalah split)

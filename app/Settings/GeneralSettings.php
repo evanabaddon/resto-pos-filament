@@ -37,6 +37,10 @@ class GeneralSettings extends Settings
     public bool $enable_fiscal_planning;
     public ?string $fiscal_license_key;
 
+    // Loyalty Settings
+    public string $loyalty_program_name;
+    public int $loyalty_point_exchange_rate; // e.g. 10000 = 1 point
+
     public static function group(): string
     {
         return 'app';
@@ -65,6 +69,9 @@ class GeneralSettings extends Settings
             'tax_column' => 'C',
             'enable_fiscal_planning' => false,
             'fiscal_license_key' => null,
+            // Loyalty Defaults
+            'loyalty_program_name' => 'Sedulur Suralaya',
+            'loyalty_point_exchange_rate' => 10000,
         ];
     }
 }

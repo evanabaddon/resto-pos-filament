@@ -31,7 +31,7 @@ class ReceiptPrintService
         // Let's check imports. original imports had PrinterSettings.
         // I should stick to original design or fix it.
         // Let's assume PrinterSettings is still needed for printer name.
-        $this->printerSettings = app(\App\Settings\PrinterSettings::class);
+        $this->printerSettings = app(PrinterSettings::class);
         $this->useWebhook = config('app.use_webhook_printing', false);
         $this->isHostingEnvironment = $this->detectHostingEnvironment();
 

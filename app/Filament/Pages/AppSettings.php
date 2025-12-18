@@ -256,6 +256,27 @@ class AppSettings extends SettingsPage
                                             ])
                                     ])
                             ]),
+
+                        // TAB: KEMITRAAN (Loyalty)
+                        Tab::make('Kemitraan')
+                            ->icon('heroicon-o-user-group')
+                            ->schema([
+                                Section::make('Konfigurasi Dasar')
+                                    ->description('Pengaturan nama program dan nilai tukar poin.')
+                                    ->schema([
+                                        TextInput::make('loyalty_program_name')
+                                            ->label('Nama Program')
+                                            ->default('Sedulur Suralaya')
+                                            ->required(),
+
+                                        TextInput::make('loyalty_point_exchange_rate')
+                                            ->label('Nilai Belanja per 1 Poin Rasa')
+                                            ->numeric()
+                                            ->prefix('Rp')
+                                            ->default(10000)
+                                            ->helperText('Contoh: Tiap belanja Rp 10.000 dapat 1 Poin.'),
+                                    ])
+                            ]),
                     ])
 
             ]);
