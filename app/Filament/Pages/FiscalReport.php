@@ -20,6 +20,7 @@ use Filament\Tables\Columns\ToggleColumn;
 use App\Models\Sale;
 use Illuminate\Support\Carbon;
 use Filament\Notifications\Notification;
+use App\Settings\FiscalSettings;
 
 class FiscalReport extends Page implements HasForms, HasTable
 {
@@ -64,6 +65,8 @@ class FiscalReport extends Page implements HasForms, HasTable
 
     public function form(Schema $schema): Schema
     {
+        $settings = app(FiscalSettings::class);
+
         return $schema
             ->schema([
                 Section::make('Filter Laporan')
@@ -83,12 +86,15 @@ class FiscalReport extends Page implements HasForms, HasTable
                             ->prefix('Rp')
                             ->placeholder('2000000')
                             ->helperText('Sistem akan memilih transaksi secara acak untuk mendekati angka ini per hari.')
+                            ->visible($settings->enable_fiscal_planning),
                     ]),
             ]);
     }
 
     public function table(Table $table): Table
     {
+        $settings = app(FiscalSettings::class);
+
         return $table
             ->query(function () {
                 return Sale::query()
@@ -111,7 +117,8 @@ class FiscalReport extends Page implements HasForms, HasTable
                     ->label('Lapor Pajak')
                     ->badge()
                     ->color(fn(bool $state): string => $state ? 'success' : 'danger')
-                    ->formatStateUsing(fn(bool $state): string => $state ? 'Ya' : 'Tidak'),
+                    ->formatStateUsing(fn(bool $state): string => $state ? 'Ya' : 'Tidak')
+                    ->visible($settings->enable_fiscal_planning),
             ])
             ->actions([
                 Action::make('toggle_tax')
@@ -123,7 +130,8 @@ class FiscalReport extends Page implements HasForms, HasTable
                     })
                     ->requiresConfirmation()
                     ->modalIcon('heroicon-o-arrow-path')
-                    ->modalDescription('Apakah anda yakin ingin mengubah status laporan pajak transaksi ini?'),
+                    ->modalDescription('Apakah anda yakin ingin mengubah status laporan pajak transaksi ini?')
+                    ->visible($settings->enable_fiscal_planning),
             ])
             ->filters([
                 SelectFilter::make('is_tax_reported')
@@ -132,112 +140,130 @@ class FiscalReport extends Page implements HasForms, HasTable
                         1 => 'Ya (Dilaporkan)',
                         0 => 'Tidak (Internal)',
                     ])
-                    ->default(1),
-            ])
-            ->headerActions([
-                Action::make('export_recap')
-                    ->label('Export Rekap Harian (PDF)')
-                    ->color('warning')
-                    ->icon('heroicon-o-document-chart-bar')
-                    ->action(function () {
-                        $data = Sale::query()
-                            ->whereBetween('created_at', [
-                                Carbon::parse($this->date_start)->startOfDay(),
-                                Carbon::parse($this->date_end)->endOfDay()
-                            ])
-                            ->where('is_tax_reported', true)
-                            ->selectRaw('DATE(created_at) as date, SUM(final_total) as total_sales, SUM(tax) as total_tax')
-                            ->groupBy('date')
-                            ->orderBy('date', 'asc')
-                            ->get();
+                    ->default($settings->enable_fiscal_planning ? 1 : null)
+                    ->visible($settings->enable_fiscal_planning),
+            ]);
+    }
 
-                        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.daily-fiscal-recap', [
-                            'data' => $data,
-                            'startDate' => Carbon::parse($this->date_start)->format('d F Y'),
-                            'endDate' => Carbon::parse($this->date_end)->format('d F Y'),
+    protected function getHeaderActions(): array
+    {
+        $settings = app(FiscalSettings::class);
+
+        return [
+            Action::make('export_recap')
+                ->label('Export Rekap Harian (PDF)')
+                ->color('warning')
+                ->icon('heroicon-o-document-chart-bar')
+                ->action(function () use ($settings) {
+                    $query = Sale::query()
+                        ->whereBetween('created_at', [
+                            Carbon::parse($this->date_start)->startOfDay(),
+                            Carbon::parse($this->date_end)->endOfDay()
                         ]);
 
-                        return response()->streamDownload(
-                            fn() => print ($pdf->output()),
-                            'rekap-pajak-' . now()->timestamp . '.pdf'
-                        );
-                    }),
-                Action::make('export_template')
-                    ->label('Export Excel (Template)')
-                    ->color('success')
-                    ->icon('heroicon-o-table-cells')
-                    ->action(function (\App\Settings\FiscalSettings $settings) {
-                        if (!$settings->template_path) {
-                            Notification::make()->title('Template belum diupload di Pengaturan Pajak')->danger()->send();
-                            return;
-                        }
+                    // Only filter if module is enabled
+                    if ($settings->enable_fiscal_planning) {
+                        $query->where('is_tax_reported', true);
+                    }
 
-                        $templatePath = storage_path('app/public/' . $settings->template_path);
-                        if (!file_exists($templatePath)) {
-                            Notification::make()->title('File template tidak ditemukan')->danger()->send();
-                            return;
-                        }
+                    $data = $query->selectRaw('DATE(created_at) as date, SUM(final_total) as total_sales, SUM(tax) as total_tax')
+                        ->groupBy('date')
+                        ->orderBy('date', 'asc')
+                        ->get();
 
-                        // Load Template
-                        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($templatePath);
-                        $sheet = $spreadsheet->getActiveSheet();
+                    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.daily-fiscal-recap', [
+                        'data' => $data,
+                        'startDate' => Carbon::parse($this->date_start)->format('d F Y'),
+                        'endDate' => Carbon::parse($this->date_end)->format('d F Y'),
+                    ]);
 
-                        // Get Data
-                        $data = Sale::query()
-                            ->whereBetween('created_at', [
-                                Carbon::parse($this->date_start)->startOfDay(),
-                                Carbon::parse($this->date_end)->endOfDay()
-                            ])
-                            ->where('is_tax_reported', true)
-                            ->selectRaw('DATE(created_at) as date, SUM(final_total) as total_sales') // Final total is omzet
-                            ->groupBy('date')
-                            ->orderBy('date', 'asc')
-                            ->get();
+                    return response()->streamDownload(
+                        fn() => print ($pdf->output()),
+                        'rekap-pajak-' . now()->timestamp . '.pdf'
+                    );
+                }),
 
-                        $row = $settings->start_row;
-                        foreach ($data as $record) {
-                            $final = $record->total_sales;
-                            $tax = $final - ($final / 1.1); // Calculate inclusive tax 10%
-            
-                            // Map Columns
-                            $sheet->setCellValue($settings->date_column . $row, Carbon::parse($record->date)->format('d/m/Y'));
-                            $sheet->setCellValue($settings->amount_column . $row, $final);
-                            $sheet->setCellValue($settings->tax_column . $row, $tax);
+            Action::make('export_template')
+                ->label('Export Excel (Template)')
+                ->color('success')
+                ->icon('heroicon-o-table-cells')
+                ->visible($settings->enable_fiscal_planning)
+                ->action(function () use ($settings) {
+                    if (!$settings->template_path) {
+                        Notification::make()->title('Template belum diupload di Pengaturan Pajak')->danger()->send();
+                        return;
+                    }
 
-                            $row++;
-                        }
+                    $templatePath = storage_path('app/public/' . $settings->template_path);
+                    if (!file_exists($templatePath)) {
+                        Notification::make()->title('File template tidak ditemukan')->danger()->send();
+                        return;
+                    }
 
-                        // Stream Download
-                        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+                    $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($templatePath);
+                    $sheet = $spreadsheet->getActiveSheet();
 
-                        return response()->streamDownload(
-                            fn() => $writer->save('php://output'),
-                            'laporan-pajak-template-' . now()->timestamp . '.xlsx'
-                        );
-                    }),
-                FilamentExportHeaderAction::make('export')
-                    ->label('Export Proposal (Detail)')
-                    ->color('success')
-                    ->icon('heroicon-o-document-arrow-down'),
-                Action::make('generate_proposal')
-                    ->label('Generate Proposal')
-                    ->color('primary')
-                    ->icon('heroicon-o-cpu-chip')
-                    ->requiresConfirmation()
-                    ->visible(fn() => auth()->user()->role === 'super_admin')
-                    ->action(function () {
-                        $this->generateProposal();
-                    }),
-                Action::make('reset_all')
-                    ->label('Reset Semua')
-                    ->color('danger')
-                    ->icon('heroicon-o-trash')
-                    ->requiresConfirmation()
-                    ->visible(fn() => auth()->user()->role === 'super_admin')
-                    ->action(function () {
-                        $this->resetProposal();
-                    }),
-            ]);
+                    $query = Sale::query()
+                        ->whereBetween('created_at', [
+                            Carbon::parse($this->date_start)->startOfDay(),
+                            Carbon::parse($this->date_end)->endOfDay()
+                        ]);
+
+                    if ($settings->enable_fiscal_planning) {
+                        $query->where('is_tax_reported', true);
+                    }
+
+                    $data = $query->selectRaw('DATE(created_at) as date, SUM(final_total) as total_sales')
+                        ->groupBy('date')
+                        ->orderBy('date', 'asc')
+                        ->get();
+
+                    $row = $settings->start_row;
+                    foreach ($data as $record) {
+                        $final = $record->total_sales;
+                        $tax = $final - ($final / 1.1);
+
+                        $sheet->setCellValue($settings->date_column . $row, Carbon::parse($record->date)->format('d/m/Y'));
+                        $sheet->setCellValue($settings->amount_column . $row, $final);
+                        $sheet->setCellValue($settings->tax_column . $row, $tax);
+
+                        $row++;
+                    }
+
+                    $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+
+                    return response()->streamDownload(
+                        fn() => $writer->save('php://output'),
+                        'laporan-pajak-template-' . now()->timestamp . '.xlsx'
+                    );
+                }),
+
+            FilamentExportHeaderAction::make('export')
+                ->label('Export Proposal (Detail)')
+                ->color('success')
+                ->icon('heroicon-o-document-arrow-down')
+                ->visible($settings->enable_fiscal_planning),
+
+            Action::make('generate_proposal')
+                ->label('Generate Proposal')
+                ->color('primary')
+                ->icon('heroicon-o-cpu-chip')
+                ->requiresConfirmation()
+                ->visible(fn() => auth()->user()->role === 'super_admin' && $settings->enable_fiscal_planning)
+                ->action(function () {
+                    $this->generateProposal();
+                }),
+
+            Action::make('reset_all')
+                ->label('Reset Semua')
+                ->color('danger')
+                ->icon('heroicon-o-trash')
+                ->requiresConfirmation()
+                ->visible(fn() => auth()->user()->role === 'super_admin' && $settings->enable_fiscal_planning)
+                ->action(function () {
+                    $this->resetProposal();
+                }),
+        ];
     }
 
     public function generateProposal()
@@ -260,7 +286,6 @@ class FiscalReport extends Page implements HasForms, HasTable
             $dayEnd = $date->copy()->endOfDay();
 
             // Randomize target for this specific day (e.g., +/- 15% variance)
-            // If target is 2.000.000, variance between 1.700.000 and 2.300.000
             $variance = 0.15;
             $dailyTarget = rand($target * (1 - $variance), $target * (1 + $variance));
 
@@ -270,13 +295,11 @@ class FiscalReport extends Page implements HasForms, HasTable
 
             $currentTotal = 0;
             foreach ($sales as $sale) {
-                // If adding this sale doesn't exceed the day's randomized target significantly (allow small buffer)
                 if ($currentTotal + $sale->final_total <= $dailyTarget * 1.05) {
 
                     $sale->update(['is_tax_reported' => true]);
                     $currentTotal += $sale->final_total;
 
-                    // Stop if we roughly met the randomized target
                     if ($currentTotal >= $dailyTarget * 0.95) {
                         break;
                     }

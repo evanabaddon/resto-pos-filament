@@ -25,8 +25,41 @@ class FiscalSettingsPage extends SettingsPage
     {
         return $schema
             ->schema([
+                Section::make('Module Activation')
+                    ->description('Aktifkan modul tambahan untuk fitur perencanaan fiskal & randomizer.')
+                    ->schema([
+                        \Filament\Forms\Components\Toggle::make('enable_fiscal_planning')
+                            ->label('Aktifkan Modul Perencanaan Fiskal')
+                            ->helperText('Jika aktif, Anda dapat mengatur target omzet harian dan menggunakan randomizer generator.')
+                            ->live(),
+
+                        TextInput::make('fiscal_license_key')
+                            ->label('License Key')
+                            ->visible(fn($get) => $get('enable_fiscal_planning'))
+                            ->required(fn($get) => $get('enable_fiscal_planning'))
+                            ->placeholder('FISCAL-PRO-XXXX-XXXX')
+                            ->rules([
+                                fn($get) => function (string $attribute, $value, \Closure $fail) use ($get) {
+                                    if ($get('enable_fiscal_planning') && !str_starts_with($value ?? '', 'FISCAL-PRO-')) {
+                                        $fail('License key tidak valid. Format harus: FISCAL-PRO-XXXX');
+                                    }
+                                },
+                            ]),
+                    ]),
+
                 Section::make('Template Excel Pemerintah')
                     ->description('Upload file template excel kosong dari dinas pajak di sini.')
+                    ->visible(fn(\App\Settings\FiscalSettings $settings) => $settings->enable_fiscal_planning) // Hide if module disabled? Or maybe keep template export available but just data is real?
+                    // User said: "report all daily turnover according to real transactions" for normal condition. 
+                    // But Template Export is part of the convenience. 
+                    // Let's decide: Settings for template should probably be visible always, or maybe just hidden to simplify?
+                    // "buat agar randomize dan penentuan omzet parameter itu sbgai modul tambahan"
+                    // So Template export ITSELF might be useful for real data too.
+                    // Let's Keep Template settings visible always, but changing the description or logic in Report page.
+                    // Wait, usually paid module includes the convenience.
+                    // Let's HIDE the planning/randomizer related settings only?
+                    // Actually, the "FiscalSettingsPage" IS about the template mostly.
+                    // Let's just Add the toggle at the top.
                     ->schema([
                         FileUpload::make('template_path')
                             ->label('File Template (Excel)')
