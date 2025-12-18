@@ -146,4 +146,47 @@
             @endif
         </div>
     </div>
+    {{-- Top Cost Contributors --}}
+    <div class="mt-6 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">🏆 Top 5 Penyumbang HPP Tertinggi (Cost Drivers)</h3>
+        <p class="text-sm text-gray-500 mb-4">
+            Jika HPP produk ini terlihat tidak wajar, cek master data produk bagian "Harga Pokok" atau "Resep".
+        </p>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3">Nama Produk</th>
+                        <th class="px-4 py-3 text-right">Terjual (Qty)</th>
+                        <th class="px-4 py-3 text-right">Unit HPP</th>
+                        <th class="px-4 py-3 text-right">Total HPP</th>
+                        <th class="px-4 py-3 text-right">Kontribusi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($hppContributors as $item)
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3 font-medium text-gray-900">{{ $item['name'] }}</td>
+                            <td class="px-4 py-3 text-right">{{ $item['qty'] }}</td>
+                            <td class="px-4 py-3 text-right">Rp {{ number_format($item['unit_hpp'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right font-bold text-orange-600">
+                                Rp {{ number_format($item['total_hpp'], 0, ',', '.') }}
+                            </td>
+                            <td class="px-4 py-3 text-right text-gray-400">
+                                {{ $totalCogs > 0 ? number_format(($item['total_hpp'] / $totalCogs) * 100, 1) : 0 }}%
+                            </td>
+                        </tr>
+                    @endforeach
+                    @if(empty($hppContributors))
+                        <tr>
+                            <td colspan="5" class="px-4 py-8 text-center text-gray-400">
+                                Tidak ada data penjualan
+                            </td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </div>
 </x-filament-panels::page>

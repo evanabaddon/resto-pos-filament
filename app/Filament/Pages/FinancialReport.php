@@ -44,6 +44,7 @@ class FinancialReport extends Page implements HasForms
     public float $grossMargin = 0;
 
     public array $expenseBreakdown = [];
+    public array $hppContributors = [];
 
     public function mount(): void
     {
@@ -151,17 +152,34 @@ class FinancialReport extends Page implements HasForms
         $this->totalRevenue = $sales->sum('final_total');
 
         // 2. COGS (HPP) - Estimated based on current Product HPP
-        // Note: Ideally, HPP should be stored in sale_items at transaction time.
-        // For now, we calculate dynamically.
         $this->totalCogs = 0;
+        $contributors = [];
+
         foreach ($sales as $sale) {
             foreach ($sale->items as $item) {
                 if ($item->product) {
                     $hpp = $item->product->computed_hpp ?? 0;
-                    $this->totalCogs += ($hpp * $item->quantity);
+                    $totalItemHpp = $hpp * $item->quantity;
+                    $this->totalCogs += $totalItemHpp;
+
+                    // Track contributors
+                    if (!isset($contributors[$item->product->name])) {
+                        $contributors[$item->product->name] = [
+                            'name' => $item->product->name,
+                            'qty' => 0,
+                            'unit_hpp' => $hpp,
+                            'total_hpp' => 0,
+                        ];
+                    }
+                    $contributors[$item->product->name]['qty'] += $item->quantity;
+                    $contributors[$item->product->name]['total_hpp'] += $totalItemHpp;
                 }
             }
         }
+
+        // Sort and take top 5
+        usort($contributors, fn($a, $b) => $b['total_hpp'] <=> $a['total_hpp']);
+        $this->hppContributors = array_slice($contributors, 0, 5);
 
         // 3. Gross Profit
         $this->totalGrossProfit = $this->totalRevenue - $this->totalCogs;
