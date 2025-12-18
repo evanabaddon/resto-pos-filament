@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Sales\Tables;
 use App\Models\Sale;
 use App\Services\ReceiptPrintService;
 use Filament\Notifications\Notification;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -26,6 +27,10 @@ class SalesTable
                 TextColumn::make('invoice_number')->label('Invoice Number')->searchable()->sortable(),
                 TextColumn::make('customer_name')->label('Customer Name')->searchable()->sortable(),
                 TextColumn::make('order_type')->label('Order Type')->searchable()->sortable(),
+                ToggleColumn::make('is_tax_reported')
+                    ->label('Fiskal')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('final_total')
                     ->label('Total Amount')
                     ->sortable()

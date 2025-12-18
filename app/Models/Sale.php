@@ -31,6 +31,7 @@ class Sale extends Model
         'amount_paid',
         'is_paid',
         'paid_at',
+        'is_tax_reported',
     ];
 
 

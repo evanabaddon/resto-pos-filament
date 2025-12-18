@@ -37,7 +37,7 @@ Modul lengkap untuk menajemen karyawan:
 
 ### 📅 Reservasi (Reservations)
 - **Booking Table**: Kelola reservasi pelanggan.
-- **Status Trakcing**: Pending, Confirmed, Seated, Cancelled.
+- **Status Tracking**: Pending, Confirmed, Seated, Cancelled.
 - **Assign Table**: Menetapkan nomor meja untuk reservasi.
 
 ### 🍳 Resep & COGS (Food Cost)
@@ -50,9 +50,16 @@ Modul lengkap untuk menajemen karyawan:
 - **Stock Movements**: Riwayat lengkap keluar masuk barang (Purchase, Sale, Adjustment, Production).
 - **Stock Adjustment**: Opname stok manual untuk penyesuaian selisih fisik.
 
+### 💰 Laporan Pajak (Fiscal)
+Fitur manajemen pelaporan fiskal yang terintegrasi:
+- **Target Omzet Harian**: Pengaturan parameter omzet harian untuk keperluan pelaporan fiskal.
+- **Automated Sampling**: Algoritma seleksi data transaksi secara otomatis dengan variasi natural (±15%) mendekati target.
+- **Export Template**: Download laporan langsung dalam format Excel pemerintah yang kolomnya bisa disesuaikan (Mapping Kolom).
+- **PDF Rekap Harian**: Ringkasan omzet dan pajak harian siap cetak dengan kolom tanda tangan.
+
 ---
 
-## 🛠️ Tekonologi yang Digunakan
+## 🛠️ Teknologi yang Digunakan
 
 - **Framework**: [Laravel 11](https://laravel.com) / 12 (Bleeding Edge)
 - **Admin & UI**: [FilamentPHP v4](https://filamentphp.com)
@@ -74,6 +81,7 @@ Modul lengkap untuk menajemen karyawan:
 | **Reservations** | `reservations`, `reservation_items` | Booking meja dan pre-order menu |
 | **Finance** | `expenses`, `loans` | Pengeluaran operasional dan pinjaman karyawan |
 | **Settings** | `settings`, `print_jobs`, `payment_methods` | Konfigurasi sistem dan printer |
+| **Tax / Fiskal** | `sales (is_tax_reported)` | **Laporan Pajak Fleksibel** (Target Omzet & Randomizer) |
 
 ---
 
