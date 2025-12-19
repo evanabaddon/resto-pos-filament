@@ -24,6 +24,7 @@ class SalesTable
             ->columns([
                 TextColumn::make('updated_at')
                     ->label('Tanggal')
+                    ->dateTime()
                     ->formatStateUsing(fn($state) => $state->diffForHumans()),
                 TextColumn::make('invoice_number')->label('Invoice Number')->searchable()->sortable(),
                 TextColumn::make('customer_name')->label('Customer Name')->searchable()->sortable(),
