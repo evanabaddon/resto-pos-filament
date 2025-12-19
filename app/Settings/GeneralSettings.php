@@ -53,6 +53,9 @@ class GeneralSettings extends Settings
     public string $wa_template_faq_redemption;
     public string $wa_template_faq_use_points;
 
+    // Reservation Template
+    public string $wa_template_reservation_confirmation;
+
     public static function group(): string
     {
         return 'app';
@@ -94,6 +97,9 @@ class GeneralSettings extends Settings
             'wa_template_faq_benefit' => "Poin Sedulur kami siapkan sebagai bentuk apresiasi untuk tamu yang berkenan datang kembali.\nPoin tersebut nantinya bisa digunakan untuk menikmati hidangan atau wedhang tertentu di kunjungan berikutnya.\n\nDi Suralaya, yang utama bukan seberapa besar belanja, tetapi seberapa sering sampun rawuh.",
             'wa_template_faq_redemption' => "Untuk penukaran, kami sesuaikan dengan jumlah poin dan frekuensi kunjungan Sedulur.\nJadi semakin sering rawuh, manfaatnya akan semakin terasa.",
             'wa_template_faq_use_points' => "Untuk saat ini, poinnya masih kami simpan terlebih dahulu, dan akan bisa digunakan setelah ada kunjungan berikutnya.\nKami ingin manfaatnya benar-benar terasa untuk Sedulur yang rawuh ajeg.\nMatur nuwun atas pengertiannya.",
+
+            // Reservation Default
+            'wa_template_reservation_confirmation' => "Halo Kak {customer_name},\n\nTerima kasih sudah melakukan reservasi di *{app_name}*.\nBerikut detail reservasinya ya:\n\n📅 Tanggal: {date}\n⏰ Jam: {time}\n👥 Jumlah: {guests} Orang\n\nDitunggu kedatangannya ya Kak! 😊",
         ];
     }
 }

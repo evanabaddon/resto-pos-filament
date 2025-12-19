@@ -35,8 +35,8 @@ class ReservationCalendarWidget extends CalendarWidget
 
     protected ?string $locale = 'id';
 
-    protected string | HtmlString | bool | null $heading = 'Kalender Reservasi';
-    
+    protected string|HtmlString|bool|null $heading = 'Kalender Reservasi';
+
     protected function getEventClickContextMenuActions(): array
     {
         return [
@@ -51,11 +51,11 @@ class ReservationCalendarWidget extends CalendarWidget
                 ->modalDescription(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $reservation = $reservationId ? Reservation::find($reservationId) : null;
-                    
+
                     if (!$reservation) {
                         return 'Reservasi tidak ditemukan';
                     }
-                    
+
                     return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Pending'?";
                 })
                 ->modalSubmitActionLabel('Ya, Ubah Status')
@@ -73,11 +73,11 @@ class ReservationCalendarWidget extends CalendarWidget
                 ->modalDescription(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $reservation = $reservationId ? Reservation::find($reservationId) : null;
-                    
+
                     if (!$reservation) {
                         return 'Reservasi tidak ditemukan';
                     }
-                    
+
                     return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Dikonfirmasi'?";
                 })
                 ->modalSubmitActionLabel('Ya, Ubah Status')
@@ -95,11 +95,11 @@ class ReservationCalendarWidget extends CalendarWidget
                 ->modalDescription(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $reservation = $reservationId ? Reservation::find($reservationId) : null;
-                    
+
                     if (!$reservation) {
                         return 'Reservasi tidak ditemukan';
                     }
-                    
+
                     return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Sudah Duduk'?";
                 })
                 ->modalSubmitActionLabel('Ya, Ubah Status')
@@ -117,11 +117,11 @@ class ReservationCalendarWidget extends CalendarWidget
                 ->modalDescription(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $reservation = $reservationId ? Reservation::find($reservationId) : null;
-                    
+
                     if (!$reservation) {
                         return 'Reservasi tidak ditemukan';
                     }
-                    
+
                     return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Selesai'?";
                 })
                 ->modalSubmitActionLabel('Ya, Ubah Status')
@@ -139,11 +139,11 @@ class ReservationCalendarWidget extends CalendarWidget
                 ->modalDescription(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $reservation = $reservationId ? Reservation::find($reservationId) : null;
-                    
+
                     if (!$reservation) {
                         return 'Reservasi tidak ditemukan';
                     }
-                    
+
                     return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Dibatalkan'?";
                 })
                 ->modalSubmitActionLabel('Ya, Ubah Status')
@@ -168,9 +168,9 @@ class ReservationCalendarWidget extends CalendarWidget
                 ->send();
             return;
         }
-        
+
         $reservation = Reservation::find($reservationId);
-        
+
         if (!$reservation) {
             Notification::make()
                 ->title('Error')
@@ -179,16 +179,16 @@ class ReservationCalendarWidget extends CalendarWidget
                 ->send();
             return;
         }
-        
+
         $oldStatus = $reservation->status;
         $reservation->update(['status' => $newStatus]);
-        
+
         Notification::make()
             ->title('Status berhasil diubah')
             ->body("Status berubah dari {$this->getStatusLabel($oldStatus)} ke {$this->getStatusLabel($newStatus)}")
             ->success()
             ->send();
-            
+
         $this->refreshRecords();
     }
 
@@ -201,7 +201,7 @@ class ReservationCalendarWidget extends CalendarWidget
         if (isset($arguments['data']['event']['extendedProps']['key'])) {
             return (int) $arguments['data']['event']['extendedProps']['key'];
         }
-        
+
         return null;
     }
 
@@ -232,7 +232,7 @@ class ReservationCalendarWidget extends CalendarWidget
                         ->label('Telepon')
                         ->disabled(),
                 ])->columns(2),
-            
+
             Section::make('Detail Reservasi')
                 ->schema([
                     DateTimePicker::make('reservation_date')
@@ -253,7 +253,7 @@ class ReservationCalendarWidget extends CalendarWidget
                         ])
                         ->disabled(),
                 ])->columns(3),
-            
+
             Section::make('Tambahan')
                 ->schema([
                     Textarea::make('special_requests')
@@ -263,7 +263,7 @@ class ReservationCalendarWidget extends CalendarWidget
                 ]),
         ]);
     }
-    
+
     /**
      * Get events query
      */
@@ -292,10 +292,10 @@ class ReservationCalendarWidget extends CalendarWidget
         if (empty($phoneNumber)) {
             return null;
         }
-        
+
         // Format nomor untuk WhatsApp
         $phone = preg_replace('/[^0-9]/', '', $phoneNumber);
-        
+
         if (substr($phone, 0, 2) === '62') {
             $whatsappNumber = $phone;
         } elseif (substr($phone, 0, 1) === '0') {
@@ -305,10 +305,10 @@ class ReservationCalendarWidget extends CalendarWidget
         } else {
             $whatsappNumber = $phone;
         }
-        
+
         return 'https://wa.me/' . $whatsappNumber;
     }
-    
+
     /**
      * OVERRIDE viewAction() untuk menentukan schema view
      */
@@ -326,23 +326,71 @@ class ReservationCalendarWidget extends CalendarWidget
                         TextInput::make('customer_phone')
                             ->label('Telepon')
                             ->disabled()
-                            ->suffixAction(
-                                Action::make('whatsapp')
+                            ->suffixActions([
+                                Action::make('whatsapp_chat')
                                     ->icon('heroicon-o-chat-bubble-left-right')
                                     ->iconButton()
-                                    ->color('success')
-                                    ->size('sm')
-                                    ->tooltip('Buka WhatsApp')
+                                    ->color('gray')
+                                    ->tooltip('Chat WhatsApp')
                                     ->url(function ($get, $record) {
-                                        // Ambil nomor dari field atau langsung dari record
                                         $phoneNumber = $get('customer_phone') ?? $record?->customer_phone;
                                         return $this->getWhatsAppUrl($phoneNumber);
                                     })
-                                    ->openUrlInNewTab()
-                                    ->visible(fn($get, $record) => !empty($get('customer_phone') ?? $record?->customer_phone))
-                            ),
+                                    ->openUrlInNewTab(),
+
+                                Action::make('confirm_wa')
+                                    ->icon('heroicon-o-check-circle')
+                                    ->iconButton()
+                                    ->color('success')
+                                    ->tooltip('Konfirmasi & Kirim WA')
+                                    ->requiresConfirmation()
+                                    ->modalHeading('Konfirmasi Reservasi')
+                                    ->modalDescription('Status akan diubah menjadi "Confirmed" dan pesan konfirmasi WhatsApp akan dikirim ke pelanggan.')
+                                    ->action(function ($record) {
+                                        if (!$record)
+                                            return;
+
+                                        // Update Status
+                                        $record->update(['status' => 'confirmed']);
+
+                                        // Prepare WA Message
+                                        $settings = app(\App\Settings\GeneralSettings::class);
+                                        $template = $settings->wa_template_reservation_confirmation;
+
+                                        $date = $record->reservation_date->translatedFormat('d F Y');
+                                        $time = $record->reservation_date->format('H:i'); // Use reservation_date, checked logic
+                            
+                                        $message = str_replace(
+                                            ['{customer_name}', '{app_name}', '{date}', '{time}', '{guests}'],
+                                            [$record->customer_name, $settings->app_name, $date, $time, $record->party_size],
+                                            $template
+                                        );
+
+                                        // Build URL
+                                        $phone = preg_replace('/[^0-9]/', '', $record->customer_phone);
+                                        if (substr($phone, 0, 1) == '0')
+                                            $phone = '62' . substr($phone, 1);
+
+                                        // Use api.whatsapp.com directly to avoid encoding issues with wa.me redirects
+                                        $url = "https://api.whatsapp.com/send?phone={$phone}&text=" . rawurlencode($message);
+
+                                        Notification::make()
+                                            ->title('Reservasi Dikonfirmasi')
+                                            ->success()
+                                            ->send();
+
+                                        // Refresh Calendar
+                                        $this->refreshRecords();
+
+                                        // Redirect via Action return if inside a modal handling context
+                                        // For suffixAction inside a ViewAction, we might need to rely on the user clicking the link? 
+                                        // But action() handles server side.
+                                        // To open URL, we return a redirect action or use $this->redirect().
+                                        redirect()->away($url);
+                                    }),
+                            ]),
                     ])->columns(2),
-                
+
                 Section::make('Detail Reservasi')
                     ->schema([
                         DateTimePicker::make('reservation_date')
@@ -363,7 +411,7 @@ class ReservationCalendarWidget extends CalendarWidget
                             ])
                             ->disabled(),
                     ])->columns(3),
-                
+
                 Section::make('Tambahan')
                     ->schema([
                         Textarea::make('special_requests')
@@ -373,7 +421,7 @@ class ReservationCalendarWidget extends CalendarWidget
                     ]),
             ]);
     }
-    
+
     /**
      * OVERRIDE editAction() untuk menentukan schema edit
      */
@@ -394,7 +442,7 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->required()
                             ->tel(),
                     ])->columns(2),
-                
+
                 Section::make('Detail Reservasi')
                     ->schema([
                         DateTimePicker::make('reservation_date')
@@ -417,7 +465,7 @@ class ReservationCalendarWidget extends CalendarWidget
                             ])
                             ->required(),
                     ])->columns(3),
-                
+
                 Section::make('Tambahan')
                     ->schema([
                         Textarea::make('special_requests')
@@ -426,7 +474,7 @@ class ReservationCalendarWidget extends CalendarWidget
                     ]),
             ]);
     }
-    
+
     /**
      * Action untuk create reservation baru
      */
@@ -447,7 +495,7 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->required()
                             ->tel(),
                     ])->columns(2),
-                
+
                 Section::make('Detail Reservasi')
                     ->schema([
                         DateTimePicker::make('reservation_date')
@@ -460,7 +508,7 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->required()
                             ->minValue(1),
                     ])->columns(2),
-                
+
                 Section::make('Tambahan')
                     ->schema([
                         Textarea::make('special_requests')
@@ -475,7 +523,7 @@ class ReservationCalendarWidget extends CalendarWidget
             })
             ->createAnother(false);
     }
-    
+
     /**
      * Set tinggi calendar
      */
@@ -483,7 +531,7 @@ class ReservationCalendarWidget extends CalendarWidget
     {
         return '600px'; // Tambah tinggi untuk tampilan lebih baik
     }
-    
+
     /**
      * Business hours restoran
      */
@@ -497,7 +545,7 @@ class ReservationCalendarWidget extends CalendarWidget
             ]
         ];
     }
-    
+
     /**
      * Slot duration 15 menit
      */
@@ -505,7 +553,7 @@ class ReservationCalendarWidget extends CalendarWidget
     {
         return '00:15:00';
     }
-    
+
     /**
      * Waktu mulai
      */
@@ -513,7 +561,7 @@ class ReservationCalendarWidget extends CalendarWidget
     {
         return '10:00:00';
     }
-    
+
     /**
      * Waktu berakhir
      */

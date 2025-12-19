@@ -112,6 +112,15 @@ class AppSettings extends SettingsPage
                                                             ->label('TikTok')
                                                             ->prefix('tiktok.com/@'),
                                                     ])
+                                            ]),
+
+                                        Section::make('Konfigurasi Reservasi')
+                                            ->columnSpan(2)
+                                            ->schema([
+                                                Textarea::make('wa_template_reservation_confirmation')
+                                                    ->label('Template Konfirmasi Reservasi Pro (WhatsApp)')
+                                                    ->rows(4)
+                                                    ->helperText('Variabel: {customer_name}, {app_name}, {date}, {time}, {guests}'),
                                             ])
                                     ])
                             ]),
