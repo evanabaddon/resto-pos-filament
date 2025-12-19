@@ -59,9 +59,22 @@ Full-suite manajemen sumber daya manusia yang terintegrasi penuh dengan keuangan
   - **Dynamic & Flexible Formula**: Rumus penggajian yang bisa dikustomisasi sepenuhnya (Gaji Pokok, Tunjangan, Overtime, Denda).
   - **Employee Loan System**: Manajemen pinjaman dengan fitur **Auto-Deduction** pada slip gaji bulanan.
 
-### 🧩 Modular Architecture & SEO Ready
+### 🧩 Modular Architecture (On-Demand Features)
+Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
 - **Toggleable Modules**: Aktifkan/Matikan modul CRM, HRM, KDS, atau Fiskal sesuai kebutuhan.
-- **SEO Optimization**: Struktur HTML semantik, Meta Tags dinamis, dan performa super cepat untuk visibilitas maksimal.
+- **Centralized Settings**: Panel pengaturan terpusat untuk semua konfigurasi modul.
+
+### 🧠 AI-Powered Intelligence (Powered by DeepSeek) 🚀 [ROADMAP]
+Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih.
+- **🤖 AI Business Assistant ("Tanya Bos")**: Konsultasi performa bisnis via chat bahasa natural (Analisis Profit, Menu Lambat, Prediksi Omset).
+- **💌 Hyper-Personalized CRM**: Otomasi pesan WhatsApp yang dibuat unik untuk setiap pelanggan berdasarkan riwayat belanja mereka.
+- **📈 Smart Inventory Forecasting**: Prediksi stok bahan baku mingguan untuk meminimalisir *waste* menggunakan pola belanja historis.
+- **🍳 AI Menu Engineering**: Saran optimasi harga dan deskripsi menu yang menggugah selera untuk meningkatkan penjualan.
+- **👥 Employee Performance Analytics**: Feedback objektif untuk manajemen tim berdasarkan data kehadiran dan efisiensi kerja.
+
+### 📊 Financial Intelligence
+- **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.
+- **Fiscal Planning (Tax Control)**: Fitur "Target Omzet" untuk membantu perencanaan pelaporan pajak yang fleksibel.
 
 ---
 
