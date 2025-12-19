@@ -1,178 +1,103 @@
 # 🍽️ Resto POS System (Laravel 11 + Filament 4)
 
-Sistem manajemen restoran terpadu (All-in-One) yang mencakup Point of Sales (POS), Manajemen Inventori & Resep, serta Human Resource Management (HRM). Aplikasi ini dirancang untuk operasional restoran modern dengan dukungan **Multi-Unit**, **Resep (COGS)**, **Manajemen Karyawan (Payroll/Absensi)**, dan **Reservasi Meja**.
+**The Ultimate Restaurant Management System** — Dirancang dengan standar Enterprise untuk operasional F&B modern yang kompleks dan dinamis. Menghadirkan pengalaman **Point of Sale (POS)** kelas dunia, **CRM Berbasis AI-Logic**, **Kitchen Display System (KDS)** Realtime, hingga **Laporan Fiskal & Profitabilitas Otomatis**.
 
 ---
 
-## 🚀 Fitur Utama
+## ⚡️ Keunggulan Utama (Highlight Features)
 
-### 🧾 Kasir & Penjualan (POS)
-- **Tampilan Kasir Baru**: Antarmuka modern yang **Compact & Responsif** (Space-saving layout).
-- **Membership Integration**: Pilih member, lihat saldo poin, dan tukar reward langsung di layar kasir.
-- **Cash Sessions**: Fitur Buka/Tutup Kasir (Shift) untuk melacak uang tunai di laci.
-- **Draft Orders**: Simpan pesanan pending (belum bayar).
-- **Split Payment**: Dukungan pembayaran sebagian atau gabungan metode (Tunai, Transfer, Kartu).
-- **Diskon & Voucher**: Manajemen kode diskon dan promo.
-- **Print Agent**: Integrasi langsung ke printer thermal via aplikasi **Electron Print Agent** (USB/Network/Bluetooth).
+### 💎 Smart POS (Point of Sale)
+Antarmuka kasir yang dirancang untuk kecepatan dan pengalaman pengguna (User Experience) premium.
+- **Space-Saving Layout (Responsive)**: Tata letak responsif yang menyesuaikan otomatis dengan layar Tablet (iPad) atau Desktop.
+- **⚡️ Quick Add Member**: Registrasi member baru **langsung dari layar transaksi** tanpa berpindah menu (menggunakan Custom Modal Native).
+- **🔔 Live POS Notifications**: Sistem notifikasi internal yang tidak mengganggu alur kerja (non-blocking) untuk status pembayaran, print, dan error.
+- **Seamless Modal Experience**: Penggunaan custom native modals (Livewire) untuk input diskon dan member, memberikan nuansa aplikasi mobile yang halus.
+- **Smart Cart Logic**: Split payment, merged tables, dan draft order (pending transaction).
+- **Direct Printing**: Integrasi ke printer thermal via **Electron Agent** (Mendukung USB/LAN/Bluetooth).
 
-### �‍🍳 Kitchen Display System (KDS) [BARU]
-Layar khusus dapur/bar untuk manajemen pesanan realtime:
-- **Standalone Layout**: Tampilan fullscreen tanpa sidebar, fokus penuh pada pengerjaan order.
-- **Department Routing**: Filter otomatis berdasarkan departemen (Dapur, Bar, Ritel).
-- **Smart Task Batching**: Tambahan pesanan di meja yang sama otomatis muncul sebagai kartu tugas baru jika pesanan sebelumnya sudah diproses (Smart Sync).
-- **Workflow Status**: *Pending* (Masuk) ➝ *Cooking* (Proses) ➝ *Ready* (Siap) ➝ *Served* (Disajikan).
-- **Dual Tracking**: Tab "Siap" (Ready) khusus untuk melihat semua pesanan yang sudah matang sebelum disajikan oleh waiter.
-- **Real-time Notifications**: Notifikasi instan ke kasir/waiter saat pesanan selesai dimasak.
+### 🤝 Advanced CRM & Loyalty (Smart SOP) 🆕
+Bukan sekadar mencatat data pelanggan, tapi membangun hubungan jangka panjang.
+- **🎯 Smart WhatsApp SOP Integration**:
+  - **Context-Aware SOP**: Sistem otomatis menyarankan pesan WhatsApp yang personal berdasarkan "Fase Pelanggan" (Baru / Repeat / High Value).
+  - **Dynamic Templates**: Template pesan yang berubah otomatis sesuai data pelanggan (Nama, Saldo Poin, Tier).
+  - **Click-to-Followup**: Tombol aksi cepat di daftar member untuk mengirim sapaan rutin atau FAQ.
+  - **Activity Tracking**: Melacak kapan terakhir kali member dihubungi (`last_contacted_at`), dengan fitur Reset Status.
+- **Dynamic Loyalty Tiers**: Level member yang naik/turun otomatis berdasarkan frekuensi kunjungan atau total belanja.
+- **Points Ecosystem**: Earn & Burn points (Belanja dapat poin, bayar pakai poin).
 
-### �👥 Human Resource Management (HRM)
-Modul lengkap untuk menajemen karyawan:
-- **Karyawan**: Data lengkap karyawan termasuk foto wajah.
-- **Shift Kerja**: Pengaturan jadwal shift (Pagi, Siang, Malam).
-- **Absensi (Attendance)**: Pencatatan kehadiran dengan validasi foto dan status terlambat.
-- **Penggajian (Payroll)**: 
-  - Hitung gaji otomatis berdasarkan formula.
-  - Tunjangan & Potongan Variable.
-  - Slip Gaji (Payslip).
-- **Pinjaman (Loans)**: Manajemen pinjaman karyawan dan cicilan potong gaji.
-- **Cuti (Leave Requests)**: Pengajuan dan persetujuan cuti.
+### ‍🍳 Intelligent Kitchen Display System (KDS)
+Orkestrasi dapur digital tanpa kertas.
+- **Zero-Latency Realtime Sync**: Pesanan muncul di dapur **detik itu juga** saat kasir klik simpan.
+- **Smart Task Batching**: Menggabungkan item yang sama untuk efisiensi masak.
+- **Department Routing**: Memisahkan otomatis pesanan Bar (Minuman) dan Dapur (Makanan).
+- **Status Workflow**: *Pending* ➝ *Cooking* ➝ *Ready* ➝ *Served*.
 
-### 🤝 Membership & Loyalty (CRM) [BARU]
-- **Sistem Member**: Pencatatan data pelanggan dengan level membership (Tier).
-- **Poin Loyalty**:
-  - Pelanggan mendapatkan poin otomatis dari transaksi.
-  - **Tukar Poin**: Poin dapat ditukar dengan produk gratis (Reward).
-  - **Pay with Points**: Poin dapat digunakan sebagai potongan harga langsung di kasir (1 Poin = Rp 1, configurable).
-- **Tier Otomatis**: Kenaikan level member berdasarkan total belanja atau jumlah kunjungan.
+### 👥 Modern HRM (Payroll & Attendance)
+Full-suite manajemen sumber daya manusia yang terintegrasi penuh dengan keuangan.
+- **Smart Attendance System**:
+  - **Face Recognition Ready**: Validasi kehadiran menggunakan biometrik wajah untuk mencegah "titip absen".
+  - **GPS Geofencing**: Memastikan karyawan clock-in/out hanya di area outlet.
+  - **Late Penalty Logic**: Pemotongan otomatis untuk keterlambatan berdasarkan durasi (menit).
+- **Automated Payroll Engine**:
+  - **Dynamic & Flexible Formula**: Rumus penggajian sepenuhnya **bisa dikustomisasi** sesuai kebijakan restoran (bisa menambah komponen baru tanpa coding).
+    > *Contoh default*: `(Gaji Pokok + Tunjangan Jabatan + Overtime) - (Denda Terlambat + Cicilan Kasbon + PPh 21)`
+  - **Payslip Generation**: Cetak slip gaji digital otomatis setiap akhir periode.
+  - **Take Home Pay Tuning**: Penyesuaian manual (Adjustment) untuk bonus atau denda dadakan.
+- **Employee Loan Management**:
+  - **Installment Tracking**: Manajemen pinjaman karyawan dengan skema cicilan tenor (Bulan).
+  - **Auto-Deduction**: Cicilan otomatis memotong gaji bulanan (Payroll Integration) sehingga tidak perlu penagihan manual.
+- **Shift & Rostering**: Pengaturan jadwal shift fleksibel dengan dukungan tukar shift.
 
-### 📅 Reservasi (Reservations)
-- **Booking Table**: Kelola reservasi pelanggan.
-- **Pre-Order Menu**: Input pesanan menu di awal (terintegrasi dengan data Produk).
-- **Status Tracking**: Pending, Confirmed, Seated, Cancelled.
-- **Assign Table**: Menetapkan nomor meja untuk reservasi.
+### 📱 Self-Service Kiosk & PWA 🆕
+- **Progressive Web App (PWA)**: Dapat diinstall di tablet Android/iPad sebagai aplikasi native.
+- **Attendance Kiosk Mode**: Mode khusus tablet dinding untuk absensi karyawan yang cepat dan akurat.
 
-### 🍳 Resep & COGS (Food Cost)
-- **Recipe Management**: Tentukan bahan baku untuk setiap produk jadi.
-- **Auto Stock Deduction**: Stok bahan baku berkurang otomatis saat menu terjual.
-- **HPP Calculation**: Perhitungan Harga Pokok Produksi otomatis dari total biaya bahan.
+### 🧩 Modular Architecture (On-Demand Features)
+Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
+- **Toggleable Modules**: Aktifkan/Matikan modul CRM, HRM, KDS, atau Fiskal sesuai lisensi atau kebutuhan outlet.
+- **Centralized Settings**: Panel pengaturan terpusat untuk semua konfigurasi modul.
 
-### 📦 Inventori & Stok
-- **Multi-Unit Conversion**: Beli dalam Kg, pakai dalam Gram (Otomatis konversi).
-- **Stock Movements**: Riwayat lengkap keluar masuk barang (Purchase, Sale, Adjustment, Production).
-- **Stock Adjustment**: Opname stok manual untuk penyesuaian selisih fisik.
-
-###  Dashboard & Analitik
-- **Realtime Dashboard**: Pantau omzet harian, tren penjualan, dan produk terlaris langsung dari halaman utama.
-- **Top Products**: Grafik menu paling laku (Makanan & Minuman).
-- **Peak Hours**: Heatmap untuk melihat jam-jam sibuk restoran.
-- **Revenue Overview**: Ringkasan pendapatan kotor per periode.
-
-### 💰 Laporan Keuangan (Profit & Loss) [BARU]
-Laporan Laba Rugi komprehensif untuk analisis kesehatan bisnis:
-- **Net Profit Otomatis**: Menghitung Omzet - HPP - Biaya Operasional = Laba Bersih.
-- **Analisis HPP Product**: Deteksi dini kesalahan input HPP dengan fitur "Top Cost Contributors".
-- **Margin Analysis**: Peringatan otomatis jika margin keuntungan terlalu rendah (<10%).
-- **Top Profit Chart**: Analisis produk penyumbang keuntungan terbesar.
-- **Filter Bulanan**: Filter cepat per Bulan & Tahun.
-
-### 💰 Laporan Pajak (Fiscal)
-Fitur manajemen pelaporan fiskal (Target Omzet) untuk keperluan perpajakan:
-- **Target Omzet Harian**: Pengaturan parameter omzet harian.
-- **Automated Sampling**: Seleksi data transaksi otomatis mendekati target.
-- **Export Template**: Download laporan pajak format Excel.
-- **PDF Rekap Harian**: Ringkasan omzet pajak harian siap cetak.
+### 📊 Financial Intelligence
+- **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.
+- **Fiscal Planning (Tax Control)**: Fitur "Target Omzet" untuk membantu perencanaan pelaporan pajak yang fleksibel.
 
 ---
 
-## 🛠️ Teknologi yang Digunakan
+## 🛠️ Stack Teknologi (Enterprise Grade)
 
-- **Framework**: [Laravel 11](https://laravel.com) / 12 (Bleeding Edge)
-- **Admin & UI**: [FilamentPHP v4](https://filamentphp.com)
-- **Styling**: [TailwindCSS v4](https://tailwindcss.com)
-- **Database**: MySQL / MariaDB
-- **Desktop Agent**: [Electron](https://www.electronjs.org) (Untuk Direct Printing)
+Dibangun di atas pondasi teknologi paling modern dan stabil di tahun 2025.
 
----
-
-## 🏗️ Struktur Database & Modul (Ringkasan)
-
-| Kategori | Tabel / Modul Utama | Fungsi |
-|----------|---------------------|--------|
-| **Core** | `products`, `categories`, `units` | Manajemen data master produk dan satuan |
-| **Sales** | `sales`, `sale_items`, `cash_sessions` | Transaksi POS dan Sesi Kasir |
-| **Production** | `SaleItems (KDS Status)` | Alur kerja dapur dan bar (KDS) |
-| **Inventory** | `purchases`, `stock_movements`, `recipes` | Stok masuk, resep, dan log pergerakan |
-| **HRM** | `employees`, `payrolls`, `attendances`, `shifts` | Karyawan, Gaji, Absensi, Jadwal |
-| **CRM (Loyalty)** | `members`, `loyalty_tiers`, `loyalty_rewards` | Member, Poin, Level, dan Tukar Hadiah |
-| **Reservations** | `reservations`, `reservation_items` | Booking meja dan pre-order menu |
-| **Finance** | `expenses`, `loans` | Pengeluaran operasional dan pinjaman karyawan |
-| **Settings** | `settings`, `print_jobs`, `payment_methods` | Konfigurasi sistem dan printer |
-| **Tax / Fiskal** | `sales (is_tax_reported)` | **Laporan Pajak Fleksibel** (Target Omzet & Randomizer) |
+- **Framework**: [Laravel 11](https://laravel.com) (PHP 8.2+)
+- **Admin & UI**: [FilamentPHP v4](https://filamentphp.com) (Bleeding Edge)
+- **Engine**: [Livewire 3](https://livewire.laravel.com) (Reactive UI)
+- **Styling**: [TailwindCSS v4](https://tailwindcss.com) (Zero-runtime CSS)
+- **Database**: MySQL 8 / MariaDB
+- **State Management**: Alpine.js v3
+- **Local Agent**: Electron (Untuk Bridge Hardware)
 
 ---
 
-## 💻 Instalasi & Setup
+## 🗺️ Cara Penggunaan (Quick Start)
 
-### 1️⃣ Persiapan Backend (Laravel)
+### 1. POS Operation
+1.  Buka menu **POS**.
+2.  Pilih produk ➝ Masuk ke Keranjang.
+3.  **Member**: Cari member atau klik **Tanda Tambah (+)** untuk buat member baru kilat.
+4.  **Bayar**: Pilih metode bayar (Tunai/QRIS/Card). Struk otomatis tercetak.
 
-Pastikan PHP >= 8.2 dan Composer sudah terinstall.
-
-```bash
-# Clone repository
-git clone https://github.com/evanabaddon/resto-pos-filament.git
-cd resto-pos-filament
-
-# Install Dependencies
-composer install
-npm install
-
-# Setup Environment
-cp .env.example .env
-# (Sesuaikan konfigurasi DB_DATABASE, DB_USERNAME, dll di file .env)
-
-# Generate Key & Migrate
-php artisan key:generate
-php artisan storage:link
-php artisan migrate --seed
-
-# Jalankan Server Development (Tailwind v4 Build)
-npm run dev
-php artisan serve
-```
+### 2. CRM Follow-up
+1.  Buka menu **Kemitraan (Member)**.
+2.  Lihat kolom **"Terakhir Followup"**.
+3.  Klik **Action WhatsApp**: Pilih template (Sapaan Rutin, FAQ Benefit, dll).
+4.  Kirim pesan personal dalam satu klik.
 
 ---
 
-## 🗺️ Roadmap Pengembangan
-
-### 🚀 Prioritas Selanjutnya (Next Phase)
-1. ** Visual Table Management**
-   - Denah lantai (Floor Plan) interaktif.
-   - Indikator status meja: *Kosong, Terisi, Reserved*.
-   - Drag & drop untuk memindahkan pesanan atau menggabungkan meja.
-
-### 🔮 Rencana Jangka Panjang (Future)
-- **📱 Self-Order Menu (QR Code)**: Pelanggan scan QR di meja untuk pesan mandiri.
-- **💳 Payment Gateway**: Integrasi QRIS otomatis (Midtrans/Xendit) untuk status pembayaran realtime.
+## ⚠️ Requirements
+- PHP 8.2+
+- Composer 2+
+- Node.js & NPM (untuk build assets)
 
 ---
 
-## 🔄 Alur Kerja Sistem
-
-1. **Setup Data**: Buat Unit -> Bahan Baku -> Resep -> Produk Jadi.
-2. **Daily Operation**:
-   - Kasir membuka **Cash Session** (Modal Awal).
-   - Penjualan POS ➝ **Notifikasi Realtime ke KDS**.
-   - Chef/Barista memproses di KDS ➝ Waiter mendapat **Notifikasi Siap**.
-   - Waiter menyajikan ➝ Status pesanan selesai (Served).
-3. **End of Month**: 
-   - Review Dashboard & Export Laporan Penjualan.
-   - Generate Payroll Karyawan (Otomatis hitung gaji).
-
----
-
-## ⚠️ Catatan Pengembang
-- **Filament V4**: Project ini menggunakan versi filament/laravel terbaru. Pastikan environment mendukung.
-- **Node Modules**: Diperlukan untuk build assets Tailwind v4.
-
----
-
-📍 **Maintainer:** Evan Helga
+📍 **Developed by Evan Helga** — *Crafting Digital Excellence for F&B Business.*

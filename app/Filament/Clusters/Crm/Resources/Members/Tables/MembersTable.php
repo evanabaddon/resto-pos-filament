@@ -178,6 +178,22 @@ class MembersTable
                             redirect()->away("https://wa.me/{$phone}?text={$text}");
                         }),
 
+                    // 5. Reset Followup
+                    Action::make('reset_followup')
+                        ->label('Reset Status Followup')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('gray')
+                        ->requiresConfirmation()
+                        ->modalHeading('Reset Status Followup?')
+                        ->modalDescription('Status "Terakhir Followup" akan dikembalikan ke "Belum pernah". Gunakan jika Anda tidak jadi mengirim pesan.')
+                        ->action(function ($record) {
+                            $record->update(['last_contacted_at' => null]);
+                            \Filament\Notifications\Notification::make()
+                                ->title('Status Followup Direset')
+                                ->success()
+                                ->send();
+                        }),
+
                 ])
                     ->label('WhatsApp SOP')
                     ->icon('heroicon-m-chat-bubble-oval-left-ellipsis')
