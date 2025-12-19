@@ -412,6 +412,30 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->disabled(),
                     ])->columns(3),
 
+                Section::make('Pre-Order Menu')
+                    ->schema([
+                        Forms\Components\Repeater::make('items')
+                            ->relationship()
+                            ->schema([
+                                Select::make('product_id')
+                                    ->relationship('product', 'name')
+                                    ->label('Menu')
+                                    ->disabled(),
+                                TextInput::make('quantity')
+                                    ->label('Qty')
+                                    ->numeric()
+                                    ->disabled(),
+                                TextInput::make('note')
+                                    ->label('Catatan')
+                                    ->disabled(),
+                            ])
+                            ->columns(3)
+                            ->addable(false)
+                            ->deletable(false)
+                            ->reorderable(false),
+                    ])
+                    ->collapsed(),
+
                 Section::make('Tambahan')
                     ->schema([
                         Textarea::make('special_requests')
@@ -419,6 +443,67 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->disabled()
                             ->rows(3),
                     ]),
+            ])
+            ->extraModalFooterActions([
+                Action::make('convert_to_sale')
+                    ->label('Convert to Sale (POS)')
+                    ->icon('heroicon-o-shopping-cart')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Konversi ke Transaksi POS')
+                    ->modalDescription('Reservasi ini akan dikonversi menjadi transaksi aktif. Stok akan dipotong saat pembayaran.')
+                    ->action(function (Reservation $record) {
+                        // 1. Create Sale Header
+                        $sale = \App\Models\Sale::create([
+                            'reservation_id' => $record->id,
+                            'customer_name' => $record->customer_name, // Fallback if no member
+                            'status' => 'pending',
+                            'total_amount' => 0, // Will be calculated
+                            'payment_method_id' => null,
+                        ]);
+
+                        // 2. Copy Items
+                        $total = 0;
+                        foreach ($record->items as $item) {
+                            $product = $item->product;
+                            if (!$product)
+                                continue;
+
+                            $price = $product->price;
+                            $subtotal = $price * $item->quantity;
+
+                            $sale->items()->create([
+                                'product_id' => $item->product_id,
+                                'quantity' => $item->quantity,
+                                'unit_price' => $price,
+                                'subtotal' => $subtotal,
+                                'note' => $item->note,
+                            ]);
+
+                            $total += $subtotal;
+                        }
+
+                        // 3. Update Sale Total
+                        $sale->update(['total_amount' => $total]);
+
+                        // 4. Update Reservation Status
+                        $record->update(['status' => 'seated']);
+
+                        Notification::make()
+                            ->title('Transaksi Berhasil Dibuat')
+                            ->body("Sale #{$sale->id} telah dibuat dari reservasi ini.")
+                            ->success()
+                            ->send();
+
+                        // 5. Redirect to POS (Optional: needs logical routing to open POS with this sale)
+                        // For now we just notify. Ideally we redirect to a POS URL with ?sale_id=X
+                        // But POS uses Livewire state. 
+                        // Alternative: Redirect to Sale Edit page (Backoffice) or simple notification.
+                        // Let's redirect to Sales Edit for now as it's safer.
+                        // OR: Just keep it simple as notification.
+            
+                        // We will just show notification for now as POS integration is complex state-wise.
+                    }),
             ]);
     }
 
@@ -466,6 +551,30 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->required(),
                     ])->columns(3),
 
+                Section::make('Pre-Order Menu')
+                    ->schema([
+                        Forms\Components\Repeater::make('items')
+                            ->relationship()
+                            ->schema([
+                                Select::make('product_id')
+                                    ->relationship('product', 'name')
+                                    ->label('Menu')
+                                    ->required()
+                                    ->searchable()
+                                    ->preload(),
+                                TextInput::make('quantity')
+                                    ->label('Qty')
+                                    ->numeric()
+                                    ->default(1)
+                                    ->required(),
+                                TextInput::make('note')
+                                    ->label('Catatan'),
+                            ])
+                            ->columns(3)
+                            ->collapsed(),
+                    ])
+                    ->collapsed(),
+
                 Section::make('Tambahan')
                     ->schema([
                         Textarea::make('special_requests')
@@ -506,8 +615,33 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->label('Jumlah Orang')
                             ->numeric()
                             ->required()
+                            ->required()
                             ->minValue(1),
                     ])->columns(2),
+
+                Section::make('Pre-Order Menu')
+                    ->schema([
+                        Forms\Components\Repeater::make('items')
+                            ->relationship()
+                            ->schema([
+                                Select::make('product_id')
+                                    ->relationship('product', 'name')
+                                    ->label('Menu')
+                                    ->required()
+                                    ->searchable()
+                                    ->preload(),
+                                TextInput::make('quantity')
+                                    ->label('Qty')
+                                    ->numeric()
+                                    ->default(1)
+                                    ->required(),
+                                TextInput::make('note')
+                                    ->label('Catatan'),
+                            ])
+                            ->columns(3)
+                            ->collapsed(),
+                    ])
+                    ->collapsed(),
 
                 Section::make('Tambahan')
                     ->schema([

@@ -1049,6 +1049,14 @@
                                         Pts
                                     </div>
                                 </div>
+                                <div class="flex justify-between items-center mt-1">
+                                    <div class="text-[10px] text-gray-400 font-bold">
+                                        Dimiliki: {{ $selectedMember->points_balance ?? 0 }}
+                                    </div>
+                                    <div class="text-[10px] font-bold {{ ($selectedMember->points_balance ?? 0) - (int)$pointRedemptionAmount < 0 ? 'text-red-500' : 'text-violet-600' }}">
+                                        Sisa: {{ max(0, ($selectedMember->points_balance ?? 0) - (int)$pointRedemptionAmount) }}
+                                    </div>
+                                </div>
                              </div>
                              <div class="flex items-end pb-0.5">
                                  <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
@@ -1058,6 +1066,9 @@
                                 @inject('settings', 'App\Settings\GeneralSettings')
                                 <div class="mt-1 py-2 px-3 bg-gray-100 border border-gray-200 rounded-lg text-sm font-bold text-gray-700">
                                     Rp {{ number_format((int) $pointRedemptionAmount * ($settings->loyalty_point_value ?? 1)) }}
+                                </div>
+                                <div class="text-[10px] text-gray-400 text-right mt-1">
+                                    Rate: 1 Poin = Rp {{ number_format($settings->loyalty_point_value ?? 1) }}
                                 </div>
                              </div>
                         </div>

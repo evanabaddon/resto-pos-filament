@@ -182,6 +182,13 @@ class AppSettings extends SettingsPage
                                             ->prefix('Rp')
                                             ->default(10000)
                                             ->helperText('Contoh: Tiap belanja Rp 10.000 dapat 1 Poin.'),
+
+                                        TextInput::make('loyalty_point_value')
+                                            ->label('Nilai 1 Poin dalam Rupiah')
+                                            ->numeric()
+                                            ->prefix('Rp')
+                                            ->default(1)
+                                            ->helperText('Contoh: 1 Poin bernilai Rp 1 saat ditukarkan.'),
                                     ]),
 
                                 Section::make('WhatsApp SOP Templates')

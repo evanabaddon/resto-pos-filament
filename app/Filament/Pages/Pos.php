@@ -594,6 +594,13 @@ class Pos extends Page
         $this->dispatch('show-notification', message: 'Reward berhasil ditambahkan ke keranjang!', type: 'success');
     }
 
+    public function updatedPointRedemptionAmount()
+    {
+        if ($this->selectedMember && $this->pointRedemptionAmount > $this->selectedMember->points_balance) {
+            $this->dispatch('show-notification', message: 'Jumlah poin melebihi saldo member!', type: 'error');
+        }
+    }
+
     public function redeemPointsForDiscount()
     {
         if (!$this->selectedMember)

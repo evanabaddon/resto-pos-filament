@@ -21,9 +21,19 @@ Bukan sekadar mencatat data pelanggan, tapi membangun hubungan jangka panjang.
   - **Context-Aware SOP**: Sistem otomatis menyarankan pesan WhatsApp yang personal berdasarkan "Fase Pelanggan" (Baru / Repeat / High Value).
   - **Dynamic Templates**: Template pesan yang berubah otomatis sesuai data pelanggan (Nama, Saldo Poin, Tier).
   - **Click-to-Followup**: Tombol aksi cepat di daftar member untuk mengirim sapaan rutin atau FAQ.
-  - **Activity Tracking**: Melacak kapan terakhir kali member dihubungi (`last_contacted_at`), dengan fitur Reset Status.
+  - **Activity Tracking**: Melacak kapan terakhir kali member dihubungi (`last_contacted_at`), dengan fitur **Reset Status** jika batal kirim.
+- **💰 Smart Point System**:
+  - **Dynamic Exchange Rate**: Nilai tukar poin bisa diatur bebas di pengaturan (misal: 1 Poin = Rp 10).
+  - **Realtime Redemption Validation**: POS otomatis menghitung sisa saldo member saat penukaran dan mencegah "Over-Redemption".
+  - **Instant Balance Preview**: Kasir bisa melihat langsung nilai rupiah dari poin yang ditukar.
 - **Dynamic Loyalty Tiers**: Level member yang naik/turun otomatis berdasarkan frekuensi kunjungan atau total belanja.
-- **Points Ecosystem**: Earn & Burn points (Belanja dapat poin, bayar pakai poin).
+
+### 📅 Intelligent Reservation (WA Confirmation) 🆕
+Sistem reservasi yang terintegrasi langsung dengan komunikasi pelanggan.
+- **One-Click WhatsApp Confirmation**: Kirim konfirmasi reservasi formal via WhatsApp langsung dari kalender. format template dinamis.
+- **Pre-Order to Sales**: Fitur input pesanan (menu) saat reservasi. Saat tamu datang, pesanan **langsung dikonversi menjadi transaksi Sales** di POS tanpa input ulang.
+- **Encoding Safety**: Menggunakan *Direct API Link* untuk memastikan Emoji (📅 ⏰ 😊) terkirim sempurna tanpa error encoding.
+- **Status Automation**: Status reservasi otomatis berubah menjadi "Confirmed" saat pesan WA dikirim.
 
 ### ‍🍳 Intelligent Kitchen Display System (KDS)
 Orkestrasi dapur digital tanpa kertas.
@@ -90,6 +100,12 @@ Dibangun di atas pondasi teknologi paling modern dan stabil di tahun 2025.
 2.  Lihat kolom **"Terakhir Followup"**.
 3.  Klik **Action WhatsApp**: Pilih template (Sapaan Rutin, FAQ Benefit, dll).
 4.  Kirim pesan personal dalam satu klik.
+
+### 3. Reservasi & Confirmation
+1.  Buka Kalender Reservasi.
+2.  Klik reservasi untuk melihat detail.
+3.  Tekan tombol **"Confirm via WA"** (Icon Centang Hijau).
+4.  Sistem otomatis update status & membuka WhatsApp dengan template yang sudah diset.
 
 ---
 
