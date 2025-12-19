@@ -23,11 +23,11 @@ class StockMovementResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Produk';
 
-    protected static ?string $navigationLabel = 'Riwayat Stok';
+    protected static ?string $navigationLabel = 'Stok & Opname';
 
     public static function canCreate(): bool
     {
-        return false;
+        return true;
     }
 
     public static function form(Schema $schema): Schema

@@ -414,7 +414,7 @@ class OrderService
                     $conversion = $ingredientRate / $recipeRate;
                     $totalRestored = $recipe->quantity * $item->quantity * $conversion;
 
-                    $recipe->ingredient->increment('stock', $totalRestored);
+                    // $recipe->ingredient->increment('stock', $totalRestored); <--- REMOVED (Handled by StockMovement)
 
                     StockMovement::create([
                         'product_id' => $recipe->ingredient->id,
@@ -426,7 +426,7 @@ class OrderService
                 }
             } else {
                 // Direct Product
-                $product->increment('stock', $item->quantity);
+                // $product->increment('stock', $item->quantity); <--- REMOVED (Handled by StockMovement)
 
                 StockMovement::create([
                     'product_id' => $product->id,

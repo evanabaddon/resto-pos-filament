@@ -16,23 +16,33 @@ class StockMovementForm
                 Select::make('product_id')
                     ->relationship('product', 'name')
                     ->label('Produk')
+                    ->searchable()
+                    ->preload()
                     ->required(),
 
                 Select::make('type')
                     ->label('Jenis')
                     ->options([
-                        'increase' => 'Penambahan',
-                        'decrease' => 'Pengurangan',
+                        'increase' => 'Penambahan (+)',
+                        'decrease' => 'Pengurangan (-)',
                     ])
                     ->required(),
 
                 TextInput::make('quantity')
                     ->numeric()
+                    ->minValue(1)
                     ->label('Jumlah')
                     ->required(),
 
-                TextInput::make('reason')
+                Select::make('reason')
                     ->label('Alasan')
+                    ->options([
+                        'opname' => 'Stock Opname (Adjustment)',
+                        'purchase' => 'Pembelian Baru',
+                        'damage' => 'Barang Rusak/Expired',
+                        'gift' => 'Hadiah/Bonus',
+                        'other' => 'Lain-lain',
+                    ])
                     ->required(),
 
                 Textarea::make('notes')

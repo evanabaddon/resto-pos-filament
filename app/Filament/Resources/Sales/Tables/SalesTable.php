@@ -130,6 +130,31 @@ class SalesTable
                                 ->danger()
                                 ->send();
                         }
+                    }),
+
+                // Safe Delete Action (Void/Cancel)
+                \Filament\Actions\DeleteAction::make()
+                    ->label('Void / Hapus')
+                    ->modalHeading('Void Transaksi & Restore Stok')
+                    ->modalDescription('Apakah Anda yakin ingin menghapus transaksi ini? Stok produk akan dikembalikan (Restore Inventory) dan tercatat di Log Stok.')
+                    ->action(function (Sale $record) {
+                        try {
+                            // Use OrderService to handle safe deletion and stock restoration
+                            $orderService = new \App\Services\OrderService();
+                            $orderService->deleteSale($record->id);
+
+                            Notification::make()
+                                ->title('Transaksi berhasil di-void')
+                                ->body('Stok produk telah dikembalikan.')
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Gagal melakukan void')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
                     })
             ])
             ->toolbarActions([

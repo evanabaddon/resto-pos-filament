@@ -37,6 +37,7 @@ class StockMovementsTable
                     ->label('Tanggal')
                     ->dateTime('d M Y H:i'),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])
