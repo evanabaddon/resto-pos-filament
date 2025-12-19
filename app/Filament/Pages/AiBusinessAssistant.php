@@ -79,12 +79,18 @@ class AiBusinessAssistant extends Page
             )->first();
 
         // 2. Top 5 Menu (Filter Tanggal & Exclude DP)
-        $topItems = SaleItem::whereHas('sale', function ($query) use ($dateLimit) {
-            $query->where('status', 'completed')->where('created_at', '>=', $dateLimit);
-        })
-            ->where('product_name', '!=', 'Down Payment (DP)')
-            ->select('product_name', DB::raw('SUM(quantity) as total_qty'), DB::raw('SUM(subtotal) as total_sales'))
-            ->groupBy('product_name')
+        $topItems = SaleItem::query()
+            ->leftJoin('products', 'sale_items.product_id', '=', 'products.id')
+            ->whereHas('sale', function ($query) use ($dateLimit) {
+                $query->where('status', 'completed')->where('created_at', '>=', $dateLimit);
+            })
+            ->select(
+                DB::raw('COALESCE(sale_items.product_name, products.name, "Produk #") as final_name'),
+                DB::raw('SUM(sale_items.quantity) as total_qty'),
+                DB::raw('SUM(sale_items.subtotal) as total_sales')
+            )
+            ->groupBy('final_name')
+            ->having('final_name', '!=', 'Down Payment (DP)')
             ->orderByDesc('total_qty')
             ->limit(5)
             ->get();
@@ -113,7 +119,7 @@ class AiBusinessAssistant extends Page
             $context .= "- Belum ada data penjualan.\n";
         }
         foreach ($topItems as $item) {
-            $context .= "- {$item->product_name}: {$item->total_qty} unit (Rp " . number_format($item->total_sales, 0, ',', '.') . ")\n";
+            $context .= "- {$item->final_name}: {$item->total_qty} unit (Rp " . number_format($item->total_sales, 0, ',', '.') . ")\n";
         }
 
         $context .= "\nINVENTORI & STOK:\n";
