@@ -28,6 +28,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use App\Filament\Resources\Reservations\Widgets\ReservationCalendarWidget;
+use App\Filament\Widgets\AiDailySuggestionWidget;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -62,8 +63,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                    // AccountWidget::class,
-                    // FilamentInfoWidget::class,
+                AiDailySuggestionWidget::class,
                 ReservationCalendarWidget::class,
                 ReservationStatsWidget::class,
                 RevenueOverviewWidget::class,

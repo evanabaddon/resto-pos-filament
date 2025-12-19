@@ -55,7 +55,7 @@ class DeepSeekService
     /**
      * Specific helper for business analysis
      */
-    public function analyzeBusiness(string $prompt, string $context = '')
+    public function analyzeBusiness(array $history, string $context = '')
     {
         $systemPrompt = "Anda adalah Asisten Bisnis Pintar untuk sebuah restoran. 
         Tugas Anda adalah memberikan analisis data, saran strategi, dan jawaban yang membantu pemilik restoran (BOS).
@@ -63,10 +63,9 @@ class DeepSeekService
         Berikut adalah konteks data restoran saat ini:
         {$context}";
 
-        $messages = [
-            ['role' => 'system', 'content' => $systemPrompt],
-            ['role' => 'user', 'content' => $prompt]
-        ];
+        $messages = array_merge([
+            ['role' => 'system', 'content' => $systemPrompt]
+        ], $history);
 
         return $this->chat($messages);
     }

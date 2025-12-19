@@ -43,16 +43,16 @@ class AiBusinessAssistant extends Page
         $this->isTyping = true;
 
         // Dispatch process event to handle AI in background if needed or just process here
-        $this->processAiResponse($userPrompt);
+        $this->processAiResponse();
     }
 
-    protected function processAiResponse($prompt)
+    protected function processAiResponse()
     {
         try {
             $service = new DeepSeekService();
             $context = $this->getBusinessContext();
 
-            $response = $service->analyzeBusiness($prompt, $context);
+            $response = $service->analyzeBusiness($this->messages, $context);
 
             $content = $response['choices'][0]['message']['content'] ?? 'Maaf Bos, saya sedang mengalami gangguan koneksi ke otak pusat.';
 
