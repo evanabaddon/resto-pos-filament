@@ -38,4 +38,10 @@ return [
     'print_server' => [
         'ip' => env('PRINT_SERVER_IP', 'localhost'),
     ],
+
+    'deepseek' => [
+        'key' => env('DEEPSEEK_API_KEY'),
+        'url' => env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
+        'verify' => (bool) env('DEEPSEEK_VERIFY_SSL', true),
+    ],
 ];
