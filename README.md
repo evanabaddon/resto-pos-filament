@@ -75,8 +75,9 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
     - **Logic Aggregator**: AI menganalisis menu favorit pelanggan, level loyalty, dan riwayat kunjungan terakhir.
     - **Promo Awareness**: Otomatis mendeteksi **Kode Promo Aktif** di database dan menyelipkannya secara natural dalam draf pesan.
     - **Configurable Prompt**: Owner bisa melatih AI dengan gaya bahasa sendiri melalui menu Pengaturan.
-- **📈 Smart Inventory Forecasting [ROADMAP]**: Prediksi stok bahan baku mingguan untuk meminimalisir *waste* menggunakan pola belanja historis.
+- **📉 Smart Inventory Forecasting [ROADMAP]**: Prediksi stok bahan baku mingguan untuk meminimalisir *waste* menggunakan pola belanja historis.
 - **🍳 AI Menu Engineering [ROADMAP]**: Saran optimasi harga dan deskripsi menu yang menggugah selera untuk meningkatkan penjualan.
+- **📲 Integrated WhatsApp Gateway (Native Chat) [ROADMAP]**: Membangun gateway internal (via Baileys/WAHA) agar Bos bisa melakukan chat dua arah langsung di dalam aplikasi tanpa pindah tab.
 
 ### 📊 Financial Intelligence
 - **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.
