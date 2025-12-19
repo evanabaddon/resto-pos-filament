@@ -66,17 +66,23 @@ class AiBusinessAssistant extends Page
 
     protected function getBusinessContext(): string
     {
-        // 1. Ringkasan Penjualan 30 Hari Terakhir
+        $days = 30;
+        $dateLimit = now()->subDays($days);
+
+        // 1. Ringkasan Penjualan (Filter Tanggal)
         $salesSummary = Sale::where('status', 'completed')
-            ->where('created_at', '>=', now()->subDays(30))
+            ->where('created_at', '>=', $dateLimit)
             ->select(
                 DB::raw('COUNT(*) as total_orders'),
                 DB::raw('SUM(final_total) as total_revenue'),
                 DB::raw('AVG(final_total) as avg_ticket')
             )->first();
 
-        // 2. Top 5 Menu Terlaris
-        $topItems = SaleItem::with('product')
+        // 2. Top 5 Menu (Filter Tanggal & Exclude DP)
+        $topItems = SaleItem::whereHas('sale', function ($query) use ($dateLimit) {
+            $query->where('status', 'completed')->where('created_at', '>=', $dateLimit);
+        })
+            ->where('product_name', '!=', 'Down Payment (DP)')
             ->select('product_name', DB::raw('SUM(quantity) as total_qty'), DB::raw('SUM(subtotal) as total_sales'))
             ->groupBy('product_name')
             ->orderByDesc('total_qty')
@@ -84,21 +90,39 @@ class AiBusinessAssistant extends Page
             ->get();
 
         // 3. Ringkasan Stok (Low Stock)
-        $lowStockCount = Product::where('stock', '<', 10)->count();
+        $lowStockProducts = Product::where('stock', '<', 10)
+            ->where('is_sellable', true)
+            ->where('name', '!=', 'Down Payment (DP)')
+            ->orderBy('stock', 'asc')
+            ->limit(10)
+            ->get();
+
+        $lowStockCount = Product::where('stock', '<', 10)
+            ->where('is_sellable', true)
+            ->where('name', '!=', 'Down Payment (DP)')
+            ->count();
 
         // Bangun String Konteks
-        $context = "RINGKASAN BISNIS (30 HARI TERAKHIR):\n";
+        $context = "DATA ANALISIS " . strtoupper($days . " Hari Terakhir") . ":\n";
         $context .= "- Total Order: {$salesSummary->total_orders}\n";
         $context .= "- Total Pendapatan: Rp " . number_format($salesSummary->total_revenue, 0, ',', '.') . "\n";
-        $context .= "- Rata-rata belanja per tamu: Rp " . number_format($salesSummary->avg_ticket, 0, ',', '.') . "\n\n";
+        $context .= "- Rata-rata per Transaksi: Rp " . number_format($salesSummary->avg_ticket, 0, ',', '.') . "\n\n";
 
-        $context .= "TOP 5 MENU:\n";
+        $context .= "TOP 5 MENU TERLARIS:\n";
+        if ($topItems->isEmpty()) {
+            $context .= "- Belum ada data penjualan.\n";
+        }
         foreach ($topItems as $item) {
-            $context .= "- {$item->product_name}: {$item->total_qty} terjual (Rp " . number_format($item->total_sales, 0, ',', '.') . ")\n";
+            $context .= "- {$item->product_name}: {$item->total_qty} unit (Rp " . number_format($item->total_sales, 0, ',', '.') . ")\n";
         }
 
-        $context .= "\nSTATUS OPERASIONAL:\n";
-        $context .= "- Produk stok rendah (< 10): {$lowStockCount} item\n";
+        $context .= "\nINVENTORI & STOK:\n";
+        $context .= "- Jumlah Item Stok Rendah (< 10): {$lowStockCount} item\n";
+        if ($lowStockProducts->isNotEmpty()) {
+            $context .= "- Contoh Item Kritis: ";
+            $context .= $lowStockProducts->map(fn($p) => "{$p->name} ({$p->stock} pcs)")->implode(', ');
+            $context .= "\n";
+        }
 
         return $context;
     }
