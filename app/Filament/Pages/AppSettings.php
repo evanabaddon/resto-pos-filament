@@ -270,7 +270,7 @@ class AppSettings extends SettingsPage
                                             ->required(),
 
                                         TextInput::make('loyalty_point_exchange_rate')
-                                            ->label('Nilai Belanja per 1 Poin Rasa')
+                                            ->label('Nilai Belanja per 1 Poin')
                                             ->numeric()
                                             ->prefix('Rp')
                                             ->default(10000)
