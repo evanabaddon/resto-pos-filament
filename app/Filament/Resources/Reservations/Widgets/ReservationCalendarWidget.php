@@ -400,6 +400,11 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->label('Jumlah Orang')
                             ->numeric()
                             ->disabled(),
+                        TextInput::make('deposit_amount')
+                            ->label('Down Payment (DP)')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->disabled(),
                         Select::make('status')
                             ->label('Status')
                             ->options([
@@ -453,16 +458,25 @@ class ReservationCalendarWidget extends CalendarWidget
                     ->modalHeading('Konversi ke Transaksi POS')
                     ->modalDescription('Reservasi ini akan dikonversi menjadi transaksi aktif. Stok akan dipotong saat pembayaran.')
                     ->action(function (Reservation $record) {
+                        // 0. Check Active Session
+                        $activeSession = \App\Models\CashSession::where('user_id', auth()->id())
+                            ->whereNull('closed_at')
+                            ->latest()
+                            ->first();
+
                         // 1. Create Sale Header
                         $sale = \App\Models\Sale::create([
                             'reservation_id' => $record->id,
-                            'customer_name' => $record->customer_name, // Fallback if no member
-                            'status' => 'pending',
-                            'total_amount' => 0, // Will be calculated
+                            'user_id' => auth()->id(),
+                            'cash_session_id' => $activeSession?->id, // Link to active session
+                            'invoice_number' => 'RSVP-' . date('Ymd') . '-' . strtoupper(uniqid()),
+                            'customer_name' => $record->customer_name,
+                            'status' => 'draft', // Pending = Draft/Open Order in this system
+                            'total_amount' => 0,
                             'payment_method_id' => null,
                         ]);
 
-                        // 2. Copy Items
+                        // 2. Copy Items (Snapshot Name)
                         $total = 0;
                         foreach ($record->items as $item) {
                             $product = $item->product;
@@ -474,6 +488,7 @@ class ReservationCalendarWidget extends CalendarWidget
 
                             $sale->items()->create([
                                 'product_id' => $item->product_id,
+                                'product_name' => $product->name, // Snapshot name
                                 'quantity' => $item->quantity,
                                 'unit_price' => $price,
                                 'subtotal' => $subtotal,
@@ -483,26 +498,30 @@ class ReservationCalendarWidget extends CalendarWidget
                             $total += $subtotal;
                         }
 
-                        // 3. Update Sale Total
+                        // 3. Handle Deposit Deduction (Named Item)
+                        if ($record->deposit_amount > 0) {
+                            $sale->items()->create([
+                                'product_id' => null, // Custom Item
+                                'product_name' => 'Down Payment (DP)', // Explicit Name
+                                'quantity' => 1,
+                                'unit_price' => -$record->deposit_amount,
+                                'subtotal' => -$record->deposit_amount,
+                                'note' => 'Potongan DP Reservasi',
+                            ]);
+                            $total -= $record->deposit_amount;
+                        }
+
+                        // 4. Update Sale Total
                         $sale->update(['total_amount' => $total]);
 
-                        // 4. Update Reservation Status
+                        // 5. Update Reservation Status
                         $record->update(['status' => 'seated']);
 
                         Notification::make()
                             ->title('Transaksi Berhasil Dibuat')
-                            ->body("Sale #{$sale->id} telah dibuat dari reservasi ini.")
+                            ->body("Sale #{$sale->invoice_number} telah dibuat. Total: " . number_format($total))
                             ->success()
                             ->send();
-
-                        // 5. Redirect to POS (Optional: needs logical routing to open POS with this sale)
-                        // For now we just notify. Ideally we redirect to a POS URL with ?sale_id=X
-                        // But POS uses Livewire state. 
-                        // Alternative: Redirect to Sale Edit page (Backoffice) or simple notification.
-                        // Let's redirect to Sales Edit for now as it's safer.
-                        // OR: Just keep it simple as notification.
-            
-                        // We will just show notification for now as POS integration is complex state-wise.
                     }),
             ]);
     }
@@ -539,6 +558,11 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->numeric()
                             ->required()
                             ->minValue(1),
+                        TextInput::make('deposit_amount')
+                            ->label('Down Payment (DP)')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->default(0),
                         Select::make('status')
                             ->label('Status')
                             ->options([

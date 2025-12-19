@@ -20,11 +20,12 @@ class Reservation extends Model implements Eventable
     }
     protected $fillable = [
         'customer_name',
-        'customer_phone', 
+        'customer_phone',
         'party_size',
         'reservation_date',
         'status',
         'special_requests',
+        'deposit_amount',
     ];
 
     protected $casts = [
@@ -69,7 +70,7 @@ class Reservation extends Model implements Eventable
                 'border-color: #9ca3af' => true,
             ],
         };
-        
+
         // Tambahkan styles umum
         $styles['border-width: 2px'] = true;
         $styles['border-style: solid'] = true;
