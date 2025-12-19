@@ -11,6 +11,7 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
@@ -39,123 +40,98 @@ class SalesTable
             ->recordActions([
                 EditAction::make(),
 
-                // Action untuk preview struk dengan modal
                 Action::make('previewReceipt')
-                    ->label('Preview Struk')
+                    ->label('Preview')
                     ->icon('heroicon-o-eye')
                     ->color('info')
                     ->modalHeading('Preview Struk')
                     ->modalContent(function (Sale $record) {
-                        // Load relationships
                         $sale = $record->load(['items.product', 'paymentMethod', 'user']);
-
-                        return view('filament.components.receipt-preview-content', [
-                            'sale' => $sale
-                        ]);
+                        return view('filament.components.receipt-preview-content', ['sale' => $sale]);
                     })
                     ->modalFooterActions([
                         Action::make('print')
-                            ->label('Cetak Struk')
+                            ->label('Cetak')
                             ->icon('heroicon-o-printer')
                             ->color('success')
-                            ->action(function (Sale $record) {
-                                try {
-                                    (new ReceiptPrintService($record))->printReceipt();
-                                    Notification::make()
-                                        ->title('Print job sent to webhook')
-                                        ->success()
-                                        ->send();
-                                } catch (\Exception $e) {
-                                    Notification::make()
-                                        ->title('Webhook Print Failed')
-                                        ->body($e->getMessage())
-                                        ->warning()
-                                        ->send();
-                                }
-
-                                return self::printReceiptDirect($record);
-                            }),
+                            ->action(fn(Sale $record) => (new ReceiptPrintService($record))->printReceipt()),
                         Action::make('close')
                             ->label('Tutup')
                             ->color('gray')
-                            ->close(), // Gunakan close() bukan cancel()
-                    ])
-                    ->modalWidth('sm'),
+                            ->close(),
+                    ]),
 
-                // Action untuk print langsung
-                Action::make('printReceipt')
-                    ->label('Print Struk')
-                    ->icon('heroicon-o-printer')
-                    ->color('success')
-                    ->action(function (Sale $record) {
-                        try {
-                            (new ReceiptPrintService($record))->printReceipt();
-                            Notification::make()
-                                ->title('Print job sent to webhook')
-                                ->success()
-                                ->send();
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->title('Webhook Print Failed')
-                                ->body($e->getMessage())
-                                ->warning()
-                                ->send();
-                        }
+                // Group Secondary Actions
+                \Filament\Actions\ActionGroup::make([
+                    // Print Struk Direct
+                    Action::make('printReceipt')
+                        ->label('Print Struk')
+                        ->icon('heroicon-o-printer')
+                        ->action(fn(Sale $record) => (new ReceiptPrintService($record))->printReceipt()),
 
-                        return self::printReceiptDirect($record);
-                    })
-                    ->requiresConfirmation(),
+                    // Cetak Ulang Order
+                    Action::make('reprintOrder')
+                        ->label('Cetak Ulang Order')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->action(function (Sale $record) {
+                            // ... existing logic ...
+                            try {
+                                $service = new \App\Services\OrderPrintService();
+                                $service->printOrderByProductType($record);
+                                Notification::make()->title('Order dikirim ulang')->success()->send();
+                            } catch (\Exception $e) {
+                                Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                            }
+                        }),
 
-                // Action untuk cetak ulang order (Kitchen/Bar)
-                Action::make('reprintOrder')
-                    ->label('Cetak Ulang Order')
-                    ->icon('heroicon-o-arrow-path')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->modalHeading('Cetak Ulang Order ke Dapur/Bar')
-                    ->modalDescription('Apakah Anda yakin ingin mencetak ulang pesanan ini? Print job akan dikirim kembali ke printer Dapur dan Bar.')
-                    ->action(function (Sale $record) {
-                        try {
-                            $service = new \App\Services\OrderPrintService();
-                            $service->printOrderByProductType($record);
+                    // Assign Member
+                    Action::make('assignMember')
+                        ->label('Klaim Poin Member')
+                        ->icon('heroicon-o-user-plus')
+                        ->visible(fn(Sale $record) => $record->status === 'completed' && !$record->member_id)
+                        ->form([
+                            \Filament\Forms\Components\Select::make('member_id')
+                                ->label('Pilih Member')
+                                ->relationship('member', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->required(),
+                        ])
+                        ->action(function (Sale $record, array $data) {
+                            // ... existing logic ...
+                            try {
+                                $member = \App\Models\Member::find($data['member_id']);
+                                $points = floor($record->amount_paid / 1000);
+                                $record->update(['member_id' => $member->id, 'points_earned' => $points]);
+                                $member->addPoints($points);
+                                $member->recordVisit($record->amount_paid);
+                                Notification::make()->title('Poin Diklaim')->success()->send();
+                            } catch (\Exception $e) {
+                                Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                            }
+                        }),
 
-                            Notification::make()
-                                ->title('Print job ulang berhasil dikirim')
-                                ->success()
-                                ->send();
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->title('Gagal mencetak ulang')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-                        }
-                    }),
-
-                // Safe Delete Action (Void/Cancel)
-                \Filament\Actions\DeleteAction::make()
-                    ->label('Void / Hapus')
-                    ->modalHeading('Void Transaksi & Restore Stok')
-                    ->modalDescription('Apakah Anda yakin ingin menghapus transaksi ini? Stok produk akan dikembalikan (Restore Inventory) dan tercatat di Log Stok.')
-                    ->action(function (Sale $record) {
-                        try {
-                            // Use OrderService to handle safe deletion and stock restoration
-                            $orderService = new \App\Services\OrderService();
-                            $orderService->deleteSale($record->id);
-
-                            Notification::make()
-                                ->title('Transaksi berhasil di-void')
-                                ->body('Stok produk telah dikembalikan.')
-                                ->success()
-                                ->send();
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->title('Gagal melakukan void')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-                        }
-                    })
+                    // Void / Delete
+                    \Filament\Actions\DeleteAction::make()
+                        ->label('Void Transaksi')
+                        ->modalHeading('Void Transaksi & Restore Stok')
+                        ->action(function (Sale $record) {
+                            // ... existing logic ...
+                            try {
+                                $orderService = new \App\Services\OrderService();
+                                $orderService->deleteSale($record->id);
+                                Notification::make()->title('Transaksi Void Berhasil')->success()->send();
+                            } catch (\Exception $e) {
+                                Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                            }
+                        }),
+                ])
+                    ->label('Terkait')
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->color('gray')
+                    ->tooltip('Menu Aksi'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
