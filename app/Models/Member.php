@@ -17,10 +17,12 @@ class Member extends Model
         'total_visits',
         'last_visit_at',
         'tier_id',
+        'last_contacted_at',
     ];
 
     protected $casts = [
         'last_visit_at' => 'datetime',
+        'last_contacted_at' => 'datetime',
         'total_spend' => 'decimal:2',
     ];
 

@@ -34,6 +34,11 @@ class MemberResource extends Resource
 
     protected static ?string $modelLabel = 'Member';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return app(\App\Settings\GeneralSettings::class)->enable_crm;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return MemberForm::configure($schema);

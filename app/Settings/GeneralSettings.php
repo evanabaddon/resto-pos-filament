@@ -25,6 +25,9 @@ class GeneralSettings extends Settings
     public bool $enable_kds;
     public ?string $kds_license_key;
 
+    public bool $enable_crm;
+    public ?string $crm_license_key;
+
     public string $printer_width;
     public bool $enable_table_number;
 
@@ -41,6 +44,14 @@ class GeneralSettings extends Settings
     public string $loyalty_program_name;
     public int $loyalty_point_exchange_rate; // e.g. 10000 = 1 point
     public int $loyalty_point_value; // e.g. 1 point = 1 IDR
+
+    // WhatsApp SOP Templates
+    public string $wa_template_phase_1;
+    public string $wa_template_phase_2;
+    public string $wa_template_phase_3;
+    public string $wa_template_faq_benefit;
+    public string $wa_template_faq_redemption;
+    public string $wa_template_faq_use_points;
 
     public static function group(): string
     {
@@ -60,6 +71,8 @@ class GeneralSettings extends Settings
             'hrm_license_key' => null,
             'enable_kds' => false,
             'kds_license_key' => null,
+            'enable_crm' => false,
+            'crm_license_key' => null,
             'printer_width' => '58mm',
             'enable_table_number' => false,
             // Fiscal Defaults
@@ -74,6 +87,13 @@ class GeneralSettings extends Settings
             'loyalty_program_name' => 'Sedulur Suralaya',
             'loyalty_point_exchange_rate' => 10000,
             'loyalty_point_value' => 1,
+            // WA Default Templates
+            'wa_template_phase_1' => "Selamat sore, Bapak/Ibu {name}.\nMatur nuwun sampun rawuh di Kahyangan Suralaya.\nSemoga suasana dan hidangannya berkenan.\n\nKami informasikan, kunjungan Bapak/Ibu sudah tercatat sebagai Sedulur Suralaya, dengan total {points} poin di sistem kami.\n\nJika di lain waktu berkenan datang kembali, Suralaya selalu terbuka menyambut.",
+            'wa_template_phase_2' => "Selamat sore, Bapak/Ibu {name}.\nTotal poin Anda saat ini: {points} poin.\n\nSebagai Sedulur Suralaya, setiap kunjungan akan tercatat sebagai poin.\nPoin tersebut dapat digunakan untuk menikmati hidangan atau wedhang tertentu di kunjungan berikutnya.\n\nDi Suralaya, yang utama bukan seberapa besar belanja, tapi seberapa sering sampun rawuh.",
+            'wa_template_phase_3' => "Selamat sore, Bapak/Ibu {name}.\nKami informasikan, status Sedulur panjenengan kini menjadi Sedulur Tinetes.\n\nPoin yang telah terkumpul dapat digunakan langsung di kasir atau ditukar dengan menu tertentu sesuai ketentuan.\nMatur nuwun sampun rawuh ajeg wonten Suralaya.",
+            'wa_template_faq_benefit' => "Poin Sedulur kami siapkan sebagai bentuk apresiasi untuk tamu yang berkenan datang kembali.\nPoin tersebut nantinya bisa digunakan untuk menikmati hidangan atau wedhang tertentu di kunjungan berikutnya.\n\nDi Suralaya, yang utama bukan seberapa besar belanja, tetapi seberapa sering sampun rawuh.",
+            'wa_template_faq_redemption' => "Untuk penukaran, kami sesuaikan dengan jumlah poin dan frekuensi kunjungan Sedulur.\nJadi semakin sering rawuh, manfaatnya akan semakin terasa.",
+            'wa_template_faq_use_points' => "Untuk saat ini, poinnya masih kami simpan terlebih dahulu, dan akan bisa digunakan setelah ada kunjungan berikutnya.\nKami ingin manfaatnya benar-benar terasa untuk Sedulur yang rawuh ajeg.\nMatur nuwun atas pengertiannya.",
         ];
     }
 }

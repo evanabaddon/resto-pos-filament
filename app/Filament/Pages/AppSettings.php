@@ -116,8 +116,97 @@ class AppSettings extends SettingsPage
                                     ])
                             ]),
 
+                        // TAB: FISCAL
+                        Tab::make('Fiscal / Pajak')
+                            ->visible(fn() => app(GeneralSettings::class)->enable_fiscal_planning)
+                            ->icon('heroicon-o-calculator')
+                            ->schema([
+
+                                Section::make('Excel Template Configuration')
+                                    ->description('Konfigurasi template laporan pajak (Excel).')
+                                    ->schema([
+                                        FileUpload::make('template_path')
+                                            ->label('File Template (Excel)')
+                                            ->disk('public')
+                                            ->directory('fiscal-templates')
+                                            ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']),
+
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('start_row')
+                                                    ->label('Baris Mulai Data')
+                                                    ->numeric()
+                                                    ->default(2)
+                                                    ->required(),
+                                                TextInput::make('date_column')
+                                                    ->label('Kolom Tanggal')
+                                                    ->default('A')
+                                                    ->required(),
+                                                TextInput::make('amount_column')
+                                                    ->label('Kolom Omzet (Total)')
+                                                    ->default('B')
+                                                    ->required(),
+                                                TextInput::make('tax_column')
+                                                    ->label('Kolom Pajak')
+                                                    ->default('C')
+                                                    ->required(),
+                                            ])
+                                    ])
+                            ]),
+
+                        // TAB: KEMITRAAN (Loyalty)
+                        Tab::make('Kemitraan')
+                            ->visible(fn() => app(GeneralSettings::class)->enable_crm)
+                            ->icon('heroicon-o-user-group')
+                            ->schema([
+                                Section::make('Konfigurasi Dasar')
+                                    ->description('Pengaturan nama program dan nilai tukar poin.')
+                                    ->schema([
+                                        TextInput::make('loyalty_program_name')
+                                            ->label('Nama Program')
+                                            ->default('Sedulur Suralaya')
+                                            ->required(),
+
+                                        TextInput::make('loyalty_point_exchange_rate')
+                                            ->label('Nilai Belanja per 1 Poin')
+                                            ->numeric()
+                                            ->prefix('Rp')
+                                            ->default(10000)
+                                            ->helperText('Contoh: Tiap belanja Rp 10.000 dapat 1 Poin.'),
+                                    ]),
+
+                                Section::make('WhatsApp SOP Templates')
+                                    ->description('Atur pesan otomatis untuk sapaan WhatsApp.')
+                                    ->schema([
+                                        Textarea::make('wa_template_phase_1')
+                                            ->label('Fase 1: Kunjungan Pertama')
+                                            ->rows(4)
+                                            ->helperText('Variabel: {name}, {points}'),
+                                        Textarea::make('wa_template_phase_2')
+                                            ->label('Fase 2: Mulai Repeat (Visit >= 2)')
+                                            ->rows(4),
+                                        Textarea::make('wa_template_phase_3')
+                                            ->label('Fase 3: Naik Tier (Sedulur Tinetes)')
+                                            ->rows(4)
+                                            ->helperText('Variabel: {name}'),
+
+                                        Section::make('Cheat Sheet FAQ')
+                                            ->schema([
+                                                Textarea::make('wa_template_faq_benefit')
+                                                    ->label('FAQ: Benefit Poin')
+                                                    ->rows(3),
+                                                Textarea::make('wa_template_faq_redemption')
+                                                    ->label('FAQ: Penukaran Hadiah')
+                                                    ->rows(3),
+                                                Textarea::make('wa_template_faq_use_points')
+                                                    ->label('FAQ: Bisa Dipakai Sekarang?')
+                                                    ->rows(3),
+                                            ]),
+                                    ]),
+                            ]),
+
                         // TAB: MODULES
-                        Tab::make('Modules')
+                        Tab::make('Modules (PRO)')
                             ->icon('heroicon-o-sparkles')
                             ->schema([
                                 Section::make('HRM (Human Resource Management)')
@@ -186,15 +275,10 @@ class AppSettings extends SettingsPage
                                                 ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
                                                 : 'Aktifkan modul KDS.'
                                             ),
-                                    ])
-                            ]),
+                                    ]),
 
-                        // TAB: FISCAL
-                        Tab::make('Fiscal / Pajak')
-                            ->icon('heroicon-o-calculator')
-                            ->schema([
-                                Section::make('Module Activation')
-                                    ->description('Aktifkan modul tambahan untuk fitur perencanaan fiskal & randomizer.')
+                                Section::make('Fiscal (Tax & Planning)')
+                                    ->description('Manage Fiscal Planning and Tax Reports.')
                                     ->schema([
                                         TextInput::make('fiscal_license_key')
                                             ->label('License Key')
@@ -225,60 +309,40 @@ class AppSettings extends SettingsPage
                                             ),
                                     ]),
 
-                                Section::make('Excel Template Configuration')
-                                    ->description('Konfigurasi template laporan pajak (Excel).')
+                                Section::make('CRM (Loyalty & Member)')
+                                    ->description('Manage Customer Loyalty, Points, and Tiers.')
                                     ->schema([
-                                        FileUpload::make('template_path')
-                                            ->label('File Template (Excel)')
-                                            ->disk('public')
-                                            ->directory('fiscal-templates')
-                                            ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']),
+                                        TextInput::make('crm_license_key')
+                                            ->label('License Key')
+                                            ->password()
+                                            ->revealable()
+                                            ->helperText('Masukkan lisensi, format: CRM-PRO-XXXX')
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(function ($state, Set $set) {
+                                                if ($state && str_starts_with($state, 'CRM-PRO-')) {
+                                                    // Valid
+                                                } else {
+                                                    $set('enable_crm', false);
+                                                }
+                                            }),
 
-                                        Grid::make(2)
-                                            ->schema([
-                                                TextInput::make('start_row')
-                                                    ->label('Baris Mulai Data')
-                                                    ->numeric()
-                                                    ->default(2)
-                                                    ->required(),
-                                                TextInput::make('date_column')
-                                                    ->label('Kolom Tanggal')
-                                                    ->default('A')
-                                                    ->required(),
-                                                TextInput::make('amount_column')
-                                                    ->label('Kolom Omzet (Total)')
-                                                    ->default('B')
-                                                    ->required(),
-                                                TextInput::make('tax_column')
-                                                    ->label('Kolom Pajak')
-                                                    ->default('C')
-                                                    ->required(),
-                                            ])
-                                    ])
+                                        Toggle::make('enable_crm')
+                                            ->label('Enable CRM Module')
+                                            ->inline(false)
+                                            ->disabled(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('crm_license_key') ?? '', 'CRM-PRO-')
+                                            )
+                                            ->helperText(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('crm_license_key') ?? '', 'CRM-PRO-')
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul Kemitraan.'
+                                            ),
+                                    ]),
+
                             ]),
-
-                        // TAB: KEMITRAAN (Loyalty)
-                        Tab::make('Kemitraan')
-                            ->icon('heroicon-o-user-group')
-                            ->schema([
-                                Section::make('Konfigurasi Dasar')
-                                    ->description('Pengaturan nama program dan nilai tukar poin.')
-                                    ->schema([
-                                        TextInput::make('loyalty_program_name')
-                                            ->label('Nama Program')
-                                            ->default('Sedulur Suralaya')
-                                            ->required(),
-
-                                        TextInput::make('loyalty_point_exchange_rate')
-                                            ->label('Nilai Belanja per 1 Poin')
-                                            ->numeric()
-                                            ->prefix('Rp')
-                                            ->default(10000)
-                                            ->helperText('Contoh: Tiap belanja Rp 10.000 dapat 1 Poin.'),
-                                    ])
-                            ]),
-                    ])
-
+                    ]),
             ]);
     }
 }

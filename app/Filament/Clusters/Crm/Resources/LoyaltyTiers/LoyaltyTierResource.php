@@ -24,6 +24,10 @@ class LoyaltyTierResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-star';
 
     protected static ?string $modelLabel = 'Level';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return app(\App\Settings\GeneralSettings::class)->enable_crm;
+    }
 
     public static function form(Schema $schema): Schema
     {

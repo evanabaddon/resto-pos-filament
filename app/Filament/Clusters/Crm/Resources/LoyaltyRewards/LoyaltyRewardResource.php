@@ -24,6 +24,10 @@ class LoyaltyRewardResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-gift';
 
     protected static ?string $modelLabel = 'Katalog Hadiah';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return app(\App\Settings\GeneralSettings::class)->enable_crm;
+    }
 
     public static function form(Schema $schema): Schema
     {
