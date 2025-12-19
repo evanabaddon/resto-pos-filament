@@ -505,8 +505,11 @@ class OrderService
 
             // 🔹 2. Calculate Points for Member (Earned)
             if ($sale->member_id) {
-                // Default: 1 point per 1000 IDR
-                $pointsEarned = floor($amountPaid / 1000);
+                // Get Settings
+                $settings = app(\App\Settings\GeneralSettings::class);
+                $exchangeRate = $settings->loyalty_point_exchange_rate ?? 10000;
+
+                $pointsEarned = floor($amountPaid / $exchangeRate);
 
                 $updateData['points_earned'] = $pointsEarned;
 

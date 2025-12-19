@@ -103,8 +103,11 @@ class SalesTable
                         ->action(function (Sale $record, array $data) {
                             // ... existing logic ...
                             try {
+                                // 1. Hitung Poin (Dynamic based on Settings)
+                                $settings = app(\App\Settings\GeneralSettings::class);
+                                $exchangeRate = $settings->loyalty_point_exchange_rate ?? 10000;
+                                $points = floor($record->amount_paid / $exchangeRate);
                                 $member = \App\Models\Member::find($data['member_id']);
-                                $points = floor($record->amount_paid / 1000);
                                 $record->update(['member_id' => $member->id, 'points_earned' => $points]);
                                 $member->addPoints($points);
                                 $member->recordVisit($record->amount_paid);
