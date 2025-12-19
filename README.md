@@ -64,13 +64,13 @@ Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
 - **Toggleable Modules**: Aktifkan/Matikan modul CRM, HRM, KDS, atau Fiskal sesuai kebutuhan.
 - **Centralized Settings**: Panel pengaturan terpusat untuk semua konfigurasi modul.
 
-### 🧠 AI-Powered Intelligence (Powered by DeepSeek) 🚀 [ROADMAP]
+### 🧠 AI-Powered Intelligence (Powered by DeepSeek) 🚀
 Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih.
-- **🤖 AI Business Assistant ("Tanya Bos")**: Konsultasi performa bisnis via chat bahasa natural (Analisis Profit, Menu Lambat, Prediksi Omset).
-- **💌 Hyper-Personalized CRM**: Otomasi pesan WhatsApp yang dibuat unik untuk setiap pelanggan berdasarkan riwayat belanja mereka.
-- **📈 Smart Inventory Forecasting**: Prediksi stok bahan baku mingguan untuk meminimalisir *waste* menggunakan pola belanja historis.
-- **🍳 AI Menu Engineering**: Saran optimasi harga dan deskripsi menu yang menggugah selera untuk meningkatkan penjualan.
-- **👥 Employee Performance Analytics**: Feedback objektif untuk manajemen tim berdasarkan data kehadiran dan efisiensi kerja.
+- **🤖 AI Business Assistant ("Tanya Bos") [READY]**: Konsultasi performa bisnis via chat bahasa natural. Dilengkapi konteks data realtime (Sales, Top Menu, Stock) untuk analisis profitabilitas dan strategi bisnis.
+- **💌 Hyper-Personalized CRM [NEXT]**: Otomasi pesan WhatsApp yang dibuat unik untuk setiap pelanggan berdasarkan riwayat belanja mereka.
+- **📈 Smart Inventory Forecasting [ROADMAP]**: Prediksi stok bahan baku mingguan untuk meminimalisir *waste* menggunakan pola belanja historis.
+- **🍳 AI Menu Engineering [ROADMAP]**: Saran optimasi harga dan deskripsi menu yang menggugah selera untuk meningkatkan penjualan.
+- **👥 Employee Performance Analytics [ROADMAP]**: Feedback objektif untuk manajemen tim berdasarkan data kehadiran dan efisiensi kerja.
 
 ### 📊 Financial Intelligence
 - **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.
