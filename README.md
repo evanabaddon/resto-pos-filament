@@ -66,11 +66,11 @@ Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
 
 ### 🧠 AI-Powered Intelligence (Powered by DeepSeek) 🚀
 Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih.
-- **🤖 AI Business Assistant ("Tanya Bos") [READY]**: Konsultasi performa bisnis via chat bahasa natural. Dilengkapi konteks data realtime (Sales, Top Menu, Stock) untuk analisis profitabilitas dan strategi bisnis.
+- **🤖 AI Daily Suggestion [READY]**: Widget pintar di dashboard yang memberikan saran strategi bisnis dan peringatan stok kritis secara otomatis setiap hari.
+- **💬 AI Business Assistant ("Tanya Bos") [READY]**: Konsultasi performa bisnis via chat bahasa natural dengan **Conversation Memory** (AI ingat sejarah percakapan). Dilengkapi konteks data realtime (Sales, Top Menu, Stock).
 - **💌 Hyper-Personalized CRM [NEXT]**: Otomasi pesan WhatsApp yang dibuat unik untuk setiap pelanggan berdasarkan riwayat belanja mereka.
 - **📈 Smart Inventory Forecasting [ROADMAP]**: Prediksi stok bahan baku mingguan untuk meminimalisir *waste* menggunakan pola belanja historis.
 - **🍳 AI Menu Engineering [ROADMAP]**: Saran optimasi harga dan deskripsi menu yang menggugah selera untuk meningkatkan penjualan.
-- **👥 Employee Performance Analytics [ROADMAP]**: Feedback objektif untuk manajemen tim berdasarkan data kehadiran dan efisiensi kerja.
 
 ### 📊 Financial Intelligence
 - **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.
