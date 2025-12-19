@@ -42,9 +42,17 @@ class Pos extends Page
     protected static ?string $navigationLabel = 'POS';
 
     protected $listeners = [
+        'refreshCart' => '$refresh',
+        'scanProduct' => 'scanProduct',
+        'update-cart-totals' => 'updateCartTotals',
+        'checkout-success' => 'handleCheckoutSuccess',
+        'refresh-page' => '$refresh',
+        'memberCreated' => 'selectMember', // Re-use selectMember logic
         'closeCashSessionFromLayout' => 'closeCashSession',
         'cashInConfirmed' => 'handleCashInConfirmed',
         'cashInCancelled' => 'handleCashInCancelled',
+        'cashOutConfirmed' => 'handleCashOutConfirmed',
+        'cashOutCancelled' => 'handleCashOutCancelled',
         'saleLoaded' => 'handleSaleLoaded',
         'paymentRequested' => 'handlePaymentRequested',
         'paymentProcessed' => 'handlePaymentProcessed',
@@ -543,6 +551,8 @@ class Pos extends Page
         $this->customerName = ''; // Optional reset
         $this->dispatch('show-notification', message: 'Member dihapus dari transaksi.', type: 'info');
     }
+
+
 
     public function getAvailableRewardsProperty()
     {

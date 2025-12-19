@@ -117,11 +117,11 @@ class PosPaymentModal extends Component
 
         // Validasi untuk cash payment
         if ($this->isCashPayment && $this->amount_paid < $this->finalTotal) {
-            Notification::make()
-                ->title('Pembayaran Gagal')
-                ->body('Jumlah bayar tidak boleh kurang dari total tagihan untuk pembayaran tunai.')
-                ->danger()
-                ->send();
+            $this->dispatch(
+                'show-notification',
+                message: 'Jumlah bayar tidak boleh kurang dari total tagihan untuk pembayaran tunai.',
+                type: 'error'
+            );
             return;
         }
 
@@ -137,11 +137,11 @@ class PosPaymentModal extends Component
         logger('Process Payment - Sale ID:', ['saleId' => $saleIdToPrint]);
 
         if (!$saleIdToPrint) {
-            Notification::make()
-                ->title('Error')
-                ->body('Sale ID tidak valid.')
-                ->danger()
-                ->send();
+            $this->dispatch(
+                'show-notification',
+                message: 'Sale ID tidak valid.',
+                type: 'error'
+            );
             return;
         }
 
@@ -205,31 +205,31 @@ class PosPaymentModal extends Component
             $fakePaymentMethod = new \stdClass();
             $fakePaymentMethod->name = $overrideMethod;
             $fakePaymentMethod->code = stripos($overrideMethod, 'cash') !== false ? 'cash' : 'other';
-            
+
             // We can't easily setRelation with stdClass on a real Eloquent model 
             // without it expecting a Model instance usually.
             // But we can try setting the attribute if the view checks that.
             // Actually, best is to try to load the real payment method if we have ID.
-            
+
             if ($this->payment_method) {
                 // If we have the ID, fetch real model
                 $pm = PaymentMethod::find($this->payment_method);
                 if ($pm) {
                     $previewSale->setRelation('paymentMethod', $pm);
                 } else {
-                     // Fallback
-                     $previewSale->setRelation('paymentMethod', new PaymentMethod(['name' => $overrideMethod, 'code' => 'other']));
+                    // Fallback
+                    $previewSale->setRelation('paymentMethod', new PaymentMethod(['name' => $overrideMethod, 'code' => 'other']));
                 }
             } else {
-                 // Fallback if no ID (shouldn't happen in processPayment)
-                 // Or if just name passed.
-                 $previewSale->setRelation('paymentMethod', new PaymentMethod(['name' => $overrideMethod, 'code' => 'other']));
+                // Fallback if no ID (shouldn't happen in processPayment)
+                // Or if just name passed.
+                $previewSale->setRelation('paymentMethod', new PaymentMethod(['name' => $overrideMethod, 'code' => 'other']));
             }
         }
 
         // 4. Render using Standard Blade View
         $settings = app(\App\Settings\GeneralSettings::class);
-        
+
         $this->receiptContent = view('filament.components.receipt-preview-content', [
             'sale' => $previewSale,
             'settings' => $settings
@@ -249,11 +249,11 @@ class PosPaymentModal extends Component
         ]);
 
         if (!$saleIdToPrint) {
-            Notification::make()
-                ->title('Error')
-                ->body('Tidak ada transaksi yang dipilih untuk dicetak.')
-                ->danger()
-                ->send();
+            $this->dispatch(
+                'show-notification',
+                message: 'Tidak ada transaksi yang dipilih untuk dicetak.',
+                type: 'error'
+            );
             return;
         }
 
@@ -269,11 +269,11 @@ class PosPaymentModal extends Component
         logger('Print completed received in PosPaymentModal');
         $this->isPrinting = false;
 
-        Notification::make()
-            ->title('Print Selesai')
-            ->body('Struk berhasil dicetak.')
-            ->success()
-            ->send();
+        $this->dispatch(
+            'show-notification',
+            message: 'Struk berhasil dicetak.',
+            type: 'success'
+        );
     }
 
     // Handler ketika print gagal

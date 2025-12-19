@@ -32,7 +32,7 @@ class CashSummaryModal extends Component
     public function openModal()
     {
         $sessionId = session('cash_session_id');
-        
+
         if (!$sessionId) {
             $this->dispatch('showNotification', [
                 'message' => 'Tidak ada sesi kas yang aktif',
@@ -43,10 +43,10 @@ class CashSummaryModal extends Component
 
         // Load session dengan semua data terkait
         $this->session = CashSession::with([
-            'sales' => function($query) {
+            'sales' => function ($query) {
                 $query->where('status', 'completed');
             },
-            'cashExpenses' => function($query) {
+            'cashExpenses' => function ($query) {
                 $query->where('status', 'approved');
             }
         ])->find($sessionId);
@@ -78,25 +78,25 @@ class CashSummaryModal extends Component
         // Hitung penjualan berdasarkan payment method
         $paymentMethodSales = [];
         $totalSales = 0;
-        
+
         foreach ($sales as $sale) {
             $paymentMethodCode = $sale->paymentMethod->code ?? 'unknown';
             $amount = $sale->final_total;
-            
+
             if (!isset($paymentMethodSales[$paymentMethodCode])) {
                 $paymentMethodSales[$paymentMethodCode] = 0;
             }
-            
+
             $paymentMethodSales[$paymentMethodCode] += $amount;
             $totalSales += $amount;
         }
 
         // Hitung total pengeluaran dari kasir
         $totalCashExpenses = $expenses->sum('amount');
-        
+
         // Cash sales khusus untuk perhitungan expected cash
         $cashSales = $paymentMethodSales['cash'] ?? 0;
-        
+
         // Expected cash = kas awal + penjualan cash - pengeluaran cash
         $expectedCash = $this->session->cash_in_hand + $cashSales - $totalCashExpenses;
 
@@ -141,20 +141,22 @@ class CashSummaryModal extends Component
 
             // Hitung ulang selisih
             $cashDifference = $this->manualCashOut - $this->summary['expected_cash'];
-            
+
             $this->summary['cash_out'] = $this->manualCashOut;
             $this->summary['cash_difference'] = $cashDifference;
             $this->cashDifference = $cashDifference;
             $this->actualCashOut = $this->manualCashOut;
 
             // ✅ PERBAIKAN: Kirim string, bukan array
-            $this->dispatch('showNotification', 
+            $this->dispatch(
+                'showNotification',
                 'Kas akhir berhasil diperbarui'
             );
 
         } catch (\Exception $e) {
             // ✅ PERBAIKAN: Kirim string, bukan array
-            $this->dispatch('showNotification', 
+            $this->dispatch(
+                'showNotification',
                 'Gagal memperbarui kas akhir: ' . $e->getMessage()
             );
         }
@@ -164,7 +166,8 @@ class CashSummaryModal extends Component
     {
         // Validasi: cash_out harus diisi
         if ($this->actualCashOut === null || $this->actualCashOut === '') {
-            $this->dispatch('showNotification',
+            $this->dispatch(
+                'showNotification',
                 'Harap masukkan jumlah kas akhir terlebih dahulu'
             );
             return;
@@ -185,27 +188,29 @@ class CashSummaryModal extends Component
             // Clear session
             session()->forget('cash_session_id');
 
-            $this->dispatch('showNotification',
+            $this->dispatch(
+                'showNotification',
                 'Sesi kas berhasil ditutup'
             );
 
             // Tutup modal dan refresh halaman
             $this->closeModal();
-            
+
             // Dispatch event untuk refresh dashboard
             $this->dispatch('cashSessionClosed');
-            
+
             // Redirect atau refresh
             redirect()->route('filament.admin.pages.dashboard');
 
-            Notification::make()
-                ->title('Berhasil')
-                ->body('Kas akhir berhasil diperbarui')
-                ->success()
-                ->send();
+            $this->dispatch(
+                'show-notification',
+                message: 'Laporan Shift berhasil dicetak',
+                type: 'success'
+            );
 
         } catch (\Exception $e) {
-            $this->dispatch('showNotification',
+            $this->dispatch(
+                'showNotification',
                 'Gagal menutup sesi: ' . $e->getMessage()
             );
         }
@@ -219,7 +224,7 @@ class CashSummaryModal extends Component
 
     public function getPaymentMethodColorClass($color): string
     {
-        return match($color) {
+        return match ($color) {
             'green' => '#10B981',
             'purple' => '#8B5CF6',
             'orange' => '#F97316',
