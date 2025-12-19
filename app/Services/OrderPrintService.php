@@ -123,8 +123,15 @@ class OrderPrintService
             $generalItems = [];
 
             foreach ($sale->items as $item) {
+                $productName = $item->product_name ?? $item->product->name ?? 'Unknown Item';
+
+                // 🔥 SKIP DP items for order prints
+                if ($productName === 'Down Payment (DP)') {
+                    Log::info("⏭️ Skipping DP item for order print: {$productName}");
+                    continue;
+                }
+
                 $productType = $item->product->type ?? 'general';
-                $productName = $item->product->name ?? 'Unknown Script';
 
                 Log::info("🔍 Classifying item: {$productName}", [
                     'type' => $productType,
@@ -174,7 +181,6 @@ class OrderPrintService
 
             Log::info("✅ Order printing completed for sale #{$sale->invoice_number}", $printResults);
             return $printResults;
-
         } catch (\Exception $e) {
             Log::error("❌ Order printing failed: " . $e->getMessage());
             throw $e;
@@ -218,7 +224,6 @@ class OrderPrintService
                 'printer' => $printerName,
                 'division' => $division
             ];
-
         } catch (\Exception $e) {
             Log::error("❌ {$division} direct print failed: " . $e->getMessage());
             return [
@@ -276,7 +281,7 @@ class OrderPrintService
                     'table' => $sale->table_number ?? '-',
                     'items' => array_map(function ($item) {
                         return [
-                            'product_name' => $item->product->name ?? 'Unknown',
+                            'product_name' => $item->product_name ?? $item->product->name ?? 'Unknown',
                             'quantity' => $item->quantity + 0,
                             'notes' => $item->notes ?? '',
                         ];
@@ -356,7 +361,6 @@ class OrderPrintService
             } else {
                 throw new \Exception("HTTP {$response->status()}: " . substr($response->body(), 0, 200));
             }
-
         } catch (\Exception $e) {
             Log::error("❌ Webhook print failed: " . $e->getMessage());
 
@@ -445,7 +449,6 @@ class OrderPrintService
                     'body' => substr($response->body(), 0, 200)
                 ];
             }
-
         } catch (\Exception $e) {
             return [
                 'success' => false,
@@ -479,7 +482,6 @@ class OrderPrintService
 
             Log::info("✅ Raw content printed successfully");
             return true;
-
         } catch (\Exception $e) {
             Log::error("❌ Raw content print failed: " . $e->getMessage());
             throw $e;
@@ -539,6 +541,12 @@ class OrderPrintService
                 if (!$product)
                     continue;
 
+                // 🔥 SKIP DP items for order prints
+                if ($product->name === 'Down Payment (DP)') {
+                    Log::info("⏭️ Skipping DP item for new order print: {$product->name}");
+                    continue;
+                }
+
                 $item = (object) [
                     'product' => $product,
                     'quantity' => $itemData['quantity'],
@@ -588,7 +596,6 @@ class OrderPrintService
 
             Log::info("✅ New items printing completed", $printResults);
             return $printResults;
-
         } catch (\Exception $e) {
             Log::error("❌ New items printing failed: " . $e->getMessage());
             throw $e;
@@ -617,7 +624,7 @@ class OrderPrintService
                     'is_update' => true, // Flag for specific styling if needed
                     'items' => array_map(function ($item) {
                         return [
-                            'product_name' => $item->product->name ?? 'Unknown',
+                            'product_name' => $item->product_name ?? $item->product->name ?? 'Unknown',
                             'quantity' => $item->quantity + 0,
                             'notes' => $item->notes ?? '',
                         ];
@@ -687,7 +694,7 @@ class OrderPrintService
             foreach ($sale->items as $item) {
                 if (!empty($item->notes)) {
                     $itemsWithNotes[] = [
-                        'product' => $item->product->name ?? 'Unknown',
+                        'product' => $item->product_name ?? $item->product->name ?? 'Unknown',
                         'notes' => $item->notes,
                         'quantity' => $item->quantity
                     ];
@@ -701,7 +708,6 @@ class OrderPrintService
                 'items_with_notes' => $itemsWithNotes,
                 'items_with_notes_count' => count($itemsWithNotes)
             ];
-
         } catch (\Exception $e) {
             return [
                 'error' => $e->getMessage()
@@ -760,7 +766,7 @@ class OrderPrintService
         $content .= $emptyLine;
 
         foreach ($items as $item) {
-            $productName = $item->product->name ?? 'Unknown';
+            $productName = $item->product_name ?? $item->product->name ?? 'Unknown';
             $qty = "x" . ($item->quantity + 0);
 
             // Layout: "Name (max 26) .... xQty"
@@ -989,7 +995,6 @@ class OrderPrintService
                 'success' => true,
                 'message' => 'Test order printing successful'
             ];
-
         } catch (\Exception $e) {
             return [
                 'success' => false,

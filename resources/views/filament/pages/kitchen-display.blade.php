@@ -74,7 +74,7 @@
                             <div class="flex-1 pr-2">
                                 <div class="flex items-baseline gap-2">
                                     <span class="font-black text-xl">{{ (float)$item->quantity }}x</span>
-                                    <span class="font-bold text-base leading-tight">{{ $item->product->name }}</span>
+                                    <span class="font-bold text-base leading-tight">{{ $item->product_name ?? $item->product->name ?? '(Tanpa Nama)' }}</span>
                                 </div>
                                 @if($item->notes)
                                 <div class="mt-1 flex items-start gap-1 text-red-500 text-xs font-semibold bg-red-50 dark:bg-red-900/20 p-1.5 rounded-lg inline-block">

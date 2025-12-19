@@ -28,48 +28,40 @@ Bukan sekadar mencatat data pelanggan, tapi membangun hubungan jangka panjang.
   - **Instant Balance Preview**: Kasir bisa melihat langsung nilai rupiah dari poin yang ditukar.
 - **Dynamic Loyalty Tiers**: Level member yang naik/turun otomatis berdasarkan frekuensi kunjungan atau total belanja.
 
-### 📅 Intelligent Reservation (WA Confirmation) 🆕
-Sistem reservasi yang terintegrasi langsung dengan komunikasi pelanggan.
-- **One-Click WhatsApp Confirmation**: Kirim konfirmasi reservasi formal via WhatsApp langsung dari kalender. format template dinamis.
-- **Pre-Order to Sales**: Fitur input pesanan (menu) saat reservasi. Saat tamu datang, pesanan **langsung dikonversi menjadi transaksi Sales** di POS tanpa input ulang.
-- **Encoding Safety**: Menggunakan *Direct API Link* untuk memastikan Emoji (📅 ⏰ 😊) terkirim sempurna tanpa error encoding.
-- **Status Automation**: Status reservasi otomatis berubah menjadi "Confirmed" saat pesan WA dikirim.
+### 📅 Intelligent Reservation & DP System 🆕
+Sistem reservasi yang terintegrasi langsung dengan komunikasi pelanggan dan manajemen keuangan.
+- **One-Click WhatsApp Confirmation**: Kirim konfirmasi reservasi formal via WhatsApp langsung dari kalender. Format template dinamis dengan dukungan Emoji sempurna (📅 ⏰ 😊).
+- **💰 Robust Down Payment (DP) System**:
+  - **Pay DP Anywhere**: Kelola pembayaran uang muka melalui Tabel Reservasi maupun Kalender.
+  - **Automated DP Ledger**: Setiap pembayaran DP otomatis membuat transaksi di POS dengan prefix `DP-` untuk pelacakan finansial yang akurat.
+  - **Self-Cleaning Catalog**: Produk "Down Payment (DP)" dikelola sebagai *System Item*—otomatis tersembunyi dari master data dan katalog POS agar tidak mengganggu operasional harian.
+- **🔄 Smart Pre-Order to Sales**:
+  - **Conversion Logic**: Konversi reservasi menjadi transaksi aktif di POS dalam satu klik.
+  - **Automatic DP Deduction**: Sistem otomatis mendeteksi uang muka dan menambahkannya sebagai item pengurang (minus) di transaksi kasir.
+  - **Double-Transaction Protection**: Tombol konversi otomatis hilang setelah digunakan (ketika status berubah menjadi `Seated`), mencegah duplikasi data penjualan.
+- **Snapshot Integrity**: Nama produk disnapshot saat konversi untuk memastikan data historis tetap akurat meskipun produk asli dihapus atau diubah.
 
-### ‍🍳 Intelligent Kitchen Display System (KDS)
-Orkestrasi dapur digital tanpa kertas.
-- **Zero-Latency Realtime Sync**: Pesanan muncul di dapur **detik itu juga** saat kasir klik simpan.
+### ‍🍳 Intelligent Kitchen Display System (KDS) & Printing
+Orkestrasi dapur digital tanpa kertas dengan sistem penyaringan cerdas.
+- **Zero-Latency Realtime Sync**: Pesanan muncul di dapur detik itu juga saat kasir klik simpan.
 - **Smart Task Batching**: Menggabungkan item yang sama untuk efisiensi masak.
 - **Department Routing**: Memisahkan otomatis pesanan Bar (Minuman) dan Dapur (Makanan).
+- **🚫 System Item Filtering**: Item finansial seperti "Down Payment (DP)" secara cerdas difilter agar tidak muncul di KDS maupun struk pesanan dapur/bar, menjaga fokus area produksi pada menu yang harus disiapkan.
 - **Status Workflow**: *Pending* ➝ *Cooking* ➝ *Ready* ➝ *Served*.
 
 ### 👥 Modern HRM (Payroll & Attendance)
 Full-suite manajemen sumber daya manusia yang terintegrasi penuh dengan keuangan.
 - **Smart Attendance System**:
-  - **Face Recognition Ready**: Validasi kehadiran menggunakan biometrik wajah untuk mencegah "titip absen".
+  - **Face Recognition Ready**: Validasi kehadiran menggunakan biometrik wajah.
   - **GPS Geofencing**: Memastikan karyawan clock-in/out hanya di area outlet.
-  - **Late Penalty Logic**: Pemotongan otomatis untuk keterlambatan berdasarkan durasi (menit).
+  - **Late Penalty Logic**: Pemotongan otomatis untuk keterlambatan.
 - **Automated Payroll Engine**:
-  - **Dynamic & Flexible Formula**: Rumus penggajian sepenuhnya **bisa dikustomisasi** sesuai kebijakan restoran (bisa menambah komponen baru tanpa coding).
-    > *Contoh default*: `(Gaji Pokok + Tunjangan Jabatan + Overtime) - (Denda Terlambat + Cicilan Kasbon + PPh 21)`
-  - **Payslip Generation**: Cetak slip gaji digital otomatis setiap akhir periode.
-  - **Take Home Pay Tuning**: Penyesuaian manual (Adjustment) untuk bonus atau denda dadakan.
-- **Employee Loan Management**:
-  - **Installment Tracking**: Manajemen pinjaman karyawan dengan skema cicilan tenor (Bulan).
-  - **Auto-Deduction**: Cicilan otomatis memotong gaji bulanan (Payroll Integration) sehingga tidak perlu penagihan manual.
-- **Shift & Rostering**: Pengaturan jadwal shift fleksibel dengan dukungan tukar shift.
+  - **Dynamic & Flexible Formula**: Rumus penggajian yang bisa dikustomisasi sepenuhnya (Gaji Pokok, Tunjangan, Overtime, Denda).
+  - **Employee Loan System**: Manajemen pinjaman dengan fitur **Auto-Deduction** pada slip gaji bulanan.
 
-### 📱 Self-Service Kiosk & PWA 🆕
-- **Progressive Web App (PWA)**: Dapat diinstall di tablet Android/iPad sebagai aplikasi native.
-- **Attendance Kiosk Mode**: Mode khusus tablet dinding untuk absensi karyawan yang cepat dan akurat.
-
-### 🧩 Modular Architecture (On-Demand Features)
-Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
-- **Toggleable Modules**: Aktifkan/Matikan modul CRM, HRM, KDS, atau Fiskal sesuai lisensi atau kebutuhan outlet.
-- **Centralized Settings**: Panel pengaturan terpusat untuk semua konfigurasi modul.
-
-### 📊 Financial Intelligence
-- **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.
-- **Fiscal Planning (Tax Control)**: Fitur "Target Omzet" untuk membantu perencanaan pelaporan pajak yang fleksibel.
+### 🧩 Modular Architecture & SEO Ready
+- **Toggleable Modules**: Aktifkan/Matikan modul CRM, HRM, KDS, atau Fiskal sesuai kebutuhan.
+- **SEO Optimization**: Struktur HTML semantik, Meta Tags dinamis, dan performa super cepat untuk visibilitas maksimal.
 
 ---
 
@@ -77,13 +69,13 @@ Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
 
 Dibangun di atas pondasi teknologi paling modern dan stabil di tahun 2025.
 
-- **Framework**: [Laravel 11](https://laravel.com) (PHP 8.2+)
-- **Admin & UI**: [FilamentPHP v4](https://filamentphp.com) (Bleeding Edge)
-- **Engine**: [Livewire 3](https://livewire.laravel.com) (Reactive UI)
-- **Styling**: [TailwindCSS v4](https://tailwindcss.com) (Zero-runtime CSS)
+- **Framework**: [Laravel 11](https://laravel.com)
+- **Admin & UI**: [FilamentPHP v4](https://filamentphp.com)
+- **Engine**: [Livewire 3](https://livewire.laravel.com)
+- **Styling**: [TailwindCSS v4](https://tailwindcss.com) & Vanilla CSS
 - **Database**: MySQL 8 / MariaDB
 - **State Management**: Alpine.js v3
-- **Local Agent**: Electron (Untuk Bridge Hardware)
+- **Local Agent**: Electron (Hardware Bridge)
 
 ---
 
@@ -92,20 +84,18 @@ Dibangun di atas pondasi teknologi paling modern dan stabil di tahun 2025.
 ### 1. POS Operation
 1.  Buka menu **POS**.
 2.  Pilih produk ➝ Masuk ke Keranjang.
-3.  **Member**: Cari member atau klik **Tanda Tambah (+)** untuk buat member baru kilat.
-4.  **Bayar**: Pilih metode bayar (Tunai/QRIS/Card). Struk otomatis tercetak.
+3.  **Member**: Cari member atau klik **(+)** untuk buat member baru kilat.
+4.  **Bayar**: Pilih metode bayar. Struk otomatis tercetak.
 
 ### 2. CRM Follow-up
 1.  Buka menu **Kemitraan (Member)**.
-2.  Lihat kolom **"Terakhir Followup"**.
-3.  Klik **Action WhatsApp**: Pilih template (Sapaan Rutin, FAQ Benefit, dll).
-4.  Kirim pesan personal dalam satu klik.
+2.  Gunakan Tombol WhatsApp untuk kirim template sapaan personal.
 
-### 3. Reservasi & Confirmation
-1.  Buka Kalender Reservasi.
-2.  Klik reservasi untuk melihat detail.
-3.  Tekan tombol **"Confirm via WA"** (Icon Centang Hijau).
-4.  Sistem otomatis update status & membuka WhatsApp dengan template yang sudah diset.
+### 3. Reservasi & DP
+1.  **Input**: Catat reservasi & menu pre-order tamu.
+2.  **Bayar DP**: Klik **"Bayar DP"** untuk mencatat uang muka.
+3.  **Konfirmasi**: Tekan tombol **"Confirm via WA"** untuk kirim link konfirmasi otomatis.
+4.  **Tamu Datang**: Klik **"Proses ke Kasir"**. Transaksi akan muncul di POS dengan potongan DP otomatis.
 
 ---
 

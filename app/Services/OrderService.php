@@ -85,6 +85,7 @@ class OrderService
                         SaleItem::create([
                             'sale_id' => $sale->id,
                             'product_id' => $productId,
+                            'product_name' => $item['name'] ?? Product::find($productId)?->name ?? '(Unknown)',
                             'quantity' => $diff,
                             'unit_price' => $item['price'],
                             'subtotal' => $item['price'] * $diff,
@@ -140,6 +141,7 @@ class OrderService
                     SaleItem::create([
                         'sale_id' => $sale->id,
                         'product_id' => $item['product_id'],
+                        'product_name' => $item['name'] ?? (isset($item['product_id']) ? Product::find($item['product_id'])?->name : null) ?? '(Unknown)',
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['price'],
                         'subtotal' => $item['subtotal'],
@@ -234,6 +236,7 @@ class OrderService
                     } else {
                         $mergedItems[$key] = [
                             'product_id' => $item->product_id,
+                            'product_name' => $item->product_name ?? $item->product?->name ?? '(Unknown)',
                             'quantity' => $item->quantity,
                             'unit_price' => $item->unit_price,
                             'subtotal' => $item->subtotal,
@@ -254,6 +257,7 @@ class OrderService
                 } else {
                     $mergedItems[$key] = [
                         'product_id' => $item->product_id,
+                        'product_name' => $item->product_name ?? $item->product?->name ?? '(Unknown)',
                         'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price,
                         'subtotal' => $item->subtotal,
@@ -270,6 +274,7 @@ class OrderService
                 SaleItem::create([
                     'sale_id' => $targetSale->id,
                     'product_id' => $mergedItem['product_id'],
+                    'product_name' => $mergedItem['product_name'],
                     'quantity' => $mergedItem['quantity'],
                     'unit_price' => $mergedItem['unit_price'],
                     'subtotal' => $mergedItem['subtotal'],
@@ -336,6 +341,7 @@ class OrderService
                     SaleItem::create([
                         'sale_id' => $newSale->id,
                         'product_id' => $itemData['product_id'],
+                        'product_name' => $itemData['name'] ?? (isset($itemData['product_id']) ? Product::find($itemData['product_id'])?->name : null) ?? '(Unknown)',
                         'quantity' => $itemData['quantity'],
                         'unit_price' => $itemData['price'],
                         'subtotal' => $itemData['subtotal'],

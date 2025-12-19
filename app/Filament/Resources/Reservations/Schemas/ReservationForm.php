@@ -21,23 +21,23 @@ class ReservationForm
                             ->label('Nama Pelanggan')
                             ->required()
                             ->maxLength(255),
-                            
+
                         TextInput::make('customer_phone')
                             ->label('Nomor Telepon')
                             ->tel()
                             ->maxLength(20),
-                            
+
                         TextInput::make('party_size')
                             ->label('Jumlah Orang')
                             ->numeric()
                             ->required()
                             ->minValue(1),
-                            
+
                         Textarea::make('special_requests')
                             ->label('Permintaan Khusus')
                             ->rows(3),
                     ])->columnSpanFull(),
-                    
+
                 Section::make('Detail Reservasi')
                     ->schema([
                         DateTimePicker::make('reservation_date')
@@ -47,7 +47,14 @@ class ReservationForm
                             ->minutesStep(15)
                             ->displayFormat('d/m/Y H:i')
                             ->weekStartsOnMonday(),
-                            
+
+                        TextInput::make('deposit_amount')
+                            ->label('Down Payment (DP)')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->default(0)
+                            ->helperText('Disarankan mengisi nilai ini melalui tombol "Bayar DP" agar tercatat di laporan keuangan.'),
+
                         Select::make('status')
                             ->label('Status')
                             ->options([

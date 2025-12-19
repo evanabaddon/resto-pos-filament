@@ -268,7 +268,7 @@ class PosLoadModal extends Component
                     $this->splitAssignments[$i]['total'] += $assignedTotal;
 
                     $this->splitAssignments[$i]['items'][] = [
-                        'name' => $item->product->name,
+                        'name' => $item->product_name ?? $item->product->name ?? 'Unknown',
                         'product_id' => $item->product_id,
                         'quantity' => $assignedQty,
                         'price' => $itemPrice,
@@ -347,7 +347,7 @@ class PosLoadModal extends Component
 
             if (abs($totalAssignedFloat - $itemQuantity) > 0.001) {
                 $allItemsAssigned = false;
-                $validationErrors[] = "Item {$item->product->name}: {$totalAssigned}/{$item->quantity} ter-assign";
+                $validationErrors[] = "Item " . ($item->product_name ?? $item->product->name ?? 'Unknown') . ": {$totalAssigned}/{$item->quantity} ter-assign";
             }
         }
 
@@ -388,7 +388,6 @@ class PosLoadModal extends Component
 
             // Refresh modal
             $this->openLoadModal();
-
         } catch (\Exception $e) {
             logger('Split Bill Error: ' . $e->getMessage());
             $this->dispatch(

@@ -364,6 +364,7 @@ class Pos extends Page
     public function getProductsProperty()
     {
         $query = Product::where('is_sellable', true)
+            ->where('name', '!=', 'Down Payment (DP)') // Hide system item from POS grid
             ->with(['recipes.ingredient.unit', 'recipes.unit', 'unit']) // Eager load unit
             ->where(function ($q) {
                 $q->where('stock', '>', 0)
@@ -854,7 +855,7 @@ class Pos extends Page
 
             return [
                 'product_id' => $first->product_id,
-                'name' => $product?->name ?? '(Produk dihapus)',
+                'name' => $product?->name ?? $first->product_name ?? '(Produk dihapus)',
                 'quantity' => $qty,
                 'price' => $price,
                 'subtotal' => $price * $qty,

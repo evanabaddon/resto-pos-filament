@@ -130,6 +130,84 @@ class ReservationCalendarWidget extends CalendarWidget
                     $reservationId = $this->extractReservationId($arguments);
                     $this->updateReservationStatus('completed', $reservationId);
                 }),
+            Action::make('pay_deposit')
+                ->label('Bayar DP')
+                ->icon('heroicon-o-credit-card')
+                ->color('info')
+                ->visible(function (array $arguments) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $record = \App\Models\Reservation::find($reservationId);
+                    return $record && in_array($record->status, ['pending', 'confirmed']);
+                })
+                ->schema([
+                    Select::make('payment_method_id')
+                        ->label('Metode Pembayaran')
+                        ->options(\App\Models\PaymentMethod::pluck('name', 'id'))
+                        ->required(),
+                    TextInput::make('amount')
+                        ->label('Jumlah DP')
+                        ->numeric()
+                        ->required()
+                        ->prefix('Rp'),
+                    Textarea::make('notes')
+                        ->label('Catatan'),
+                ])
+                ->action(function (array $arguments, array $data) {
+                    $reservationId = $this->extractReservationId($arguments);
+                    $record = Reservation::find($reservationId);
+                    if (!$record) return;
+
+                    $activeSession = \App\Models\CashSession::where('user_id', auth()->id())
+                        ->where('status', 'open')
+                        ->first();
+
+                    if (!$activeSession) {
+                        Notification::make()->title('Gagal')->body('Sesi kasir belum dibuka.')->danger()->send();
+                        return;
+                    }
+
+                    $depositProduct = \App\Models\Product::firstOrCreate(
+                        ['name' => 'Down Payment (DP)'],
+                        [
+                            'type' => 'service',
+                            'unit_id' => \App\Models\Unit::where('name', 'Pcs')->first()?->id ?? \App\Models\Unit::first()?->id,
+                            'is_sellable' => true,
+                            'sell_price' => 0,
+                        ]
+                    );
+
+                    $sale = \App\Models\Sale::create([
+                        'reservation_id' => $record->id,
+                        'order_type' => 'Dine In',
+                        'customer_name' => $record->customer_name,
+                        'payment_method_id' => $data['payment_method_id'],
+                        'user_id' => auth()->id(),
+                        'subtotal' => $data['amount'],
+                        'tax' => 0,
+                        'discount' => 0,
+                        'total' => $data['amount'],
+                        'final_total' => $data['amount'],
+                        'cash_session_id' => $activeSession->id,
+                        'status' => 'completed',
+                        'is_paid' => true,
+                        'paid_at' => now(),
+                        'invoice_number' => 'DP-' . date('Ymd') . '-' . strtoupper(uniqid()),
+                        'note' => 'DP: ' . $record->customer_name . ' (Res #' . $record->id . ') - ' . ($data['notes'] ?? ''),
+                    ]);
+
+                    \App\Models\SaleItem::create([
+                        'sale_id' => $sale->id,
+                        'product_id' => $depositProduct->id,
+                        'product_name' => 'Down Payment (DP)', // Snapshot name
+                        'quantity' => 1,
+                        'unit_price' => $data['amount'],
+                        'subtotal' => $data['amount'],
+                    ]);
+
+                    $record->increment('deposit_amount', $data['amount']);
+                    Notification::make()->title('Deposit Berhasil')->success()->send();
+                    $this->refreshRecords();
+                }),
             Action::make('change_status_cancelled')
                 ->label('Ubah ke Dibatalkan')
                 ->icon('heroicon-o-x-circle')
@@ -222,46 +300,7 @@ class ReservationCalendarWidget extends CalendarWidget
 
     public function defaultSchema(Schema $schema): Schema
     {
-        return $schema->components([
-            Section::make('Informasi Customer')
-                ->schema([
-                    TextInput::make('customer_name')
-                        ->label('Nama Customer')
-                        ->disabled(),
-                    TextInput::make('customer_phone')
-                        ->label('Telepon')
-                        ->disabled(),
-                ])->columns(2),
-
-            Section::make('Detail Reservasi')
-                ->schema([
-                    DateTimePicker::make('reservation_date')
-                        ->label('Tanggal & Waktu Reservasi')
-                        ->disabled(),
-                    TextInput::make('party_size')
-                        ->label('Jumlah Orang')
-                        ->numeric()
-                        ->disabled(),
-                    Select::make('status')
-                        ->label('Status')
-                        ->options([
-                            'pending' => 'Pending',
-                            'confirmed' => 'Confirmed',
-                            'seated' => 'Seated',
-                            'completed' => 'Completed',
-                            'cancelled' => 'Cancelled',
-                        ])
-                        ->disabled(),
-                ])->columns(3),
-
-            Section::make('Tambahan')
-                ->schema([
-                    Textarea::make('special_requests')
-                        ->label('Permintaan Khusus')
-                        ->disabled()
-                        ->rows(3),
-                ]),
-        ]);
+        return \App\Filament\Resources\Reservations\Schemas\ReservationForm::configure($schema);
     }
 
     /**
@@ -358,8 +397,8 @@ class ReservationCalendarWidget extends CalendarWidget
                                         $template = $settings->wa_template_reservation_confirmation;
 
                                         $date = $record->reservation_date->translatedFormat('d F Y');
-                                        $time = $record->reservation_date->format('H:i'); // Use reservation_date, checked logic
-                            
+                                        $time = $record->reservation_date->format('H:i');
+
                                         $message = str_replace(
                                             ['{customer_name}', '{app_name}', '{date}', '{time}', '{guests}'],
                                             [$record->customer_name, $settings->app_name, $date, $time, $record->party_size],
@@ -368,10 +407,8 @@ class ReservationCalendarWidget extends CalendarWidget
 
                                         // Build URL
                                         $phone = preg_replace('/[^0-9]/', '', $record->customer_phone);
-                                        if (substr($phone, 0, 1) == '0')
-                                            $phone = '62' . substr($phone, 1);
+                                        if (substr($phone, 0, 1) == '0') $phone = '62' . substr($phone, 1);
 
-                                        // Use api.whatsapp.com directly to avoid encoding issues with wa.me redirects
                                         $url = "https://api.whatsapp.com/send?phone={$phone}&text=" . rawurlencode($message);
 
                                         Notification::make()
@@ -379,13 +416,7 @@ class ReservationCalendarWidget extends CalendarWidget
                                             ->success()
                                             ->send();
 
-                                        // Refresh Calendar
                                         $this->refreshRecords();
-
-                                        // Redirect via Action return if inside a modal handling context
-                                        // For suffixAction inside a ViewAction, we might need to rely on the user clicking the link? 
-                                        // But action() handles server side.
-                                        // To open URL, we return a redirect action or use $this->redirect().
                                         redirect()->away($url);
                                     }),
                             ]),
@@ -450,40 +481,118 @@ class ReservationCalendarWidget extends CalendarWidget
                     ]),
             ])
             ->extraModalFooterActions([
+                Action::make('pay_deposit')
+                    ->label('Bayar DP')
+                    ->icon('heroicon-o-credit-card')
+                    ->color('info')
+                    ->visible(fn($record) => in_array($record?->status, ['pending', 'confirmed']))
+                    ->schema([
+                        Select::make('payment_method_id')
+                            ->label('Metode Pembayaran')
+                            ->options(\App\Models\PaymentMethod::pluck('name', 'id'))
+                            ->required(),
+                        TextInput::make('amount')
+                            ->label('Jumlah DP')
+                            ->numeric()
+                            ->required()
+                            ->prefix('Rp'),
+                        Textarea::make('notes')
+                            ->label('Catatan'),
+                    ])
+                    ->action(function (array $data, \App\Models\Reservation $record) {
+                        $activeSession = \App\Models\CashSession::where('user_id', auth()->id())
+                            ->where('status', 'open')
+                            ->first();
+
+                        if (!$activeSession) {
+                            Notification::make()->title('Gagal')->body('Sesi kasir belum dibuka.')->danger()->send();
+                            return;
+                        }
+
+                        $depositProduct = \App\Models\Product::firstOrCreate(
+                            ['name' => 'Down Payment (DP)'],
+                            [
+                                'type' => 'service',
+                                'unit_id' => \App\Models\Unit::where('name', 'Pcs')->first()?->id ?? \App\Models\Unit::first()?->id,
+                                'is_sellable' => true,
+                                'sell_price' => 0,
+                            ]
+                        );
+
+                        $sale = \App\Models\Sale::create([
+                            'reservation_id' => $record->id,
+                            'order_type' => 'Dine In',
+                            'customer_name' => $record->customer_name,
+                            'payment_method_id' => $data['payment_method_id'],
+                            'user_id' => auth()->id(),
+                            'subtotal' => $data['amount'],
+                            'tax' => 0,
+                            'discount' => 0,
+                            'total' => $data['amount'],
+                            'final_total' => $data['amount'],
+                            'cash_session_id' => $activeSession->id,
+                            'status' => 'completed',
+                            'is_paid' => true,
+                            'paid_at' => now(),
+                            'invoice_number' => 'DP-' . date('Ymd') . '-' . strtoupper(uniqid()),
+                            'note' => 'DP: ' . $record->customer_name . ' (Res #' . $record->id . ') - ' . ($data['notes'] ?? ''),
+                        ]);
+
+                        \App\Models\SaleItem::create([
+                            'sale_id' => $sale->id,
+                            'product_id' => $depositProduct->id,
+                            'product_name' => 'Down Payment (DP)', // Snapshot name
+                            'quantity' => 1,
+                            'unit_price' => $data['amount'],
+                            'subtotal' => $data['amount'],
+                        ]);
+
+                        $record->increment('deposit_amount', $data['amount']);
+                        Notification::make()->title('Deposit Berhasil')->success()->send();
+                        $this->refreshRecords();
+                    }),
                 Action::make('convert_to_sale')
-                    ->label('Convert to Sale (POS)')
+                    ->label('Proses ke Kasir')
                     ->icon('heroicon-o-shopping-cart')
-                    ->color('warning')
+                    ->color('success')
+                    ->visible(fn($record) => in_array($record?->status, ['pending', 'confirmed']))
                     ->requiresConfirmation()
                     ->modalHeading('Konversi ke Transaksi POS')
-                    ->modalDescription('Reservasi ini akan dikonversi menjadi transaksi aktif. Stok akan dipotong saat pembayaran.')
+                    ->modalDescription('Reservasi ini akan dikonversi menjadi transaksi aktif.')
                     ->action(function (Reservation $record) {
                         // 0. Check Active Session
                         $activeSession = \App\Models\CashSession::where('user_id', auth()->id())
-                            ->whereNull('closed_at')
-                            ->latest()
+                            ->where('status', 'open')
                             ->first();
+
+                        if (!$activeSession) {
+                            Notification::make()->title('Gagal')->body('Sesi kasir belum dibuka.')->danger()->send();
+                            return;
+                        }
 
                         // 1. Create Sale Header
                         $sale = \App\Models\Sale::create([
                             'reservation_id' => $record->id,
                             'user_id' => auth()->id(),
-                            'cash_session_id' => $activeSession?->id, // Link to active session
+                            'cash_session_id' => $activeSession->id,
                             'invoice_number' => 'RSVP-' . date('Ymd') . '-' . strtoupper(uniqid()),
                             'customer_name' => $record->customer_name,
-                            'status' => 'draft', // Pending = Draft/Open Order in this system
-                            'total_amount' => 0,
-                            'payment_method_id' => null,
+                            'status' => 'draft',
+                            'subtotal' => 0,
+                            'tax' => 0,
+                            'discount' => 0,
+                            'final_total' => 0,
+                            'total' => 0,
+                            'order_type' => 'Dine In',
                         ]);
 
                         // 2. Copy Items (Snapshot Name)
-                        $total = 0;
+                        $itemsSubtotal = 0;
                         foreach ($record->items as $item) {
                             $product = $item->product;
-                            if (!$product)
-                                continue;
+                            if (!$product) continue;
 
-                            $price = $product->price;
+                            $price = $item->unit_price;
                             $subtotal = $price * $item->quantity;
 
                             $sale->items()->create([
@@ -492,13 +601,13 @@ class ReservationCalendarWidget extends CalendarWidget
                                 'quantity' => $item->quantity,
                                 'unit_price' => $price,
                                 'subtotal' => $subtotal,
-                                'note' => $item->note,
+                                'notes' => $item->note,
                             ]);
 
-                            $total += $subtotal;
+                            $itemsSubtotal += $subtotal;
                         }
 
-                        // 3. Handle Deposit Deduction (Named Item)
+                        // 3. Handle Deposit Deduction
                         if ($record->deposit_amount > 0) {
                             $sale->items()->create([
                                 'product_id' => null, // Custom Item
@@ -506,22 +615,28 @@ class ReservationCalendarWidget extends CalendarWidget
                                 'quantity' => 1,
                                 'unit_price' => -$record->deposit_amount,
                                 'subtotal' => -$record->deposit_amount,
-                                'note' => 'Potongan DP Reservasi',
+                                'notes' => 'Potongan DP Reservasi',
                             ]);
-                            $total -= $record->deposit_amount;
+                            $itemsSubtotal -= $record->deposit_amount;
                         }
 
                         // 4. Update Sale Total
-                        $sale->update(['total_amount' => $total]);
+                        $sale->update([
+                            'subtotal' => $itemsSubtotal,
+                            'total' => $itemsSubtotal,
+                            'final_total' => $itemsSubtotal,
+                        ]);
 
                         // 5. Update Reservation Status
                         $record->update(['status' => 'seated']);
 
                         Notification::make()
                             ->title('Transaksi Berhasil Dibuat')
-                            ->body("Sale #{$sale->invoice_number} telah dibuat. Total: " . number_format($total))
+                            ->body("Sale #{$sale->invoice_number} telah dibuat.")
                             ->success()
                             ->send();
+
+                        return redirect()->to('/admin/sales/' . $sale->id . '/edit');
                     }),
             ]);
     }

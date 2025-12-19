@@ -21,7 +21,7 @@ use App\Models\Product;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Placeholder;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 
 class ReservationsTable
@@ -45,22 +45,22 @@ class ReservationsTable
                     ->label('Nama')
                     ->searchable()
                     ->sortable(),
-                    
+
                 TextColumn::make('customer_phone')
                     ->label('Telepon')
                     ->searchable(),
-                    
+
                 TextColumn::make('party_size')
                     ->label('Jumlah')
                     ->sortable()
                     ->badge()
-                    ->color(fn ($state) => $state > 10 ? 'warning' : 'success'),
-                    
+                    ->color(fn($state) => $state > 10 ? 'warning' : 'success'),
+
                 TextColumn::make('reservation_date')
                     ->label('Tanggal')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
-                    
+
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -88,7 +88,7 @@ class ReservationsTable
                         'completed' => 'Completed',
                         'cancelled' => 'Cancelled',
                     ]),
-                    
+
                 Filter::make('reservation_date')
                     ->schema([
                         DatePicker::make('from')
@@ -98,8 +98,8 @@ class ReservationsTable
                     ])
                     ->query(function ($query, array $data) {
                         return $query
-                            ->when($data['from'], fn ($q) => $q->whereDate('reservation_date', '>=', $data['from']))
-                            ->when($data['until'], fn ($q) => $q->whereDate('reservation_date', '<=', $data['until']));
+                            ->when($data['from'], fn($q) => $q->whereDate('reservation_date', '>=', $data['from']))
+                            ->when($data['until'], fn($q) => $q->whereDate('reservation_date', '<=', $data['until']));
                     }),
             ])
             ->recordActions([
@@ -107,13 +107,14 @@ class ReservationsTable
                 DeleteAction::make(),
                 Action::make('payDeposit')
                     ->label('Bayar DP')
-                    ->icon('heroicon-o-banknotes')
-                    ->color('success')
-                    ->form(fn (Reservation $record) => [
-                        Placeholder::make('total_estimation')
+                    ->icon('heroicon-o-credit-card')
+                    ->color('info')
+                    ->visible(fn($record) => in_array($record->status, ['pending', 'confirmed']))
+                    ->schema(fn(Reservation $record) => [
+                        TextEntry::make('total_estimation')
                             ->label('Total Estimasi Pesanan')
-                            ->content('Rp ' . number_format($record->items->sum('total_price'), 0, ',', '.')),
-                            
+                            ->money('IDR'),
+
                         Select::make('payment_method_id')
                             ->label('Metode Pembayaran')
                             ->options(PaymentMethod::pluck('name', 'id'))
@@ -130,8 +131,8 @@ class ReservationsTable
                         // 1. Cari atau Buat Product khusus Deposit
                         // Cari unit default (misal "Pcs" atau apapun yg pertama)
                         // This logic assumes at least one unit exists. Ideally "Pcs".
-                        $defaultUnit = \App\Models\Unit::where('name', 'Pcs')->first() 
-                                       ?? \App\Models\Unit::first();
+                        $defaultUnit = \App\Models\Unit::where('name', 'Pcs')->first()
+                            ?? \App\Models\Unit::first();
 
                         $activeSession = \App\Models\CashSession::where('user_id', auth()->id())
                             ->where('status', 'open')
@@ -148,9 +149,9 @@ class ReservationsTable
                         }
 
                         $depositProduct = Product::firstOrCreate(
-                            ['name' => 'Deposit Reservasi'],
+                            ['name' => 'Down Payment (DP)'],
                             [
-                                'type' => 'retail',
+                                'type' => 'service',
                                 'unit_id' => $defaultUnit?->id, // Assign Unit ID
                                 'is_sellable' => true,
                                 'base_price' => 0,
@@ -161,31 +162,40 @@ class ReservationsTable
 
                         // Fallback check if unit_id is strictly required and we found none (though unlikely in prod)
                         if (!$depositProduct->unit_id && $defaultUnit) {
-                             $depositProduct->update(['unit_id' => $defaultUnit->id]);
+                            $depositProduct->update(['unit_id' => $defaultUnit->id]);
                         }
 
                         $sale = Sale::create([
                             'reservation_id' => $record->id,
-                            'order_type' => 'Dine In', // Default to Dine In for Reservations
+                            'order_type' => 'Dine In',
                             'customer_name' => $record->customer_name,
                             'payment_method_id' => $data['payment_method_id'],
-                            'user_id' => auth()->id(), // Assign current user
-                            'total' => $data['amount'],
+                            'user_id' => auth()->id(),
+                            'subtotal' => $data['amount'],
+                            'tax' => 0,
+                            'discount' => 0,
                             'final_total' => $data['amount'],
+                            'total' => $data['amount'],
                             'cash_session_id' => $activeSession->id,
                             'status' => 'completed',
-                            'invoice_number' => 'DP-' . time(),
-                            'note' => 'Deposit: ' . $record->customer_name . ' (Res #' . $record->id . ') - Rp ' . number_format($data['amount'], 0, ',', '.') . '. ' . ($data['notes'] ?? ''),
+                            'is_paid' => true,
+                            'paid_at' => now(),
+                            'invoice_number' => 'DP-' . date('Ymd') . '-' . strtoupper(uniqid()),
+                            'note' => 'DP: ' . $record->customer_name . ' (Res #' . $record->id . ') - ' . ($data['notes'] ?? ''),
                         ]);
 
                         SaleItem::create([
                             'sale_id' => $sale->id,
                             'product_id' => $depositProduct->id,
+                            'product_name' => 'Down Payment (DP)', // Snapshot name
                             'quantity' => 1,
                             'unit_price' => $data['amount'],
                             'subtotal' => $data['amount'],
-                            'notes' => 'Deposit: ' . $record->customer_name . ' (Res #' . $record->id . ') - Rp ' . number_format($data['amount'], 0, ',', '.') . '. ' . ($data['notes'] ?? ''),
+                            'notes' => 'DP: ' . $record->customer_name . ' (Res #' . $record->id . ')',
                         ]);
+
+                        // UPDATE Reservation deposit_amount
+                        $record->increment('deposit_amount', $data['amount']);
 
                         Notification::make()
                             ->title('Deposit Berhasil')
@@ -196,10 +206,11 @@ class ReservationsTable
                 Action::make('convertToSale')
                     ->label('Proses ke Kasir')
                     ->icon('heroicon-o-shopping-cart')
-                    ->color('primary')
+                    ->color('success')
+                    ->visible(fn($record) => in_array($record->status, ['pending', 'confirmed']))
                     ->requiresConfirmation()
                     // Remove form() as we automate everything
-                    ->form([]) 
+                    ->schema([])
                     ->action(function (Reservation $record, array $data) {
                         // 0. Cek Active Session
                         $activeSession = \App\Models\CashSession::where('user_id', auth()->id())
@@ -215,83 +226,92 @@ class ReservationsTable
                             return;
                         }
 
-                        // 1. Hitung Total Items
-                        $itemsTotal = $record->items->sum('total_price');
-                        
-                        // 2. Hitung Total Deposit (dari sales yg ada)
-                        $totalDeposit = $record->deposits()->sum('total');
-
-                        // 3. Create Sale
+                        // 1. Create Sale header
                         $sale = Sale::create([
                             'reservation_id' => $record->id,
                             'order_type' => 'Dine In',
                             'customer_name' => $record->customer_name,
-                            'user_id' => auth()->id(), // Assign current user
-                            'cash_session_id' => $activeSession->id, // Assign Active Session
-                            'status' => 'draft', // Draft sale, not paid yet
-                            'invoice_number' => 'INV-' . time(),
-                            'total' => 0, // Will update
+                            'user_id' => auth()->id(),
+                            'cash_session_id' => $activeSession->id,
+                            'status' => 'draft',
+                            'invoice_number' => 'RSVP-' . date('Ymd') . '-' . strtoupper(uniqid()),
+                            'subtotal' => 0,
+                            'tax' => 0,
+                            'discount' => 0,
+                            'final_total' => 0,
+                            'total' => 0,
                             'note' => 'Reservation #' . $record->id,
                         ]);
 
-                        // 4. Clone Items
+                        // 2. Clone Items (Snapshot Name)
+                        $itemsSubtotal = 0;
                         foreach ($record->items as $item) {
+                            $product = $item->product;
+                            if (!$product) continue;
+
+                            $price = $item->unit_price;
+                            $subtotal = $price * $item->quantity;
+
                             SaleItem::create([
                                 'sale_id' => $sale->id,
                                 'product_id' => $item->product_id,
+                                'product_name' => $product->name, // Snapshot name
                                 'quantity' => $item->quantity,
-                                'unit_price' => $item->unit_price,
-                                'subtotal' => $item->total_price,
+                                'unit_price' => $price,
+                                'subtotal' => $subtotal,
                                 'notes' => $item->note,
                             ]);
+
+                            $itemsSubtotal += $subtotal;
                         }
 
-                        // 5. Add Adjustment Item (Negative) IF Deposit exists
-                        if ($totalDeposit > 0) {
-                             // Cari Product Deposit Reservasi
-                             $depositProduct = Product::where('name', 'Deposit Reservasi')->first();
-                             
-                             // Safety check: if deleted, recreate or find first
-                             if (!$depositProduct) {
-                                 // Should exist if DP was made, but handle edge case
-                                 $depositProduct = Product::firstOrCreate(['name' => 'Deposit Reservasi']);
-                             }
-
-                             SaleItem::create([
+                        // 3. Handle Deposit Deduction (Named Item)
+                        if ($record->deposit_amount > 0) {
+                            SaleItem::create([
                                 'sale_id' => $sale->id,
-                                'product_id' => $depositProduct->id,
+                                'product_id' => null, // Custom Item
+                                'product_name' => 'Down Payment (DP)', // Explicit Name
                                 'quantity' => 1,
-                                'unit_price' => -$totalDeposit,
-                                'subtotal' => -$totalDeposit,
-                                'notes' => 'Potongan DP Reservation #' . $record->id,
+                                'unit_price' => -$record->deposit_amount,
+                                'subtotal' => -$record->deposit_amount,
+                                'notes' => 'Potongan DP Reservasi',
                             ]);
+                            $itemsSubtotal -= $record->deposit_amount;
                         }
 
-                        // 6. Recalculate Sale Total
-                        $finalTotal = $itemsTotal - $totalDeposit;
+                        // 4. Update Sale Total
                         $sale->update([
-                            'subtotal' => $finalTotal, // Since subtotal = sum of items (including negative adjustment)
-                            'final_total' => $finalTotal,
-                            'total' => $finalTotal
+                            'subtotal' => $itemsSubtotal,
+                            'final_total' => $itemsSubtotal,
+                            'total' => $itemsSubtotal,
                         ]);
 
-                        // 7. Redirect
+                        // 5. Update Reservation Status
+                        $record->update(['status' => 'seated']);
+
+                        Notification::make()
+                            ->title('Transaksi Berhasil Dibuat')
+                            ->body("Sale #{$sale->invoice_number} telah dibuat.")
+                            ->success()
+                            ->send();
+
+                        // 6. Redirect
                         return redirect()->to('/admin/sales/' . $sale->id . '/edit');
                     }),
 
                 Action::make('confirm')
-                     ->label('Konfirmasi')
+                    ->label('Konfirmasi')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (Reservation $record) => $record->status === 'pending')
-                    ->action(fn (Reservation $record) => $record->update(['status' => 'confirmed'])),
-                    
+                    ->visible(fn(Reservation $record) => $record->status === 'pending')
+                    ->action(fn(Reservation $record) => $record->update(['status' => 'confirmed'])),
+
                 Action::make('seat')
                     ->label('Dudukkan')
                     ->icon('heroicon-o-user-group')
                     ->color('info')
-                    ->visible(fn (Reservation $record) => $record->status === 'confirmed')
-                    ->action(fn (Reservation $record) => $record->update(['status' => 'seated'])),
+                    ->visible(fn(Reservation $record) => $record->status === 'confirmed')
+                    ->action(fn(Reservation $record) => $record->update(['status' => 'seated'])),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

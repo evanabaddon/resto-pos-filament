@@ -141,7 +141,7 @@ class KitchenDisplay extends Page
             ->get();
 
         if ($itemsInBatch->count() <= 2) {
-            $itemNames = $itemsInBatch->map(fn($i) => $i->product->name)->implode(', ');
+            $itemNames = $itemsInBatch->map(fn($i) => $i->product_name ?? $i->product->name ?? 'Unknown Item')->implode(', ');
             $bodyText = "{$itemNames} untuk {$customerInfo} ({$locationInfo}) telah siap.";
         } else {
             $bodyText = "Sebagian pesanan {$departmentName} untuk {$customerInfo} ({$locationInfo}) telah siap.";
@@ -163,7 +163,7 @@ class KitchenDisplay extends Page
             default => 'Dapur',
         };
 
-        $itemName = $item->product->name;
+        $itemName = $item->product_name ?? $item->product->name ?? 'Unknown Item';
         $customerInfo = $sale->customer_name ?? 'Pelanggan';
         $locationInfo = $sale->table_number ? "Meja #{$sale->table_number}" : $sale->order_type;
 
@@ -266,7 +266,7 @@ class KitchenDisplay extends Page
 
                     // Mention items in batch if small, otherwise summary
                     if ($itemsToMark->count() <= 2) {
-                        $itemNames = $itemsToMark->map(fn($i) => $i->product->name)->implode(', ');
+                        $itemNames = $itemsToMark->map(fn($i) => $i->product_name ?? $i->product->name ?? 'Unknown Item')->implode(', ');
                         $bodyText = "{$itemNames} untuk {$customerInfo} ({$locationInfo}) telah siap.";
                     } else {
                         $bodyText = "Sebagian pesanan {$departmentName} untuk {$customerInfo} ({$locationInfo}) telah siap.";

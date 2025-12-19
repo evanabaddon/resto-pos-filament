@@ -105,7 +105,7 @@ class ReceiptPrintService
                 'sale' => $sale->toArray(),
                 'items' => $sale->items->map(function ($item) {
                     $i = $item->toArray();
-                    $i['product_name'] = $item->product->name ?? 'Unknown';
+                    $i['product_name'] = $item->product_name ?? $item->product->name ?? 'Unknown';
                     $i['quantity'] = $item->quantity + 0;
                     return $i;
                 })->toArray(),
@@ -125,7 +125,6 @@ class ReceiptPrintService
             } else {
                 throw new \Exception($result['error'] ?? 'Webhook print failed');
             }
-
         } catch (\Exception $e) {
             Log::error('❌ Webhook receipt print failed: ' . $e->getMessage());
 
@@ -193,7 +192,6 @@ class ReceiptPrintService
             } else {
                 throw new \Exception("HTTP {$response->status()}: " . substr($response->body(), 0, 200));
             }
-
         } catch (\Exception $e) {
             Log::error("❌ Webhook print failed: " . $e->getMessage());
             return [
@@ -230,7 +228,6 @@ class ReceiptPrintService
                 // Test direct print
                 return $this->testPrinter();
             }
-
         } catch (\Exception $e) {
             return [
                 'success' => false,
@@ -305,7 +302,7 @@ class ReceiptPrintService
         $content .= "------------------------\n";
 
         foreach ($sale->items as $item) {
-            $productName = $item->product->name ?? 'Unknown Product';
+            $productName = $item->product_name ?? $item->product->name ?? 'Unknown Product';
 
             if (strlen($productName) > 20) {
                 $productName = substr($productName, 0, 17) . '...';
@@ -400,11 +397,9 @@ class ReceiptPrintService
 
             Log::info('✅ Receipt printed successfully');
             return true;
-
         } catch (\Exception $e) {
             Log::error('❌ Direct receipt print failed: ' . $e->getMessage());
             throw new \Exception("Gagal mencetak struk: " . $e->getMessage());
-
         } finally {
             $this->safeClose($printer);
         }
@@ -539,7 +534,7 @@ class ReceiptPrintService
         $printer->text("------------------------\n");
 
         foreach ($sale->items as $item) {
-            $productName = $item->product->name ?? 'Unknown Product';
+            $productName = $item->product_name ?? $item->product->name ?? 'Unknown Product';
 
             if (strlen($productName) > 20) {
                 $productName = substr($productName, 0, 17) . '...';
@@ -665,7 +660,6 @@ class ReceiptPrintService
 
             Log::info('Available printers: ' . implode(', ', $printers));
             return $printers;
-
         } catch (\Exception $e) {
             Log::error('Error getting printers: ' . $e->getMessage());
             return [];
@@ -716,7 +710,6 @@ class ReceiptPrintService
                 'success' => true,
                 'message' => 'Test print berhasil dikirim ke printer ' . $targetPrinter
             ];
-
         } catch (\Exception $e) {
             Log::error('❌ Printer test failed: ' . $e->getMessage());
             return [
@@ -758,7 +751,6 @@ class ReceiptPrintService
 
             Log::info("✅ Raw content printed successfully");
             return true;
-
         } catch (\Exception $e) {
             Log::error("❌ Raw content print failed: " . $e->getMessage());
             throw new \Exception("Gagal print order: " . $e->getMessage());
@@ -773,7 +765,4 @@ class ReceiptPrintService
             }
         }
     }
-
-
-
 }

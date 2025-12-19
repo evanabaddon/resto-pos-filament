@@ -73,7 +73,7 @@ class PosPaymentModal extends Component
         // Load sale items untuk struk
         $this->saleItems = $sale->items->map(function ($item) {
             return [
-                'name' => $item->product->name ?? 'Produk',
+                'name' => $item->product_name ?? $item->product->name ?? 'Produk',
                 'quantity' => $item->quantity,
                 'price' => $item->unit_price,
                 'subtotal' => $item->subtotal,
@@ -177,7 +177,7 @@ class PosPaymentModal extends Component
         // $this->printReceiptDirect();
     }
 
-    protected function generateReceiptPreview(Sale $sale = null, $overrideAmount = null, $overrideMethod = null)
+    protected function generateReceiptPreview(?Sale $sale = null, $overrideAmount = null, $overrideMethod = null)
     {
         // 1. Resolve Sale
         if (!$sale) {
@@ -305,7 +305,6 @@ class PosPaymentModal extends Component
                 ->body('Struk telah dikirim ke printer thermal.')
                 ->success()
                 ->send();
-
         } catch (\Exception $e) {
             logger('Print receipt failed: ' . $e->getMessage());
 
@@ -364,6 +363,4 @@ class PosPaymentModal extends Component
             'selectedPaymentMethod' => $this->selectedPaymentMethod,
         ]);
     }
-
-
 }
