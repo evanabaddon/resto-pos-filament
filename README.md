@@ -60,13 +60,21 @@ Modul lengkap untuk menajemen karyawan:
 - **Stock Movements**: Riwayat lengkap keluar masuk barang (Purchase, Sale, Adjustment, Production).
 - **Stock Adjustment**: Opname stok manual untuk penyesuaian selisih fisik.
 
-### � Dashboard & Analitik
+###  Dashboard & Analitik
 - **Realtime Dashboard**: Pantau omzet harian, tren penjualan, dan produk terlaris langsung dari halaman utama.
 - **Top Products**: Grafik menu paling laku (Makanan & Minuman).
 - **Peak Hours**: Heatmap untuk melihat jam-jam sibuk restoran.
 - **Revenue Overview**: Ringkasan pendapatan kotor per periode.
 
-### �💰 Laporan Pajak (Fiscal)
+### 💰 Laporan Keuangan (Profit & Loss) [BARU]
+Laporan Laba Rugi komprehensif untuk analisis kesehatan bisnis:
+- **Net Profit Otomatis**: Menghitung Omzet - HPP - Biaya Operasional = Laba Bersih.
+- **Analisis HPP Product**: Deteksi dini kesalahan input HPP dengan fitur "Top Cost Contributors".
+- **Margin Analysis**: Peringatan otomatis jika margin keuntungan terlalu rendah (<10%).
+- **Top Profit Chart**: Analisis produk penyumbang keuntungan terbesar.
+- **Filter Bulanan**: Filter cepat per Bulan & Tahun.
+
+### 💰 Laporan Pajak (Fiscal)
 Fitur manajemen pelaporan fiskal (Target Omzet) untuk keperluan perpajakan:
 - **Target Omzet Harian**: Pengaturan parameter omzet harian.
 - **Automated Sampling**: Seleksi data transaksi otomatis mendekati target.
