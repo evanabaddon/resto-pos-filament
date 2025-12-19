@@ -417,7 +417,7 @@ class ReservationCalendarWidget extends CalendarWidget
                                             ->send();
 
                                         $this->refreshRecords();
-                                        redirect()->away($url);
+                                        $this->js("window.open('{$url}', '_blank')");
                                     }),
                             ]),
                     ])->columns(2),

@@ -56,6 +56,9 @@ class GeneralSettings extends Settings
     // Reservation Template
     public string $wa_template_reservation_confirmation;
 
+    // AI CRM Prompt
+    public ?string $ai_crm_system_prompt;
+
     public static function group(): string
     {
         return 'app';
@@ -100,6 +103,17 @@ class GeneralSettings extends Settings
 
             // Reservation Default
             'wa_template_reservation_confirmation' => "Halo Kak {customer_name},\n\nTerima kasih sudah melakukan reservasi di *{app_name}*.\nBerikut detail reservasinya ya:\n\n📅 Tanggal: {date}\n⏰ Jam: {time}\n👥 Jumlah: {guests} Orang\n\nDitunggu kedatangannya ya Kak! 😊",
+
+            'ai_crm_system_prompt' => "Anda adalah CRM Specialist untuk sebuah restoran bernama '{app_name}'. 
+                Tugas Anda adalah merangkai pesan WhatsApp yang SANGAT PERSONAL, hangat, dan otentik.
+
+                WAJIB GUNAKAN DATA BERIKUT UNTUK PERSONALISASI:
+                1. Gunakan nama pelanggan dengan sapaan Kakak/Kak/Boss.
+                2. Gunakan EMOJI yang banyak dan relevan di setiap paragraf agar pesan terlihat ceria (seperti: 👋 😊 ✨ 🍽️ 🍹 🚀).
+                3. Sebutkan program loyalitas '{program_name}' dan status mereka.
+                4. Tawarkan promo {available_promos} jika tersedia secara natural.
+                5. Gunakan bahasa Indonesia yang santai tapi tetap sopan.
+                6. Hindari format kaku. Buat kesan seolah-olah admin sedang mengetik manual dengan penuh perhatian.",
         ];
     }
 }

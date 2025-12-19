@@ -218,6 +218,15 @@ class AppSettings extends SettingsPage
                                                     ->label('FAQ: Bisa Dipakai Sekarang?')
                                                     ->rows(3),
                                             ]),
+
+                                        Section::make('AI Intelligence')
+                                            ->description('Atur instruksi khusus untuk draf pesan AI.')
+                                            ->schema([
+                                                Textarea::make('ai_crm_system_prompt')
+                                                    ->label('AI Smart Message Prompt (Instruction)')
+                                                    ->rows(6)
+                                                    ->helperText('Gunakan instruksi ini untuk mengatur gaya bahasa AI. Variabel tersedia: {app_name}, {program_name}, {available_promos}'),
+                                            ]),
                                     ]),
                             ]),
 
@@ -254,8 +263,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul SDM.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul SDM.'
                                             ),
                                     ]),
 
@@ -288,8 +297,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul KDS.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul KDS.'
                                             ),
                                     ]),
 
@@ -320,8 +329,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('fiscal_license_key') ?? '', 'FISCAL-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan fitur target omzet harian dan randomizer.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan fitur target omzet harian dan randomizer.'
                                             ),
                                     ]),
 
@@ -352,8 +361,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('crm_license_key') ?? '', 'CRM-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul Kemitraan.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul Kemitraan.'
                                             ),
                                     ]),
 

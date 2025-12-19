@@ -21,6 +21,7 @@ Bukan sekadar mencatat data pelanggan, tapi membangun hubungan jangka panjang.
   - **Context-Aware SOP**: Sistem otomatis menyarankan pesan WhatsApp yang personal berdasarkan "Fase Pelanggan" (Baru / Repeat / High Value).
   - **Dynamic Templates**: Template pesan yang berubah otomatis sesuai data pelanggan (Nama, Saldo Poin, Tier).
   - **Click-to-Followup**: Tombol aksi cepat di daftar member untuk mengirim sapaan rutin atau FAQ.
+  - **🚀 Productivity Boost**: Semua perintah WhatsApp (SOP/FAQ/AI) otomatis terbuka di **Tab Baru**, menjaga konsistensi alur kerja admin tanpa menutup dashboard utama.
   - **Activity Tracking**: Melacak kapan terakhir kali member dihubungi (`last_contacted_at`), dengan fitur **Reset Status** jika batal kirim.
 - **💰 Smart Point System**:
   - **Dynamic Exchange Rate**: Nilai tukar poin bisa diatur bebas di pengaturan (misal: 1 Poin = Rp 10).
@@ -65,10 +66,15 @@ Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
 - **Centralized Settings**: Panel pengaturan terpusat untuk semua konfigurasi modul.
 
 ### 🧠 AI-Powered Intelligence (Powered by DeepSeek) 🚀
-Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih.
-- **🤖 AI Daily Suggestion [READY]**: Widget pintar di dashboard yang memberikan saran strategi bisnis dan peringatan stok kritis secara otomatis setiap hari.
-- **💬 AI Business Assistant ("Tanya Bos") [READY]**: Konsultasi performa bisnis via chat bahasa natural dengan **Conversation Memory** (AI ingat sejarah percakapan). Dilengkapi konteks data realtime (Sales, Top Menu, Stock).
-- **💌 Hyper-Personalized CRM [NEXT]**: Otomasi pesan WhatsApp yang dibuat unik untuk setiap pelanggan berdasarkan riwayat belanja mereka.
+Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih untuk keputusan bisnis yang lebih tajam.
+- **🤖 AI Daily Suggestion [READY]**: Widget pintar di dashboard yang memberikan saran strategi bisnis dan peringatan stok kritis secara otomatis setiap hari. Menganalisis data penjualan 30 hari terakhir dan status inventaris secara mendalam.
+- **💬 AI Business Assistant ("Tanya Bos") [READY]**: Konsultasi performa bisnis via chat bahasa natural dengan **Conversation Memory**.
+    - **Premium UI/UX**: Interface modern dengan efek *Glassmorphism*, input dinamis, dan responsivitas penuh untuk Mobile & Desktop.
+    - **Live Context**: AI memiliki akses ke data Penjualan, Menu Terlaris, dan Stok Rendah (realtime).
+- **💌 AI Smart Message (CRM) [READY]**: Generasi draf WhatsApp yang sangat personal untuk member dengan kecerdasan kontekstual.
+    - **Logic Aggregator**: AI menganalisis menu favorit pelanggan, level loyalty, dan riwayat kunjungan terakhir.
+    - **Promo Awareness**: Otomatis mendeteksi **Kode Promo Aktif** di database dan menyelipkannya secara natural dalam draf pesan.
+    - **Configurable Prompt**: Owner bisa melatih AI dengan gaya bahasa sendiri melalui menu Pengaturan.
 - **📈 Smart Inventory Forecasting [ROADMAP]**: Prediksi stok bahan baku mingguan untuk meminimalisir *waste* menggunakan pola belanja historis.
 - **🍳 AI Menu Engineering [ROADMAP]**: Saran optimasi harga dan deskripsi menu yang menggugah selera untuk meningkatkan penjualan.
 
@@ -104,18 +110,23 @@ Dibangun di atas pondasi teknologi paling modern dan stabil di tahun 2025.
 1.  Buka menu **Kemitraan (Member)**.
 2.  Gunakan Tombol WhatsApp untuk kirim template sapaan personal.
 
-### 3. Reservasi & DP
-1.  **Input**: Catat reservasi & menu pre-order tamu.
-2.  **Bayar DP**: Klik **"Bayar DP"** untuk mencatat uang muka.
-3.  **Konfirmasi**: Tekan tombol **"Confirm via WA"** untuk kirim link konfirmasi otomatis.
-4.  **Tamu Datang**: Klik **"Proses ke Kasir"**. Transaksi akan muncul di POS dengan potongan DP otomatis.
+3.  **Reservasi & DP**:
+    1.  **Input**: Catat reservasi & menu pre-order tamu di menu Reservasi.
+    2.  **Bayar DP**: Klik **"Bayar DP"** untuk mencatat uang muka otomatis.
+    3.  **WhatsApp**: Gunakan tombol konfirmasi untuk kirim detail reservasi ke tamu.
+    4.  **Check-in**: Klik **"Proses ke Kasir"** saat tamu datang untuk potong DP otomatis di POS.
+
+4.  **AI Strategy**:
+    1.  Pantau widget **AI Daily Suggestion** di Dashboard untuk insight harian.
+    2.  Buka menu **"Tanya Bos"** untuk analisis data mendalam via chat.
 
 ---
 
-## ⚠️ Requirements
-- PHP 8.2+
-- Composer 2+
-- Node.js & NPM (untuk build assets)
+### ⚙️ Requirements & Setup
+- **PHP 8.2+** & **MySQL 8+**
+- **DeepSeek API Key**: Masukkan `DEEPSEEK_API_KEY` di file `.env` untuk mengaktifkan fitur AI.
+- **Node.js & NPM**: Untuk kompilasi assets (Vite).
+- **Composer**: Untuk manajemen dependensi PHP.
 
 ---
 
