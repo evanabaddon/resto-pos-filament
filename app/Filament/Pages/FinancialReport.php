@@ -45,6 +45,7 @@ class FinancialReport extends Page implements HasForms
 
     public array $expenseBreakdown = [];
     public array $hppContributors = [];
+    public array $profitContributors = [];
 
     public function mount(): void
     {
@@ -169,17 +170,32 @@ class FinancialReport extends Page implements HasForms
                             'qty' => 0,
                             'unit_hpp' => $hpp,
                             'total_hpp' => 0,
+                            'total_revenue' => 0,
+                            'total_profit' => 0,
                         ];
                     }
                     $contributors[$item->product->name]['qty'] += $item->quantity;
                     $contributors[$item->product->name]['total_hpp'] += $totalItemHpp;
+
+                    // Profit Calc
+                    $itemRevenue = $item->subtotal; // Assuming subtotal is after discount? verify? No, subtotal is unit_price * qty
+                    // Wait, sale_items has subtotal.
+                    $contributors[$item->product->name]['total_revenue'] += $item->subtotal;
+                    $contributors[$item->product->name]['total_profit'] += ($item->subtotal - $totalItemHpp);
                 }
             }
         }
 
-        // Sort and take top 5
-        usort($contributors, fn($a, $b) => $b['total_hpp'] <=> $a['total_hpp']);
-        $this->hppContributors = array_slice($contributors, 0, 5);
+        // Sort and take top 5 HPP
+        // Need to clone for separate sorting
+        $sortByHpp = $contributors;
+        usort($sortByHpp, fn($a, $b) => $b['total_hpp'] <=> $a['total_hpp']);
+        $this->hppContributors = array_slice($sortByHpp, 0, 5);
+
+        // Sort and take top 5 Profit
+        $sortByProfit = $contributors;
+        usort($sortByProfit, fn($a, $b) => $b['total_profit'] <=> $a['total_profit']);
+        $this->profitContributors = array_slice($sortByProfit, 0, 5);
 
         // 3. Gross Profit
         $this->totalGrossProfit = $this->totalRevenue - $this->totalCogs;
