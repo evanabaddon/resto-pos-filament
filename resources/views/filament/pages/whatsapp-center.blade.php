@@ -69,7 +69,6 @@
                             {{-- Avatar --}}
                             {{-- Avatar --}}
                             <div class="relative shrink-0">
-                            <div class="relative shrink-0">
                                 <img src="{{ route('whatsapp.avatar', $chat->remote_jid) }}" 
                                      class="w-12 h-12 rounded-full object-cover bg-gray-200 dark:bg-gray-700" 
                                      loading="lazy"
@@ -228,8 +227,7 @@
                         <div class="flex items-center gap-3 cursor-pointer">
                             {{-- Avatar Header --}}
                             <div class="relative shrink-0">
-                            <div class="relative shrink-0">
-                                <img src="{{ route('whatsapp.avatar', $selectedJid) }}" 
+                                <img src="http://127.0.0.1:3000/avatar/{{ $selectedJid }}" 
                                      class="w-10 h-10 rounded-full object-cover bg-gray-200 dark:bg-gray-700" 
                                      loading="lazy"
                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
