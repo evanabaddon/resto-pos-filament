@@ -55,16 +55,31 @@ class AiDailySuggestionWidget extends Widget
         $lowStockItems = Product::where('stock', '<', 10)
             ->where('is_sellable', true)
             ->where('name', '!=', 'Down Payment (DP)')
+            ->whereDoesntHave('recipes') // Only track stock for items without recipes (Retail/Raw)
             ->orderBy('stock', 'asc')
             ->limit(3)
             ->get();
 
-        $lowStockCount = Product::where('stock', '<', 10)->where('is_sellable', true)->count();
+        $lowStockIngredients = Product::where('stock', '<', 10)
+            ->whereHas('usedInRecipes') // Only items used as ingredients
+            ->orderBy('stock', 'asc')
+            ->limit(5)
+            ->get();
 
-        $context = "Pendapatan Hari Ini: Rp" . number_format($todayRevenue, 0, ',', '.') . ". Total item kritis: {$lowStockCount}. ";
+        $lowStockCount = Product::where('stock', '<', 10)
+            ->where('is_sellable', true)
+            ->where('name', '!=', 'Down Payment (DP)')
+            ->whereDoesntHave('recipes')
+            ->count();
+
+        $context = "Pendapatan Hari Ini: Rp" . number_format($todayRevenue, 0, ',', '.') . ". Total retail kritis: {$lowStockCount}. ";
 
         if ($lowStockItems->isNotEmpty()) {
-            $context .= "Produk paling kritis: " . $lowStockItems->map(fn($p) => "{$p->name} ({$p->stock})")->implode(', ') . ".";
+            $context .= "Produk Retail Kritis: " . $lowStockItems->map(fn($p) => "{$p->name} ({$p->stock})")->implode(', ') . ". ";
+        }
+
+        if ($lowStockIngredients->isNotEmpty()) {
+            $context .= "BAHAN BAKU KRITIS (Wajib Restock): " . $lowStockIngredients->map(fn($p) => "{$p->name} (Sisa {$p->stock})")->implode(', ') . ".";
         }
 
         return $context;

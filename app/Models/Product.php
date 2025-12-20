@@ -11,7 +11,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Product extends Model
 {
     protected $fillable = [
-        'name', 'type', 'unit_id', 'category_id', 'stock', 'base_price', 'sell_price', 'is_sellable', 'additional_cost', 'image'
+        'name',
+        'type',
+        'unit_id',
+        'category_id',
+        'stock',
+        'base_price',
+        'sell_price',
+        'is_sellable',
+        'additional_cost',
+        'image'
     ];
 
     protected $appends = ['image_url'];
@@ -45,6 +54,11 @@ class Product extends Model
         return $this->hasMany(Recipe::class, 'product_id');
     }
 
+    public function usedInRecipes(): HasMany
+    {
+        return $this->hasMany(Recipe::class, 'ingredient_id');
+    }
+
     public function ingredients(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'recipes', 'product_id', 'ingredient_id')
@@ -54,7 +68,7 @@ class Product extends Model
 
     public function getPricePerBaseUnitAttribute(): float
     {
-        if (! $this->unit || $this->unit->conversion_rate == 0) {
+        if (!$this->unit || $this->unit->conversion_rate == 0) {
             return $this->base_price ?? 0;
         }
 
@@ -89,7 +103,7 @@ class Product extends Model
             $this->update([
                 'base_price' => $lastPurchaseItem->price // Ganti menjadi 'price'
             ]);
-            
+
             \Log::info("HPP updated for product {$this->name} to {$lastPurchaseItem->price}");
         } else {
             \Log::warning("No received purchase found for product {$this->name}");

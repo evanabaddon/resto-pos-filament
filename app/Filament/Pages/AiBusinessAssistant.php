@@ -35,7 +35,8 @@ class AiBusinessAssistant extends Page
 
     public function sendMessage()
     {
-        if (empty(trim($this->userMessage))) return;
+        if (empty(trim($this->userMessage)))
+            return;
 
         $userPrompt = $this->userMessage;
         $this->messages[] = ['role' => 'user', 'content' => $userPrompt];
@@ -99,6 +100,14 @@ class AiBusinessAssistant extends Page
         $lowStockProducts = Product::where('stock', '<', 10)
             ->where('is_sellable', true)
             ->where('name', '!=', 'Down Payment (DP)')
+            ->whereDoesntHave('recipes')
+            ->orderBy('stock', 'asc')
+            ->limit(10)
+            ->get();
+
+        // 4. Low Stock Ingredients (Raw Materials)
+        $lowStockIngredients = Product::where('stock', '<', 10)
+            ->whereHas('usedInRecipes')
             ->orderBy('stock', 'asc')
             ->limit(10)
             ->get();
@@ -106,6 +115,7 @@ class AiBusinessAssistant extends Page
         $lowStockCount = Product::where('stock', '<', 10)
             ->where('is_sellable', true)
             ->where('name', '!=', 'Down Payment (DP)')
+            ->whereDoesntHave('recipes')
             ->count();
 
         // Bangun String Konteks
@@ -123,10 +133,17 @@ class AiBusinessAssistant extends Page
         }
 
         $context .= "\nINVENTORI & STOK:\n";
-        $context .= "- Jumlah Item Stok Rendah (< 10): {$lowStockCount} item\n";
+        $context .= "- Jumlah Item Retail Kritis (< 10): {$lowStockCount} item\n";
+
         if ($lowStockProducts->isNotEmpty()) {
-            $context .= "- Contoh Item Kritis: ";
-            $context .= $lowStockProducts->map(fn($p) => "{$p->name} ({$p->stock} pcs)")->implode(', ');
+            $context .= "- Retail Kritis: ";
+            $context .= $lowStockProducts->map(fn($p) => "{$p->name} ({$p->stock})")->implode(', ');
+            $context .= "\n";
+        }
+
+        if ($lowStockIngredients->isNotEmpty()) {
+            $context .= "- BAHAN BAKU KRITIS: ";
+            $context .= $lowStockIngredients->map(fn($p) => "{$p->name} (Sisa {$p->stock})")->implode(', ');
             $context .= "\n";
         }
 
