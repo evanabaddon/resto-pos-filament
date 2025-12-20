@@ -162,8 +162,28 @@ user=www-data
 numprocs=2
 ```
 
-#### **B. Shared Hosting (Alternatif: Cron Job)**
-Jika menggunakan Shared Hosting (cPanel/DirectAdmin) yang tidak mendukung Supervisor, gunakan **Cron Job** untuk menjalankan scheduler harian dan antrean pesan.
+#### **B. Production with PM2 (Modern & Simple)**
+Jika lebih familiar dengan Node.js ecosystem, **PM2** adalah cara termudah untuk mengelola Queue Laravel dan WhatsApp Gateway sekaligus.
+
+**1. Jalankan Queue Laravel:**
+```bash
+pm2 start "php artisan queue:work" --name "resto-worker"
+```
+
+**2. Jalankan WhatsApp Gateway:**
+```bash
+cd wa-gateway
+pm2 start index.js --name "wa-gateway"
+```
+
+**3. Simpan agar otomatis jalan saat server reboot:**
+```bash
+pm2 save
+pm2 startup
+```
+
+#### **C. Shared Hosting (Alternatif: Cron Job)**
+Jika menggunakan Shared Hosting yang tidak mendukung PM2/Supervisor, gunakan **Cron Job**.
 
 **1. Setel Cron Job harian (Per Menit):**
 Tambahkan perintah ini di menu "Cron Jobs" hosting (Sesuaikan path folder project Bos):
@@ -171,6 +191,19 @@ Tambahkan perintah ini di menu "Cron Jobs" hosting (Sesuaikan path folder projec
 * * * * * cd /home/suralaya.id/pos.suralaya.id && php artisan schedule:run >> /dev/null 2>&1
 ```
 *(Contoh path di atas jika project berada di `/home/suralaya.id/pos.suralaya.id`)*
+
+---
+
+#### **⚡️ Tips: Optimasi Near-Realtime (Tiap 15 Detik)**
+Jika merasa 1 menit terlalu lama untuk notifikasi WhatsApp, gunakan trik `sleep` di cPanel. Masukkan **4 baris** Cron Job berikut:
+
+1. `* * * * * cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1`
+2. `* * * * * sleep 15; cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1`
+3. `* * * * * sleep 30; cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1`
+4. `* * * * * sleep 45; cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1`
+
+> [!IMPORTANT]
+> **KEAMANAN SERVER**: Pastikan di `routes/console.php` perintah queue menggunakan flag `--stop-when-empty`. Tanpa flag ini, server hosting Bos akan **OVERLOAD** dan akun bisa di-suspend karena proses yang menumpuk.
 
 **2. Jalankan Queue via Scheduler:**
 Pastikan di file `routes/console.php` (Laravel 11), antrean dijalankan secara berkala jika tidak ada worker yang stand-by:

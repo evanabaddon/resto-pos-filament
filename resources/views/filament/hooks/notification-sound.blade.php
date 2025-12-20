@@ -27,7 +27,7 @@
         }
 
         function playSound() {
-            const audio = new Audio('data:audio/mp3;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAGDgYtAgAyN+QWaAAihwMWm4G8QQRDiMcCBcH3Cc+CDv/7cQBwl3qZzZ9UHadbDf8jX8m8q/rnM9847M7C3d/fu/5otj079znef7354Jt//X1z3eEc4gamDmnky5f/uQRAAL888jXywgAAHnka+WEAAAEIGbCU8AAAAAAAAAAAAAIAa5wsts+G1l569LO190qvGDP8SXqqI9dpYOTgIlU8G7i3/eDxbvCVEQKwJSLdZSzpk2EQjAdr/5qPCFxZph8thishZ8LOqd8dZh8vB92cP20Xm//uQRAAAAAAwAABAAAABAAABAAAOE1iWvh9Y7Rby7hzF8aRnziWsE+0UjvFh06Fm6qlvqx11T5Ze13W09l8kwLK8lI4kYvPc//7cRSS+0/1/fH566f/n8vr7+Mc80eLR1m101/F5ykds8/t//uQRAAAAAAwAABAAAABAAABAAACAe7v7/t//7/f/9/3//v9//7/f/9/3//v9//7/f/9/3//v9//7/f/9/3//v9//7/f/9/3//v9//7/f/9/3//v9//7/f/9/3//v9//7/f/9/3//v9//7/f/9//uQRAAAAAAwAABAAAABAAABAAAC');
+            const audio = new Audio('/sounds/whatsapp_pc.mp3');
             audio.play().then(() => console.log('Sound played')).catch(e => console.error('Sound error:', e));
         }
 
@@ -35,7 +35,10 @@
         setTimeout(checkCount, 1000);
 
         // Hook into Livewire updates to detect notification changes
-        Livewire.hook('morph.updated', ({ el, component }) => {
+        Livewire.hook('morph.updated', ({
+            el,
+            component
+        }) => {
             checkCount();
         });
 

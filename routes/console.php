@@ -8,6 +8,4 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Aktifkan pemrosesan antrean (Queue) setiap menit untuk Shared Hosting
-
-Schedule::command('queue:work')->everyMinute();
+Schedule::command('queue:work --stop-when-empty')->everySecond();
