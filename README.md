@@ -78,7 +78,17 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
     - **Configurable Prompt**: Owner bisa melatih AI dengan gaya bahasa sendiri melalui menu Pengaturan.
 - **📉 Smart Inventory Forecasting [ROADMAP]**: Prediksi stok bahan baku mingguan untuk meminimalisir *waste* menggunakan pola belanja historis.
 - **🍳 AI Menu Engineering [ROADMAP]**: Saran optimasi harga dan deskripsi menu yang menggugah selera untuk meningkatkan penjualan.
-- **📲 Integrated WhatsApp Gateway (Native Chat) [ROADMAP]**: Membangun gateway internal (via Baileys/WAHA) agar bisa melakukan chat dua arah langsung di dalam aplikasi tanpa pindah tab.
+
+### 💬 Integrated WhatsApp Center (Native Chat) [NEW] 🚀
+Menghadirkan pengalaman WhatsApp Web langsung di dalam dashboard admin.
+- **✨ Modern UI**: Tampilan chat yang familiar, responsif, dan elegan mirip WhatsApp Web asli.
+- **⚡️ Realtime Features**:
+  - **Live Status**: Indikator status pesan (Jam 🕐 ➝ Abu ✔️ ➝ Biru ✔️✔️).
+  - **Avatar Sync**: Menampilkan foto profil kontak, grup, dan akun Anda sendiri secara otomatis.
+- **📁 Media Rich**:
+  - **Drag & Drop**: Kirim gambar/dokumen tinggal tarik & lepas.
+  - **Clipboard & Voice**: Dukungan paste gambar (Ctrl+V) dan pemutaran Voice Note.
+- **👥 Smart Group & Contact**: Penamaan kontak dan grup yang akurat dan stabil.
 
 ### 📊 Financial Intelligence
 - **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.

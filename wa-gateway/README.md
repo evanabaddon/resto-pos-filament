@@ -24,10 +24,17 @@ This is a self-hosted WhatsApp Gateway using [Baileys](https://github.com/Whiske
     - Go to **Whatsapp Center** (under Communication).
     - Scan the QR Code that appears.
 
+
+## 🌟 New Features
+-   **Avatar Proxy**: Proxies WhatsApp profile pictures via `/avatar/:jid` (auto-fallback to low-res/preview if high-res fails).
+-   **Status Sync**: Listens for 'read' and 'delivered' updates and forwards them to Laravel.
+-   **Media Handling**: Enhanced support for Images, Videos, Audio (Voice Notes), and Documents.
+-   **Robust Auth**: Auto-logout cleanup and seamless re-pairing flow.
+
 ## 🔗 Architecture
 
 - **Port**: 3000 (Defined in `index.js`)
-- **Webhook**: Sends received messages to `http://127.0.0.1:8000/api/webhook/wa`.
+- **Webhook**: Sends received messages & status updates to `http://127.0.0.1:8000/api/webhook/wa`.
     - If your Laravel app runs on a different port/domain, update `WEBHOOK_URL` in `.env` or `index.js`.
 
 ## 📂 Project Structure
@@ -39,3 +46,5 @@ This is a self-hosted WhatsApp Gateway using [Baileys](https://github.com/Whiske
 
 - **QR Code not showing?** Check if `npm start` is running without errors.
 - **Messages not appearing in Chat?** Check Laravel logs (`storage/logs/laravel.log`) for Webhook errors.
+- **Avatar 404 Error?** This is **NORMAL**. It means the contact has no profile picture or their privacy settings block it. The frontend will automatically show initials instead.
+
