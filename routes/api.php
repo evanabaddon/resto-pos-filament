@@ -20,7 +20,7 @@ Route::get('/pos/products-sync', function () {
     $products = \App\Models\Product::where('is_sellable', true)
         ->select('id', 'name', 'sell_price as price', 'stock', 'category_id', 'image', 'type')
         ->get();
-        
+
     return response()->json([
         'products' => $products,
         'timestamp' => now()->toIso8601String()
@@ -32,19 +32,19 @@ Route::post('/pos/sync-offline-sales', function (Request $request) {
     try {
         $orders = $request->input('orders', []);
         $syncedCount = 0;
-        
+
         foreach ($orders as $orderData) {
             // Gunakan Transaction per order agar aman
             \Illuminate\Support\Facades\DB::transaction(function () use ($orderData) {
                 // Recalculate Totals from Items to avoid corrupted frontend data
                 $calculatedSubtotal = 0;
                 foreach ($orderData['items'] as $item) {
-                    $price = isset($item['price']) ? (float)$item['price'] : 0;
-                    $qty = isset($item['quantity']) ? (float)$item['quantity'] : 1;
+                    $price = isset($item['price']) ? (float) $item['price'] : 0;
+                    $qty = isset($item['quantity']) ? (float) $item['quantity'] : 1;
                     $calculatedSubtotal += ($price * $qty);
                 }
 
-                $tax = isset($orderData['tax']) ? (float)$orderData['tax'] : 0;
+                $tax = isset($orderData['tax']) ? (float) $orderData['tax'] : 0;
                 $finalTotal = $calculatedSubtotal + $tax;
 
                 // Cari Cash Session yang sedang AKTIF (Open) untuk User 1
@@ -55,17 +55,17 @@ Route::post('/pos/sync-offline-sales', function (Request $request) {
 
                 // 1. Create Sale as DRAFT (agar bisa dibayar nanti)
                 $sale = \App\Models\Sale::create([
-                    'invoice_number' => 'OFFLINE-' . time() . '-' . uniqid(), 
+                    'invoice_number' => 'OFFLINE-' . time() . '-' . uniqid(),
                     'customer_name' => $orderData['customer_name'] ?? 'Offline Customer',
                     'order_type' => 'offline', // Penanda ini transaksi dari offline mode
                     'user_id' => 1, // Default user
                     'cash_session_id' => $activeSession ? $activeSession->id : null, // Link ke sesi aktif
-                    
-                    'subtotal' => $calculatedSubtotal, 
+
+                    'subtotal' => $calculatedSubtotal,
                     'tax' => $tax,
                     'final_total' => $finalTotal,
-                    'total' => $finalTotal, 
-                    
+                    'total' => $finalTotal,
+
                     'payment_method' => null, // Karena draft, belum dibayar
                     'payment_method_id' => null,
                     'status' => 'draft', // User minta draft
@@ -93,7 +93,7 @@ Route::post('/pos/sync-offline-sales', function (Request $request) {
         }
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'synced_count' => $syncedCount,
             'message' => "Successfully synced {$syncedCount} offline orders"
         ]);
@@ -101,8 +101,8 @@ Route::post('/pos/sync-offline-sales', function (Request $request) {
     } catch (\Exception $e) {
         Log::error('❌ Sync Failed: ' . $e->getMessage());
         return response()->json([
-            'success' => false, 
-            'error' => $e->getMessage() 
+            'success' => false,
+            'error' => $e->getMessage()
         ], 500);
     }
 });
@@ -112,6 +112,9 @@ Route::post('/pos/sync-offline-sales', function (Request $request) {
 */
 
 Route::prefix('webhook')->group(function () {
+
+    // WhatsApp Webhook
+    Route::post('/wa', [\App\Http\Controllers\Api\WhatsappWebhookController::class, 'handle']);
 
     // Test endpoint
     Route::get('/test', function () {

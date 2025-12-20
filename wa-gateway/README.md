@@ -1,0 +1,41 @@
+# Resto POS WhatsApp Gateway
+
+This is a self-hosted WhatsApp Gateway using [Baileys](https://github.com/WhiskeySockets/Baileys).
+
+## 🚀 How to Run
+
+1.  **Install Dependencies** (First time only):
+    ```bash
+    npm install
+    ```
+
+2.  **Start the Service**:
+    ```bash
+    npm start
+    ```
+    or for production (background):
+    ```bash
+    npm install -g pm2
+    pm2 start index.js --name "wa-gateway"
+    ```
+
+3.  **Connect WhatsApp**:
+    - Open your Laravel Admin Panel.
+    - Go to **Whatsapp Center** (under Communication).
+    - Scan the QR Code that appears.
+
+## 🔗 Architecture
+
+- **Port**: 3000 (Defined in `index.js`)
+- **Webhook**: Sends received messages to `http://127.0.0.1:8000/api/webhook/wa`.
+    - If your Laravel app runs on a different port/domain, update `WEBHOOK_URL` in `.env` or `index.js`.
+
+## 📂 Project Structure
+
+- `index.js`: Main entry point (Baileys + Express).
+- `auth_info_baileys/`: Folder where WhatsApp session credentials are stored (Auto-created).
+
+## ⚠️ Troubleshooting
+
+- **QR Code not showing?** Check if `npm start` is running without errors.
+- **Messages not appearing in Chat?** Check Laravel logs (`storage/logs/laravel.log`) for Webhook errors.
