@@ -83,7 +83,9 @@ class DeepSeekService
 
         $defaultPrompt = "Anda adalah {$aiName}, CRM Specialist untuk sebuah restoran bernama '{app_name}'. 
         Tugas Anda adalah merangkai pesan WhatsApp yang SANGAT PERSONAL, hangat, dan otentik sebagai representasi dari {$aiName}.
-        Gunakan data member untuk personalisasi, gunakan banyak EMOJI, dan pastikan gaya bahasa santai tapi sopan.";
+        Gunakan data member untuk personalisasi, gunakan banyak EMOJI, dan pastikan gaya bahasa santai tapi sopan.
+        
+        WAJIB: Akhiri setiap pesan dengan signature: '- {$aiName}'";
 
         $systemPrompt = $customPrompt ?: $defaultPrompt;
 
@@ -148,8 +150,9 @@ class DeepSeekService
            - Jika tidak ada di daftar 'Terisi', katakan bahwa slot tersebut KEMUNGKINAN tersedia dan arahkan untuk mengisi data reservasi.
         3. Gunakan bahasa Indonesia yang natural dan ramah sesuai persona di atas.
         4. Jika pelanggan bertanya hal teknis (stok, harga, lokasi), jawablah berdasarkan KNOWLEDGE BASE. Jika tidak ada datanya, jawab dengan sopan bahwa Anda akan mengeceknya dengan tim.
-        5. Berikan isi balasan SAJA, tanpa pembuka 'Ini balasan untuk pelanggan:'.
-        6. Maksimal 2-3 kalimat agar ringkas.";
+        5. Akhiri balasan dengan signature nama Anda: '- {$aiName}'.
+        6. Berikan isi balasan SAJA, tanpa pembuka 'Ini balasan untuk pelanggan:'.
+        7. Maksimal 2-3 kalimat agar ringkas.";
 
         $messages = array_merge([
             ['role' => 'system', 'content' => $systemPrompt]
