@@ -53,7 +53,6 @@ Route::get('/test-webhook-debug', function () {
             'headers' => $response->headers(),
             'body' => $response->successful() ? $response->json() : substr($response->body(), 0, 500)
         ];
-
     } catch (\Exception $e) {
         $webhookTest = [
             'success' => false,
@@ -195,4 +194,4 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
     }
 
     return response()->noContent(404);
-})->name('whatsapp.avatar');
+})->name('whatsapp.avatar')->where('jid', '.*');

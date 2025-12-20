@@ -111,29 +111,48 @@ class DeepSeekService
     /**
      * Generate a contextual reply suggestion for WhatsApp
      */
-    public function generateReplySuggestion(array $chatHistory, string $senderName)
+    public function generateReplySuggestion(array $chatHistory, string $senderName, string $context = '')
     {
         $settings = app(\App\Settings\GeneralSettings::class);
         $aiName = $settings->ai_assistant_name ?? 'Business Assistant';
+        $appName = $settings->app_name ?? 'Restoran Kami';
+        $programName = $settings->loyalty_program_name ?? 'Member';
 
-        $systemPrompt = "Anda adalah {$aiName}, asisten AI profesional untuk sebuah bisnis F&B (Restoran).
-        Tugas: Berikan draf balasan WhatsApp yang sopan, membantu, dan profesional untuk pelanggan.
-        Konteks: Anda sedang membalas pesan dari pelanggan bernama '{$senderName}'.
+        // Persona & Tone Instructions from Settings
+        $personaInstructions = $settings->ai_crm_system_prompt ?? '';
+
+        // Variable replacement for persona
+        $replacements = [
+            '{app_name}' => $appName,
+            '{program_name}' => $programName,
+            '{ai_name}' => $aiName,
+            '{available_promos}' => 'Promo Aktif', // Simplified for general replies
+        ];
+        $personaInstructions = str_replace(array_keys($replacements), array_values($replacements), $personaInstructions);
+
+        $systemPrompt = "Anda adalah {$aiName}, AI Assistant untuk bisnis '{$appName}'.
         
-        Instruksi Gaya Bahasa:
-        - Gunakan bahasa Indonesia yang natural, ramah, dan sopan.
-        - Hindari bahasa robot / kaku.
-        - Gunakan emoji secukupnya agar terkesan hangat.
-        - Langsung berikan isi balasan, tanpa pembuka seperti 'Berikut draf balasannya:'.
-        - Maksimal 2-3 kalimat, kecuali pelanggan bertanya hal kompleks.
+        KNOWLEDGE BASE (DATA ASLI):
+        {$context}
 
-        Jawablah seolah-olah Anda adalah customer service manusia yang sangat kompeten.";
+        PERAN & PERSONA:
+        {$personaInstructions}
+        
+        TUGAS SAAT INI: 
+        Berikan draf balasan WhatsApp yang tepat, membantu, dan solutif untuk pelanggan bernama '{$senderName}'.
+
+        ATURAN PENTING:
+        1. JANGAN PERNAH mengarang menu atau fitur yang tidak ada di KNOWLEDGE BASE di atas.
+        2. Gunakan bahasa Indonesia yang natural dan ramah sesuai persona di atas.
+        3. Jika pelanggan bertanya hal teknis (stok, harga, lokasi), jawablah berdasarkan KNOWLEDGE BASE. Jika tidak ada datanya, jawab dengan sopan bahwa Anda akan mengeceknya dengan tim.
+        4. Berikan isi balasan SAJA, tanpa pembuka 'Ini balasan untuk pelanggan:'.
+        5. Maksimal 2-3 kalimat agar ringkas.";
 
         $messages = array_merge([
             ['role' => 'system', 'content' => $systemPrompt]
         ], $chatHistory);
 
-        $response = $this->chat($messages, ['temperature' => 0.8]); // Higher temp for creativity
+        $response = $this->chat($messages, ['temperature' => 0.7]); // Slightly lower temp for accuracy
 
         return $response['choices'][0]['message']['content'] ?? '';
     }

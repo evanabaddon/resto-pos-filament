@@ -260,8 +260,18 @@ app.get('/avatar/:jid', async (req, res) => {
         if (!sock) return res.status(503).send('Not connected');
 
         let jid = req.params.jid;
-        // Basic cleanup for group IDs or phone numbers
-        if (!jid.includes('@')) jid += '@s.whatsapp.net';
+
+        // Clean up JID from device suffix or weird formats
+        // Example: 628123:10@s.whatsapp.net -> 628123@s.whatsapp.net
+        if (jid.includes('@')) {
+            const [userPart, domain] = jid.split('@');
+            const cleanUser = userPart.split(':')[0];
+            jid = `${cleanUser}@${domain}`;
+        } else {
+            jid = `${jid.split(':')[0]}@s.whatsapp.net`;
+        }
+
+        console.log(`[Avatar] Requesting for cleaned: ${jid} (Original: ${req.params.jid})`);
 
         // Try High Res first
         let ppUrl = await sock.profilePictureUrl(jid, 'image').catch(() => null);
@@ -276,6 +286,7 @@ app.get('/avatar/:jid', async (req, res) => {
         }
         return res.status(404).send('No profile picture');
     } catch (e) {
+        console.error(`[Avatar] Error for ${req.params.jid}:`, e.message);
         res.status(404).send('No profile picture');
     }
 });

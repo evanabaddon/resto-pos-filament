@@ -23,6 +23,10 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Textarea;
 use App\Models\Member;
 use App\Models\Reservation;
+use App\Models\Product;
+use App\Models\DiscountCode;
+use App\Models\SaleItem;
+use Illuminate\Support\Facades\DB;
 
 class WhatsappCenter extends Page implements HasActions, HasForms
 {
@@ -100,7 +104,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 ]);
 
                 $this->checkMemberStatus(); // Refresh status
-    
+
                 Notification::make()
                     ->title('Member Created')
                     ->success()
@@ -630,7 +634,10 @@ class WhatsappCenter extends Page implements HasActions, HasForms
             // Get sender name
             $senderName = $recentMessages->where('from_me', false)->last()->push_name ?? 'Pelanggan';
 
-            $suggestion = $aiService->generateReplySuggestion($chatHistory, $senderName);
+            // GATHER REAL CONTEXT
+            $context = $this->getChatContext();
+
+            $suggestion = $aiService->generateReplySuggestion($chatHistory, $senderName, $context);
 
             if ($suggestion) {
                 $this->newMessage = $suggestion;
@@ -639,7 +646,6 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                     ->success()
                     ->send();
             }
-
         } catch (\Exception $e) {
             Notification::make()
                 ->title('AI Error')
@@ -649,5 +655,36 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         } finally {
             $this->isGeneratingAi = false;
         }
+    }
+
+    protected function getChatContext(): string
+    {
+        // 1. Top Products (Actual Menu)
+        $topItems = SaleItem::query()
+            ->select('product_id', DB::raw('SUM(quantity) as total_qty'))
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->where('products.is_sellable', true)
+            ->where('products.name', '!=', 'Down Payment (DP)')
+            ->groupBy('product_id')
+            ->orderByDesc('total_qty')
+            ->limit(5)
+            ->get();
+
+        $menuList = $topItems->map(fn($item) => $item->product?->name)->filter()->implode(', ');
+        if (empty($menuList)) {
+            $menuList = Product::where('is_sellable', true)->where('name', '!=', 'Down Payment (DP)')->limit(5)->pluck('name')->implode(', ');
+        }
+
+        // 2. Active Promos
+        $activePromos = DiscountCode::where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
+            })
+            ->limit(3)
+            ->get(['code', 'name']);
+
+        $promoStr = $activePromos->isEmpty() ? 'Tidak ada promo aktif saat ini' : $activePromos->map(fn($p) => "{$p->name} (Kode: {$p->code})")->implode(', ');
+
+        return "MENU UNGGULAN: {$menuList}\nPROMO AKTIF: {$promoStr}";
     }
 }

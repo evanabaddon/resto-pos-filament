@@ -92,10 +92,23 @@ class MembersTable
                             // 2. Gather Business Context (Settings & Active Discounts)
                             $activePromos = DiscountCode::where('is_active', true)
                                 ->where(function ($q) {
-                                $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
-                            })
+                                    $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
+                                })
                                 ->limit(3)
                                 ->get(['code', 'name', 'type', 'value', 'min_purchase']);
+
+                            // 3. Gather Top Menu (Knowledge Base)
+                            $topItems = SaleItem::query()
+                                ->select('product_id', DB::raw('SUM(quantity) as total_qty'))
+                                ->join('products', 'sale_items.product_id', '=', 'products.id')
+                                ->where('products.is_sellable', true)
+                                ->where('products.name', '!=', 'Down Payment (DP)')
+                                ->groupBy('product_id')
+                                ->orderByDesc('total_qty')
+                                ->limit(5)
+                                ->get();
+
+                            $menuList = $topItems->map(fn($item) => $item->product?->name)->filter()->toArray();
 
                             $companyData = [
                                 'app_name' => $settings->app_name,
@@ -103,6 +116,7 @@ class MembersTable
                                 'tiktok' => $settings->app_tiktok,
                                 'program_name' => $settings->loyalty_program_name,
                                 'available_promos' => $activePromos->toArray(),
+                                'top_menu' => $menuList,
                             ];
 
                             // 3. Generate using AI
