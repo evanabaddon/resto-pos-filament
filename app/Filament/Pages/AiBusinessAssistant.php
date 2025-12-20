@@ -27,9 +27,12 @@ class AiBusinessAssistant extends Page
 
     public function mount()
     {
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $aiName = $settings->ai_assistant_name ?? 'Asisten Pintar';
+
         $this->messages[] = [
             'role' => 'assistant',
-            'content' => 'Halo Bos! Saya adalah asisten pintar Anda. Saya memiliki akses ke data penjualan, stok, dan performa restoran Anda. Ada yang bisa saya bantu analisis hari ini?'
+            'content' => "Halo Bos! Saya {$aiName}. Saya memiliki akses ke data penjualan, stok, dan performa restoran Anda. Ada yang bisa saya bantu analisis hari ini?"
         ];
     }
 
@@ -53,7 +56,10 @@ class AiBusinessAssistant extends Page
             $service = new DeepSeekService();
             $context = $this->getBusinessContext();
 
-            $response = $service->analyzeBusiness($this->messages, $context);
+            // Optimization: Keep only last 10 messages context to save tokens
+            $recentMessages = array_slice($this->messages, -10);
+
+            $response = $service->analyzeBusiness($recentMessages, $context);
 
             $content = $response['choices'][0]['message']['content'] ?? 'Maaf Bos, saya sedang mengalami gangguan koneksi ke otak pusat.';
 

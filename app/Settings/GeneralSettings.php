@@ -59,6 +59,9 @@ class GeneralSettings extends Settings
     // AI CRM Prompt
     public ?string $ai_crm_system_prompt;
 
+    // AI Persona Name
+    public string $ai_assistant_name = 'Sarah (AI Admin)';
+
     public static function group(): string
     {
         return 'app';

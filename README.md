@@ -71,6 +71,7 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
 - **💬 AI Business Assistant ("Tanya Bos") [READY]**: Konsultasi performa bisnis via chat bahasa natural dengan **Conversation Memory**.
     - **Premium UI/UX**: Interface modern dengan efek *Glassmorphism*, input dinamis, dan responsivitas penuh untuk Mobile & Desktop.
     - **Live Context**: AI memiliki akses ke data Penjualan, Menu Terlaris, dan Stok Rendah (realtime).
+    - **Persona Config**: Set your AI Assistant's Name (e.g., "Sarah", "Jarvis") in Settings for a personalized experience.
 - **💌 AI Smart Message (CRM) [READY]**: Generasi draf WhatsApp yang sangat personal untuk member dengan kecerdasan kontekstual.
     - **Logic Aggregator**: AI menganalisis menu favorit pelanggan, level loyalty, dan riwayat kunjungan terakhir.
     - **Promo Awareness**: Otomatis mendeteksi **Kode Promo Aktif** di database dan menyelipkannya secara natural dalam draf pesan.

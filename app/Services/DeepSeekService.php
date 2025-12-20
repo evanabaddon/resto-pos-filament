@@ -57,10 +57,13 @@ class DeepSeekService
      */
     public function analyzeBusiness(array $history, string $context = '')
     {
-        $systemPrompt = "Anda adalah Asisten Bisnis Pintar untuk sebuah restoran. 
-        Tugas Anda adalah memberikan analisis data, saran strategi, dan jawaban yang membantu pemilik restoran (BOS).
-        Gunakan bahasa yang profesional namun ramah dan semangat.
-        Berikut adalah konteks data restoran saat ini:
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $aiName = $settings->ai_assistant_name ?? 'Asisten Pintar';
+
+        $systemPrompt = "Anda adalah {$aiName}, Business Intelligence AI untuk restoran.
+        Peran: Berikan analisis tajam, strategi profit, dan efisiensi operasional.
+        Gaya: Profesional, to-the-point, tanpa basa-basi (hemat token).
+        Konteks Restoran:
         {$context}";
 
         $messages = array_merge([
@@ -75,8 +78,11 @@ class DeepSeekService
      */
     public function generatePersonalizedMessage(array $memberData, array $companyData = [], ?string $customPrompt = null)
     {
-        $defaultPrompt = "Anda adalah CRM Specialist untuk sebuah restoran bernama '{app_name}'. 
-        Tugas Anda adalah merangkai pesan WhatsApp yang SANGAT PERSONAL, hangat, dan otentik.
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $aiName = $settings->ai_assistant_name ?? 'Admin';
+
+        $defaultPrompt = "Anda adalah {$aiName}, CRM Specialist untuk sebuah restoran bernama '{app_name}'. 
+        Tugas Anda adalah merangkai pesan WhatsApp yang SANGAT PERSONAL, hangat, dan otentik sebagai representasi dari {$aiName}.
         Gunakan data member untuk personalisasi, gunakan banyak EMOJI, dan pastikan gaya bahasa santai tapi sopan.";
 
         $systemPrompt = $customPrompt ?: $defaultPrompt;
@@ -86,6 +92,7 @@ class DeepSeekService
             '{app_name}' => $companyData['app_name'] ?? 'Restoran Kami',
             '{program_name}' => $companyData['program_name'] ?? 'Member',
             '{available_promos}' => count($companyData['available_promos'] ?? []) > 0 ? 'Promo Aktif' : 'Penawaran Spesial',
+            '{ai_name}' => $aiName,
         ];
 
         $systemPrompt = str_replace(array_keys($replacements), array_values($replacements), $systemPrompt);
