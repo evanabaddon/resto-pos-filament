@@ -348,6 +348,38 @@ app.post('/chat/send', async (req, res) => {
     }
 })
 
+app.post('/chat/download-media', async (req, res) => {
+    const { message } = req.body;
+
+    if (!status === 'connected' || !sock) {
+        return res.status(400).json({ error: 'WhatsApp not connected' });
+    }
+
+    try {
+        console.log(`Manual download requested for message ID: ${message.key.id}`);
+        const buffer = await downloadMediaMessage(
+            message,
+            'buffer',
+            {},
+            { logger: pino({ level: 'silent' }), reuploadRequest: sock.updateMediaMessage }
+        );
+
+        const supportedTypes = ['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage'];
+        const messageKeys = Object.keys(message.message);
+        const messageType = messageKeys.find(key => supportedTypes.includes(key));
+        const mimeType = message.message[messageType]?.mimetype || '';
+
+        res.json({
+            success: true,
+            media_data: buffer.toString('base64'),
+            mimetype: mimeType
+        });
+    } catch (e) {
+        console.error('Manual download failed:', e);
+        res.status(500).json({ error: e.message });
+    }
+})
+
 app.post('/logout', async (req, res) => {
     try {
         if (sock) {

@@ -10,6 +10,8 @@ use UnitEnum;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Filament\Notifications\Notification;
 
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -99,7 +101,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
                 $this->checkMemberStatus(); // Refresh status
     
-                \Filament\Notifications\Notification::make()
+                Notification::make()
                     ->title('Member Created')
                     ->success()
                     ->send();
@@ -145,7 +147,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                     'status' => 'pending',
                 ]);
 
-                \Filament\Notifications\Notification::make()
+                Notification::make()
                     ->title('Reservation Created')
                     ->success()
                     ->send();
@@ -214,7 +216,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 $this->status = 'gateway_error';
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("WA Gateway Connection Error: " . $e->getMessage());
+            Log::error("WA Gateway Connection Error: " . $e->getMessage());
             $this->status = 'offline'; // Node likely not running
             $this->qrCode = null;
         }
@@ -388,6 +390,63 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         $this->replyToMessage = null;
     }
 
+    public function downloadMedia($messageId)
+    {
+        $msg = \App\Models\WhatsappMessage::find($messageId);
+        if (!$msg || !$msg->full_message) {
+            Notification::make()->title('Gagal')->body('Data pesan tidak ditemukan.')->danger()->send();
+            return;
+        }
+
+        try {
+            /** @var \Illuminate\Http\Client\Response $response */
+            $response = Http::timeout(30)->post($this->getGatewayUrl() . '/chat/download-media', [
+                'message' => $msg->full_message
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $decoded = base64_decode($data['media_data']);
+                $mimeType = $data['mimetype'];
+
+                $extension = match ($msg->attachment_type) {
+                    'image' => 'jpg',
+                    'video' => 'mp4',
+                    'document' => 'pdf',
+                    'audio' => 'mp3',
+                    default => 'bin'
+                };
+
+                // Specific audio extension check
+                if ($msg->attachment_type === 'audio') {
+                    if (str_contains($mimeType, 'ogg'))
+                        $extension = 'ogg';
+                    elseif (str_contains($mimeType, 'mp4'))
+                        $extension = 'mp4';
+                }
+
+                $filename = 'wa_manual_' . time() . '_' . Str::random(5) . '.' . $extension;
+                $path = 'whatsapp-media/' . date('Y-m-d');
+
+                if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->makeDirectory($path);
+                }
+
+                \Illuminate\Support\Facades\Storage::disk('public')->put($path . '/' . $filename, $decoded);
+
+                $msg->update(['attachment_path' => $path . '/' . $filename]);
+
+                $this->refreshMessages();
+                Notification::make()->title('Berhasil')->body('Media berhasil didownload.')->success()->send();
+            } else {
+                Notification::make()->title('Gagal')->body('Gagal mendownload dari gateway.')->danger()->send();
+            }
+        } catch (\Exception $e) {
+            Log::error('Manual Download Error: ' . $e->getMessage());
+            Notification::make()->title('Error')->body('Terjadi kesalahan: ' . $e->getMessage())->danger()->send();
+        }
+    }
+
     public function sendMessage()
     {
         if (!$this->selectedJid || (empty($this->newMessage) && !$this->attachment))
@@ -494,14 +553,14 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 $this->replyToMessage = null; // Reset reply
                 $this->refreshMessages();
             } else {
-                \Filament\Notifications\Notification::make()
+                Notification::make()
                     ->title('Gagal mengirim pesan')
                     ->body($response->body())
                     ->danger()
                     ->send();
             }
         } catch (\Exception $e) {
-            \Filament\Notifications\Notification::make()
+            Notification::make()
                 ->title('Error Connection')
                 ->body($e->getMessage())
                 ->danger()
@@ -519,7 +578,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         $this->selectedJid = null;
         $this->activeChatMessages = [];
 
-        \Filament\Notifications\Notification::make()
+        Notification::make()
             ->title('Conversation deleted')
             ->success()
             ->send();
@@ -528,7 +587,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     public function logout()
     {
         try {
-            \Illuminate\Support\Facades\Http::post($this->getGatewayUrl() . '/logout');
+            Http::post($this->getGatewayUrl() . '/logout');
 
             // Clear all messages from database as requested
             \App\Models\WhatsappMessage::truncate();
@@ -537,7 +596,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
             $this->activeChatMessages = [];
 
             $this->checkConnection();
-            \Filament\Notifications\Notification::make()->title('Logged out & Data Cleared')->success()->send();
+            Notification::make()->title('Logged out & Data Cleared')->success()->send();
         } catch (\Exception $e) {
         }
     }
@@ -575,14 +634,14 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
             if ($suggestion) {
                 $this->newMessage = $suggestion;
-                \Filament\Notifications\Notification::make()
+                Notification::make()
                     ->title('✨ AI Suggestion Generated')
                     ->success()
                     ->send();
             }
 
         } catch (\Exception $e) {
-            \Filament\Notifications\Notification::make()
+            Notification::make()
                 ->title('AI Error')
                 ->body($e->getMessage())
                 ->danger()

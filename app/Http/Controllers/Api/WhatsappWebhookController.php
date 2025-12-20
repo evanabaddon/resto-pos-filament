@@ -94,7 +94,10 @@ class WhatsappWebhookController extends Controller
             $mimeType = $data['attachment_mimetype'] ?? null;
             $caption = $data['caption'] ?? null;
 
-            if (!empty($data['attachment_data']) && $attachmentType) {
+            $settings = app(\App\Settings\GeneralSettings::class);
+            $shouldDownload = $data['from_me'] || $settings->wa_auto_download_media;
+
+            if ($shouldDownload && !empty($data['attachment_data']) && $attachmentType) {
                 try {
                     $decoded = base64_decode($data['attachment_data']);
                     $extension = match ($attachmentType) {

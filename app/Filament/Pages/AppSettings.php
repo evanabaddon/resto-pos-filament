@@ -406,6 +406,12 @@ class AppSettings extends SettingsPage
                                                 ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
                                                 : 'Aktifkan modul WhatsApp Center.'
                                             ),
+
+                                        Toggle::make('wa_auto_download_media')
+                                            ->label('Auto Download Media')
+                                            ->helperText('Jika dinonaktifkan, media hanya didownload saat diklik (menghemat storage).')
+                                            ->default(true)
+                                            ->visible(fn(Get $get) => $get('enable_wa_center')),
                                     ]),
                             ]),
                     ])

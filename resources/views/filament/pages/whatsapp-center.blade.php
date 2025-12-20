@@ -424,7 +424,34 @@
                                         @endif
 
                                         @if($msg->attachment_type)
-                                            @if($msg->attachment_type === 'image')
+                                            @if(!$msg->attachment_path)
+                                                {{-- MEDIA NOT DOWNLOADED PLACEHOLDER --}}
+                                                <div class="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 mb-2">
+                                                    <div class="w-10 h-10 flex items-center justify-center bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full">
+                                                        @if($msg->attachment_type === 'image') <x-heroicon-o-camera class="w-6 h-6" />
+                                                        @elseif($msg->attachment_type === 'video') <x-heroicon-o-video-camera class="w-6 h-6" />
+                                                        @elseif($msg->attachment_type === 'audio') <x-heroicon-o-microphone class="w-6 h-6" />
+                                                        @else <x-heroicon-o-document-arrow-down class="w-6 h-6" />
+                                                        @endif
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                            {{ $msg->attachment_type }} Belum Diunduh
+                                                        </p>
+                                                        <button 
+                                                            wire:click="downloadMedia({{ $msg->id }})"
+                                                            wire:loading.attr="disabled"
+                                                            class="text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 mt-0.5"
+                                                        >
+                                                            <span wire:loading.remove wire:target="downloadMedia({{ $msg->id }})">Unduh Sekarang</span>
+                                                            <span wire:loading wire:target="downloadMedia({{ $msg->id }})" class="flex items-center gap-1">
+                                                                <svg class="animate-spin h-3 w-3 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                                Mengunduh...
+                                                            </span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            @elseif($msg->attachment_type === 'image')
                                                 <div class="rounded-lg overflow-hidden mb-1 relative group-hover:brightness-95 transition cursor-pointer" onclick="window.open('{{ Storage::url($msg->attachment_path) }}', '_blank')">
                                                     <img src="{{ Storage::url($msg->attachment_path) }}" class="max-w-full md:max-w-sm object-cover">
                                                 </div>
@@ -449,9 +476,9 @@
                                                     <div class="w-8 h-8 flex items-center justify-center bg-red-100 text-red-500 rounded">
                                                         <x-heroicon-s-document class="w-5 h-5" />
                                                     </div>
-                                                    <div class="overflow-hidden">
-                                                        <p class="truncate font-medium text-xs">{{ basename($msg->attachment_path) }}</p>
-                                                        <p class="text-[10px] text-gray-500">Document</p>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-xs font-bold truncate">{{ $msg->caption ?? 'Document' }}</p>
+                                                        <p class="text-[10px] opacity-60">Klik untuk melihat</p>
                                                     </div>
                                                 </a>
                                             @endif

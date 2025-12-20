@@ -30,6 +30,7 @@ class GeneralSettings extends Settings
 
     public bool $enable_wa_center;
     public ?string $wa_license_key;
+    public bool $wa_auto_download_media;
 
     public string $printer_width;
     public bool $enable_table_number;
@@ -86,7 +87,8 @@ class GeneralSettings extends Settings
             'enable_crm' => false,
             'crm_license_key' => null,
             'enable_wa_center' => false,
-            'wa_license_key' => null,
+            'wa_license_key' => '',
+            'wa_auto_download_media' => true,
             'printer_width' => '58mm',
             'enable_table_number' => false,
             // Fiscal Defaults
