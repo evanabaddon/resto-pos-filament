@@ -143,10 +143,13 @@ class DeepSeekService
 
         ATURAN PENTING:
         1. JANGAN PERNAH mengarang menu atau fitur yang tidak ada di KNOWLEDGE BASE di atas.
-        2. Gunakan bahasa Indonesia yang natural dan ramah sesuai persona di atas.
-        3. Jika pelanggan bertanya hal teknis (stok, harga, lokasi), jawablah berdasarkan KNOWLEDGE BASE. Jika tidak ada datanya, jawab dengan sopan bahwa Anda akan mengeceknya dengan tim.
-        4. Berikan isi balasan SAJA, tanpa pembuka 'Ini balasan untuk pelanggan:'.
-        5. Maksimal 2-3 kalimat agar ringkas.";
+        2. CEK RESERVASI: Jika pelanggan bertanya tentang ketersediaan (besok, nanti malam, jam 7), bandingkan dengan 'WAKTU SISTEM SAAT INI' dan 'RESERVASI MENDATANG' di KNOWLEDGE BASE. 
+           - Jika slot waktu tersebut sudah ada di daftar 'Terisi', katakan bahwa jam tersebut sudah penuh dan tawarkan jam lain.
+           - Jika tidak ada di daftar 'Terisi', katakan bahwa slot tersebut KEMUNGKINAN tersedia dan arahkan untuk mengisi data reservasi.
+        3. Gunakan bahasa Indonesia yang natural dan ramah sesuai persona di atas.
+        4. Jika pelanggan bertanya hal teknis (stok, harga, lokasi), jawablah berdasarkan KNOWLEDGE BASE. Jika tidak ada datanya, jawab dengan sopan bahwa Anda akan mengeceknya dengan tim.
+        5. Berikan isi balasan SAJA, tanpa pembuka 'Ini balasan untuk pelanggan:'.
+        6. Maksimal 2-3 kalimat agar ringkas.";
 
         $messages = array_merge([
             ['role' => 'system', 'content' => $systemPrompt]

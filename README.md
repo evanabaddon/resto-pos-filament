@@ -69,27 +69,29 @@ Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
 Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih untuk keputusan bisnis yang lebih tajam.
 - **🤖 AI Daily Suggestion [READY]**: Widget pintar di dashboard yang memberikan saran strategi bisnis dan peringatan stok kritis secara otomatis setiap hari. Menganalisis data penjualan 30 hari terakhir dan status inventaris secara mendalam.
 - **💬 AI Business Assistant ("Tanya Nirmala") [READY]**: Konsultasi performa bisnis via chat bahasa natural dengan **Conversation Memory**.
-    - **Premium UI/UX**: Interface modern dengan efek *Glassmorphism*, input dinamis, dan responsivitas penuh untuk Mobile & Desktop.
-    - **Live Context**: AI memiliki akses ke data Penjualan, Menu Terlaris, dan Stok Rendah (realtime).
-    - **Persona Config**: Set your AI Assistant's Name (e.g., "Sarah", "Jarvis") in Settings for a personalized experience.
+    - **Premium UI/UX**: Interface modern dengan efek *Glassmorphism*, input dinamis, dan responsivitas penuh.
+    - **Live Context**: AI memiliki akses ke data Penjualan, Menu Terlaris, dan Stok Kritis (Retail & Bahan Baku).
+    - **Persona Config**: Ubah Nama AI (misal: "Sarah", "Jarvis") di Settings untuk pengalaman yang lebih personal.
 - **💌 AI Smart Message (CRM) [READY]**: Generasi draf WhatsApp yang sangat personal untuk member dengan kecerdasan kontekstual.
-    - **Logic Aggregator**: AI menganalisis menu favorit pelanggan, level loyalty, dan riwayat kunjungan terakhir.
-    - **Promo Awareness**: Otomatis mendeteksi **Kode Promo Aktif** di database dan menyelipkannya secara natural dalam draf pesan.
-    - **Configurable Prompt**: Owner bisa melatih AI dengan gaya bahasa sendiri melalui menu Pengaturan.
+    - **No-Hallucination Menu**: AI hanya akan menyebutkan **Menu Asli** (Top 5 Menu terlaris) yang ada di database.
+    - **Promo Awareness**: Otomatis mendeteksi **Kode Promo Aktif** di database dan menyelipkannya secara natural.
+    - **Loyalty Integration**: AI membaca level member (Sedulur Suralaya) untuk menyesuaikan apresiasi poin.
 - **📉 Smart Inventory Forecasting [ROADMAP]**: Prediksi stok bahan baku mingguan untuk meminimalisir *waste* menggunakan pola belanja historis.
 - **🍳 AI Menu Engineering [ROADMAP]**: Saran optimasi harga dan deskripsi menu yang menggugah selera untuk meningkatkan penjualan.
 
-### 💬 Integrated WhatsApp Center (Native Chat) [NEW] 🚀
+### 💬 Integrated WhatsApp Center (Native Chat) 🚀
 Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
 - **✨ Full-Featured Interface**: Tampilan chat yang familiar, responsif, dan elegan dengan **Dark Mode** support.
-- **🤖 Context-Aware AI Reply**: Generate balasan cerdas otomatis menggunakan AI yang membaca *10 chat terakhir* untuk konteks percakapan yang relevan.
+- **🤖 Grounded AI Reply (Anti-Hallucination)**: Generate balasan cerdas otomatis yang didukung oleh **Knowledge Base** bisnis Bos:
+  - **Menu Awareness**: AI tahu daftar menu terlaris Bos secara realtime.
+  - **Promo Awareness**: AI tahu promo apa yang sedang berlangsung di kasir.
+  - **Reservation Availability**: AI dapat mengecek ketersediaan meja dengan membaca data reservasi 7 hari ke depan secara otomatis.
 - **↩️ Reply with Quote**: Fitur balas pesan (Reply) dengan kutipan asli, persis seperti di aplikasi native.
 - **⚡️ Realtime Architecture**:
   - **Live Notifications**: Notifikasi suara dan visual instan saat pesan baru masuk tanpa refresh.
-  - **Live Status**: Indikator status pesan (Jam 🕐 ➝ Abu ✔️ ➝ Biru ✔️✔️).
-  - **Auto Sync**: Avatar kontak dan nama grup tersinkronisasi otomatis.
+  - **Direct Avatar Proxy**: Sistem penanganan avatar otomatis untuk performa tinggi (Fixing JID cleaning & device sync).
 - **📁 Advanced Media Handling**:
-  - **Ratio-Perfect Video**: Pemutar video pintar yang menghormati rasio asli (Portrait/Landscape) tanpa memotong konten.
+  - **Ratio-Perfect Video**: Pemutar video pintar yang menghormati rasio asli (Portrait/Landscape).
   - **Drag & Drop**: Kirim gambar/dokumen tinggal tarik & lepas dengan preview cepat.
   - **Voice & Documents**: Dukungan penuh untuk voice note dan dokumen PDF.
 - **🚧 Group Mention Autocomplete [WIP]**: Fitur tagging anggota grup (`@user`) sedang dalam tahap pengembangan (Beta).

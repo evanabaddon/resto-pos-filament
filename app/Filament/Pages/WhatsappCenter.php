@@ -685,6 +685,22 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
         $promoStr = $activePromos->isEmpty() ? 'Tidak ada promo aktif saat ini' : $activePromos->map(fn($p) => "{$p->name} (Kode: {$p->code})")->implode(', ');
 
-        return "MENU UNGGULAN: {$menuList}\nPROMO AKTIF: {$promoStr}";
+        // 3. Upcoming Reservations (Availability)
+        $upcomingReservations = Reservation::whereIn('status', ['pending', 'confirmed'])
+            ->where('reservation_date', '>=', now())
+            ->where('reservation_date', '<', now()->addDays(7))
+            ->orderBy('reservation_date', 'asc')
+            ->get();
+
+        $resStr = $upcomingReservations->isEmpty()
+            ? 'Belum ada reservasi dalam 7 hari ke depan. Semua slot tersedia.'
+            : $upcomingReservations->map(fn($r) => $r->reservation_date->format('d M H:i') . " ({$r->party_size} org)")->implode(', ');
+
+        $now = now()->format('l, d F Y H:i');
+
+        return "WAKTU SISTEM SAAT INI: {$now}\n" .
+            "MENU UNGGULAN: {$menuList}\n" .
+            "PROMO AKTIF: {$promoStr}\n" .
+            "RESERVASI MENDATANG (Slot Terisi): {$resStr}";
     }
 }
