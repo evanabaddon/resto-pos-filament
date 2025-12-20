@@ -48,7 +48,9 @@ class WhatsappCenter extends Page
                 $this->qrCode = $data['qr'] ?? null;
 
                 if ($this->status === 'connected' && isset($data['user'])) {
-                    $this->userAvatar = $data['user']['avatar'] ?? null;
+                    // Use the proxy route for the user avatar as well
+                    $userJid = $data['user']['id'] ?? null;
+                    $this->userAvatar = $userJid ? route('whatsapp.avatar', $userJid) : null;
                     $this->userName = $data['user']['name'] ?? null;
                 }
             } else {
