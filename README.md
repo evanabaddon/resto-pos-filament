@@ -65,10 +65,10 @@ Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
 - **Toggleable Modules**: Aktifkan/Matikan modul CRM, HRM, KDS, atau Fiskal sesuai kebutuhan.
 - **Centralized Settings**: Panel pengaturan terpusat untuk semua konfigurasi modul.
 
-### 🧠 AI-Powered Intelligence (Powered by DeepSeek) 🚀
+### 🧠 AI-Powered Intelligence (Powered by Nirmala AI) 🚀
 Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih untuk keputusan bisnis yang lebih tajam.
 - **🤖 AI Daily Suggestion [READY]**: Widget pintar di dashboard yang memberikan saran strategi bisnis dan peringatan stok kritis secara otomatis setiap hari. Menganalisis data penjualan 30 hari terakhir dan status inventaris secara mendalam.
-- **💬 AI Business Assistant ("Tanya Bos") [READY]**: Konsultasi performa bisnis via chat bahasa natural dengan **Conversation Memory**.
+- **💬 AI Business Assistant ("Tanya Nirmala") [READY]**: Konsultasi performa bisnis via chat bahasa natural dengan **Conversation Memory**.
     - **Premium UI/UX**: Interface modern dengan efek *Glassmorphism*, input dinamis, dan responsivitas penuh untuk Mobile & Desktop.
     - **Live Context**: AI memiliki akses ke data Penjualan, Menu Terlaris, dan Stok Rendah (realtime).
     - **Persona Config**: Set your AI Assistant's Name (e.g., "Sarah", "Jarvis") in Settings for a personalized experience.
