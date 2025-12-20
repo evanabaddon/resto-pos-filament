@@ -80,15 +80,22 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
 - **🍳 AI Menu Engineering [ROADMAP]**: Saran optimasi harga dan deskripsi menu yang menggugah selera untuk meningkatkan penjualan.
 
 ### 💬 Integrated WhatsApp Center (Native Chat) [NEW] 🚀
-Menghadirkan pengalaman WhatsApp Web langsung di dalam dashboard admin.
-- **✨ Modern UI**: Tampilan chat yang familiar, responsif, dan elegan mirip WhatsApp Web asli.
-- **⚡️ Realtime Features**:
+Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
+- **✨ Full-Featured Interface**: Tampilan chat yang familiar, responsif, dan elegan dengan **Dark Mode** support.
+- **🤖 Context-Aware AI Reply**: Generate balasan cerdas otomatis menggunakan AI yang membaca *10 chat terakhir* untuk konteks percakapan yang relevan.
+- **↩️ Reply with Quote**: Fitur balas pesan (Reply) dengan kutipan asli, persis seperti di aplikasi native.
+- **⚡️ Realtime Architecture**:
+  - **Live Notifications**: Notifikasi suara dan visual instan saat pesan baru masuk tanpa refresh.
   - **Live Status**: Indikator status pesan (Jam 🕐 ➝ Abu ✔️ ➝ Biru ✔️✔️).
-  - **Avatar Sync**: Menampilkan foto profil kontak, grup, dan akun Anda sendiri secara otomatis.
-- **📁 Media Rich**:
-  - **Drag & Drop**: Kirim gambar/dokumen tinggal tarik & lepas.
-  - **Clipboard & Voice**: Dukungan paste gambar (Ctrl+V) dan pemutaran Voice Note.
-- **👥 Smart Group & Contact**: Penamaan kontak dan grup yang akurat dan stabil.
+  - **Auto Sync**: Avatar kontak dan nama grup tersinkronisasi otomatis.
+- **📁 Advanced Media Handling**:
+  - **Ratio-Perfect Video**: Pemutar video pintar yang menghormati rasio asli (Portrait/Landscape) tanpa memotong konten.
+  - **Drag & Drop**: Kirim gambar/dokumen tinggal tarik & lepas dengan preview cepat.
+  - **Voice & Documents**: Dukungan penuh untuk voice note dan dokumen PDF.
+- **🚧 Group Mention Autocomplete [WIP]**: Fitur tagging anggota grup (`@user`) sedang dalam tahap pengembangan (Beta).
+- **🔄 Smart Conversion Actions**:
+  - **Quick Member**: Konversi chat pelanggan baru menjadi Member CRM langsung dari header chat. Auto-detect jika sudah terdaftar.
+  - **Create Reservation**: Buat jadwal reservasi langsung saat chatting tanpa perlu pindah menu.
 
 ### 📊 Financial Intelligence
 - **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.
@@ -110,35 +117,48 @@ Dibangun di atas pondasi teknologi paling modern dan stabil di tahun 2025.
 
 ---
 
-## 🗺️ Cara Penggunaan (Quick Start)
+## 🚀 Deployment & Background Services
 
-### 1. POS Operation
-1.  Buka menu **POS**.
-2.  Pilih produk ➝ Masuk ke Keranjang.
-3.  **Member**: Cari member atau klik **(+)** untuk buat member baru kilat.
-4.  **Bayar**: Pilih metode bayar. Struk otomatis tercetak.
+Agar notifikasi WhatsApp dan AI berjalan realtime, service di bawah ini **WAJIB** dijalankan di server.
 
-### 2. CRM Follow-up
-1.  Buka menu **Kemitraan (Member)**.
-2.  Gunakan Tombol WhatsApp untuk kirim template sapaan personal.
+### 1. Queue Worker (PENTING untuk Notifikasi)
+Service ini menangani Notifikasi Database, pengiriman email, dan proses background lainnya agar UI tetap cepat.
 
-3.  **Reservasi & DP**:
-    1.  **Input**: Catat reservasi & menu pre-order tamu di menu Reservasi.
-    2.  **Bayar DP**: Klik **"Bayar DP"** untuk mencatat uang muka otomatis.
-    3.  **WhatsApp**: Gunakan tombol konfirmasi untuk kirim detail reservasi ke tamu.
-    4.  **Check-in**: Klik **"Proses ke Kasir"** saat tamu datang untuk potong DP otomatis di POS.
+**Perintah Manual (Terminal):**
+```bash
+php artisan queue:work
+```
 
-4.  **AI Strategy**:
-    1.  Pantau widget **AI Daily Suggestion** di Dashboard untuk insight harian.
-    2.  Buka menu **"Tanya Bos"** untuk analisis data mendalam via chat.
+**Setup Production (Supervisor / Cron):**
+Sangat disarankan menggunakan **Supervisor** di Ubuntu/Linux agar otomatis restart jika mati.
+```ini
+[program:resto-pos-queue]
+process_name=%(program_name)s_%(process_num)02d
+command=php /path/to/project/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+autostart=true
+autorestart=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/path/to/project/storage/logs/worker.log
+stopwaitsecs=3600
+```
 
----
+### 2. WhatsApp Gateway (Node.js)
+Service penghubung antara aplikasi POS dengan server WhatsApp.
 
-### ⚙️ Requirements & Setup
+**Jalankan Service:**
+```bash
+cd wa-gateway
+npm install
+npm start
+```
+*Gunakan `pm2` atau `systemd` untuk menjalankan service ini di background pada production.*
+
+### 3. Requirements Setup
 - **PHP 8.2+** & **MySQL 8+**
-- **DeepSeek API Key**: Masukkan `DEEPSEEK_API_KEY` di file `.env` untuk mengaktifkan fitur AI.
-- **Node.js & NPM**: Untuk kompilasi assets (Vite).
-- **Composer**: Untuk manajemen dependensi PHP.
+- **DeepSeek API Key**: `DEEPSEEK_API_KEY` di `.env` untuk fitur AI.
+- **Microphone Permission**: Izin browser diperlukan untuk fitur Voice Note.
 
 ---
 

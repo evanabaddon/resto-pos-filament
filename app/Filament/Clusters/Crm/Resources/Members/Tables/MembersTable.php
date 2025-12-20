@@ -92,8 +92,8 @@ class MembersTable
                             // 2. Gather Business Context (Settings & Active Discounts)
                             $activePromos = DiscountCode::where('is_active', true)
                                 ->where(function ($q) {
-                                    $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
-                                })
+                                $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
+                            })
                                 ->limit(3)
                                 ->get(['code', 'name', 'type', 'value', 'min_purchase']);
 
@@ -142,7 +142,7 @@ class MembersTable
                         ->modalHeading('Kirim Pesan WhatsApp (SOP)')
                         ->modalDescription('Pesan otomatis dibuat berdasarkan fase pelanggan (Baru/Repeat/Naik Tier). Silakan review sebelum kirim.')
                         ->form(function ($record) {
-                            $settings = app(\App\Settings\GeneralSettings::class);
+                            $settings = app(GeneralSettings::class);
                             $message = '';
 
                             // Logic Phase
@@ -198,7 +198,7 @@ class MembersTable
                         ->icon('heroicon-o-question-mark-circle')
                         ->action(function ($record, $livewire) {
                             $record->update(['last_contacted_at' => now()]);
-                            $settings = app(\App\Settings\GeneralSettings::class);
+                            $settings = app(GeneralSettings::class);
                             $phone = preg_replace('/[^0-9]/', '', $record->phone);
                             if (substr($phone, 0, 1) == '0')
                                 $phone = '62' . substr($phone, 1);
@@ -213,7 +213,7 @@ class MembersTable
                         ->icon('heroicon-o-gift')
                         ->action(function ($record, $livewire) {
                             $record->update(['last_contacted_at' => now()]);
-                            $settings = app(\App\Settings\GeneralSettings::class);
+                            $settings = app(GeneralSettings::class);
                             $phone = preg_replace('/[^0-9]/', '', $record->phone);
                             if (substr($phone, 0, 1) == '0')
                                 $phone = '62' . substr($phone, 1);
@@ -228,7 +228,7 @@ class MembersTable
                         ->icon('heroicon-o-check-circle')
                         ->action(function ($record, $livewire) {
                             $record->update(['last_contacted_at' => now()]);
-                            $settings = app(\App\Settings\GeneralSettings::class);
+                            $settings = app(GeneralSettings::class);
                             $phone = preg_replace('/[^0-9]/', '', $record->phone);
                             if (substr($phone, 0, 1) == '0')
                                 $phone = '62' . substr($phone, 1);

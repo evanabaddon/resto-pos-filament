@@ -61,7 +61,7 @@
                 </div>
 
                 {{-- CHAT LIST --}}
-                <div class="flex-1 overflow-y-auto custom-scrollbar" wire:poll.5s>
+                <div class="flex-1 overflow-y-auto custom-scrollbar" wire:poll.3s="pollState">
                     @forelse($this->chats as $chat)
                         <div wire:click="selectChat('{{ $chat->remote_jid }}')" 
                              class="group flex items-center gap-3 p-3 cursor-pointer transition border-b border-gray-100 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 {{ $selectedJid === $chat->remote_jid ? 'bg-gray-100 dark:bg-gray-800' : '' }}">
@@ -90,18 +90,16 @@
                                         {{ \Carbon\Carbon::parse($chat->last_message_time ?? now())->format('H:i') }}
                                     </span>
                                 </div>
-                                <div class="flex justify-between items-center">
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate pr-2">
-                                        @if(str_contains($chat->remote_jid, '@g.us'))
-                                            <span class="font-bold text-gray-600 dark:text-gray-300">
-                                                {{ $chat->push_name ? explode(' ', $chat->push_name)[0] : 'User' }}:
-                                            </span>
+                                <div class="flex justify-between items-center mt-1">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate min-w-0 flex-1 pr-2">
+                                        @if($chat->from_me)
+                                            <span class="text-gray-400 font-bold">You:</span>
                                         @endif
-                                        {{ $chat->message ?? 'Media' }}
+                                        {{ $chat->message ?? ($chat->caption ? '📷 ' . $chat->caption : 'Media') }}
                                     </p>
                                     
                                     @if($chat->unread_count > 0)
-                                        <span class="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-green-500 rounded-full">
+                                        <span class="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-green-500 rounded-full shrink-0">
                                             {{ $chat->unread_count }}
                                         </span>
                                     @endif
@@ -139,34 +137,65 @@
                         }
                     },
                     handlePaste(e) {
-                        if (e.clipboardData && e.clipboardData.files.length > 0) {
+                        // 1. Files always take priority (Copied files from Finder/Explorer)
+                        if (e.clipboardData.files.length > 0) {
                             e.preventDefault();
-                            let file = e.clipboardData.files[0];
-                            
-                            // Generate a safer file object
-                            const type = file.type || 'image/png';
-                            const ext = type.split('/')[1] || 'png';
-                            const filename = `paste-${new Date().getTime()}.${ext}`;
+                            this.uploadFile(e.clipboardData.files[0]);
+                            return;
+                        }
 
-                            // Recreate file to ensure name and type are explicit
-                            const newFile = new File([file.slice(0, file.size, type)], filename, { type: type });
-                            
-                            this.uploadFile(newFile);
+                        // 2. Fallback to Items (Screenshots / Raw Data)
+                        let item = null;
+                        if (e.clipboardData.items) {
+                            for (let i = 0; i < e.clipboardData.items.length; i++) {
+                                if (e.clipboardData.items[i].type.indexOf('image') !== -1) {
+                                    item = e.clipboardData.items[i];
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (item) {
+                            const blob = item.getAsFile();
+                            if (blob) {
+                                e.preventDefault();
+                                
+                                // FORCE valid file structure for raw blobs (Screenshots)
+                                // We slice to ensure the mime-type is correctly picked up by the server's finfo
+                                const filename = `screenshot-${new Date().getTime()}.png`;
+                                const freshBlob = blob.slice(0, blob.size, 'image/png');
+                                const newFile = new File([freshBlob], filename, { type: 'image/png' });
+                                
+                                this.uploadFile(newFile);
+                            }
                         }
                     },
                     uploadFile(file) {
-                        $wire.upload('attachment', file, (uploadedFilename) => {
-                            // Success
-                        }, (error) => {
-                            console.error('Upload Error:', error);
-                            new FilamentNotification()
-                                .title('Upload Gagal')
-                                .body(error?.message || 'Gagal memproses file. Pastikan format didukung.')
-                                .danger()
-                                .send();
-                        });
+                        // Create a DataTransfer to simulate a file selection
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        
+                        // Reference the hidden file input
+                        const fileInput = this.$refs.fileInput;
+                        fileInput.files = dataTransfer.files;
+                        
+                        // Dispatch the change event to trigger Livewire's wire:model
+                        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+                        new FilamentNotification()
+                            .title('Mengunggah File...')
+                            .body('Sedang memproses ' + (file.size / 1024 / 1024).toFixed(2) + ' MB')
+                            .info()
+                            .send();
                     }
                  }"
+                  x-on:livewire-upload-error.window="
+                    new FilamentNotification()
+                        .title('Gagal Mengunggah')
+                        .body($event.detail.error || 'Terjadi kesalahan saat mengunggah file. Pastikan server mengizinkan file besar.')
+                        .danger()
+                        .send();
+                  "
                  x-on:dragover.prevent="isDragging = true"
                  x-on:dragleave.prevent="isDragging = false"
                  x-on:drop.prevent="handleDrop($event)"
@@ -240,13 +269,28 @@
                                 <span class="font-semibold text-gray-800 dark:text-gray-100 text-sm">
                                     {{ $activeChat->effective_name ?? $activeChat->push_name ?? 'Unknown' }}
                                 </span>
-                                <span class="text-xs text-gray-500 dark:text-gray-400">
-                                    {{ $selectedJid }}
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                                        {{ $selectedJid }}
+                                    </span>
+                                    @if($isMember && $memberData)
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800">
+                                            Member {{ $memberData->tier->name ?? '' }}
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
 
                         <div class="flex items-center gap-1">
+                            {{-- Actions --}}
+                            <div class="hidden md:flex items-center gap-1 mr-2">
+                                @if(!$isMember)
+                                    {{ $this->createMemberAction }}
+                                @endif
+                                {{ $this->createReservationAction }}
+                            </div>
+
                             <button wire:click="refreshMessages" class="p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition">
                                 <x-heroicon-o-arrow-path class="w-5 h-5" />
                             </button>
@@ -257,6 +301,11 @@
                                     </button>
                                 </x-slot>
                                 <x-filament::dropdown.list>
+                                    @if(!$isMember)
+                                        {{ $this->createMemberAction }}
+                                    @endif
+                                    {{ $this->createReservationAction }}
+                                    
                                     <x-filament::dropdown.list.item wire:click="deleteConversation" color="danger" icon="heroicon-o-trash">
                                         Bersihkan Chat
                                     </x-filament::dropdown.list.item>
@@ -291,24 +340,77 @@
 
                             {{-- MESSAGE BUBBLE --}}
                             <div class="flex w-full {{ $msg->from_me ? 'justify-end' : 'justify-start' }} group mb-1">
-                                <div class="relative max-w-[70%] sm:max-w-[60%] text-sm rounded-lg shadow-sm px-2 py-1.5
+                                <div class="relative max-w-[70%] sm:max-w-[60%] text-sm rounded-lg shadow-sm px-2 py-1.5 pr-8
                                     {{ $msg->from_me ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none' : 'bg-white dark:bg-[#202c33] rounded-tl-none' }}">
                                     
+                                    {{-- REPLY BUTTON (Visible on Hover) --}}
+                                    <button wire:click="setReplyTo('{{ $msg->id }}')" 
+                                            class="absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-gray-500 hover:text-purple-500 z-20">
+                                        <x-heroicon-m-arrow-uturn-left class="w-3 h-3" />
+                                    </button>
+                                    
+                                    {{-- Group Sender Name --}}
                                     @if(!$msg->from_me && str_contains($msg->remote_jid, '@g.us'))
-                                        <p class="text-[11px] font-bold text-orange-500 mb-0.5 leading-tight">
-                                            {{ $msg->push_name ?? substr($msg->remote_jid, 0, 5) }}
+                                        @php
+                                            $senderJid = data_get($msg->full_message, 'key.participant') ?? data_get($msg->full_message, 'participant');
+                                            $senderName = $msg->push_name ?? ($senderJid ? str_replace('@s.whatsapp.net', '', $senderJid) : 'Unknown');
+                                            // Colorize based on sender for visual distinction
+                                            $colorIndex = crc32($senderName) % 5;
+                                            $colors = ['text-orange-500', 'text-pink-500', 'text-purple-500', 'text-blue-500', 'text-teal-500'];
+                                            $senderColor = $colors[abs($colorIndex)];
+                                        @endphp
+                                        <p class="text-[11px] font-bold {{ $senderColor }} mb-0.5 leading-tight cursor-pointer hover:underline"
+                                           wire:click="$set('newMessage', '@' . '{{ $senderJid ? str_replace('@s.whatsapp.net', '', $senderJid) : '' }} ')">
+                                            {{ $senderName }}
                                         </p>
                                     @endif
 
                                     <div class="text-gray-800 dark:text-gray-100 leading-relaxed break-words relative">
+                                        {{-- QUOTED MESSAGE PREVIEW --}}
+                                        @php
+                                            $fullMsg = $msg->full_message ?? [];
+                                            $contextInfo = $fullMsg['message']['extendedTextMessage']['contextInfo'] 
+                                                        ?? $fullMsg['message']['imageMessage']['contextInfo']
+                                                        ?? $fullMsg['message']['videoMessage']['contextInfo']
+                                                        ?? $fullMsg['message']['documentMessage']['contextInfo']
+                                                        ?? $fullMsg['message']['audioMessage']['contextInfo']
+                                                        ?? null;
+                                            
+                                            $quotedMsg = $contextInfo['quotedMessage'] ?? null;
+                                        @endphp
+
+                                        @if($quotedMsg)
+                                            <div class="mb-1.5 p-1.5 rounded-md bg-black/5 dark:bg-white/10 border-l-4 border-purple-500 text-xs text-gray-600 dark:text-gray-300 select-none cursor-pointer opacity-80">
+                                                <p class="font-bold text-[10px] text-purple-600 dark:text-purple-400 mb-0.5">
+                                                    @php
+                                                        $participant = $contextInfo['participant'] ?? '';
+                                                        $isMe = str_contains($participant, auth()->user()->phone ?? 'xx-xx') || (isset($contextInfo['isMe']) && $contextInfo['isMe']);
+                                                        $participantName = $isMe ? 'You' : str_replace('@s.whatsapp.net', '', $participant);
+                                                    @endphp
+                                                    {{ $participantName }}
+                                                </p>
+                                                <p class="line-clamp-2">
+                                                    {{ 
+                                                        $quotedMsg['conversation'] 
+                                                        ?? $quotedMsg['extendedTextMessage']['text'] 
+                                                        ?? (isset($quotedMsg['imageMessage']) ? '📷 Photo' : null)
+                                                        ?? (isset($quotedMsg['videoMessage']) ? '🎥 Video' : null)
+                                                        ?? (isset($quotedMsg['audioMessage']) ? '🎵 Audio' : null)
+                                                        ?? (isset($quotedMsg['documentMessage']) ? '📄 Document' : null)
+                                                        ?? '...'
+                                                    }}
+                                                </p>
+                                            </div>
+                                        @endif
+
                                         @if($msg->attachment_type)
                                             @if($msg->attachment_type === 'image')
                                                 <div class="rounded-lg overflow-hidden mb-1 relative group-hover:brightness-95 transition cursor-pointer" onclick="window.open('{{ Storage::url($msg->attachment_path) }}', '_blank')">
                                                     <img src="{{ Storage::url($msg->attachment_path) }}" class="max-w-full md:max-w-sm object-cover">
                                                 </div>
                                             @elseif($msg->attachment_type === 'video')
-                                                <div class="rounded-lg overflow-hidden mb-1 bg-black">
-                                                    <video controls class="max-w-full md:max-w-sm max-h-[300px]">
+                                                <div class="rounded-lg overflow-hidden mb-1 bg-black flex items-center justify-center">
+                                                    <video controls class="max-w-full md:max-w-sm max-h-[500px]">
                                                         <source src="{{ Storage::url($msg->attachment_path) }}">
                                                     </video>
                                                 </div>
@@ -379,8 +481,29 @@
                     </div>
 
                     {{-- INPUT AREA --}}
-                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-800 shrink-0 z-20" x-data="{ isUploading: false }">
+                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-800 shrink-0 z-20" 
+                         x-data="{ isUploading: false }"
+                         x-on:focus-input.window="$refs.messageInput.focus()">
                         
+                        {{-- Reply Context Preview --}}
+                        @if($replyToMessage)
+                            <div class="absolute bottom-20 left-4 right-4 bg-white dark:bg-gray-700 p-3 rounded-xl shadow-lg border-l-4 border-purple-500 flex justify-between items-center animate-slide-up z-30">
+                                <div class="flex flex-col overflow-hidden min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <p class="text-xs font-bold text-purple-600 dark:text-purple-400">
+                                            Replying to {{ $replyToMessage->from_me ? 'You' : $replyToMessage->push_name ?? 'Contact' }}
+                                        </p>
+                                    </div>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 truncate">
+                                        {{ $replyToMessage->message ?? $replyToMessage->caption ?? ($replyToMessage->attachment_type ? ucfirst($replyToMessage->attachment_type) : 'Message') }}
+                                    </p>
+                                </div>
+                                <button wire:click="cancelReply" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full transition text-gray-500">
+                                    <x-heroicon-m-x-mark class="w-5 h-5" />
+                                </button>
+                            </div>
+                        @endif
+
                         {{-- Attachment Preview --}}
                         @if($attachment)
                             <div class="absolute bottom-20 left-4 right-4 bg-white dark:bg-gray-700 p-3 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 flex justify-between items-center animate-slide-up">
@@ -413,9 +536,21 @@
                                 <x-heroicon-o-paper-clip class="w-6 h-6 transform -rotate-45" />
                             </button>
 
+                            {{-- AI GENERATE BUTTON --}}
+                            <button type="button" wire:click="generateAiReply" 
+                                    class="w-10 h-10 flex items-center justify-center text-purple-500 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-gray-700 dark:text-purple-400 dark:hover:text-purple-200 transition relative rounded-full"
+                                    title="Generate AI Reply"
+                                    {{ $status !== 'connected' || $isGeneratingAi ? 'disabled' : '' }}>
+                                <x-heroicon-o-sparkles class="w-6 h-6 {{ $isGeneratingAi ? 'animate-pulse' : '' }}" />
+                                <div wire:loading wire:target="generateAiReply" class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-full">
+                                   <x-filament::loading-indicator class="w-10 h-10 text-purple-600" />
+                                </div>
+                            </button>
+
+                            
                             {{-- TEXT INPUT --}}
                             <div class="flex-1 relative">
-                                <input wire:model="newMessage" type="text" 
+                                <input wire:model="newMessage" x-ref="messageInput" type="text" 
                                     class="w-full rounded-lg border-none bg-white dark:bg-gray-700 py-3 pl-4 pr-10 focus:ring-0 shadow-sm placeholder-gray-400 text-gray-800 dark:text-gray-100"
                                     placeholder="Ketik pesan..."
                                     {{ $status !== 'connected' ? 'disabled' : '' }}>

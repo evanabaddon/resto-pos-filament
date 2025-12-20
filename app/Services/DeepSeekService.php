@@ -108,4 +108,33 @@ class DeepSeekService
 
         return $this->chat($messages);
     }
+    /**
+     * Generate a contextual reply suggestion for WhatsApp
+     */
+    public function generateReplySuggestion(array $chatHistory, string $senderName)
+    {
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $aiName = $settings->ai_assistant_name ?? 'Business Assistant';
+
+        $systemPrompt = "Anda adalah {$aiName}, asisten AI profesional untuk sebuah bisnis F&B (Restoran).
+        Tugas: Berikan draf balasan WhatsApp yang sopan, membantu, dan profesional untuk pelanggan.
+        Konteks: Anda sedang membalas pesan dari pelanggan bernama '{$senderName}'.
+        
+        Instruksi Gaya Bahasa:
+        - Gunakan bahasa Indonesia yang natural, ramah, dan sopan.
+        - Hindari bahasa robot / kaku.
+        - Gunakan emoji secukupnya agar terkesan hangat.
+        - Langsung berikan isi balasan, tanpa pembuka seperti 'Berikut draf balasannya:'.
+        - Maksimal 2-3 kalimat, kecuali pelanggan bertanya hal kompleks.
+
+        Jawablah seolah-olah Anda adalah customer service manusia yang sangat kompeten.";
+
+        $messages = array_merge([
+            ['role' => 'system', 'content' => $systemPrompt]
+        ], $chatHistory);
+
+        $response = $this->chat($messages, ['temperature' => 0.8]); // Higher temp for creativity
+
+        return $response['choices'][0]['message']['content'] ?? '';
+    }
 }

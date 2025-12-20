@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Filament\Pages\WhatsappCenter;
 use App\Http\Controllers\Controller;
 use App\Models\WhatsappMessage;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -144,6 +147,31 @@ class WhatsappWebhookController extends Controller
             ]);
 
             Log::info('WA Message Saved ID: ' . $msg->id);
+
+            // Send Filament Database Notification
+            if (!$data['from_me']) {
+                $recipientUsers = \App\Models\User::all(); // Notify all admins/users
+
+                Log::info("Sending WA Notification to " . $recipientUsers->count() . " users. Content: " . Str::limit($data['message'] ?? $caption ?? '...', 20));
+
+                $senderName = $pushName ?? $data['remote_jid'];
+                $preview = Str::limit($data['message'] ?? $caption ?? 'Mengirim lampiran', 50);
+
+                Notification::make()
+                    ->title("Pesan dari {$senderName}")
+                    ->body($preview)
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->actions([
+                        Action::make('reply')
+                            ->button()
+                            ->label('Balas')
+                            ->url(WhatsappCenter::getUrl(['jid' => $data['remote_jid']]))
+                            ->markAsRead(),
+                    ])
+                    ->sendToDatabase($recipientUsers);
+
+                Log::info("Notification dispatch command executed.");
+            }
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {

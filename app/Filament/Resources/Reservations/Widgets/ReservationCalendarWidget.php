@@ -136,7 +136,7 @@ class ReservationCalendarWidget extends CalendarWidget
                 ->color('info')
                 ->visible(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
-                    $record = \App\Models\Reservation::find($reservationId);
+                    $record = Reservation::find($reservationId);
                     return $record && in_array($record->status, ['pending', 'confirmed']);
                 })
                 ->schema([
@@ -155,7 +155,8 @@ class ReservationCalendarWidget extends CalendarWidget
                 ->action(function (array $arguments, array $data) {
                     $reservationId = $this->extractReservationId($arguments);
                     $record = Reservation::find($reservationId);
-                    if (!$record) return;
+                    if (!$record)
+                        return;
 
                     $activeSession = \App\Models\CashSession::where('user_id', auth()->id())
                         ->where('status', 'open')
@@ -407,7 +408,8 @@ class ReservationCalendarWidget extends CalendarWidget
 
                                         // Build URL
                                         $phone = preg_replace('/[^0-9]/', '', $record->customer_phone);
-                                        if (substr($phone, 0, 1) == '0') $phone = '62' . substr($phone, 1);
+                                        if (substr($phone, 0, 1) == '0')
+                                            $phone = '62' . substr($phone, 1);
 
                                         $url = "https://api.whatsapp.com/send?phone={$phone}&text=" . rawurlencode($message);
 
@@ -590,7 +592,8 @@ class ReservationCalendarWidget extends CalendarWidget
                         $itemsSubtotal = 0;
                         foreach ($record->items as $item) {
                             $product = $item->product;
-                            if (!$product) continue;
+                            if (!$product)
+                                continue;
 
                             $price = $item->unit_price;
                             $subtotal = $price * $item->quantity;

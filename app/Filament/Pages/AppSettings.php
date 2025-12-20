@@ -376,6 +376,37 @@ class AppSettings extends SettingsPage
                                             ),
                                     ]),
 
+                                Section::make('WhatsApp Center (Official Style)')
+                                    ->description('Manage Native WhatsApp Chat Integration.')
+                                    ->schema([
+                                        TextInput::make('wa_license_key')
+                                            ->label('License Key')
+                                            ->password()
+                                            ->revealable()
+                                            ->helperText('Masukkan lisensi, format: WA-PRO-XXXX')
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(function ($state, Set $set) {
+                                                if ($state && str_starts_with($state, 'WA-PRO-')) {
+                                                    // Valid
+                                                } else {
+                                                    $set('enable_wa_center', false);
+                                                }
+                                            }),
+
+                                        Toggle::make('enable_wa_center')
+                                            ->label('Enable WhatsApp Center')
+                                            ->inline(false)
+                                            ->disabled(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('wa_license_key') ?? '', 'WA-PRO-')
+                                            )
+                                            ->helperText(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('wa_license_key') ?? '', 'WA-PRO-')
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul WhatsApp Center.'
+                                            ),
+                                    ]),
                             ]),
                     ])
             ]);

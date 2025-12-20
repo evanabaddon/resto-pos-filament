@@ -55,6 +55,12 @@ class AdminPanelProvider extends PanelProvider
             ->brandName($brandName)
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->spa()
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('10s') // Balanced: Responsive but stable
+            ->renderHook(
+                'panels::body.end',
+                fn() => view('filament.hooks.notification-sound')
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -102,7 +108,9 @@ class AdminPanelProvider extends PanelProvider
                 'Manajemen SDM',
                 'Kemitraan (CRM)',
                 'Laporan',
-                'Settings',
+                'AI Intelligence',
+                'Super Chat',
+                'Settings'
             ]);
     }
 }

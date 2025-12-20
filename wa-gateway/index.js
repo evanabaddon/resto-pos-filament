@@ -298,7 +298,7 @@ app.get('/status', async (req, res) => {
 })
 
 app.post('/chat/send', async (req, res) => {
-    const { number, message, media_data, media_type, caption } = req.body;
+    const { number, message, media_data, media_type, caption, quoted, mentions } = req.body;
 
     if (!status === 'connected' || !sock) {
         return res.status(400).json({ error: 'WhatsApp not connected' });
@@ -312,6 +312,14 @@ app.post('/chat/send', async (req, res) => {
         }
 
         let sentMsg;
+        const options = {};
+        if (quoted) {
+            options.quoted = quoted;
+        }
+        if (mentions) {
+            options.mentions = mentions;
+        }
+
         if (media_data && media_type) {
             // Convert base64 to buffer
             const buffer = Buffer.from(media_data, 'base64');
@@ -327,10 +335,10 @@ app.post('/chat/send', async (req, res) => {
                 messagePayload = { document: buffer, mimetype: 'application/pdf', fileName: caption || 'file.pdf' };
             }
 
-            sentMsg = await sock.sendMessage(jid, messagePayload);
+            sentMsg = await sock.sendMessage(jid, messagePayload, options);
         } else {
             // Simple text message
-            sentMsg = await sock.sendMessage(jid, { text: message });
+            sentMsg = await sock.sendMessage(jid, { text: message }, options);
         }
 
         res.json({ success: true, data: sentMsg });
