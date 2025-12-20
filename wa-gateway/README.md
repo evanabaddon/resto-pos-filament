@@ -33,9 +33,10 @@ This is a self-hosted WhatsApp Gateway using [Baileys](https://github.com/Whiske
 
 ## 🔗 Architecture
 
-- **Port**: 3000 (Defined in `index.js`)
-- **Webhook**: Sends received messages & status updates to `http://127.0.0.1:8000/api/webhook/wa`.
-    - If your Laravel app runs on a different port/domain, update `WEBHOOK_URL` in `.env` or `index.js`.
+## 🔗 Architecture
+
+- **Port**: Default `3000` (Configurable via `PORT` in `.env`).
+- **Webhook**: Sends updates to `http://127.0.0.1:8000/api/webhook/wa` (Configurable via `WEBHOOK_URL` in `.env`).
 
 ## 📂 Project Structure
 

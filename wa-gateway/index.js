@@ -370,6 +370,7 @@ app.post('/logout', async (req, res) => {
 })
 
 app.listen(PORT, () => {
-    console.log(`WA Gateway running on port ${PORT}`)
+    console.log(`\n🚀 WA Gateway running on port ${PORT}`)
+    console.log(`🔗 Webhook URL: ${WEBHOOK_URL}\n`)
     connectToWhatsApp()
 })

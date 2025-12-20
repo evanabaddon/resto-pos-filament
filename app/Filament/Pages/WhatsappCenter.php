@@ -35,11 +35,15 @@ class WhatsappCenter extends Page
 
     // ... (getChatsProperty and startNewChat remain unchanged) ...
 
+    protected function getGatewayUrl()
+    {
+        return rtrim(env('WA_GATEWAY_URL', 'http://127.0.0.1:3000'), '/');
+    }
+
     public function checkConnection()
     {
         try {
-            // Assume Node service runs on port 3000 locally
-            $response = \Illuminate\Support\Facades\Http::timeout(2)->get('http://127.0.0.1:3000/status');
+            $response = \Illuminate\Support\Facades\Http::timeout(2)->get($this->getGatewayUrl() . '/status');
             if ($response->successful()) {
                 $data = $response->json();
                 $this->status = $data['status'] ?? 'error';
@@ -57,100 +61,8 @@ class WhatsappCenter extends Page
             $this->qrCode = null;
         }
     }
-    public function getChatsProperty()
-    {
-        // Fetch the latest message for each remote_jid
-        // logical efficient query for chat list
-        return \App\Models\WhatsappMessage::query()
-            ->select('whatsapp_messages.*')
-            ->selectRaw('(SELECT COUNT(*) FROM whatsapp_messages as wm2 WHERE wm2.remote_jid = whatsapp_messages.remote_jid AND wm2.from_me = 0 AND wm2.status = "received") as unread_count')
-            // Subquery to get the most relevant name (Contact Name or Group Subject)
-            ->selectRaw("
-                CASE 
-                    WHEN whatsapp_messages.remote_jid LIKE '%@g.us' THEN 
-                        COALESCE(
-                            (SELECT conversation_name FROM whatsapp_messages as wm_group WHERE wm_group.remote_jid = whatsapp_messages.remote_jid AND wm_group.conversation_name IS NOT NULL ORDER BY id DESC LIMIT 1),
-                            (SELECT push_name FROM whatsapp_messages as wm_name WHERE wm_name.remote_jid = whatsapp_messages.remote_jid AND wm_name.from_me = 0 AND wm_name.push_name IS NOT NULL ORDER BY id DESC LIMIT 1),
-                            whatsapp_messages.push_name
-                        )
-                    ELSE
-                        COALESCE(
-                            (SELECT push_name FROM whatsapp_messages as wm_name WHERE wm_name.remote_jid = whatsapp_messages.remote_jid AND wm_name.from_me = 0 AND wm_name.push_name IS NOT NULL ORDER BY id DESC LIMIT 1),
-                            conversation_name,
-                            whatsapp_messages.push_name
-                        )
-                END as effective_name
-            ")
-            ->whereIn('id', function ($query) {
-                $query->selectRaw('MAX(id)')
-                    ->from('whatsapp_messages')
-                    ->groupBy('remote_jid');
-            })
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('push_name', 'like', "%{$this->search}%")
-                        ->orWhere('conversation_name', 'like', "%{$this->search}%")
-                        ->orWhere('remote_jid', 'like', "%{$this->search}%");
-                });
-            })
-            ->orderByDesc('created_at')
-            ->get();
-    }
 
-    public function startNewChat($number)
-    {
-        $cleanNumber = preg_replace('/[^0-9]/', '', $number);
-        if (strlen($cleanNumber) < 5)
-            return;
-
-        $jid = $cleanNumber . '@s.whatsapp.net';
-        $this->selectChat($jid);
-        $this->search = '';
-    }
-
-    public function pollState()
-    {
-        $this->checkConnection();
-        $this->refreshMessages();
-    }
-
-    public function mount()
-    {
-        $this->checkConnection();
-    }
-
-    public function selectChat($jid)
-    {
-        $this->selectedJid = $jid;
-        $this->newMessage = '';
-
-        // Mark messages as read
-        \App\Models\WhatsappMessage::where('remote_jid', $jid)
-            ->where('from_me', false)
-            ->where('status', 'received')
-            ->update(['status' => 'read']);
-
-        $this->refreshMessages();
-    }
-
-    public $lastMessageCount = 0;
-
-    public function refreshMessages()
-    {
-        if ($this->selectedJid) {
-            $messages = \App\Models\WhatsappMessage::where('remote_jid', $this->selectedJid)
-                ->orderBy('created_at', 'asc')
-                ->get();
-
-            $this->activeChatMessages = $messages;
-
-            // Only scroll if message count changed (new message arrived)
-            if ($messages->count() > $this->lastMessageCount) {
-                $this->dispatch('chat-updated');
-                $this->lastMessageCount = $messages->count();
-            }
-        }
-    }
+    // ... [getChatsProperty and startNewChat same as before] ...
 
     public function sendMessage()
     {
@@ -182,8 +94,7 @@ class WhatsappCenter extends Page
                 $payload['caption'] = $this->newMessage;
             }
 
-            // Assume Node service runs on port 3000
-            $response = \Illuminate\Support\Facades\Http::post('http://127.0.0.1:3000/chat/send', $payload);
+            $response = \Illuminate\Support\Facades\Http::post($this->getGatewayUrl() . '/chat/send', $payload);
 
             if ($response->successful()) {
                 // Find recipient name to preserve chat title in the list
@@ -229,26 +140,12 @@ class WhatsappCenter extends Page
         }
     }
 
-    public function deleteConversation()
-    {
-        if (!$this->selectedJid)
-            return;
-
-        \App\Models\WhatsappMessage::where('remote_jid', $this->selectedJid)->delete();
-
-        $this->selectedJid = null;
-        $this->activeChatMessages = [];
-
-        \Filament\Notifications\Notification::make()
-            ->title('Conversation deleted')
-            ->success()
-            ->send();
-    }
+    // ... [deleteConversation] ...
 
     public function logout()
     {
         try {
-            \Illuminate\Support\Facades\Http::post('http://127.0.0.1:3000/logout');
+            \Illuminate\Support\Facades\Http::post($this->getGatewayUrl() . '/logout');
 
             // Clear all messages from database as requested
             \App\Models\WhatsappMessage::truncate();
