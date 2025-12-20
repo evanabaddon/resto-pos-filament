@@ -406,11 +406,22 @@ class ReservationCalendarWidget extends CalendarWidget
                                         $date = $record->reservation_date->translatedFormat('d F Y');
                                         $time = $record->reservation_date->format('H:i');
 
-                                        $message = str_replace(
-                                            ['{customer_name}', '{app_name}', '{date}', '{time}', '{guests}'],
-                                            [$record->customer_name, $settings->app_name, $date, $time, $record->party_size],
-                                            $template
-                                        );
+                                        try {
+                                            $aiService = app(\App\Services\DeepSeekService::class);
+                                            $message = $aiService->generateReservationConfirmation([
+                                                'customer_name' => $record->customer_name,
+                                                'date' => $date,
+                                                'time' => $time,
+                                                'guests' => $record->party_size,
+                                                'special_requests' => $record->special_requests,
+                                            ], $template);
+                                        } catch (\Exception $e) {
+                                            $message = str_replace(
+                                                ['{customer_name}', '{app_name}', '{date}', '{time}', '{guests}'],
+                                                [$record->customer_name, $settings->app_name, $date, $time, $record->party_size],
+                                                $template
+                                            );
+                                        }
 
 
                                         Notification::make()

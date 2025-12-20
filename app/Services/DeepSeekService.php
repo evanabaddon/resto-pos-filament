@@ -162,4 +162,62 @@ class DeepSeekService
 
         return $response['choices'][0]['message']['content'] ?? '';
     }
+
+    /**
+     * Generate an AI-powered reservation confirmation message
+     */
+    public function generateReservationConfirmation(array $reservationData, string $template = '')
+    {
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $aiName = $settings->ai_assistant_name ?? 'Admin';
+        $appName = $settings->app_name ?? 'Restoran Kami';
+        $programName = $settings->loyalty_program_name ?? 'Member';
+
+        // Persona & Tone Instructions from Settings
+        $personaInstructions = $settings->ai_crm_system_prompt ?? '';
+
+        // Variable replacement for persona
+        $replacements = [
+            '{app_name}' => $appName,
+            '{program_name}' => $programName,
+            '{ai_name}' => $aiName,
+        ];
+        $personaInstructions = str_replace(array_keys($replacements), array_values($replacements), $personaInstructions);
+
+        $systemPrompt = "Anda adalah {$aiName}, AI Assistant untuk bisnis '{$appName}'.
+        
+        PERAN & PERSONA:
+        {$personaInstructions}
+        
+        TUGAS SAAT INI: 
+        Buatlah pesan WhatsApp konfirmasi reservasi yang SANGAT RAMAH, PERSONAL, dan ANTUSIAS.
+        Gunakan data reservasi berikut sebagai inti informasi, tetapi rangkai dengan gaya bahasa Anda sendiri sesuai persona di atas.
+
+        DATA RESERVASI:
+        - Nama: {$reservationData['customer_name']}
+        - Tanggal: {$reservationData['date']}
+        - Jam: {$reservationData['time']}
+        - Jumlah Tamu: {$reservationData['guests']}
+        - Permintaan Khusus: " . ($reservationData['special_requests'] ?? '-') . "
+
+        TEMPLATE REFERENSI (Opsional - gunakan sebagai inspirasi data):
+        {$template}
+
+        ATURAN PENTING:
+        1. Jangan hanya menyalin template. Buatlah terasa lebih mengalir dan 'manusiawi'.
+        2. Gunakan EMOJI yang relevan agar suasana ceria.
+        3. Pastikan informasi Tanggal, Jam, dan Jumlah Tamu TERTERA JELAS.
+        4. Akhiri balasan dengan signature nama Anda: '- {$aiName}'.
+        5. Berikan isi balasan SAJA.
+        6. Jika ada Permintaan Khusus, sebutkan bahwa tim akan berusaha memenuhinya.";
+
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt],
+            ['role' => 'user', 'content' => "Buat konfirmasi untuk Kak {$reservationData['customer_name']}."]
+        ];
+
+        $response = $this->chat($messages, ['temperature' => 0.8]);
+
+        return $response['choices'][0]['message']['content'] ?? '';
+    }
 }
