@@ -14,6 +14,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use App\Filament\Pages\WhatsappCenter;
 use Illuminate\Support\Facades\DB;
 
 class MembersTable
@@ -136,16 +137,20 @@ class MembersTable
                                     ->required()
                             ];
                         })
-                        ->action(function ($data, $record, $livewire) {
+                        ->action(function ($data, $record) {
                             $phone = preg_replace('/[^0-9]/', '', $record->phone);
                             if (substr($phone, 0, 1) == '0') {
                                 $phone = '62' . substr($phone, 1);
+                            } elseif (substr($phone, 0, 1) == '8') {
+                                $phone = '62' . $phone;
                             }
-                            $text = rawurlencode($data['message']);
+                            $jid = $phone . '@s.whatsapp.net';
                             $record->update(['last_contacted_at' => now()]);
 
-                            $url = "https://api.whatsapp.com/send?phone={$phone}&text={$text}";
-                            $livewire->js("window.open('{$url}', '_blank')");
+                            return redirect()->to(WhatsappCenter::getUrl([
+                                'jid' => $jid,
+                                'message' => $data['message']
+                            ]));
                         }),
 
                     // 1. Smart SOP Action
@@ -186,69 +191,76 @@ class MembersTable
                                     ->required()
                             ];
                         })
-                        ->action(function ($data, $record, $livewire) {
+                        ->action(function ($data, $record) {
                             $phone = preg_replace('/[^0-9]/', '', $record->phone);
                             if (substr($phone, 0, 1) == '0') {
                                 $phone = '62' . substr($phone, 1);
+                            } elseif (substr($phone, 0, 1) == '8') {
+                                $phone = '62' . $phone;
                             }
-                            $text = rawurlencode($data['message']);
+                            $jid = $phone . '@s.whatsapp.net';
 
                             // Update Timestamp
                             $record->update(['last_contacted_at' => now()]);
 
-                            // Filament specific: Notification
-                            \Filament\Notifications\Notification::make()
-                                ->title('Membuka WhatsApp...')
-                                ->success()
-                                ->send();
-
-                            $url = "https://api.whatsapp.com/send?phone={$phone}&text={$text}";
-                            $livewire->js("window.open('{$url}', '_blank')");
+                            return redirect()->to(WhatsappCenter::getUrl([
+                                'jid' => $jid,
+                                'message' => $data['message']
+                            ]));
                         }),
 
                     // 2. Cheat Sheet - Benefit
                     Action::make('faq_benefit')
                         ->label('FAQ: Benefit Poin')
                         ->icon('heroicon-o-question-mark-circle')
-                        ->action(function ($record, $livewire) {
+                        ->action(function ($record) {
                             $record->update(['last_contacted_at' => now()]);
                             $settings = app(GeneralSettings::class);
                             $phone = preg_replace('/[^0-9]/', '', $record->phone);
-                            if (substr($phone, 0, 1) == '0')
-                                $phone = '62' . substr($phone, 1);
-                            $text = rawurlencode($settings->wa_template_faq_benefit);
-                            $url = "https://api.whatsapp.com/send?phone={$phone}&text={$text}";
-                            $livewire->js("window.open('{$url}', '_blank')");
+                            if (substr($phone, 0, 1) == '0') $phone = '62' . substr($phone, 1);
+                            elseif (substr($phone, 0, 1) == '8') $phone = '62' . $phone;
+                            $jid = $phone . '@s.whatsapp.net';
+
+                            return redirect()->to(WhatsappCenter::getUrl([
+                                'jid' => $jid,
+                                'message' => $settings->wa_template_faq_benefit
+                            ]));
                         }),
 
                     // 3. Cheat Sheet - Redemption
                     Action::make('faq_redemption')
                         ->label('FAQ: Penukaran')
                         ->icon('heroicon-o-gift')
-                        ->action(function ($record, $livewire) {
+                        ->action(function ($record) {
                             $record->update(['last_contacted_at' => now()]);
                             $settings = app(GeneralSettings::class);
                             $phone = preg_replace('/[^0-9]/', '', $record->phone);
-                            if (substr($phone, 0, 1) == '0')
-                                $phone = '62' . substr($phone, 1);
-                            $text = rawurlencode($settings->wa_template_faq_redemption);
-                            $url = "https://api.whatsapp.com/send?phone={$phone}&text={$text}";
-                            $livewire->js("window.open('{$url}', '_blank')");
+                            if (substr($phone, 0, 1) == '0') $phone = '62' . substr($phone, 1);
+                            elseif (substr($phone, 0, 1) == '8') $phone = '62' . $phone;
+                            $jid = $phone . '@s.whatsapp.net';
+
+                            return redirect()->to(WhatsappCenter::getUrl([
+                                'jid' => $jid,
+                                'message' => $settings->wa_template_faq_redemption
+                            ]));
                         }),
 
                     // 4. Cheat Sheet - Use Points
                     Action::make('faq_use_points')
                         ->label('FAQ: Pakai Sekarang')
                         ->icon('heroicon-o-check-circle')
-                        ->action(function ($record, $livewire) {
+                        ->action(function ($record) {
                             $record->update(['last_contacted_at' => now()]);
                             $settings = app(GeneralSettings::class);
                             $phone = preg_replace('/[^0-9]/', '', $record->phone);
-                            if (substr($phone, 0, 1) == '0')
-                                $phone = '62' . substr($phone, 1);
-                            $text = rawurlencode($settings->wa_template_faq_use_points);
-                            $url = "https://api.whatsapp.com/send?phone={$phone}&text={$text}";
-                            $livewire->js("window.open('{$url}', '_blank')");
+                            if (substr($phone, 0, 1) == '0') $phone = '62' . substr($phone, 1);
+                            elseif (substr($phone, 0, 1) == '8') $phone = '62' . $phone;
+                            $jid = $phone . '@s.whatsapp.net';
+
+                            return redirect()->to(WhatsappCenter::getUrl([
+                                'jid' => $jid,
+                                'message' => $settings->wa_template_faq_use_points
+                            ]));
                         }),
 
                     // 5. Reset Followup

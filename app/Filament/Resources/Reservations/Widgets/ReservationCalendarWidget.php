@@ -24,6 +24,7 @@ use Guava\Calendar\Filament\Actions\EditAction;
 use Guava\Calendar\Filament\Actions\ViewAction;
 use Guava\Calendar\ValueObjects\EventClickInfo;
 use Guava\Calendar\Filament\Actions\CreateAction;
+use App\Filament\Pages\WhatsappCenter;
 
 class ReservationCalendarWidget extends CalendarWidget
 {
@@ -333,20 +334,25 @@ class ReservationCalendarWidget extends CalendarWidget
             return null;
         }
 
-        // Format nomor untuk WhatsApp
+        $jid = $this->formatToJid($phoneNumber);
+        return WhatsappCenter::getUrl(['jid' => $jid]);
+    }
+
+    private function formatToJid(?string $phoneNumber): ?string
+    {
+        if (empty($phoneNumber)) return null;
+
         $phone = preg_replace('/[^0-9]/', '', $phoneNumber);
 
         if (substr($phone, 0, 2) === '62') {
-            $whatsappNumber = $phone;
+            $phone = $phone;
         } elseif (substr($phone, 0, 1) === '0') {
-            $whatsappNumber = '62' . substr($phone, 1);
+            $phone = '62' . substr($phone, 1);
         } elseif (substr($phone, 0, 1) === '8') {
-            $whatsappNumber = '62' . $phone;
-        } else {
-            $whatsappNumber = $phone;
+            $phone = '62' . $phone;
         }
 
-        return 'https://wa.me/' . $whatsappNumber;
+        return $phone . '@s.whatsapp.net';
     }
 
     /**
@@ -406,12 +412,6 @@ class ReservationCalendarWidget extends CalendarWidget
                                             $template
                                         );
 
-                                        // Build URL
-                                        $phone = preg_replace('/[^0-9]/', '', $record->customer_phone);
-                                        if (substr($phone, 0, 1) == '0')
-                                            $phone = '62' . substr($phone, 1);
-
-                                        $url = "https://api.whatsapp.com/send?phone={$phone}&text=" . rawurlencode($message);
 
                                         Notification::make()
                                             ->title('Reservasi Dikonfirmasi')
@@ -419,7 +419,12 @@ class ReservationCalendarWidget extends CalendarWidget
                                             ->send();
 
                                         $this->refreshRecords();
-                                        $this->js("window.open('{$url}', '_blank')");
+
+                                        $jid = $this->formatToJid($record->customer_phone);
+                                        return redirect()->to(WhatsappCenter::getUrl([
+                                            'jid' => $jid,
+                                            'message' => $message
+                                        ]));
                                     }),
                             ]),
                     ])->columns(2),

@@ -299,6 +299,11 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
         if ($jid) {
             $this->selectChat($jid);
+
+            // Handle pre-filled message
+            if ($message = request()->query('message')) {
+                $this->newMessage = $message;
+            }
         }
     }
 

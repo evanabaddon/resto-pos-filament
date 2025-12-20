@@ -23,6 +23,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
+use App\Filament\Pages\WhatsappCenter;
+use Filament\Tables\Actions\Action as TableAction;
 
 class ReservationsTable
 {
@@ -48,7 +50,20 @@ class ReservationsTable
 
                 TextColumn::make('customer_phone')
                     ->label('Telepon')
-                    ->searchable(),
+                    ->searchable()
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->iconColor('success')
+                    ->action(
+                        TableAction::make('chat_wa')
+                            ->url(function ($record) {
+                                if (!$record->customer_phone) return null;
+                                $phone = preg_replace('/[^0-9]/', '', $record->customer_phone);
+                                if (substr($phone, 0, 1) === '0') $phone = '62' . substr($phone, 1);
+                                elseif (substr($phone, 0, 1) === '8') $phone = '62' . $phone;
+                                $jid = $phone . '@s.whatsapp.net';
+                                return WhatsappCenter::getUrl(['jid' => $jid]);
+                            })
+                    ),
 
                 TextColumn::make('party_size')
                     ->label('Jumlah')
