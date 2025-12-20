@@ -46,3 +46,4 @@ widowsclient/windows-print-client.php
 /electron-print-agent/dist
 /wa-gateway/auth_info_baileys
 /wa-gateway/node_modules
+wa-gateway/package-lock.json
