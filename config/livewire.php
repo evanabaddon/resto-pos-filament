@@ -64,8 +64,8 @@ return [
     */
 
     'temporary_file_upload' => [
-        'disk' => 'public',        // Use public disk which is known to work
-        'rules' => ['file', 'max:51200'],
+        'disk' => null,        // Default (local)
+        'rules' => 'nullable|max:51200', // 50MB, extremely permissive string
         'directory' => 'livewire-tmp',   // Will be storage/app/public/livewire-tmp
         'middleware' => null,  // Example: 'throttle:60,1'             | Default: 'throttle:60,1'
         'preview_mimes' => [   // Supported file types for temporary pre-signed file URLs...

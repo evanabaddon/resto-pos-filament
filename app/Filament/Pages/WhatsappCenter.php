@@ -8,6 +8,8 @@ use BackedEnum;
 use UnitEnum;
 
 use Livewire\Features\SupportFileUploads\WithFileUploads;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -195,7 +197,8 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     public function checkConnection()
     {
         try {
-            $response = \Illuminate\Support\Facades\Http::timeout(2)->get($this->getGatewayUrl() . '/status');
+            /** @var \Illuminate\Http\Client\Response $response */
+            $response = Http::timeout(2)->get($this->getGatewayUrl() . '/status');
             if ($response->successful()) {
                 $data = $response->json();
                 $this->status = $data['status'] ?? 'error';
@@ -457,7 +460,8 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 $payload['caption'] = $this->newMessage;
             }
 
-            $response = \Illuminate\Support\Facades\Http::post($this->getGatewayUrl() . '/chat/send', $payload);
+            /** @var \Illuminate\Http\Client\Response $response */
+            $response = Http::asJson()->post($this->getGatewayUrl() . '/chat/send', $payload);
 
             if ($response->successful()) {
                 // Find recipient name to preserve chat title in the list

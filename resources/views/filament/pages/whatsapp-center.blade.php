@@ -171,22 +171,42 @@
                         }
                     },
                     uploadFile(file) {
-                        // Create a DataTransfer to simulate a file selection
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(file);
-                        
-                        // Reference the hidden file input
-                        const fileInput = this.$refs.fileInput;
-                        fileInput.files = dataTransfer.files;
-                        
-                        // Dispatch the change event to trigger Livewire's wire:model
-                        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        // 1. Ensure we have an active chat to upload to
+                        if (!$wire.selectedJid) {
+                            new FilamentNotification()
+                                .title('Pilih Percakapan')
+                                .body('Silakan pilih percakapan terlebih dahulu sebelum mengirim file.')
+                                .warning()
+                                .send();
+                            return;
+                        }
 
-                        new FilamentNotification()
-                            .title('Mengunggah File...')
-                            .body('Sedang memproses ' + (file.size / 1024 / 1024).toFixed(2) + ' MB')
-                            .info()
-                            .send();
+                        // 2. Perform upload
+                        console.log('Starting upload for file:', file.name, file.size);
+
+                        $wire.upload('attachment', file, (uploadedFilename) => {
+                            // Success
+                            console.log('Upload successful:', uploadedFilename);
+                            new FilamentNotification()
+                                .title('File Siap Dikirim')
+                                .body('Klik ikon pesawat kertas untuk mengirim.')
+                                .success()
+                                .send();
+                        }, (error) => {
+                            // Failure
+                            console.error('LIVEWIRE UPLOAD ERROR:', error);
+                            
+                            let errorMsg = error || 'Terjadi kesalahan saat mengunggah.';
+                            if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                                errorMsg += ' Cek apakah APP_URL di .env sudah sesuai.';
+                            }
+
+                            new FilamentNotification()
+                                .title('Gagal Mengunggah')
+                                .body(errorMsg)
+                                .danger()
+                                .send();
+                        });
                     }
                  }"
                   x-on:livewire-upload-error.window="
