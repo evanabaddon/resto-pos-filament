@@ -33,8 +33,6 @@ class WhatsappCenter extends Page
     public $userAvatar = null;
     public $userName = null;
 
-    // ... (getChatsProperty and startNewChat remain unchanged) ...
-
     protected function getGatewayUrl()
     {
         return rtrim(env('WA_GATEWAY_URL', 'http://127.0.0.1:3000'), '/');
@@ -57,6 +55,7 @@ class WhatsappCenter extends Page
                 $this->status = 'gateway_error';
             }
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("WA Gateway Connection Error: " . $e->getMessage());
             $this->status = 'offline'; // Node likely not running
             $this->qrCode = null;
         }
