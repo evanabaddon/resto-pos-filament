@@ -1,6 +1,9 @@
-# 🍽️ Resto POS System (Laravel 11 + Filament 4)
+# 🍽️ Resto Intelligence: Advanced F&B Ecosystem 🚀
+### Next-Gen Restaurant OS — Powered by Adaptive AI & Native WhatsApp Gateway
 
-**The Ultimate Restaurant Management System** — Dirancang dengan standar Enterprise untuk operasional F&B modern yang kompleks dan dinamis. Menghadirkan pengalaman **Point of Sale (POS)** kelas dunia, **CRM Berbasis AI-Logic**, **Kitchen Display System (KDS)** Realtime, hingga **Laporan Fiskal & Profitabilitas Otomatis**.
+**Resto Intelligence** adalah **Enterprise-Grade F&B Ecosystem** yang dirancang untuk mendefinisikan ulang standar operasional restoran modern. Mengintegrasikan teknologi **Laravel 11**, **Filament 4**, dan **Hybrid AI Intelligence**, sistem ini menghadirkan perpaduan sempurna antara **High-Speed Point of Sale**, **Native WhatsApp Gateway**, dan **Autonomous Business Intelligence**.
+
+Ini bukan sekadar alat pencatat transaksi; ini adalah pusat komando digital yang memberdayakan outlet Anda dengan **AI-Driven CRM**, **Real-time Kitchen Orchestration (KDS)**, hingga **Automated Fiscal & P&L Analysis**. Sistem ini memastikan setiap detik operasional Anda optimal, setiap pelanggan merasa dihargai secara personal melalui **Hyper-Personalized WhatsApp**, dan setiap keputusan bisnis didukung oleh kecerdasan buatan yang akurat.
 
 ---
 
@@ -72,12 +75,11 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
     - **Premium UI/UX**: Interface modern dengan efek *Glassmorphism*, input dinamis, dan responsivitas penuh.
     - **Live Context**: AI memiliki akses ke data Penjualan, Menu Terlaris, dan Stok Kritis (Retail & Bahan Baku).
     - **Persona Config**: Ubah Nama AI (misal: "Sarah", "Jarvis") di Settings untuk pengalaman yang lebih personal.
-- **💌 AI Smart Message (CRM) [READY]**: Generasi draf WhatsApp yang sangat personal untuk member dengan kecerdasan kontekstual.
-    - **No-Hallucination Menu**: AI hanya akan menyebutkan **Menu Asli** (Top 5 Menu terlaris) yang ada di database.
-    - **Promo Awareness**: Otomatis mendeteksi **Kode Promo Aktif** di database dan menyelipkannya secara natural.
-    - **Loyalty Integration**: AI membaca level member (Sedulur Suralaya) untuk menyesuaikan apresiasi poin.
-- **📉 Smart Inventory Forecasting [ROADMAP]**: Prediksi stok bahan baku mingguan untuk meminimalisir *waste* menggunakan pola belanja historis.
-- **🍳 AI Menu Engineering [ROADMAP]**: Saran optimasi harga dan deskripsi menu yang menggugah selera untuk meningkatkan penjualan.
+- **💌 AI Smart Message & Reply (Grounded AI) [READY]**: Generasi draf pesan yang sangat personal dengan **Zero-Hallucination Logic**.
+    - **Product Grounding**: AI hanya akan menyebutkan **Menu Asli** (Top 5 Terlaris) dari database, bukan menu fiktif.
+    - **Promo Awareness**: Otomatis menyertakan kode promo aktif yang tersedia di sistem kasir.
+    - **Signature System**: Penutup pesan otomatis sesuai nama Assistant yang dikonfigurasi.
+- **📅 AI Reservation Awareness [NEW]**: AI secara cerdas mengecek ketersediaan jam reservasi dengan membaca jadwal 7 hari ke depan sebelum memberikan draf balasan.
 
 ### 💬 Integrated WhatsApp Center (Native Chat) 🚀
 Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
@@ -105,6 +107,30 @@ Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
 
 ---
 
+## 🗺️ Roadmap Strategis 2026: Strategic Expansion
+
+Rencana pengembangan fitur masa depan untuk memaksimalkan ROI dan efisiensi operasional.
+
+### 1. 🍳 AI Menu Engineering (Profit & Popularity Matrix) [NEXT]
+- **Stars, Plowhorses, Puzzles, & Dogs**: AI mengklasifikasikan menu berdasarkan profitabilitas vs popularitas.
+- **Dynamic Pricing Advice**: AI menyarankan kenaikan harga atau penggantian bahan baku untuk menu yang populer tapi kurang menguntungkan.
+
+### 2. 💌 Loyalty Automation 2.0 (The AI CRM Agent)
+- **Automatic Re-engagement**: Pesan otomatis ke pelanggan yang tidak datang >30 hari.
+- **Birthday & Milestone Alerts**: Pengiriman otomatis gift dan ucapan untuk meningkatkan *Retention Rate*.
+
+### 3. ⏱️ Kitchen Productivity & Performance Analytics
+- **Preparation Time Tracking**: Melacak durasi masak per item dari KDS masuk hingga selesai.
+- **Kitchen Bottleneck Detection**: Menganalisis menu mana yang paling sering membuat antrean dapur macet.
+
+### 4. 📉 Smart Inventory Forecasting
+- **Predictive Restocking**: AI memprediksi kebutuhan bahan baku minggu depan berdasarkan tren historis dan sisa stok saat ini.
+
+### 5. 💰 Integrated P&L Dashboard (Daily Net Profit)
+- **Expense vs Revenue**: Dashboard laba rugi harian otomatis yang sudah memotong Gaji, Operasional, dan HPP.
+
+---
+
 ## 🛠️ Stack Teknologi (Enterprise Grade)
 
 Dibangun di atas pondasi teknologi paling modern dan stabil di tahun 2025.
@@ -123,28 +149,38 @@ Dibangun di atas pondasi teknologi paling modern dan stabil di tahun 2025.
 
 Agar notifikasi WhatsApp dan AI berjalan realtime, service di bawah ini **WAJIB** dijalankan di server.
 
-### 1. Queue Worker (PENTING untuk Notifikasi)
-Service ini menangani Notifikasi Database, pengiriman email, dan proses background lainnya agar UI tetap cepat.
+### 1. Queue & Scheduler Setup
 
-**Perintah Manual (Terminal):**
-```bash
-php artisan queue:work
-```
-
-**Setup Production (Supervisor / Cron):**
-Sangat disarankan menggunakan **Supervisor** di Ubuntu/Linux agar otomatis restart jika mati.
+#### **A. VPS / Dedicated (Rekomendasi: Supervisor)**
+Gunakan **Supervisor** agar proses `queue:work` otomatis restart jika mati.
 ```ini
 [program:resto-pos-queue]
-process_name=%(program_name)s_%(process_num)02d
 command=php /path/to/project/artisan queue:work --sleep=3 --tries=3 --max-time=3600
 autostart=true
 autorestart=true
 user=www-data
 numprocs=2
-redirect_stderr=true
-stdout_logfile=/path/to/project/storage/logs/worker.log
-stopwaitsecs=3600
 ```
+
+#### **B. Shared Hosting (Alternatif: Cron Job)**
+Jika menggunakan Shared Hosting (cPanel/DirectAdmin) yang tidak mendukung Supervisor, gunakan **Cron Job** untuk menjalankan scheduler harian dan antrean pesan.
+
+**1. Setel Cron Job harian (Per Menit):**
+Tambahkan perintah ini di menu "Cron Jobs" hosting (Sesuaikan path folder project Bos):
+```bash
+* * * * * cd /home/suralaya.id/pos.suralaya.id && php artisan schedule:run >> /dev/null 2>&1
+```
+*(Contoh path di atas jika project berada di `/home/suralaya.id/pos.suralaya.id`)*
+
+**2. Jalankan Queue via Scheduler:**
+Pastikan di file `routes/console.php` (Laravel 11), antrean dijalankan secara berkala jika tidak ada worker yang stand-by:
+```php
+// Contoh di routes/console.php
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::command('queue:work --stop-when-empty')->everyMinute();
+```
+*Metode ini akan memproses antrean notifikasi/WA setiap 1 menit.*
 
 ### 2. WhatsApp Gateway (Node.js)
 Service penghubung antara aplikasi POS dengan server WhatsApp.
