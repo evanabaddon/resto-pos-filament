@@ -13,6 +13,7 @@ use Filament\Forms\Components\Textarea;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Forms\Components\Hidden;
 use Filament\Schemas\Components\Section;
 use Illuminate\Database\Eloquent\Builder;
 use Guava\Calendar\Enums\CalendarViewType;
@@ -518,7 +519,7 @@ class ReservationCalendarWidget extends CalendarWidget
                         Textarea::make('notes')
                             ->label('Catatan'),
                     ])
-                    ->action(function (array $data, \App\Models\Reservation $record) {
+                    ->action(function (array $data, Reservation $record) {
                         $activeSession = \App\Models\CashSession::where('user_id', auth()->id())
                             ->where('status', 'open')
                             ->first();
@@ -719,14 +720,28 @@ class ReservationCalendarWidget extends CalendarWidget
                                     ->label('Menu')
                                     ->required()
                                     ->searchable()
-                                    ->preload(),
+                                    ->preload()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, \Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get) {
+                                        $product = \App\Models\Product::find($state);
+                                        $price = $product?->price ?? 0;
+                                        $set('unit_price', $price);
+                                        $set('total_price', $price * (int) ($get('quantity') ?? 1));
+                                    }),
                                 TextInput::make('quantity')
                                     ->label('Qty')
                                     ->numeric()
                                     ->default(1)
-                                    ->required(),
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, \Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get) {
+                                        $price = (float) $get('unit_price');
+                                        $set('total_price', $price * (int) $state);
+                                    }),
                                 TextInput::make('note')
                                     ->label('Catatan'),
+                                Hidden::make('unit_price')->default(0)->dehydrated(),
+                                Hidden::make('total_price')->default(0)->dehydrated(),
                             ])
                             ->columns(3)
                             ->collapsed(),
