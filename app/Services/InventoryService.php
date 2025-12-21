@@ -68,6 +68,11 @@ class InventoryService
      */
     protected function addtoConsumption(array &$consumption, Product $product, float $quantity): void
     {
+        // Only forecast for 'raw' (ingredients) and 'retail' products
+        if (!$this->isForecastingRelevant($product)) {
+            return;
+        }
+
         $id = $product->id;
         if (!isset($consumption[$id])) {
             $consumption[$id] = [
@@ -80,6 +85,14 @@ class InventoryService
             ];
         }
         $consumption[$id]['total_consumed'] += $quantity;
+    }
+
+    /**
+     * Check if a product is relevant for restocking forecast.
+     */
+    protected function isForecastingRelevant(Product $product): bool
+    {
+        return in_array($product->type, ['raw', 'retail']);
     }
 
     /**

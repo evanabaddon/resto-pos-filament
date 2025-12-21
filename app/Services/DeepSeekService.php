@@ -29,7 +29,7 @@ class DeepSeekService
                 ->withOptions([
                     'verify' => config('services.deepseek.verify', true)
                 ])
-                ->timeout(60)
+                ->timeout(120)
                 ->post($this->baseUrl . '/chat/completions', array_merge([
                     'model' => 'deepseek-chat',
                     'messages' => $messages,

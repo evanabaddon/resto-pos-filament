@@ -97,7 +97,6 @@ Route::post('/pos/sync-offline-sales', function (Request $request) {
             'synced_count' => $syncedCount,
             'message' => "Successfully synced {$syncedCount} offline orders"
         ]);
-
     } catch (\Exception $e) {
         Log::error('❌ Sync Failed: ' . $e->getMessage());
         return response()->json([
@@ -175,7 +174,6 @@ Route::prefix('webhook')->group(function () {
                 'job_id' => $jobId,
                 'message' => 'Print job queued successfully'
             ]);
-
         } catch (\Exception $e) {
             Log::error('❌ Webhook print error: ' . $e->getMessage());
             return response()->json([
@@ -188,7 +186,7 @@ Route::prefix('webhook')->group(function () {
     // Get pending print jobs untuk Windows client
     Route::get('/print-jobs', function (Request $request) {
         try {
-            Log::info('📋 Getting pending print jobs');
+            // Log::info('📋 Getting pending print jobs');
 
             // Validasi secret key (Prioritas Settings > Config)
             $settings = app(\App\Settings\PrinterSettings::class);
@@ -226,7 +224,6 @@ Route::prefix('webhook')->group(function () {
                 'total' => count($jobs),
                 'timestamp' => now()->toIso8601String()
             ]);
-
         } catch (\Exception $e) {
             Log::error('❌ Get print jobs error: ' . $e->getMessage());
             return response()->json([
@@ -267,7 +264,6 @@ Route::prefix('webhook')->group(function () {
                     'error' => 'Job not found'
                 ], 404);
             }
-
         } catch (\Exception $e) {
             Log::error('❌ Complete job error: ' . $e->getMessage());
             return response()->json([
@@ -313,7 +309,6 @@ Route::prefix('webhook')->group(function () {
                     'error' => 'Job not found'
                 ], 404);
             }
-
         } catch (\Exception $e) {
             Log::error('❌ Failed job error: ' . $e->getMessage());
             return response()->json([
@@ -335,7 +330,6 @@ Route::prefix('webhook')->group(function () {
                 'pending_jobs' => $pendingJobs,
                 'version' => '1.0.0'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
