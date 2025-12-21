@@ -230,14 +230,17 @@ class DeepSeekService
         7. Jika ada Permintaan Khusus, sebutkan bahwa tim akan berusaha memenuhinya.
         8. CEK INFO CUACA DI ATAS:
            - Periksa apakah tanggal reservasi ({$reservationData['date']}) ada di dalam daftar 'INFO PRAKIRAAN CUACA'.
-           - Jika ADA dan hujan: Wajib ingatkan pelanggan 'Jangan lupa bawa payung/jas hujan ya kak, hati-hati dijalan!'.
-           - Jika ADA dan panas: Tawarkan menu segar kami.
-           - Jika TIDAK ADA di daftar cuaca, JANGAN menyebutkan soal cuaca/hujan/panas sama sekali (karena data tidak valid).";
+           - Jika ADA dan HUJAN: Wajib ingatkan 'Jangan lupa bawa payung/jas hujan ya kak, hati-hati dijalan!'.
+           - Jika ADA dan PANAS (Suhu > 30°C): Tawarkan menu segar kami.
+           - Jika ADA dan CERAH/BERAWAN: Katakan 'Cuaca diprediksi bersahabat, pas banget buat kumpul-kumpul!'.
+           - Jika TIDAK ADA di daftar cuaca, JANGAN menyebutkan soal cuaca sama sekali.";
 
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user', 'content' => "Buat konfirmasi untuk Kak {$reservationData['customer_name']}."]
         ];
+
+        Log::info('DeepSeek Reservation Prompt:', ['system' => $systemPrompt, 'weather_context_debug' => $weatherContext]);
 
         $response = $this->chat($messages, ['temperature' => 0.8]);
 
