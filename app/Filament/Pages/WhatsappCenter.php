@@ -232,8 +232,14 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         // logical efficient query for chat list
         return \App\Models\WhatsappMessage::query()
             ->select('whatsapp_messages.*')
+            ->selectRaw('members.name as member_name')
             ->selectRaw('(SELECT COUNT(*) FROM whatsapp_messages as wm2 WHERE wm2.remote_jid = whatsapp_messages.remote_jid AND wm2.from_me = 0 AND wm2.status = "received") as unread_count')
-            // Subquery to get the most relevant name (Contact Name or Group Subject)
+            // Join with members table to get name if exists
+            ->leftJoin('members', function ($join) {
+                // Determine phone number from remote_jid (remove @s.whatsapp.net)
+                $join->on('members.phone', '=', DB::raw("SUBSTRING_INDEX(whatsapp_messages.remote_jid, '@', 1)"));
+            })
+            // Subquery to get the most relevant name (Member Name > Contact Name > Push Name)
             ->selectRaw("
                 CASE 
                     WHEN whatsapp_messages.remote_jid LIKE '%@g.us' THEN 
@@ -244,13 +250,14 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                         )
                     ELSE
                         COALESCE(
+                            members.name,
                             (SELECT push_name FROM whatsapp_messages as wm_name WHERE wm_name.remote_jid = whatsapp_messages.remote_jid AND wm_name.from_me = 0 AND wm_name.push_name IS NOT NULL ORDER BY id DESC LIMIT 1),
                             conversation_name,
                             whatsapp_messages.push_name
                         )
                 END as effective_name
             ")
-            ->whereIn('id', function ($query) {
+            ->whereIn('whatsapp_messages.id', function ($query) {
                 $query->selectRaw('MAX(id)')
                     ->from('whatsapp_messages')
                     ->groupBy('remote_jid');

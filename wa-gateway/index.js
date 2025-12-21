@@ -123,13 +123,25 @@ async function connectToWhatsApp() {
 
                     // Fix for LID (Linked Device) JIDs -> Use the Phone Number JID
                     if (remoteJid.includes('@lid') && msg.key.fromMe === false) {
-                        // For incoming messages from others, senderPn or participant often holds the real number
-                        remoteJid = msg.key.senderPn || msg.key.participant || remoteJid;
+                        // Priority 1: Check senderPn in the key (new Baileys)
+                        if (msg.key.senderPn) {
+                            remoteJid = msg.key.senderPn;
+                        }
+                        // Priority 2: Check participant (often holds the real number in group context or if mapped)
+                        else if (msg.key.participant && !msg.key.participant.includes('@lid')) {
+                            remoteJid = msg.key.participant;
+                        }
+                        // Priority 3: Fallback - if we can't find PN, we might be stuck with LID.
+                        // Ideally we should query the store or normalize, but for now we try to stick to senderPn.
                     } else if (remoteJid.includes('@lid') && msg.key.fromMe === true) {
-                        // For messages sent by ME from another device, we want who I sent it TO.
-                        // But msg.key.remoteJid in 'message.upsert' for sent items is usually the recipient.
-                        // However, if it is a LID, we might need to look at other fields, or just ignore LID updates if they duplicate.
-                        // Let's rely on standard handling but try to map to s.whatsapp.net if possible.
+                        // For messages sent by ME from another device
+                        // Try to find who the recipient was.
+                        // But usually we just want to ensure we don't store LID as the key if possible.
+                    }
+
+                    // Format JID to ensure it is @s.whatsapp.net if it is a phone number
+                    if (!remoteJid.includes('@') && !remoteJid.includes('-')) {
+                        remoteJid = remoteJid + '@s.whatsapp.net';
                     }
 
                     // Ensure we prefer s.whatsapp.net for 1-on-1 chats

@@ -77,52 +77,55 @@
 
                 {{-- CHAT LIST --}}
                 <div class="flex-1 overflow-y-auto custom-scrollbar" wire:poll.3s="pollState">
-                    @forelse($this->chats as $chat)
-                        <div wire:click="selectChat('{{ $chat->remote_jid }}')"
-                            class="group flex items-center gap-3 p-3 cursor-pointer transition border-b border-gray-100 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 {{ $selectedJid === $chat->remote_jid ? 'bg-gray-100 dark:bg-gray-800' : '' }}">
+                    @if($this->chats->count() > 0)
+                        @foreach($this->chats as $chat)
+                            <div wire:click="selectChat('{{ $chat->remote_jid }}')"
+                                class="group flex items-center gap-3 p-3 cursor-pointer transition border-b border-gray-100 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 {{ $selectedJid === $chat->remote_jid ? 'bg-gray-100 dark:bg-gray-800' : '' }}">
 
-                            {{-- Avatar --}}
-                            <div class="relative shrink-0">
-                                <img src="{{ route('whatsapp.avatar', $chat->remote_jid) }}"
-                                    class="w-12 h-12 rounded-full object-cover bg-gray-200 dark:bg-gray-700" loading="lazy"
-                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                                {{-- Avatar --}}
+                                <div class="relative shrink-0" x-data="{ showFallback: false }">
+                                    <img src="{{ route('whatsapp.avatar', $chat->remote_jid) }}"
+                                        class="w-12 h-12 rounded-full object-cover bg-gray-200 dark:bg-gray-700" loading="lazy"
+                                        x-show="!showFallback"
+                                        x-on:error="showFallback = true">
 
-                                <div class="w-12 h-12 rounded-full flex hidden items-center justify-center text-white text-lg font-medium shadow-sm select-none"
-                                    style="background-color: {{ '#' . substr(md5($chat->remote_jid), 0, 6) }}">
-                                    {{ strtoupper(substr($chat->effective_name ?? $chat->push_name ?? $chat->remote_jid, 0, 1)) }}
+                                    <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium shadow-sm select-none"
+                                        style="background-color: {{ '#' . substr(md5($chat->remote_jid), 0, 6) }}"
+                                        x-show="showFallback"
+                                        style="display: none;">
+                                        {{ strtoupper(substr($chat->effective_name ?? $chat->push_name ?? $chat->remote_jid, 0, 1)) }}
+                                    </div>
                                 </div>
-                            </div>
 
-                            {{-- Chat Info --}}
-                            <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-baseline mb-0.5">
-                                    <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                                        {{ $chat->effective_name ?? $chat->push_name ?? str_replace('@s.whatsapp.net', '',
-                                        $chat->remote_jid) }}
-                                    </h3>
-                                    <span class="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">
-                                        {{-- Using Carbon directly here if possible, else parsing string --}}
-                                        {{ \Carbon\Carbon::parse($chat->last_message_time ?? now())->format('H:i') }}
-                                    </span>
-                                </div>
-                                <div class="flex justify-between items-center mt-1">
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate min-w-0 flex-1 pr-2">
-                                        @if($chat->from_me)
-                                            <span class="text-gray-400 font-bold">You:</span>
-                                        @endif
-                                        {{ $chat->message ?? ($chat->caption ? '📷 ' . $chat->caption : 'Media') }}
-                                    </p>
-
-                                    @if($chat->unread_count > 0)
-                                        <span
-                                            class="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-green-500 rounded-full shrink-0">
-                                            {{ $chat->unread_count }}
+                                {{-- Chat Info --}}
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-baseline mb-0.5">
+                                        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                                            {{ $chat->effective_name ?? $chat->push_name ?? str_replace('@s.whatsapp.net', '', $chat->remote_jid) }}
+                                        </h3>
+                                        <span class="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">
+                                            {{ \Carbon\Carbon::parse($chat->last_message_time ?? now())->format('H:i') }}
                                         </span>
-                                    @endif
+                                    </div>
+                                    <div class="flex justify-between items-center mt-1">
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate min-w-0 flex-1 pr-2">
+                                            @if($chat->from_me)
+                                                <span class="text-gray-400 font-bold">You:</span>
+                                            @endif
+                                            {{ $chat->message ?? ($chat->caption ? '📷 ' . $chat->caption : 'Media') }}
+                                        </p>
+
+                                        @if($chat->unread_count > 0)
+                                            <span
+                                                class="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-green-500 rounded-full shrink-0">
+                                                {{ $chat->unread_count }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    @empty
+                        @endforeach
+                    @else
                         @if($search)
                             <div class="p-4 text-center flex flex-col items-center">
                                 <p class="text-sm text-gray-500 mb-2">Tidak ada chat ditemukan.</p>
@@ -137,7 +140,7 @@
                                 Belum ada percakapan.
                             </div>
                         @endif
-                    @endforelse
+                    @endif
                 </div>
             </div>
 
@@ -287,13 +290,16 @@
                         class="h-16 px-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0 z-20">
                         <div class="flex items-center gap-3 cursor-pointer">
                             {{-- Avatar Header --}}
-                            <div class="relative shrink-0">
+                            <div class="relative shrink-0" x-data="{ showFallback: false }">
                                 <img src="{{ route('whatsapp.avatar', $selectedJid) }}"
                                     class="w-10 h-10 rounded-full object-cover bg-gray-200 dark:bg-gray-700" loading="lazy"
-                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                                    x-show="!showFallback"
+                                    x-on:error="showFallback = true">
 
-                                <div class="w-10 h-10 rounded-full flex hidden items-center justify-center text-white text-lg font-medium shadow-sm select-none"
-                                    style="background-color: {{ '#' . substr(md5($selectedJid), 0, 6) }}">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-medium shadow-sm select-none"
+                                    style="background-color: {{ '#' . substr(md5($selectedJid), 0, 6) }}"
+                                    x-show="showFallback"
+                                    style="display: none;">
                                     {{ strtoupper(substr($activeChat->effective_name ?? $activeChat->push_name ?? 'U', 0, 1)) }}
                                 </div>
                             </div>
@@ -317,13 +323,6 @@
 
                         <div class="flex items-center gap-1">
                             {{-- Actions --}}
-                            <div class="hidden md:flex items-center gap-1 mr-2">
-                                @if(!$isMember)
-                                    {{ $this->createMemberAction }}
-                                @endif
-                                {{ $this->createReservationAction }}
-                            </div>
-
                             <button wire:click="refreshMessages"
                                 class="p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition">
                                 <x-heroicon-o-arrow-path class="w-5 h-5" />
@@ -337,9 +336,14 @@
                                 </x-slot>
                                 <x-filament::dropdown.list>
                                     @if(!$isMember)
-                                        {{ $this->createMemberAction }}
+                                        <x-filament::dropdown.list.item wire:click="mountAction('createMember')" icon="heroicon-o-user-plus">
+                                            Daftarkan Member
+                                        </x-filament::dropdown.list.item>
                                     @endif
-                                    {{ $this->createReservationAction }}
+
+                                    <x-filament::dropdown.list.item wire:click="mountAction('createReservation')" icon="heroicon-o-calendar-days">
+                                        Buat Reservasi
+                                    </x-filament::dropdown.list.item>
 
                                     <x-filament::dropdown.list.item wire:click="deleteConversation" color="danger"
                                         icon="heroicon-o-trash">
