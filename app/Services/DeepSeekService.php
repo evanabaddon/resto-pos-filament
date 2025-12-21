@@ -143,9 +143,18 @@ class DeepSeekService
         Tugas Anda adalah merangkai pesan WhatsApp yang SANGAT PERSONAL, hangat, dan otentik sebagai representasi dari {$aiName}.
         Gunakan data member untuk personalisasi, gunakan banyak EMOJI, dan pastikan gaya bahasa santai tapi sopan.
         
-        WAJIB: Akhiri setiap pesan dengan signature: '- {$aiName}'";
+        WAJIB: Akhiri setiap pesan dengan signature: '- {$aiName}'
+        
+        ATURAN PENTING:
+        1. Berikan HANYA isi pesan WhatsApp saja.
+        2. JANGAN sertakan pembuka seperti 'Tentu', 'Berikut draftnya', atau analisis lain.
+        3. Langsung mulai dengan sapaan 'Halo Kak...' atau sejenisnya.";
 
         $systemPrompt = $customPrompt ?: $defaultPrompt;
+
+        // Force append strict rules regarding output format (to override potential legacy custom prompts)
+        $systemPrompt .= "\n\nATURAN MUTLAK: Outputkan HANYA isi pesan WhatsApp. JANGAN sertakan kata pengantar, analisis, atau teks lain di luar pesan.";
+
 
         // Perform basic variable replacement in system prompt
         $replacements = [

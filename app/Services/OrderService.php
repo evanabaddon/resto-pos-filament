@@ -523,7 +523,8 @@ class OrderService
                 $member = $member ?? \App\Models\Member::find($sale->member_id);
                 if ($member) {
                     $member->addPoints($pointsEarned);
-                    $member->recordVisit($amountPaid);
+                    // Pass the payment time to ensure last_visit_at matches the transaction
+                    $member->recordVisit($amountPaid, $sale->paid_at ?? now());
                     Log::info("🎁 Points awarded to member: {$member->name}", ['points' => $pointsEarned]);
                 }
             }

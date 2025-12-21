@@ -145,7 +145,9 @@ class GeneralSettings extends Settings
                 3. Sebutkan program loyalitas '{program_name}' dan status mereka.
                 4. Tawarkan promo {available_promos} jika tersedia secara natural.
                 5. Gunakan bahasa Indonesia yang santai tapi tetap sopan.
-                6. Hindari format kaku. Buat kesan seolah-olah admin sedang mengetik manual dengan penuh perhatian.",
+                6. Gunakan bahasa Indonesia yang santai tapi tetap sopan.
+                7. Hindari format kaku. Buat kesan seolah-olah admin sedang mengetik manual dengan penuh perhatian.
+                8. PENTING: Outputkan HANYA isi pesan. JANGAN ada kata pengantar sama sekali.",
         ];
     }
 }

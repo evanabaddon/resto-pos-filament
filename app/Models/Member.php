@@ -50,11 +50,34 @@ class Member extends Model
         return false;
     }
 
-    public function recordVisit(float $spendAmount): void
+    public function recordVisit(float $spendAmount, $visitDate = null): void
     {
         $this->increment('total_visits');
         $this->increment('total_spend', $spendAmount);
-        $this->update(['last_visit_at' => now()]);
+
+        $date = $visitDate ? \Carbon\Carbon::parse($visitDate) : now();
+
+        // Only update if this visit is newer than the recorded last visit, 
+        // OR if last_visit_at is null.
+        if (is_null($this->last_visit_at) || $date->gt($this->last_visit_at)) {
+            $this->update(['last_visit_at' => $date]);
+        }
+        // Force update if needed? Usually we only want the LATEST visit.
+        // But if user claims an OLD transaction, we probably don't want to overwrite a NEWER visit.
+        // However, user complaint is about "last visit says 4 hours ago" when it should be transaction time.
+        // If they claim an old transaction, and they also visited today, "Last Visit" should technically be today.
+        // But if this IS the only visit, it should be the transaction date.
+        // Let's stick to "update if newer or null" logic for correctness.
+        // Wait, if I am claiming a transaction from yesterday, and I have no other visits today.
+        // If my last visit in DB was 1 month ago.
+        // Then I claim yesterday's transaction. Last visit becomes Yesterday. Correct.
+        // If I claim yesterday's transaction, but I already visited Today (and it's recorded).
+        // Then Last Visit should stay Today. Correct.
+        // So the logic `if ($date > $this->last_visit_at)` is correct.
+
+        // Simplified based on typical request: Just update it or check correctness.
+        // The user issue is "It shows claim time instead of transaction time".
+        // Use the passed date.
 
         $this->checkTierUpgrade();
     }

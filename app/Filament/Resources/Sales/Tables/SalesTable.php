@@ -110,7 +110,8 @@ class SalesTable
                                 $member = \App\Models\Member::find($data['member_id']);
                                 $record->update(['member_id' => $member->id, 'points_earned' => $points]);
                                 $member->addPoints($points);
-                                $member->recordVisit($record->amount_paid);
+                                // Pass sale creation date to avoid "visited just now" regarding old sales
+                                $member->recordVisit($record->amount_paid, $record->created_at);
                                 Notification::make()->title('Poin Diklaim')->success()->send();
                             } catch (\Exception $e) {
                                 Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
