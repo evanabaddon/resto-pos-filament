@@ -4,11 +4,19 @@
         @if($aiResults)
         <x-filament::section>
             <x-slot name="heading">
-                <div class="flex items-center gap-2">
-                    <x-filament::icon
-                        icon="heroicon-m-sparkles"
-                        class="h-5 w-5 text-indigo-500" />
-                    <span>AI Insight & Analisis</span>
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <x-filament::icon
+                            icon="heroicon-m-sparkles"
+                            class="h-5 w-5 text-indigo-500" />
+                        <span>AI Insight & Analisis</span>
+                    </div>
+                    @if($lastGeneratedAt)
+                    <div class="flex items-center gap-1 text-xs font-normal text-gray-500">
+                        <x-filament::icon icon="heroicon-m-clock" class="h-4 w-4" />
+                        Terakhir update: {{ $lastGeneratedAt }}
+                    </div>
+                    @endif
                 </div>
             </x-slot>
 

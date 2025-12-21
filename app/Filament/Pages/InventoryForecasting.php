@@ -10,6 +10,7 @@ use Filament\Notifications\Notification;
 use Filament\Support\Colors\Color;
 use BackedEnum;
 use UnitEnum;
+use Illuminate\Support\Facades\Cache;
 
 class InventoryForecasting extends Page
 {
@@ -27,6 +28,7 @@ class InventoryForecasting extends Page
 
     public array $historyData = [];
     public ?array $aiResults = null;
+    public ?string $lastGeneratedAt = null;
     public bool $isLoading = false;
     public int $forecastDays = 7;
 
@@ -37,6 +39,13 @@ class InventoryForecasting extends Page
         }
 
         $this->historyData = $inventoryService->getForecastingData();
+
+        // Load cached results if available
+        $cached = Cache::get('inventory_forecast_result');
+        if ($cached) {
+            $this->aiResults = $cached['results'];
+            $this->lastGeneratedAt = $cached['timestamp'];
+        }
     }
 
     public function getHeaderActions(): array
@@ -60,6 +69,14 @@ class InventoryForecasting extends Page
 
             if ($result && isset($result['recommendations'])) {
                 $this->aiResults = $result;
+                $this->lastGeneratedAt = now()->format('d M Y, H:i');
+
+                // Cache the results for 24 hours
+                Cache::put('inventory_forecast_result', [
+                    'results' => $this->aiResults,
+                    'timestamp' => $this->lastGeneratedAt,
+                ], now()->addHours(24));
+
                 Notification::make()
                     ->title('Prediksi Berhasil')
                     ->success()
