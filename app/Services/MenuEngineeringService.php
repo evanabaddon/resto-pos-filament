@@ -38,17 +38,12 @@ class MenuEngineeringService
         foreach ($products as $product) {
             $qty = $salesData->get($product->id)->total_qty ?? 0;
 
-            // Calculate COGS
-            $cogs = 0;
-            if ($product->recipes->isNotEmpty()) {
-                foreach ($product->recipes as $recipe) {
-                    $ingredientPrice = $recipe->ingredient->price_per_base_unit ?? 0;
-                    $conversionRate = $recipe->unit->conversion_rate ?: 1;
-                    $cogs += ($ingredientPrice * ($recipe->quantity / $conversionRate));
-                }
-            } else {
-                // Retail/Service uses base_price
-                $cogs = $product->base_price ?? 0;
+            // Use standardized HPP calculation from Product Model
+            $cogs = $product->computed_hpp;
+
+            // Defensive check: If HPP is still 0 but Sell Price > 0, fallback to Base Price
+            if ($cogs == 0 && ($product->base_price > 0)) {
+                $cogs = $product->base_price;
             }
 
             $contributionMargin = $product->sell_price - $cogs;
