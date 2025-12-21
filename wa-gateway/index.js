@@ -273,27 +273,36 @@ async function connectToWhatsApp() {
 }
 
 // REST API
-// Helper to extract JID
-function formatJid(jid) {
+// Helper to normalize JID (Fix 08 -> 628)
+function normalizeJid(jid) {
     if (!jid) return null;
-    return jid.includes('@') ? jid : `${jid}@s.whatsapp.net`;
+
+    // Don't mess with Group JIDs too much
+    if (jid.includes('@g.us') || jid.includes('@lid')) return jid;
+
+    let [user, domain] = jid.split('@');
+
+    // Remove non-numeric from user part
+    user = user.replace(/[^0-9]/g, '');
+
+    // Indonesia 08 -> 628
+    if (user.startsWith('08')) {
+        user = '62' + user.substring(1);
+    }
+
+    // Keep original domain or default to s.whatsapp.net
+    if (!domain) {
+        domain = 's.whatsapp.net';
+    }
+
+    return `${user}@${domain}`;
 }
 
 app.get('/avatar/:jid', async (req, res) => {
     try {
         if (!sock) return res.status(503).send('Not connected');
 
-        let jid = req.params.jid;
-
-        // Clean up JID from device suffix or weird formats
-        // Example: 628123:10@s.whatsapp.net -> 628123@s.whatsapp.net
-        if (jid.includes('@')) {
-            const [userPart, domain] = jid.split('@');
-            const cleanUser = userPart.split(':')[0];
-            jid = `${cleanUser}@${domain}`;
-        } else {
-            jid = `${jid.split(':')[0]}@s.whatsapp.net`;
-        }
+        let jid = normalizeJid(req.params.jid);
 
         console.log(`[Avatar] Requesting for cleaned: ${jid} (Original: ${req.params.jid})`);
 
@@ -340,11 +349,8 @@ app.post('/chat/send', async (req, res) => {
     }
 
     try {
-        // Format number: ensure it ends with @s.whatsapp.net
-        let jid = number;
-        if (!jid.includes('@')) {
-            jid = `${jid}@s.whatsapp.net`;
-        }
+        // Format number: ensure it ends with @s.whatsapp.net AND fix 08 -> 628
+        let jid = normalizeJid(number);
 
         let sentMsg;
         const options = {};
