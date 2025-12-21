@@ -66,6 +66,9 @@ class GeneralSettings extends Settings
     // AI Persona Name
     public string $ai_assistant_name = 'Sarah (AI Admin)';
 
+    // BMKG Weather Settings
+    public ?string $bmkg_location_code;
+
     public static function group(): string
     {
         return 'app';
@@ -91,6 +94,7 @@ class GeneralSettings extends Settings
             'wa_auto_download_media' => true,
             'printer_width' => '58mm',
             'enable_table_number' => false,
+            'bmkg_location_code' => null, // Default null
             // Fiscal Defaults
             'template_path' => null,
             'start_row' => 2,

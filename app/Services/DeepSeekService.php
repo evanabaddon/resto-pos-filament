@@ -184,10 +184,26 @@ class DeepSeekService
         ];
         $personaInstructions = str_replace(array_keys($replacements), array_values($replacements), $personaInstructions);
 
+        // Fetch Weather Data
+        $weatherContext = "";
+        if ($code = $settings->bmkg_location_code) {
+            $service = app(\App\Services\BmkgWeatherService::class);
+            $summary = $service->getForecastSummary($code);
+
+            if (!empty($summary) && $summary !== "Data cuaca tidak tersedia saat ini.") {
+                $weatherContext = "\n--- INFO PRAKIRAAN CUACA ---\n";
+                $weatherContext .= $summary . "\n";
+                $weatherContext .= "----------------------------\n";
+            }
+        }
+
         $systemPrompt = "Anda adalah {$aiName}, AI Assistant untuk bisnis '{$appName}'.
         
         PERAN & PERSONA:
         {$personaInstructions}
+        
+        DATA CUACA (Opsional):
+        {$weatherContext}
         
         TUGAS SAAT INI: 
         Buatlah pesan WhatsApp konfirmasi reservasi yang SANGAT RAMAH, PERSONAL, dan ANTUSIAS.
@@ -211,7 +227,12 @@ class DeepSeekService
         4. Jika ada Pre-Order Menu, sebutkan kembali menu yang dipesan agar pelanggan yakin.
         5. Akhiri balasan dengan signature nama Anda: '- {$aiName}'.
         6. Berikan isi balasan SAJA.
-        7. Jika ada Permintaan Khusus, sebutkan bahwa tim akan berusaha memenuhinya.";
+        7. Jika ada Permintaan Khusus, sebutkan bahwa tim akan berusaha memenuhinya.
+        8. CEK INFO CUACA DI ATAS:
+           - Periksa apakah tanggal reservasi ({$reservationData['date']}) ada di dalam daftar 'INFO PRAKIRAAN CUACA'.
+           - Jika ADA dan hujan: Wajib ingatkan pelanggan 'Jangan lupa bawa payung/jas hujan ya kak, hati-hati dijalan!'.
+           - Jika ADA dan panas: Tawarkan menu segar kami.
+           - Jika TIDAK ADA di daftar cuaca, JANGAN menyebutkan soal cuaca/hujan/panas sama sekali (karena data tidak valid).";
 
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],

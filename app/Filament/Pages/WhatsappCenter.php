@@ -759,9 +759,30 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
         $now = now()->format('l, d F Y H:i');
 
+        // 4. Weather Data (BMKG Integration)
+        $weatherContext = "";
+        $settings = app(\App\Settings\GeneralSettings::class);
+        if ($code = $settings->bmkg_location_code) {
+            $service = app(\App\Services\BmkgWeatherService::class);
+            $summary = $service->getForecastSummary($code);
+
+            if (!empty($summary) && $summary !== "Data cuaca tidak tersedia saat ini.") {
+                $weatherContext = "\n--- INFO CUACA 3 HARI KEDEPAN ---\n";
+                $weatherContext .= $summary . "\n";
+                $weatherContext .= "------------------\n";
+
+                $weatherContext .= "INSTRUKSI KHUSUS AI (Harap sertakan dalam respon):\n";
+                $weatherContext .= "1. Cek tanggal reservasi pelanggan.\n";
+                $weatherContext .= "2. Jika tanggal reservasi ada dalam daftar cuaca di atas, berikan tips (misal: Hujan -> Bawa Payung/Mobil, Panas -> Minum Es).\n";
+                $weatherContext .= "3. PENTING: Jika tanggal reservasi LEBIH DARI 3 hari kedepan (tidak ada di list), JANGAN berikan prediksi cuaca asal-asalan. Cukup konfirmasi reservasi saja.\n";
+                $weatherContext .= "------------------\n";
+            }
+        }
+
         return "WAKTU SISTEM SAAT INI: {$now}\n" .
             "MENU UNGGULAN: {$menuList}\n" .
             "PROMO AKTIF: {$promoStr}\n" .
-            "RESERVASI MENDATANG (Slot Terisi): {$resStr}";
+            "RESERVASI MENDATANG (Slot Terisi): {$resStr}\n" .
+            $weatherContext;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
@@ -45,6 +46,46 @@ class AppSettings extends SettingsPage
                             ->schema([
                                 Grid::make(2)
                                     ->schema([
+                                        Section::make('Integrasi Cuaca (BMKG)')
+                                            ->columnSpan(2)
+                                            ->description('Tampilkan cuaca di Dashboard & digunakan AI untuk rekomendasi menu.')
+                                            ->schema([
+                                                TextInput::make('bmkg_location_code')
+                                                    ->label('Kode Wilayah (ADM4)')
+                                                    ->placeholder('Contoh: 31.71.03.1001 (Kemayoran)')
+                                                    ->helperText('Cari kode kelurahan/desa Anda di https://wilayah.id atau dokumentasi BMKG.')
+                                                    ->suffixAction(
+                                                        Action::make('test_bmkg')
+                                                            ->icon('heroicon-o-beaker')
+                                                            ->label('Test')
+                                                            ->action(function ($state) {
+                                                                if (!$state) {
+                                                                    \Filament\Notifications\Notification::make()->title('Masukkan kode terlebih dahulu')->warning()->send();
+                                                                    return;
+                                                                }
+
+                                                                try {
+                                                                    $response = \Illuminate\Support\Facades\Http::get("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={$state}");
+                                                                    if ($response->successful()) {
+                                                                        $data = $response->json();
+                                                                        $lokasi = $data['lokasi'] ?? [];
+                                                                        $nama = "{$lokasi['desa']}, {$lokasi['kecamatan']}, {$lokasi['kotkab']}";
+
+                                                                        \Filament\Notifications\Notification::make()
+                                                                            ->title('Kode Valid!')
+                                                                            ->body("Lokasi ditemukan: {$nama}")
+                                                                            ->success()
+                                                                            ->send();
+                                                                    } else {
+                                                                        \Filament\Notifications\Notification::make()->title('Gagal mengambil data.')->body('Pastikan kode benar.')->danger()->send();
+                                                                    }
+                                                                } catch (\Exception $e) {
+                                                                    \Filament\Notifications\Notification::make()->title('Connection Error')->body($e->getMessage())->danger()->send();
+                                                                }
+                                                            })
+                                                    ),
+                                            ]),
+
                                         Section::make('Identitas Aplikasi')
                                             ->columnSpan(1)
                                             ->schema([
