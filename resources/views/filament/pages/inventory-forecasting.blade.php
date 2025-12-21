@@ -55,13 +55,6 @@
                         <p class="text-xs text-indigo-700/60 dark:text-indigo-400/60">{{ app(\App\Settings\GeneralSettings::class)->ai_assistant_name }} Analysis</p>
                     </div>
                 </div>
-
-                @if($lastGeneratedAt)
-                <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white/50 dark:bg-gray-800/50 rounded-full text-[10px] font-medium text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-700">
-                    <x-heroicon-m-clock class="w-3.5 h-3.5" />
-                    Terakhir update: {{ $lastGeneratedAt }}
-                </div>
-                @endif
             </div>
 
             <div class="prose prose-sm dark:prose-invert max-w-none">
