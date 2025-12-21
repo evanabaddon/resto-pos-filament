@@ -80,7 +80,13 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
     - **Product Grounding**: AI hanya akan menyebutkan **Menu Asli** (Top 5 Terlaris) dari database, bukan menu fiktif.
     - **Promo Awareness**: Otomatis menyertakan kode promo aktif yang tersedia di sistem kasir.
     - **Signature System**: Penutup pesan otomatis sesuai nama Assistant yang dikonfigurasi.
-- **📅 AI Reservation Awareness [NEW]**: AI secara cerdas mengecek ketersediaan jam reservasi dengan membaca jadwal 7 hari ke depan sebelum memberikan draf balasan.
+- **📅 AI Reservation Awareness & Weather Intelligence [NEW]**:
+    - **Smart Availability Check**: AI secara cerdas mengecek ketersediaan jam reservasi dengan membaca jadwal 7 hari ke depan.
+    - **🌤️ Hyper-Local Weather Forecaster**: Terintegrasi langsung dengan BMKG. Data cuaca digunakan untuk memberikan saran presisi saat konfirmasi reservasi:
+        - **"Hujan"**: AI mengingatkan pelanggan membawa payung atau naik mobil.
+        - **"Panas"**: AI menyarankan menu minuman dingin yang menyegarkan.
+        - **"Neutral"**: AI memberikan sentuhan ramah tentang cuaca yang bersahabat.
+    - **Visual Weather Widget**: Widget prakiraan cuaca 12-jam (per 3 jam) di dashboard yang mengambil data real-time dari kode wilayah kelurahan setempat.
 
 ### 💬 Integrated WhatsApp Center (Native Chat) 🚀
 Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
@@ -103,6 +109,7 @@ Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
   - **Create Reservation**: Buat jadwal reservasi langsung saat chatting tanpa perlu pindah menu.
 - **⚙️ Storage Management**:
   - **Auto Download Control**: Opsi *"Auto Download Media Whatsapp"* di menu Settings untuk menghemat penyimpanan server. Jika dinonaktifkan, media hanya akan diunduh saat tombol "Unduh" diklik.
+  - **BMKG Location Sync**: Konfigurasi lokasi cuaca presisi hingga tingkat Kelurahan menggunakan Kode Wilayah BMKG untuk akurasi data.
 
 ### 📊 Financial Intelligence
 - **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.
