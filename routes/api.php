@@ -218,7 +218,7 @@ Route::prefix('webhook')->group(function () {
                 })
                 ->toArray();
 
-            Log::info("✅ Returning " . count($jobs) . " pending jobs");
+            // Log::info("✅ Returning " . count($jobs) . " pending jobs");
 
             return response()->json([
                 'success' => true,
