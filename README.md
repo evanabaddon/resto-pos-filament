@@ -85,7 +85,12 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
     - **Product Grounding**: AI hanya akan menyebutkan **Menu Asli** (Top 5 Terlaris) dari database, bukan menu fiktif.
     - **Promo Awareness**: Otomatis menyertakan kode promo aktif yang tersedia di sistem kasir.
     - **Signature System**: Penutup pesan otomatis sesuai nama Assistant yang dikonfigurasi.
-- **📅 AI Reservation Awareness & Weather Intelligence [NEW]**:
+- **� AI Provider Agnostic & Dynamic Models [NEW] [READY]**:
+    - **Multi-Provider Support**: Bebas pilih antara **DeepSeek (Native)**, **OpenRouter (Free/Paid)**, atau **Custom OpenAI API**.
+    - **One-Click Presets**: Setup instan untuk OpenRouter & DeepSeek dengan auto-fill URL dan konfigurasi model.
+    - **Dynamic Model Fetching**: Daftar model ditarik secara real-time dari API OpenRouter dengan indikator model **(FREE)**.
+    - **Zero-Code Configuration**: Atur API Keys dan Model langsung melalui Dashboard Admin tanpa menyentuh file `.env`.
+- **�📅 AI Reservation Awareness & Weather Intelligence [NEW]**:
     - **Smart Availability Check**: AI secara cerdas mengecek ketersediaan jam reservasi dengan membaca jadwal 7 hari ke depan.
     - **🌤️ Hyper-Local Weather Forecaster**: Terintegrasi langsung dengan BMKG. Data cuaca digunakan untuk memberikan saran presisi saat konfirmasi reservasi:
         - **"Hujan"**: AI mengingatkan pelanggan membawa payung atau naik mobil.
@@ -228,8 +233,10 @@ Schedule::command('queue:work --stop-when-empty')->everyMinute();
 ### 🛠️ Persyaratan Sistem (Requirements)
 - **PHP 8.2+** (Extension: BCMath, Ctype, Fileinfo, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML)
 - **MySQL 8.0+** / MariaDB 10.4+
-- **AI API Key**: Masukkan API Key Anda ke `DEEPSEEK_API_KEY` di file `.env`.
-- **Flexible AI Support**: Mendukung DeepSeek, OpenRouter (untuk model gratis seperti Gemini/Llama), atau OpenAI-compatible API lainnya. Konfigurasikan **Base URL** dan **Model Name** di menu Settings.
+- **AI API Integrated**: Mendukung DeepSeek, OpenRouter, atau OpenAI-compatible API.
+    - **Quick Setup**: Pilih provider (DeepSeek/OpenRouter) di menu Settings untuk konfigurasi otomatis.
+    - **Dynamic Models**: Daftar model ditarik secara real-time dari API (khusus OpenRouter).
+    - **Local Dev**: Jika jalan di lokal (Windows/MacOS) dan kena error SSL, tambahkan `DEEPSEEK_VERIFY_SSL=false` di `.env`.
 - **Node.js 18+**: Diperlukan khusus untuk modul WhatsApp Gateway.
 - **Microphone & Camera**: Diperlukan izin browser untuk fitur Voice Note & Face Recognition.
 

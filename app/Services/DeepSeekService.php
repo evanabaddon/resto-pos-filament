@@ -24,6 +24,47 @@ class DeepSeekService
     }
 
     /**
+     * Fetch available models from the provider
+     */
+    public function getAvailableModels(?string $provider = null): array
+    {
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $provider = $provider ?: ($settings->ai_provider ?? 'deepseek');
+
+        return \Illuminate\Support\Facades\Cache::remember("ai_models_{$provider}", 3600 * 24, function () use ($provider) {
+            try {
+                if ($provider === 'openrouter') {
+                    $response = Http::withOptions([
+                        'verify' => config('services.deepseek.verify', true)
+                    ])
+                        ->timeout(30)
+                        ->get('https://openrouter.ai/api/v1/models');
+                    if ($response->successful()) {
+                        $models = $response->json()['data'] ?? [];
+                        return collect($models)->mapWithKeys(function ($model) {
+                            $isFree = ($model['pricing']['prompt'] ?? 1) == 0;
+                            $label = $model['name'] . ($isFree ? ' (FREE)' : '');
+                            return [$model['id'] => $label];
+                        })->toArray();
+                    }
+                }
+
+                if ($provider === 'deepseek') {
+                    return [
+                        'deepseek-chat' => 'DeepSeek Chat',
+                        'deepseek-reasoner' => 'DeepSeek Reasoner (R1)',
+                    ];
+                }
+
+                return [];
+            } catch (\Exception $e) {
+                Log::error("Failed to fetch AI models for {$provider}: " . $e->getMessage());
+                return [];
+            }
+        });
+    }
+
+    /**
      * Send a chat request to the configured AI Service
      */
     public function chat(array $messages, array $options = [])

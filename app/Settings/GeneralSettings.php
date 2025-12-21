@@ -71,6 +71,7 @@ class GeneralSettings extends Settings
 
     // AI Intelligence Configuration
     public string $ai_assistant_name = 'Sarah (AI Admin)';
+    public string $ai_provider = 'deepseek';
     public string $ai_model = 'deepseek-chat';
     public string $ai_base_url = 'https://api.deepseek.com';
     public ?string $ai_api_key = null;
@@ -105,6 +106,7 @@ class GeneralSettings extends Settings
             'ai_forecasting_license_key' => null,
             'enable_menu_engineering' => false,
             'menu_engineering_license_key' => null,
+            'ai_provider' => 'deepseek',
             'ai_model' => 'deepseek-chat',
             'ai_base_url' => 'https://api.deepseek.com',
             'ai_api_key' => null,

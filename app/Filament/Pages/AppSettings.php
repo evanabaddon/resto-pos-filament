@@ -282,16 +282,66 @@ class AppSettings extends SettingsPage
                                         Section::make('Konfigurasi API AI')
                                             ->description('Pengaturan teknis koneksi ke penyedia AI (DeepSeek, OpenRouter, OpenAI, dll).')
                                             ->schema([
+                                                Select::make('ai_provider')
+                                                    ->label('AI Provider')
+                                                    ->options([
+                                                        'deepseek' => 'DeepSeek (Default)',
+                                                        'openrouter' => 'OpenRouter (Free Models & More)',
+                                                        'custom' => 'Custom (OpenAI Compatible)',
+                                                    ])
+                                                    ->required()
+                                                    ->live()
+                                                    ->afterStateUpdated(function ($state, Set $set) {
+                                                        if ($state === 'deepseek') {
+                                                            $set('ai_base_url', 'https://api.deepseek.com');
+                                                            $set('ai_model', 'deepseek-chat');
+                                                        } elseif ($state === 'openrouter') {
+                                                            $set('ai_base_url', 'https://openrouter.ai/api/v1');
+                                                            $set('ai_model', 'google/gemini-2.0-flash-exp:free');
+                                                        }
+                                                    }),
+
                                                 Grid::make(3)
                                                     ->schema([
                                                         TextInput::make('ai_base_url')
                                                             ->label('Base API URL')
                                                             ->placeholder('https://api.deepseek.com')
-                                                            ->helperText('Contoh: https://openrouter.ai/api/v1'),
+                                                            ->required()
+                                                            ->helperText(fn(Get $get) => $get('ai_provider') === 'openrouter' ? 'Terisi otomatis untuk OpenRouter.' : 'Endpoint API (OpenAI Compatible).'),
+
+                                                        // Use Dynamic Select for models
+                                                        Select::make('ai_model')
+                                                            ->label('Model Name')
+                                                            ->options(function (Get $get) {
+                                                                $provider = $get('ai_provider') ?: 'deepseek';
+                                                                if ($provider === 'custom') return [];
+
+                                                                return app(\App\Services\DeepSeekService::class)->getAvailableModels($provider);
+                                                            })
+                                                            ->visible(fn(Get $get) => $get('ai_provider') !== 'custom')
+                                                            ->searchable()
+                                                            ->required()
+                                                            ->suffixAction(
+                                                                Action::make('refresh_models')
+                                                                    ->icon('heroicon-m-arrow-path')
+                                                                    ->label('Refresh')
+                                                                    ->tooltip('Perbarui daftar model dari API')
+                                                                    ->action(function (Get $get) {
+                                                                        $provider = $get('ai_provider') ?: 'deepseek';
+                                                                        \Illuminate\Support\Facades\Cache::forget("ai_models_{$provider}");
+                                                                        \Filament\Notifications\Notification::make()
+                                                                            ->title('Daftar model diperbarui!')
+                                                                            ->success()
+                                                                            ->send();
+                                                                    })
+                                                            ),
+
                                                         TextInput::make('ai_model')
                                                             ->label('Model Name')
                                                             ->placeholder('deepseek-chat')
-                                                            ->helperText('Contoh: deepseek-chat atau google/gemini-2.0-flash-exp:free'),
+                                                            ->visible(fn(Get $get) => $get('ai_provider') === 'custom')
+                                                            ->required(),
+
                                                         TextInput::make('ai_api_key')
                                                             ->label('API Key (Optional)')
                                                             ->password()
