@@ -57,6 +57,13 @@ async function connectToWhatsApp() {
             qrCodeData = null;
             if (shouldReconnect) {
                 connectToWhatsApp()
+            } else {
+                console.log('Connection closed due to LOGOUT (401). Clearing credentials and restarting...');
+                const authPath = path.join(__dirname, 'auth_info_baileys');
+                if (fs.existsSync(authPath)) {
+                    fs.rmSync(authPath, { recursive: true, force: true });
+                }
+                connectToWhatsApp();
             }
         } else if (connection === 'open') {
             console.log('opened connection')
@@ -394,7 +401,11 @@ app.post('/chat/download-media', async (req, res) => {
 app.post('/logout', async (req, res) => {
     try {
         if (sock) {
-            await sock.logout();
+            try {
+                await sock.logout();
+            } catch (err) {
+                console.warn('Socket logout failed, forcing local cleanup:', err.message);
+            }
         }
 
         // Delete Auth Folder to force new QR

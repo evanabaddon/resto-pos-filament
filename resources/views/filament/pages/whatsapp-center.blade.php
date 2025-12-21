@@ -638,9 +638,19 @@
 
                             {{-- TEXT INPUT --}}
                             <div class="flex-1 relative">
-                                <input wire:model="newMessage" x-ref="messageInput" type="text"
-                                    class="w-full rounded-lg border-none bg-white dark:bg-gray-700 py-3 pl-4 pr-10 focus:ring-0 shadow-sm placeholder-gray-400 text-gray-800 dark:text-gray-100"
-                                    placeholder="Ketik pesan..." {{ $status !== 'connected' ? 'disabled' : '' }}>
+                                <textarea wire:model="newMessage" x-ref="messageInput"
+                                    x-data="{ 
+                                        resize() { 
+                                            $el.style.height = 'auto'; 
+                                            $el.style.height = $el.scrollHeight + 'px';
+                                        } 
+                                    }"
+                                    x-init="resize()"
+                                    @input="resize()"
+                                    @keydown.enter="if(!$event.shiftKey) { $event.preventDefault(); $wire.sendMessage(); $el.style.height = 'auto'; }"
+                                    class="w-full rounded-lg border-none bg-white dark:bg-gray-700 py-3 pl-4 pr-10 focus:ring-0 shadow-sm placeholder-gray-400 text-gray-800 dark:text-gray-100 resize-none overflow-y-auto min-h-[48px] max-h-[120px]"
+                                    rows="1"
+                                    placeholder="Ketik pesan (Shift+Enter untuk baris baru)..." {{ $status !== 'connected' ? 'disabled' : '' }}></textarea>
                             </div>
 
                             {{-- SEND BUTTON --}}
