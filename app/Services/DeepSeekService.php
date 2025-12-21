@@ -202,7 +202,7 @@ class DeepSeekService
         PERAN & PERSONA:
         {$personaInstructions}
         
-        DATA CUACA (Opsional):
+        DATA CUACA (WAJIB):
         {$weatherContext}
         
         TUGAS SAAT INI: 
