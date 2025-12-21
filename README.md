@@ -39,8 +39,9 @@ Sistem reservasi yang terintegrasi langsung dengan komunikasi pelanggan dan mana
   - **Pay DP Anywhere**: Kelola pembayaran uang muka melalui Tabel Reservasi maupun Kalender.
   - **Automated DP Ledger**: Setiap pembayaran DP otomatis membuat transaksi di POS dengan prefix `DP-` untuk pelacakan finansial yang akurat.
   - **Self-Cleaning Catalog**: Produk "Down Payment (DP)" dikelola sebagai *System Item*—otomatis tersembunyi dari master data dan katalog POS agar tidak mengganggu operasional harian.
-- **🔄 Smart Pre-Order to Sales**:
-  - **Conversion Logic**: Konversi reservasi menjadi transaksi aktif di POS dalam satu klik.
+- **🔄 Smart Pre-Order to Sales (Flexible)**:
+  - **Flexible Item Management**: Tambahkan menu pre-order dengan harga fleksibel (bisa diedit manual) dan hitungan otomatis.
+  - **Instant Conversion upon Arrival**: Saat pelanggan datang, konversi seluruh data reservasi beserta item pre-order menjadi transaksi penjualan (Sales) di POS dalam satu klik.
   - **Automatic DP Deduction**: Sistem otomatis mendeteksi uang muka dan menambahkannya sebagai item pengurang (minus) di transaksi kasir.
   - **Double-Transaction Protection**: Tombol konversi otomatis hilang setelah digunakan (ketika status berubah menjadi `Seated`), mencegah duplikasi data penjualan.
 - **Snapshot Integrity**: Nama produk disnapshot saat konversi untuk memastikan data historis tetap akurat meskipun produk asli dihapus atau diubah.
