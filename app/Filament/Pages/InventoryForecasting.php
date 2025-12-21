@@ -56,6 +56,13 @@ class InventoryForecasting extends Page
                 ->icon('heroicon-o-sparkles')
                 ->color(Color::Indigo)
                 ->action('generateAiForecast'),
+
+            Action::make('exportPdf')
+                ->label('Export PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color(Color::Gray)
+                ->action('exportToPdf')
+                ->visible(fn() => $this->aiResults !== null),
         ];
     }
 
@@ -92,6 +99,36 @@ class InventoryForecasting extends Page
                 ->send();
         } finally {
             $this->isLoading = false;
+        }
+    }
+
+    public function exportToPdf()
+    {
+        if (!$this->aiResults) {
+            Notification::make()
+                ->title('Belum ada data untuk diexport')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        try {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.inventory-forecast', [
+                'aiResults' => $this->aiResults,
+                'historyData' => $this->historyData,
+                'timestamp' => $this->lastGeneratedAt,
+            ]);
+
+            return response()->streamDownload(
+                fn() => print($pdf->output()),
+                'forecasting-report-' . now()->timestamp . '.pdf'
+            );
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Gagal export PDF')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
         }
     }
 }
