@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Cache;
 class InventoryForecasting extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar';
-    protected static string|UnitEnum|null $navigationGroup = 'Produk';
+    protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
     protected static ?string $navigationLabel = 'Prediksi Restock (AI)';
     protected static ?string $title = 'AI Smart Inventory';
     protected static ?int $navigationSort = 5;

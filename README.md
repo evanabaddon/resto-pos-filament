@@ -1,9 +1,13 @@
+<div align="center">
+
 # 🍽️ Intelligent Restaurant Ecosystem 🚀
 ### Next-Gen Restaurant OS — Powered by Adaptive AI & Native WhatsApp Gateway
 
 **Intelligent Restaurant Ecosystem** adalah **Enterprise-Grade F&B Ecosystem** yang dirancang untuk mendefinisikan ulang standar operasional restoran modern. Mengintegrasikan teknologi **Laravel 11**, **Filament 4**, dan **Hybrid AI Intelligence**, sistem ini menghadirkan perpaduan sempurna antara **High-Speed Point of Sale**, **Native WhatsApp Gateway**, dan **Autonomous Business Intelligence**.
 
 Ini bukan sekadar alat pencatat transaksi; ini adalah pusat komando digital yang memberdayakan outlet Anda dengan **AI-Driven CRM**, **Real-time Kitchen Orchestration (KDS)**, hingga **Automated Fiscal & P&L Analysis**. Sistem ini memastikan setiap detik operasional Anda optimal, setiap pelanggan merasa dihargai secara personal melalui **Hyper-Personalized WhatsApp**, dan setiap keputusan bisnis didukung oleh kecerdasan buatan yang akurat.
+
+</div>
 
 ---
 
@@ -16,7 +20,8 @@ Antarmuka kasir yang dirancang untuk kecepatan dan pengalaman pengguna (User Exp
 - **🔔 Live POS Notifications**: Sistem notifikasi internal yang tidak mengganggu alur kerja (non-blocking) untuk status pembayaran, print, dan error.
 - **Seamless Modal Experience**: Penggunaan custom native modals (Livewire) untuk input diskon dan member, memberikan nuansa aplikasi mobile yang halus.
 - **Smart Cart Logic**: Split payment, merged tables, dan draft order (pending transaction).
-- **Direct Printing**: Integrasi ke printer thermal via **Electron Agent** (Mendukung USB/LAN/Bluetooth).
+- **🖨️ Multi-Printer Infrastructure**: Mendukung banyak printer sekaligus (Kasir, Dapur, & Bar) via **Electron Agent** (Mendukung USB/LAN/Bluetooth).
+- **Direct Printing**: Pencetakan struk dan order otomatis tanpa dialog print browser, memberikan kecepatan transaksi maksimal.
 
 ### 🤝 Advanced CRM & Loyalty (Smart SOP) 🆕
 Bukan sekadar mencatat data pelanggan, tapi membangun hubungan jangka panjang.
@@ -50,7 +55,7 @@ Sistem reservasi yang terintegrasi langsung dengan komunikasi pelanggan dan mana
 Orkestrasi dapur digital tanpa kertas dengan sistem penyaringan cerdas.
 - **Zero-Latency Realtime Sync**: Pesanan muncul di dapur detik itu juga saat kasir klik simpan.
 - **Smart Task Batching**: Menggabungkan item yang sama untuk efisiensi masak.
-- **Department Routing**: Memisahkan otomatis pesanan Bar (Minuman) dan Dapur (Makanan).
+- **Department Routing & Auto-Print**: Memisahkan otomatis pesanan Bar (Minuman) dan Dapur (Makanan). Order otomatis terwujud dalam bentuk **Print-Out di masing-masing divisi** begitu pesanan disimpan oleh kasir.
 - **🚫 System Item Filtering**: Item finansial seperti "Down Payment (DP)" secara cerdas difilter agar tidak muncul di KDS maupun struk pesanan dapur/bar, menjaga fokus area produksi pada menu yang harus disiapkan.
 - **Status Workflow**: *Pending* ➝ *Cooking* ➝ *Ready* ➝ *Served*.
 
@@ -123,9 +128,13 @@ Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
 - **⚙️ Storage Management**:
   - **Auto Download Control**: Opsi *"Auto Download Media Whatsapp"* di menu Settings untuk menghemat penyimpanan server. Jika dinonaktifkan, media hanya akan diunduh saat tombol "Unduh" diklik.
 
-### 📊 Financial Intelligence
-- **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.
-- **Fiscal Planning (Tax Control)**: Fitur "Target Omzet" untuk membantu perencanaan pelaporan pajak yang fleksibel.
+### 📊 Laporan & Analisis (Financial & Analytical Intelligence) 🚀
+Pusat kendali data yang menggabungkan kecerdasan buatan dan perhitungan fiskal akurat.
+
+- 🏛️ **Laporan Pajak (Fiskal)**: Perencanaan pajak yang fleksibel dengan fitur Target Omzet.
+- 📈 **Laba/Rugi (Profit & Loss)**: Dashboard laba bersih harian yang menghitung HPP (COGS) secara realtime.
+- 📦 **Prediksi Restock (AI)**: Analisis kebutuhan bahan baku 7 hari ke depan berbasis tren historis.
+- 🍽️ **Analisis Menu (AI)**: Klasifikasi profitabilitas menu (Stars, Plowhorses, etc.) dengan saran strategis AI.
 
 ---
 
@@ -133,18 +142,15 @@ Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
 
 Rencana pengembangan fitur masa depan untuk memaksimalkan ROI dan efisiensi operasional.
 
-### 1. 🍳 AI Menu Engineering (Profit & Popularity Matrix) [COMPLETED]
-- Sudah diimplementasikan dengan fitur klasifikasi Unit Unggulan & Ekspor PDF.
-
-### 2. 💌 Loyalty Automation 2.0 (The AI CRM Agent) [NEXT]
+### 💌 Loyalty Automation 2.0 (The AI CRM Agent) [NEXT]
 - **Automatic Re-engagement**: Pesan otomatis ke pelanggan yang tidak datang >30 hari.
 - **Birthday & Milestone Alerts**: Pengiriman otomatis gift dan ucapan untuk meningkatkan *Retention Rate*.
 
-### 3. ⏱️ Kitchen Productivity & Performance Analytics
+### ⏱️ Kitchen Productivity & Performance Analytics
 - **Preparation Time Tracking**: Melacak durasi masak per item dari KDS masuk hingga selesai.
 - **Kitchen Bottleneck Detection**: Menganalisis menu mana yang paling sering membuat antrean dapur macet.
 
-### 4. 💰 Integrated P&L Dashboard (Daily Net Profit)
+### 💰 Integrated P&L Dashboard (Daily Net Profit)
 - **Expense vs Revenue**: Dashboard laba rugi harian otomatis yang sudah memotong Gaji, Operasional, dan HPP.
 
 ---
@@ -165,12 +171,14 @@ Dibangun di atas pondasi teknologi paling modern dan stabil di tahun 2025.
 
 ## 🚀 Deployment & Background Services
 
-Agar notifikasi WhatsApp dan AI berjalan realtime, service di bawah ini **WAJIB** dijalankan di server.
+Agar orkestrasi WhatsApp dan AI berjalan secara *real-time*, service di bawah ini **WAJIB** dijalankan di latar belakang (background).
 
 ### 1. Queue & Scheduler Setup
 
-#### **A. VPS / Dedicated (Rekomendasi: Supervisor)**
-Gunakan **Supervisor** agar proses `queue:work` otomatis restart jika mati.
+Pilih salah satu metode berdasarkan lingkungan server Anda:
+
+#### **A. VPS / Dedicated (Highly Recommended)**
+Gunakan **Supervisor** untuk menjaga worker tetap hidup.
 ```ini
 [program:resto-pos-queue]
 command=php /path/to/project/artisan queue:work --sleep=3 --tries=3 --max-time=3600
@@ -180,75 +188,52 @@ user=www-data
 numprocs=2
 ```
 
-#### **B. Production with PM2 (Modern & Simple)**
-Jika lebih familiar dengan Node.js ecosystem, **PM2** adalah cara termudah untuk mengelola Queue Laravel dan WhatsApp Gateway sekaligus.
-
-**1. Jalankan Queue Laravel:**
+#### **B. Modern Orchestration (PM2)**
+Cara termuda untuk mengelola Queue Laravel dan WhatsApp Gateway dalam satu panel.
 ```bash
+# Jalankan Worker Laravel
 pm2 start "php artisan queue:work" --name "resto-worker"
+
+# Jalankan WhatsApp Gateway
+cd wa-gateway && pm2 start index.js --name "wa-gateway"
+
+# Simpan Konfigurasi
+pm2 save && pm2 startup
 ```
 
-**2. Jalankan WhatsApp Gateway:**
+#### **C. Shared Hosting (Cron Job)**
+Gunakan jika Anda tidak memiliki akses SSH root. Tambahkan di menu Cron Jobs:
 ```bash
-cd wa-gateway
-pm2 start index.js --name "wa-gateway"
+* * * * * cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-**3. Simpan agar otomatis jalan saat server reboot:**
-```bash
-pm2 save
-pm2 startup
-```
-
-#### **C. Shared Hosting (Alternatif: Cron Job)**
-Jika menggunakan Shared Hosting yang tidak mendukung PM2/Supervisor, gunakan **Cron Job**.
-
-**1. Setel Cron Job harian (Per Menit):**
-Tambahkan perintah ini di menu "Cron Jobs" hosting (Sesuaikan path folder project Bos):
-```bash
-* * * * * cd /home/suralaya.id/pos.suralaya.id && php artisan schedule:run >> /dev/null 2>&1
-```
-*(Contoh path di atas jika project berada di `/home/suralaya.id/pos.suralaya.id`)*
+> [!TIP]
+> **Optimasi Real-time (15 Detik):** Jika 1 menit terlalu lama, Anda bisa menyulap Cron Job menjadi per-15 detik dengan menambahkan 4 baris job menggunakan perintah `sleep 15`, `sleep 30`, dan `sleep 45`.
 
 ---
 
-#### **⚡️ Tips: Optimasi Near-Realtime (Tiap 15 Detik)**
-Jika merasa 1 menit terlalu lama untuk notifikasi WhatsApp, gunakan trik `sleep` di cPanel. Masukkan **4 baris** Cron Job berikut:
-
-1. `* * * * * cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1`
-2. `* * * * * sleep 15; cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1`
-3. `* * * * * sleep 30; cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1`
-4. `* * * * * sleep 45; cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1`
-
+### 🚨 Penting: Keamanan & Performa
 > [!IMPORTANT]
-> **KEAMANAN SERVER**: Pastikan di `routes/console.php` perintah queue menggunakan flag `--stop-when-empty`. Tanpa flag ini, server hosting Bos akan **OVERLOAD** dan akun bisa di-suspend karena proses yang menumpuk.
+> **Double-Check `routes/console.php`**: Pastikan perintah queue menggunakan flag `--stop-when-empty` jika dijalankan via Scheduler di Shared Hosting. Tanpa ini, server Anda berisiko **OVERLOAD** karena proses yang menumpuk.
 
-**2. Jalankan Queue via Scheduler:**
-Pastikan di file `routes/console.php` (Laravel 11), antrean dijalankan secara berkala jika tidak ada worker yang stand-by:
 ```php
-// Contoh di routes/console.php
+// Contoh di routes/console.php (Laravel 11)
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('queue:work --stop-when-empty')->everyMinute();
 ```
-*Metode ini akan memproses antrean notifikasi/WA setiap 1 menit.*
-
-### 2. WhatsApp Gateway (Node.js)
-Service penghubung antara aplikasi POS dengan server WhatsApp.
-
-**Jalankan Service:**
-```bash
-cd wa-gateway
-npm install
-npm start
-```
-*Gunakan `pm2` atau `systemd` untuk menjalankan service ini di background pada production.*
-
-### 3. Requirements Setup
-- **PHP 8.2+** & **MySQL 8+**
-- **DeepSeek API Key**: `DEEPSEEK_API_KEY` di `.env` untuk fitur AI.
-- **Microphone Permission**: Izin browser diperlukan untuk fitur Voice Note.
 
 ---
 
-📍 **Developed by Evan Helga** — *Crafting Digital Excellence for F&B Business.*
+### 🛠️ Persyaratan Sistem (Requirements)
+- **PHP 8.2+** (Extension: BCMath, Ctype, Fileinfo, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML)
+- **MySQL 8.0+** / MariaDB 10.4+
+- **DeepSeek API Key**: Masukkan ke `DEEPSEEK_API_KEY` di file `.env`.
+- **Node.js 18+**: Diperlukan khusus untuk modul WhatsApp Gateway.
+- **Microphone & Camera**: Diperlukan izin browser untuk fitur Voice Note & Face Recognition.
+
+---
+
+<p align="center">
+    📍 <b>Developed by Evan Helga</b> — <i>Crafting Digital Excellence for F&B Business.</i>
+</p>

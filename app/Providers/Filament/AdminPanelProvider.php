@@ -107,7 +107,7 @@ class AdminPanelProvider extends PanelProvider
                 'Master Data',
                 'Manajemen SDM',
                 'Kemitraan (CRM)',
-                'Laporan',
+                'Laporan & Analisis',
                 'AI Intelligence',
                 'Super Chat',
                 'Settings'

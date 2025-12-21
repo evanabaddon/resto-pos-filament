@@ -21,33 +21,21 @@ use App\Models\Sale;
 use Illuminate\Support\Carbon;
 use Filament\Notifications\Notification;
 use App\Settings\GeneralSettings;
+use BackedEnum;
+use UnitEnum;
 
 class FiscalReport extends Page implements HasForms, HasTable
 {
     use InteractsWithForms;
     use InteractsWithTable;
 
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-chart-bar';
+    protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
+    protected static ?string $title = 'Laporan Pajak (Fiskal)';
+    protected static ?string $navigationLabel = 'Laporan Pajak (Fiskal)';
+    protected static ?int $navigationSort = 1;
+
     protected string $view = 'filament.pages.fiscal-report';
-
-    public static function getNavigationGroup(): ?string
-    {
-        return 'Laporan';
-    }
-
-    public static function getNavigationIcon(): string|\Illuminate\Contracts\Support\Htmlable|null
-    {
-        return 'heroicon-o-document-chart-bar';
-    }
-
-    public static function getNavigationLabel(): string
-    {
-        return 'Laporan Pajak (Fiskal)';
-    }
-
-    public function getTitle(): string|\Illuminate\Contracts\Support\Htmlable
-    {
-        return 'Laporan Pajak (Fiskal)';
-    }
 
     public ?string $date_start = null;
     public ?string $date_end = null;
@@ -178,7 +166,7 @@ class FiscalReport extends Page implements HasForms, HasTable
                     ]);
 
                     return response()->streamDownload(
-                        fn() => print ($pdf->output()),
+                        fn() => print($pdf->output()),
                         'rekap-pajak-' . now()->timestamp . '.pdf'
                     );
                 }),

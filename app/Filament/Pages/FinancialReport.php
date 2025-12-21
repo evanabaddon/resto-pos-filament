@@ -22,10 +22,11 @@ class FinancialReport extends Page implements HasForms
 {
     use InteractsWithForms;
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-presentation-chart-line';
-    protected static string|UnitEnum|null $navigationGroup = 'Laporan';
+    protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
     protected static ?string $title = 'Laporan Keuangan (Laba/Rugi)';
     protected static ?string $navigationLabel = 'Laba/Rugi (Profit & Loss)';
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 2;
+
     protected string $view = 'filament.pages.financial-report';
 
     public ?string $date_start = null;

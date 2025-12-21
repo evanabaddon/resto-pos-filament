@@ -15,7 +15,7 @@ class MenuEngineering extends Page
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-presentation-chart-line';
     protected static ?string $navigationLabel = 'Analisis Menu (AI)';
     protected static ?string $title = 'AI Menu Engineering';
-    protected static string|UnitEnum|null $navigationGroup = 'Produk';
+    protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
     protected static ?int $navigationSort = 5;
 
     protected string $view = 'filament.pages.menu-engineering';
