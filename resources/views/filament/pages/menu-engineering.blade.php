@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <div class="space-y-6">
+    <div class="space-y-6" x-data="{ activeFilter: 'ALL' }">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <h2 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-white">Menu Engineering Matrix</h2>
@@ -102,7 +102,9 @@
             'UNIT ANDALAN' => ['bg-amber-500', 'Unit Andalan', 'Kinerja tinggi tapi pertumbuhan rendah'],
             'UNIT POTENSIAL' => ['bg-indigo-500', 'Unit Potensial', 'Potensi tinggi tapi kinerja belum optimal'],
             'UNIT KURANG BERKEMBANG' => ['bg-rose-500', 'Unit Kurang Berkembang', 'Kinerja & potensi rendah']] as $cat => $style)
-            <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden group">
+            <div @click="activeFilter = activeFilter === '{{ $cat }}' ? 'ALL' : '{{ $cat }}'"
+                class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden group cursor-pointer transition-all duration-200"
+                :class="{ 'ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-gray-900': activeFilter === '{{ $cat }}', 'opacity-60 grayscale': activeFilter !== 'ALL' && activeFilter !== '{{ $cat }}' }">
                 <div class="absolute top-0 right-0 w-16 h-16 {{ $style[0] }} opacity-5 -mr-4 -mt-4 rounded-full transition-transform group-hover:scale-150"></div>
                 <div class="flex items-center gap-3 mb-2">
                     <div class="w-2 h-2 rounded-full {{ $style[0] }}"></div>
@@ -110,8 +112,22 @@
                 </div>
                 <div class="text-2xl font-black text-gray-900 dark:text-white">{{ $grouped->get($cat)?->count() ?: 0 }}</div>
                 <p class="text-[10px] text-gray-500 dark:text-gray-400 font-medium">{{ $style[2] }}</p>
+
+                <!-- Active Indicator -->
+                <div x-show="activeFilter === '{{ $cat }}'" x-transition class="absolute bottom-2 right-2 text-primary-500">
+                    <x-heroicon-m-check-circle class="w-5 h-5" />
+                </div>
             </div>
             @endforeach
+        </div>
+
+        <!-- Filter Reset & Info -->
+        <div class="flex justify-between items-center px-1" x-show="activeFilter !== 'ALL'" x-transition>
+            <span class="text-sm text-gray-500">Menampilkan kategori: <strong x-text="activeFilter"></strong></span>
+            <button @click="activeFilter = 'ALL'" class="text-xs font-bold text-primary-600 hover:text-primary-500 flex items-center gap-1">
+                <x-heroicon-m-x-circle class="w-4 h-4" />
+                Reset Filter
+            </button>
         </div>
 
         <!-- Matrix Table -->
@@ -133,7 +149,11 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-white/5">
                         @foreach($items as $item)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                            x-show="activeFilter === 'ALL' || activeFilter === '{{ $item['category'] }}'"
+                            x-transition:enter="transition ease-out duration-300"
+                            x-transition:enter-start="opacity-0 transform scale-95"
+                            x-transition:enter-end="opacity-100 transform scale-100">
                             <td class="px-4 py-4 whitespace-nowrap">
                                 <div class="flex flex-col">
                                     <span class="font-bold text-gray-900 dark:text-white">{{ $item['name'] }}</span>
