@@ -278,6 +278,28 @@ class AppSettings extends SettingsPage
                                             ->label('AI Smart Message Prompt (Instruction)')
                                             ->rows(6)
                                             ->helperText('Gunakan instruksi ini untuk mengatur gaya bahasa AI. Variabel tersedia: {app_name}, {program_name}, {available_promos}, {ai_name}'),
+
+                                        Section::make('Konfigurasi API AI')
+                                            ->description('Pengaturan teknis koneksi ke penyedia AI (DeepSeek, OpenRouter, OpenAI, dll).')
+                                            ->schema([
+                                                Grid::make(3)
+                                                    ->schema([
+                                                        TextInput::make('ai_base_url')
+                                                            ->label('Base API URL')
+                                                            ->placeholder('https://api.deepseek.com')
+                                                            ->helperText('Contoh: https://openrouter.ai/api/v1'),
+                                                        TextInput::make('ai_model')
+                                                            ->label('Model Name')
+                                                            ->placeholder('deepseek-chat')
+                                                            ->helperText('Contoh: deepseek-chat atau google/gemini-2.0-flash-exp:free'),
+                                                        TextInput::make('ai_api_key')
+                                                            ->label('API Key (Optional)')
+                                                            ->password()
+                                                            ->revealable()
+                                                            ->placeholder('sk-...')
+                                                            ->helperText('Jika kosong, akan menggunakan key dari file .env'),
+                                                    ])
+                                            ]),
                                     ]),
                             ]),
 

@@ -69,8 +69,11 @@ class GeneralSettings extends Settings
     // AI CRM Prompt
     public ?string $ai_crm_system_prompt;
 
-    // AI Persona Name
+    // AI Intelligence Configuration
     public string $ai_assistant_name = 'Sarah (AI Admin)';
+    public string $ai_model = 'deepseek-chat';
+    public string $ai_base_url = 'https://api.deepseek.com';
+    public ?string $ai_api_key = null;
 
     // BMKG Weather Settings
     public ?string $bmkg_location_code;
@@ -102,6 +105,9 @@ class GeneralSettings extends Settings
             'ai_forecasting_license_key' => null,
             'enable_menu_engineering' => false,
             'menu_engineering_license_key' => null,
+            'ai_model' => 'deepseek-chat',
+            'ai_base_url' => 'https://api.deepseek.com',
+            'ai_api_key' => null,
             'printer_width' => '58mm',
             'enable_table_number' => false,
             'bmkg_location_code' => null, // Default null

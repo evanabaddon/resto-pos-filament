@@ -228,7 +228,8 @@ Schedule::command('queue:work --stop-when-empty')->everyMinute();
 ### 🛠️ Persyaratan Sistem (Requirements)
 - **PHP 8.2+** (Extension: BCMath, Ctype, Fileinfo, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML)
 - **MySQL 8.0+** / MariaDB 10.4+
-- **DeepSeek API Key**: Masukkan ke `DEEPSEEK_API_KEY` di file `.env`.
+- **AI API Key**: Masukkan API Key Anda ke `DEEPSEEK_API_KEY` di file `.env`.
+- **Flexible AI Support**: Mendukung DeepSeek, OpenRouter (untuk model gratis seperti Gemini/Llama), atau OpenAI-compatible API lainnya. Konfigurasikan **Base URL** dan **Model Name** di menu Settings.
 - **Node.js 18+**: Diperlukan khusus untuk modul WhatsApp Gateway.
 - **Microphone & Camera**: Diperlukan izin browser untuk fitur Voice Note & Face Recognition.
 

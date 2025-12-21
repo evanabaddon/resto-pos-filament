@@ -9,29 +9,44 @@ class DeepSeekService
 {
     protected $apiKey;
     protected $baseUrl;
+    protected $model;
 
     public function __construct()
     {
-        $this->apiKey = config('services.deepseek.key', env('DEEPSEEK_API_KEY'));
-        $this->baseUrl = config('services.deepseek.url', env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'));
+        $settings = app(\App\Settings\GeneralSettings::class);
+
+        // Priority: Settings > Config > Env
+        $this->apiKey = $settings->ai_api_key ?? config('services.deepseek.key', env('DEEPSEEK_API_KEY'));
+
+        // Priority: Settings > Config > Env > Default
+        $this->baseUrl = $settings->ai_base_url ?? config('services.deepseek.url', env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'));
+        $this->model = $settings->ai_model ?? 'deepseek-chat';
     }
 
     /**
-     * Send a chat request to DeepSeek
+     * Send a chat request to the configured AI Service
      */
     public function chat(array $messages, array $options = [])
     {
         try {
-            $response = Http::withHeaders([
+            $headers = [
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
-            ])
+            ];
+
+            // OpenRouter Specific Headers (Safe for other providers too)
+            if (str_contains($this->baseUrl, 'openrouter.ai')) {
+                $headers['HTTP-Referer'] = config('app.url');
+                $headers['X-Title'] = config('app.name');
+            }
+
+            $response = Http::withHeaders($headers)
                 ->withOptions([
                     'verify' => config('services.deepseek.verify', true)
                 ])
                 ->timeout(120)
-                ->post($this->baseUrl . '/chat/completions', array_merge([
-                    'model' => 'deepseek-chat',
+                ->post(rtrim($this->baseUrl, '/') . '/chat/completions', array_merge([
+                    'model' => $this->model,
                     'messages' => $messages,
                     'temperature' => 0.7,
                 ], $options));
@@ -40,14 +55,16 @@ class DeepSeekService
                 return $response->json();
             }
 
-            Log::error('DeepSeek API Error', [
+            Log::error('AI Service API Error', [
+                'url' => $this->baseUrl,
+                'model' => $this->model,
                 'status' => $response->status(),
                 'body' => $response->body()
             ]);
 
-            throw new \Exception('DeepSeek API returned an error: ' . $response->body());
+            throw new \Exception('AI API returned an error: ' . $response->body());
         } catch (\Exception $e) {
-            Log::error('DeepSeek Request Failed: ' . $e->getMessage());
+            Log::error('AI Request Failed: ' . $e->getMessage());
             throw $e;
         }
     }
