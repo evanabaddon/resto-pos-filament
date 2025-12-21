@@ -133,9 +133,24 @@ class WhatsappWebhookController extends Controller
             // ----------------------------
 
             // 1. Check by WA ID
-            if ($waId && WhatsappMessage::where('wa_id', $waId)->exists()) {
-                Log::info('Duplicate WA Message ignored (ID match): ' . $waId);
-                return response()->json(['success' => true, 'duplicate' => true]);
+            // 1. Check by WA ID
+            if ($waId) {
+                $existingMsg = WhatsappMessage::where('wa_id', $waId)->first();
+                if ($existingMsg) {
+                    // SELF-HEALING: If existing is LID but new one is Phone, UPGRADE IT.
+                    if (
+                        Str::contains($existingMsg->remote_jid, '@lid') &&
+                        !Str::contains($data['remote_jid'], '@lid') &&
+                        Str::endsWith($data['remote_jid'], '@s.whatsapp.net')
+                    ) {
+
+                        Log::info("DUPLICATE UPGRADE: Replacing LID {$existingMsg->remote_jid} with Phone JID {$data['remote_jid']} for ID $waId");
+                        $existingMsg->update(['remote_jid' => $data['remote_jid']]);
+                    } else {
+                        Log::info('Duplicate WA Message ignored (ID match): ' . $waId);
+                    }
+                    return response()->json(['success' => true, 'duplicate' => true]);
+                }
             }
 
             // 2. Fuzzy Deduplication (same content/sender within 2 seconds)
