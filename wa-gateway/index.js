@@ -314,6 +314,18 @@ app.get('/avatar/:jid', async (req, res) => {
             ppUrl = await sock.profilePictureUrl(jid, 'preview').catch(() => null);
         }
 
+        // [Fix] If LID failed, and it's ME, try the Phone JID
+        if (!ppUrl && jid.includes('@lid') && sock.user && sock.user.id && jid.includes(sock.user.id.split(':')[0])) {
+            const phoneJid = sock.authState?.creds?.me?.id?.split(':')[0] + '@s.whatsapp.net';
+            if (phoneJid && !phoneJid.includes('@lid')) {
+                console.log(`[Avatar] LID failed for Me, trying Phone JID: ${phoneJid}`);
+                ppUrl = await sock.profilePictureUrl(phoneJid, 'image').catch(() => null);
+                if (!ppUrl) {
+                    ppUrl = await sock.profilePictureUrl(phoneJid, 'preview').catch(() => null);
+                }
+            }
+        }
+
         if (ppUrl) {
             return res.redirect(ppUrl);
         }
@@ -327,10 +339,20 @@ app.get('/avatar/:jid', async (req, res) => {
 app.get('/status', async (req, res) => {
     let user = null;
     if (status === 'connected' && sock?.user) {
+        // Prefer Phone JID from authState if available (more reliable for avatars)
+        let userId = sock.authState?.creds?.me?.id?.split(':')[0]
+            || sock.user.id.split(':')[0];
+
+        // Ensure 628 format if it's 08
+        if (userId.startsWith('08')) userId = '62' + userId.substring(1);
+
+        // Append domain if missing
+        if (!userId.includes('@')) userId += '@s.whatsapp.net';
+
         user = {
-            id: sock.user.id,
+            id: userId,
             name: sock.user.name || sock.user.notify || 'Me',
-            avatar: `http://localhost:${PORT}/avatar/${sock.user.id.split(':')[0]}`
+            avatar: `http://localhost:${PORT}/avatar/${userId}`
         };
     }
 
