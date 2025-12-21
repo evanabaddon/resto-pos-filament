@@ -90,7 +90,9 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
 - **📉 Smart Inventory Forecasting (AI Restock) [PRO] [READY]**:
     - **Predictive Restocking**: AI memprediksi kebutuhan bahan baku untuk 7 hari ke depan berdasarkan tren historis dan sisa stok saat ini.
     - **Recipe-Aware Analytics**: Otomatis menghitung kebutuhan *raw material* (misal: biji kopi) berdasarkan penjualan menu (misal: Latte) menggunakan data resep.
+    - **Persistence & Speed**: Hasil analisis disimpan dalam cache selama 24 jam untuk akses instan tanpa perlu generate ulang setiap kali halaman dibuka.
     - **Urgency Insights**: Memberikan label urgensi (High/Medium/Low) dan alasan logis di balik setiap saran restock.
+    - **📄 Professional PDF Export**: Generate laporan restock resmi dalam format PDF yang rapi, lengkap dengan tabel rekomendasi, tingkat urgensi, dan alasan logis AI.
     - **Clean Data**: Secara otomatis mengevaluasi item non-inventori (seperti Down Payment) agar tidak mengganggu akurasi prediksi.
 
 ### 💬 Integrated WhatsApp Center (Native Chat) 🚀
