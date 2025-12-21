@@ -6,96 +6,146 @@
     <title>Smart Inventory Forecast Report</title>
     <style>
         @page {
-            margin: 1.5cm;
+            margin: 100px 25px;
         }
 
         body {
             font-family: sans-serif;
-            font-size: 9pt;
+            font-size: 11px;
             color: #333;
-            line-height: 1.5;
+            line-height: 1.4;
         }
 
         .header {
-            border-bottom: 2px solid #4f46e5;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
+            position: fixed;
+            top: -70px;
+            left: 0px;
+            right: 0px;
+            text-align: center;
+            border-bottom: 2px solid #4338ca;
+            padding-bottom: 10px;
+            height: 60px;
         }
 
         .header h1 {
-            color: #4f46e5;
             margin: 0;
-            font-size: 18pt;
-            letter-spacing: -0.5px;
+            color: #111;
+            font-size: 20px;
         }
 
         .header p {
-            margin: 5px 0 0 0;
-            color: #6b7280;
-            font-size: 9pt;
+            margin: 2px 0;
+            color: #666;
+            font-size: 10px;
         }
 
-        h3 {
-            color: #111827;
-            font-size: 12pt;
-            margin-top: 30px;
-            margin-bottom: 10px;
-            border-left: 4px solid #4f46e5;
-            padding-left: 10px;
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 3px;
+            color: #1f2937;
         }
 
-        .ai-section {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 30px;
+        .ai-box {
+            background: #f5f3ff;
+            border: 1px solid #ddd6fe;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 25px;
+            margin-bottom: 25px;
+            page-break-inside: avoid;
         }
 
-        .ai-section h2 {
-            margin-top: 0;
-            font-size: 13pt;
-            color: #1e40af;
-            margin-bottom: 10px;
+        .ai-box h3 {
+            margin: 0 0 8px 0;
+            color: #5b21b6;
+            font-size: 13px;
+            font-weight: bold;
         }
 
-        .ai-analysis {
+        .ai-box p {
             font-style: italic;
-            color: #475569;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px dashed #cbd5e1;
+            color: #4b5563;
+            margin: 0;
+            font-size: 11px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
-            table-layout: fixed;
+            margin-top: 10px;
         }
 
         thead {
             display: table-header-group;
         }
 
-        th,
-        td {
-            border: 1px solid #e2e8f0;
-            padding: 8px 10px;
-            text-align: left;
-            word-wrap: break-word;
-        }
-
         th {
-            background-color: #f1f5f9;
-            font-weight: bold;
-            color: #475569;
-            font-size: 8pt;
+            background: #f9fafb;
+            text-align: left;
+            padding: 12px 8px;
+            font-size: 9px;
             text-transform: uppercase;
+            border-bottom: 1px solid #e5e7eb;
+            color: #4b5563;
+            font-weight: bold;
         }
 
         tr {
             page-break-inside: avoid;
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: middle;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .urgency-high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .urgency-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .urgency-low {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: -60px;
+            left: 0px;
+            right: 0px;
+            height: 40px;
+            text-align: center;
+            font-size: 9px;
+            color: #999;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .page-number:after {
+            content: counter(page);
+        }
+
+        .font-bold {
+            font-weight: bold;
         }
 
         .text-right {
@@ -104,51 +154,6 @@
 
         .text-center {
             text-align: center;
-        }
-
-        .urgency-high {
-            color: #dc2626;
-            font-weight: bold;
-        }
-
-        .urgency-medium {
-            color: #d97706;
-            font-weight: bold;
-        }
-
-        .urgency-low {
-            color: #2563eb;
-            font-weight: bold;
-        }
-
-        .reason-text {
-            font-size: 8pt;
-            color: #64748b;
-            font-style: italic;
-            display: block;
-            margin-top: 4px;
-        }
-
-        .restock-amount {
-            font-size: 10pt;
-            color: #111827;
-            font-weight: 800;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: -1cm;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 8pt;
-            color: #94a3b8;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 8px;
-        }
-
-        .page-number:after {
-            content: counter(page);
         }
     </style>
 </head>
@@ -163,37 +168,35 @@
     </div>
 
     @if($aiResults)
-    <div class="ai-section">
-        <h2>AI Analysis & Insights</h2>
-        <div class="ai-analysis">
-            "{{ $aiResults['analysis'] ?? 'Tidak ada analisis tersedia.' }}"
-        </div>
+    <div class="ai-box">
+        <h3>AI Analysis & Strategic Insights</h3>
+        <p>"{{ $aiResults['analysis'] ?? 'Tidak ada analisis tersedia.' }}"</p>
 
-        <table style="border: none;">
+        <table style="margin-top: 15px; border: none;">
             <thead>
                 <tr>
-                    <th style="width: 25%;">Produk / Bahan</th>
+                    <th style="width: 30%;">Produk / Bahan</th>
                     <th style="width: 15%; text-align: center;">Urgency</th>
                     <th style="width: 20%; text-align: right;">Saran Restock</th>
-                    <th style="width: 40%;">Alasan & Prediksi</th>
+                    <th style="width: 35%;">Alasan & Prediksi</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($aiResults['recommendations'] as $rec)
                 @if(($rec['suggested_restock'] ?? 0) > 0)
                 <tr>
-                    <td style="font-weight: 600;">{{ $rec['product_name'] }}</td>
+                    <td class="font-bold">{{ $rec['product_name'] }}</td>
                     <td class="text-center">
-                        <span class="urgency-{{ $rec['urgency'] ?? 'low' }}">
+                        <span class="badge urgency-{{ $rec['urgency'] ?? 'low' }}">
                             {{ strtoupper($rec['urgency'] ?? 'MEDIUM') }}
                         </span>
                     </td>
                     <td class="text-right">
-                        <span class="restock-amount">+{{ $rec['suggested_restock'] }}</span>
+                        <span class="font-bold" style="color: #4338ca;">+{{ $rec['suggested_restock'] }}</span>
                     </td>
                     <td>
-                        <span style="font-size: 8pt;">Prediksi Kebutuhan: {{ $rec['predicted_need'] }}</span>
-                        <span class="reason-text">"{{ $rec['reason'] }}"</span>
+                        <span style="font-size: 8px; color: #6b7280; display: block;">Prediksi Kebutuhan: {{ $rec['predicted_need'] }}</span>
+                        <span style="font-size: 9px; font-style: italic; color: #4b5563;">"{{ $rec['reason'] }}"</span>
                     </td>
                 </tr>
                 @endif
@@ -203,7 +206,7 @@
     </div>
     @endif
 
-    <h3>Riwayat Konsumsi Bahan & Retail (7 Hari Terakhir)</h3>
+    <div class="section-title">Riwayat Konsumsi Bahan & Retail (7 Hari Terakhir)</div>
     <table>
         <thead>
             <tr>
@@ -217,9 +220,9 @@
         <tbody>
             @foreach($historyData as $data)
             <tr>
-                <td>{{ $data['name'] }}</td>
+                <td class="font-bold">{{ $data['name'] }}</td>
                 <td class="text-center">{{ $data['current_stock'] }}</td>
-                <td class="text-right">{{ number_format($data['total_consumed'], 2) }}</td>
+                <td class="text-right font-bold">{{ number_format($data['total_consumed'], 2) }}</td>
                 <td class="text-right">{{ $data['average_daily'] }}</td>
                 <td>{{ $data['unit'] }}</td>
             </tr>
@@ -228,7 +231,7 @@
     </table>
 
     <div class="footer">
-        Dicetak otomatis oleh Sistem AI Intelligence - {{ app(\App\Settings\GeneralSettings::class)->app_name }}
+        Dicetak otomatis oleh Sistem AI Intelligence {{ app(\App\Settings\GeneralSettings::class)->ai_assistant_name }} - {{ app(\App\Settings\GeneralSettings::class)->app_name }}
         | Halaman <span class="page-number"></span>
     </div>
 </body>

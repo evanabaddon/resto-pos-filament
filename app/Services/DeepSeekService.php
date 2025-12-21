@@ -301,4 +301,59 @@ class DeepSeekService
 
         return json_decode($content, true);
     }
+
+    /**
+     * Generate AI-powered advice for Menu Engineering matrix
+     */
+    public function analyzeMenuMatrix(array $matrixData)
+    {
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $aiName = $settings->ai_assistant_name ?? 'Business Assistant';
+        $appName = $settings->app_name ?? 'Restoran Kami';
+
+        $systemPrompt = "Anda adalah {$aiName}, Konsultan Strategi F&B untuk '{$appName}'.
+        
+        TUGAS:
+        Diberikan data 'Menu Engineering Matrix' yang berisi klasifikasi Unit Unggulan, Unit Andalan, Unit Potensial, dan Unit Kurang Berkembang, berikan saran strategis untuk meningkatkan profitabilitas menu.
+        
+        DEFINISI:
+        - UNIT UNGGULAN (High Profit, High Popularity): Pertahankan kualitas dan konsistensi.
+        - UNIT ANDALAN (High Popularity, Low Profit): Cari cara kurangi biaya bahan atau naikkan harga sedikit (evaluasi porsi).
+        - UNIT POTENSIAL (High Profit, Low Popularity): Perlu promosi lebih, ubah nama menu, atau pindahkan posisi di buku menu.
+        - UNIT KURANG BERKEMBANG (Low Profit, Low Popularity): Pertimbangkan untuk dihapus dari menu atau re-branding total.
+        
+        FORMAT OUTPUT (JSON):
+        {
+            \"overall_analysis\": \"Analisis singkat kondisi menu saat ini.\",
+            \"strategic_advice\": [
+                {
+                    \"product_name\": \"Nama Produk\",
+                    \"category\": \"UNIT UNGGULAN|UNIT ANDALAN|UNIT POTENSIAL|UNIT KURANG BERKEMBANG\",
+                    \"advice\": \"Saran spesifik dan teknis (misal: naikkan harga 10% atau kurangi porsi 15%)\"
+                }
+            ],
+            \"top_priorities\": [\"Daftar 3 hal paling mendesak yang harus dilakukan\"]
+        }
+        
+        ATURAN:
+        1. Berikan saran yang KONKRIT dan TEKNIS.
+        2. Berikan data JSON SAJA tanpa penjelasan tambahan di luar JSON.";
+
+        $userPrompt = "Berikut adalah data Menu Matrix untuk dianalisa:\n" . json_encode($matrixData, JSON_PRETTY_PRINT);
+
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt],
+            ['role' => 'user', 'content' => $userPrompt]
+        ];
+
+        $response = $this->chat($messages, [
+            'temperature' => 0.4,
+            'response_format' => ['type' => 'json_object']
+        ]);
+
+        $content = $response['choices'][0]['message']['content'] ?? '{}';
+        $content = preg_replace('/^```json\s*|\s*```$/i', '', trim($content));
+
+        return json_decode($content, true);
+    }
 }

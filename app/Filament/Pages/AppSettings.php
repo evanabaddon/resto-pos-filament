@@ -486,6 +486,38 @@ class AppSettings extends SettingsPage
                                                     : 'Aktifkan modul prediksi restock cerdas.'
                                             ),
                                     ]),
+
+                                Section::make('AI Menu Engineering (Profit Matrix)')
+                                    ->description('AI-powered menu classification and strategic pricing advice.')
+                                    ->schema([
+                                        TextInput::make('menu_engineering_license_key')
+                                            ->label('License Key')
+                                            ->password()
+                                            ->revealable()
+                                            ->helperText('Masukkan lisensi, format: MENU-PRO-XXXX')
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(function ($state, Set $set) {
+                                                if ($state && str_starts_with($state, 'MENU-PRO-')) {
+                                                    // Valid
+                                                } else {
+                                                    $set('enable_menu_engineering', false);
+                                                }
+                                            }),
+
+                                        Toggle::make('enable_menu_engineering')
+                                            ->label('Enable AI Menu Engineering Module')
+                                            ->inline(false)
+                                            ->disabled(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('menu_engineering_license_key') ?? '', 'MENU-PRO-')
+                                            )
+                                            ->helperText(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('menu_engineering_license_key') ?? '', 'MENU-PRO-')
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul klasifikasi menu cerdas.'
+                                            ),
+                                    ]),
                             ]),
                     ])
             ]);

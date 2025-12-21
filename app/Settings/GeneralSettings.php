@@ -35,6 +35,9 @@ class GeneralSettings extends Settings
     public bool $enable_ai_forecasting;
     public ?string $ai_forecasting_license_key;
 
+    public bool $enable_menu_engineering;
+    public ?string $menu_engineering_license_key;
+
     public string $printer_width;
     public bool $enable_table_number;
 
@@ -97,6 +100,8 @@ class GeneralSettings extends Settings
             'wa_auto_download_media' => true,
             'enable_ai_forecasting' => false,
             'ai_forecasting_license_key' => null,
+            'enable_menu_engineering' => false,
+            'menu_engineering_license_key' => null,
             'printer_width' => '58mm',
             'enable_table_number' => false,
             'bmkg_location_code' => null, // Default null

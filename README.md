@@ -1,7 +1,7 @@
-# 🍽️ Resto Intelligence: Advanced F&B Ecosystem 🚀
+# 🍽️ Intelligent Restaurant Ecosystem 🚀
 ### Next-Gen Restaurant OS — Powered by Adaptive AI & Native WhatsApp Gateway
 
-**Resto Intelligence** adalah **Enterprise-Grade F&B Ecosystem** yang dirancang untuk mendefinisikan ulang standar operasional restoran modern. Mengintegrasikan teknologi **Laravel 11**, **Filament 4**, dan **Hybrid AI Intelligence**, sistem ini menghadirkan perpaduan sempurna antara **High-Speed Point of Sale**, **Native WhatsApp Gateway**, dan **Autonomous Business Intelligence**.
+**Intelligent Restaurant Ecosystem** adalah **Enterprise-Grade F&B Ecosystem** yang dirancang untuk mendefinisikan ulang standar operasional restoran modern. Mengintegrasikan teknologi **Laravel 11**, **Filament 4**, dan **Hybrid AI Intelligence**, sistem ini menghadirkan perpaduan sempurna antara **High-Speed Point of Sale**, **Native WhatsApp Gateway**, dan **Autonomous Business Intelligence**.
 
 Ini bukan sekadar alat pencatat transaksi; ini adalah pusat komando digital yang memberdayakan outlet Anda dengan **AI-Driven CRM**, **Real-time Kitchen Orchestration (KDS)**, hingga **Automated Fiscal & P&L Analysis**. Sistem ini memastikan setiap detik operasional Anda optimal, setiap pelanggan merasa dihargai secara personal melalui **Hyper-Personalized WhatsApp**, dan setiap keputusan bisnis didukung oleh kecerdasan buatan yang akurat.
 
@@ -87,6 +87,7 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
         - **"Panas"**: AI menyarankan menu minuman dingin yang menyegarkan.
         - **"Neutral"**: AI memberikan sentuhan ramah tentang cuaca yang bersahabat.
     - **Visual Weather Widget**: Widget prakiraan cuaca 12-jam (per 3 jam) di dashboard yang mengambil data real-time dari kode wilayah kelurahan setempat.
+    - **🗺️ BMKG Location Sync**: Konfigurasi lokasi cuaca presisi hingga tingkat Kelurahan menggunakan Kode Wilayah BMKG untuk akurasi data.
 - **📉 Smart Inventory Forecasting (AI Restock) [PRO] [READY]**:
     - **Predictive Restocking**: AI memprediksi kebutuhan bahan baku untuk 7 hari ke depan berdasarkan tren historis dan sisa stok saat ini.
     - **Recipe-Aware Analytics**: Otomatis menghitung kebutuhan *raw material* (misal: biji kopi) berdasarkan penjualan menu (misal: Latte) menggunakan data resep.
@@ -116,7 +117,6 @@ Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
   - **Create Reservation**: Buat jadwal reservasi langsung saat chatting tanpa perlu pindah menu.
 - **⚙️ Storage Management**:
   - **Auto Download Control**: Opsi *"Auto Download Media Whatsapp"* di menu Settings untuk menghemat penyimpanan server. Jika dinonaktifkan, media hanya akan diunduh saat tombol "Unduh" diklik.
-  - **BMKG Location Sync**: Konfigurasi lokasi cuaca presisi hingga tingkat Kelurahan menggunakan Kode Wilayah BMKG untuk akurasi data.
 
 ### 📊 Financial Intelligence
 - **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.

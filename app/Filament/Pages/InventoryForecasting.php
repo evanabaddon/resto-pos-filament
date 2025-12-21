@@ -17,7 +17,8 @@ class InventoryForecasting extends Page
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar';
     protected static string|UnitEnum|null $navigationGroup = 'Produk';
     protected static ?string $navigationLabel = 'Prediksi Restock (AI)';
-    protected static ?string $title = 'Smart Inventory Forecasting';
+    protected static ?string $title = 'AI Smart Inventory';
+    protected static ?int $navigationSort = 5;
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -48,23 +49,7 @@ class InventoryForecasting extends Page
         }
     }
 
-    public function getHeaderActions(): array
-    {
-        return [
-            Action::make('generateForecast')
-                ->label('Generate AI Forecast')
-                ->icon('heroicon-o-sparkles')
-                ->color(Color::Indigo)
-                ->action('generateAiForecast'),
 
-            Action::make('exportPdf')
-                ->label('Export PDF')
-                ->icon('heroicon-o-document-arrow-down')
-                ->color(Color::Gray)
-                ->action('exportToPdf')
-                ->visible(fn() => $this->aiResults !== null),
-        ];
-    }
 
     public function generateAiForecast(InventoryService $inventoryService, DeepSeekService $deepSeekService)
     {
