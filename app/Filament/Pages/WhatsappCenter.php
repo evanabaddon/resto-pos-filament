@@ -273,9 +273,24 @@ class WhatsappCenter extends Page implements HasActions, HasForms
             ->get();
     }
 
+    public function updatedSearch($value)
+    {
+        // Auto-fix 08... to 628...
+        if (Str::startsWith($value, '08')) {
+            $this->search = '628' . substr($value, 2);
+        }
+    }
+
     public function startNewChat($number)
     {
+        // 1. Clean non-numeric characters first
         $cleanNumber = preg_replace('/[^0-9]/', '', $number);
+
+        // 2. Normalize 08... -> 628...
+        if (Str::startsWith($cleanNumber, '08')) {
+            $cleanNumber = '628' . substr($cleanNumber, 2);
+        }
+
         if (strlen($cleanNumber) < 5)
             return;
 

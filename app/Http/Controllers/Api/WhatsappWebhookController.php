@@ -94,13 +94,21 @@ class WhatsappWebhookController extends Controller
                     if ($originalMsg) {
                         $targetJid = $originalMsg->remote_jid;
 
-                        // If original was also LID (weird), try to find if it was normalized? 
-                        // But usually original outbound is to Phone JID.
+                        // Fix potential '08' in DB
+                        if (Str::startsWith($targetJid, '08')) {
+                            $targetJid = '628' . substr($targetJid, 2);
+                        }
+
+                        // If target is valid phone number, use it.
                         if (!Str::contains($targetJid, '@lid')) {
                             Log::info("MERGE SUCCESS (Quote): Mapped LID {$data['remote_jid']} -> {$targetJid}");
                             $data['remote_jid'] = $targetJid;
                             goto skip_name_match;
+                        } else {
+                            Log::warning("LID MERGE WARNING: Quoted message also has LID JID: $targetJid");
                         }
+                    } else {
+                        Log::warning("LID MERGE FAILED (Quote): Original message with ID $quotedId not found in DB.");
                     }
                 }
 
