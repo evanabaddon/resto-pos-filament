@@ -97,6 +97,12 @@ class WhatsappWebhookController extends Controller
             $settings = app(\App\Settings\GeneralSettings::class);
             $shouldDownload = $data['from_me'] || $settings->wa_auto_download_media;
 
+            if (!$shouldDownload) {
+                Log::info("Auto-download skipped. Setting disabled.");
+            } elseif (empty($data['attachment_data']) || !$attachmentType) {
+                Log::info("Auto-download skipped. No data or type. Data present: " . (empty($data['attachment_data']) ? 'NO' : 'YES'));
+            }
+
             if ($shouldDownload && !empty($data['attachment_data']) && $attachmentType) {
                 try {
                     $decoded = base64_decode($data['attachment_data']);

@@ -415,13 +415,25 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         }
 
         try {
+            $url = $this->getGatewayUrl() . '/chat/download-media';
+
             /** @var \Illuminate\Http\Client\Response $response */
-            $response = Http::timeout(30)->post($this->getGatewayUrl() . '/chat/download-media', [
+            $response = Http::timeout(30)->post($url, [
                 'message' => $msg->full_message
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
+
+                if (empty($data['media_data'])) {
+                    Notification::make()
+                        ->title('Gagal')
+                        ->body('Gateway tidak mengembalikan data media (media_data kosong).')
+                        ->danger()
+                        ->send();
+                    return;
+                }
+
                 $decoded = base64_decode($data['media_data']);
                 $mimeType = $data['mimetype'];
 
@@ -455,11 +467,27 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 $this->refreshMessages();
                 Notification::make()->title('Berhasil')->body('Media berhasil didownload.')->success()->send();
             } else {
-                Notification::make()->title('Gagal')->body('Gagal mendownload dari gateway.')->danger()->send();
+                // Detailed Error for Debugging
+                $errorBody = $response->body();
+                // Try to parse JSON error if possible
+                $jsonError = $response->json();
+                $errorMessage = $jsonError['error'] ?? $errorBody;
+
+                Log::error("Manual Download Failed: Status {$response->status()} | URL: $url | Body: $errorBody");
+
+                Notification::make()
+                    ->title('Gagal Download')
+                    ->body("Gateway Error ({$response->status()}): " . Str::limit($errorMessage, 100))
+                    ->danger()
+                    ->send();
             }
         } catch (\Exception $e) {
-            Log::error('Manual Download Error: ' . $e->getMessage());
-            Notification::make()->title('Error')->body('Terjadi kesalahan: ' . $e->getMessage())->danger()->send();
+            Log::error('Manual Download Exception: ' . $e->getMessage());
+            Notification::make()
+                ->title('Connection Error')
+                ->body('Tidak dapat menghubungi Gateway. Pastikan URL Gateway benar. Error: ' . $e->getMessage())
+                ->danger()
+                ->send();
         }
     }
 
