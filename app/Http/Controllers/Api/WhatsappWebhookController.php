@@ -62,22 +62,56 @@ class WhatsappWebhookController extends Controller
 
             // --- LID RESOLUTION LOGIC ---
             if (Str::contains($data['remote_jid'], '@lid')) {
-                Log::info("Received message from LID: " . $data['remote_jid'] . " Name: " . ($data['push_name'] ?? 'N/A'));
+                Log::info("Received message from LID: " . $data['remote_jid']);
 
+                // STRATEGY 1: QUOTED MESSAGE LOOKUP (Strongest Link)
+                // If user replies to a message, we can find the original message and its conversation
+                $contextInfo = $data['full_message']['message']['extendedTextMessage']['contextInfo']
+                    ?? $data['full_message']['message']['imageMessage']['contextInfo']
+                    ?? $data['full_message']['message']['videoMessage']['contextInfo']
+                    ?? $data['full_message']['message']['audioMessage']['contextInfo']
+                    ?? $data['full_message']['message']['documentMessage']['contextInfo']
+                    ?? null;
+
+                if ($contextInfo && isset($contextInfo['stanzaId'])) {
+                    $quotedId = $contextInfo['stanzaId'];
+                    Log::info("LID Lookup: Found quoted stanzaId: $quotedId");
+
+                    // Find the original message (which should have the correct Phone JID)
+                    $originalMsg = WhatsappMessage::where('wa_id', $quotedId)
+                        ->orWhere('id', $quotedId)
+                        ->first();
+
+                    if ($originalMsg) {
+                        $targetJid = $originalMsg->remote_jid;
+
+                        // If original was also LID (weird), try to find if it was normalized? 
+                        // But usually original outbound is to Phone JID.
+                        if (!Str::contains($targetJid, '@lid')) {
+                            Log::info("MERGE SUCCESS (Quote): Mapped LID {$data['remote_jid']} -> {$targetJid}");
+                            $data['remote_jid'] = $targetJid;
+                            goto skip_name_match;
+                        }
+                    }
+                }
+
+                // STRATEGY 2: NAME MATCH (Weak Fallback)
                 if (!empty($data['push_name'])) {
-                    // Try to find an existing conversation with this Name that is NOT a LID
                     $existingJid = WhatsappMessage::where('push_name', $data['push_name'])
                         ->where('remote_jid', 'not like', '%@lid')
                         ->where('remote_jid', 'like', '%@s.whatsapp.net') // Ensure it is a phone number
                         ->value('remote_jid');
 
                     if ($existingJid) {
-                        Log::info("MERGE SUCCESS: Mapped LID {$data['remote_jid']} -> {$existingJid} based on name '{$data['push_name']}'");
+                        Log::info("MERGE SUCCESS (Name): Mapped LID {$data['remote_jid']} -> {$existingJid} based on name '{$data['push_name']}'");
                         $data['remote_jid'] = $existingJid;
                     } else {
                         Log::warning("LID MERGE FAILED: No existing conversation found for name '{$data['push_name']}'");
                     }
                 }
+
+                skip_name_match:
+                ;
             }
             // ----------------------------
 
