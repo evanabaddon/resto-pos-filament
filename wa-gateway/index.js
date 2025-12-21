@@ -122,21 +122,26 @@ async function connectToWhatsApp() {
                     let remoteJid = msg.key.remoteJid;
 
                     // Fix for LID (Linked Device) JIDs -> Use the Phone Number JID
-                    if (remoteJid.includes('@lid') && msg.key.fromMe === false) {
-                        // Priority 1: Check senderPn in the key (new Baileys)
+                    if (remoteJid.includes('@lid')) {
+                        console.log('Detected LID JID:', remoteJid, 'FromMe:', msg.key.fromMe);
+
+                        // 1. Try senderPn (Best source for Phone Number)
                         if (msg.key.senderPn) {
                             remoteJid = msg.key.senderPn;
+                            console.log('-> Resolved LID to senderPn:', remoteJid);
                         }
-                        // Priority 2: Check participant (often holds the real number in group context or if mapped)
+                        // 2. Try participant (Group context or explicit participant)
                         else if (msg.key.participant && !msg.key.participant.includes('@lid')) {
                             remoteJid = msg.key.participant;
+                            console.log('-> Resolved LID to participant:', remoteJid);
                         }
-                        // Priority 3: Fallback - if we can't find PN, we might be stuck with LID.
-                        // Ideally we should query the store or normalize, but for now we try to stick to senderPn.
-                    } else if (remoteJid.includes('@lid') && msg.key.fromMe === true) {
-                        // For messages sent by ME from another device
-                        // Try to find who the recipient was.
-                        // But usually we just want to ensure we don't store LID as the key if possible.
+                        // 3. FromMe case: If I sent it from a linked device, we really want the recipient.
+                        // But msg.key.remoteJid is usually the recipient in fromMe cases (unless it's a self-chat).
+                        // If remoteJid IS the recipient and it is a LID, we try to fix it.
+                        else if (msg.key.fromMe) {
+                            // If I sent TO a LID, we can't easily guess the phone number unless we have it mapped.
+                            // But usually, remoteJid for outgoing is the target.
+                        }
                     }
 
                     // Format JID to ensure it is @s.whatsapp.net if it is a phone number

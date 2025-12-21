@@ -491,8 +491,12 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         }
     }
 
-    public function sendMessage()
+    public function sendMessage($message = null)
     {
+        if ($message) {
+            $this->newMessage = $message;
+        }
+
         if (!$this->selectedJid || (empty($this->newMessage) && !$this->attachment))
             return;
 

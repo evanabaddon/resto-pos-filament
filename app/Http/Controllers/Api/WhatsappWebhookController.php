@@ -60,6 +60,27 @@ class WhatsappWebhookController extends Controller
             // Extract WA ID from payload OR from full_message
             $waId = $data['wa_id'] ?? $data['full_message']['key']['id'] ?? null;
 
+            // --- LID RESOLUTION LOGIC ---
+            if (Str::contains($data['remote_jid'], '@lid')) {
+                Log::info("Received message from LID: " . $data['remote_jid'] . " Name: " . ($data['push_name'] ?? 'N/A'));
+
+                if (!empty($data['push_name'])) {
+                    // Try to find an existing conversation with this Name that is NOT a LID
+                    $existingJid = WhatsappMessage::where('push_name', $data['push_name'])
+                        ->where('remote_jid', 'not like', '%@lid')
+                        ->where('remote_jid', 'like', '%@s.whatsapp.net') // Ensure it is a phone number
+                        ->value('remote_jid');
+
+                    if ($existingJid) {
+                        Log::info("MERGE SUCCESS: Mapped LID {$data['remote_jid']} -> {$existingJid} based on name '{$data['push_name']}'");
+                        $data['remote_jid'] = $existingJid;
+                    } else {
+                        Log::warning("LID MERGE FAILED: No existing conversation found for name '{$data['push_name']}'");
+                    }
+                }
+            }
+            // ----------------------------
+
             // 1. Check by WA ID
             if ($waId && WhatsappMessage::where('wa_id', $waId)->exists()) {
                 Log::info('Duplicate WA Message ignored (ID match): ' . $waId);
