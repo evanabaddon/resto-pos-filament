@@ -60,6 +60,15 @@ class WhatsappWebhookController extends Controller
             // Extract WA ID from payload OR from full_message
             $waId = $data['wa_id'] ?? $data['full_message']['key']['id'] ?? null;
 
+            // --- JID NORMALIZATION (Global) ---
+            // Ensure we always deal with 628... not 08...
+            if (Str::startsWith($data['remote_jid'], '08') && Str::endsWith($data['remote_jid'], '@s.whatsapp.net')) {
+                $oldJid = $data['remote_jid'];
+                $data['remote_jid'] = '628' . substr($oldJid, 2);
+                Log::info("Normalized JID: $oldJid -> {$data['remote_jid']}");
+            }
+            // ----------------------------------
+
             // --- LID RESOLUTION LOGIC ---
             if (Str::contains($data['remote_jid'], '@lid')) {
                 Log::info("Received message from LID: " . $data['remote_jid']);
