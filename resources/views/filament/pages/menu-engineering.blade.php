@@ -98,10 +98,28 @@
             $grouped = collect($matrixData['items'])->groupBy('category');
             @endphp
 
-            @foreach(['UNIT UNGGULAN' => ['bg-emerald-500', 'Unit Unggulan', 'Kinerja tinggi & potensi tinggi'],
-            'UNIT ANDALAN' => ['bg-amber-500', 'Unit Andalan', 'Kinerja tinggi tapi pertumbuhan rendah'],
-            'UNIT POTENSIAL' => ['bg-indigo-500', 'Unit Potensial', 'Potensi tinggi tapi kinerja belum optimal'],
-            'UNIT KURANG BERKEMBANG' => ['bg-rose-500', 'Unit Kurang Berkembang', 'Kinerja & potensi rendah']] as $cat => $style)
+            @foreach([
+            'UNIT UNGGULAN' => [
+            'bg-emerald-500',
+            'Menu Unggulan',
+            'Penjualan tinggi dengan margin laba besar'
+            ],
+            'UNIT ANDALAN' => [
+            'bg-amber-500',
+            'Menu Andalan',
+            'Penjualan tinggi namun margin laba relatif kecil'
+            ],
+            'UNIT POTENSIAL' => [
+            'bg-indigo-500',
+            'Menu Potensial',
+            'Margin laba tinggi namun volume penjualan masih rendah'
+            ],
+            'UNIT KURANG BERKEMBANG' => [
+            'bg-rose-500',
+            'Menu Kurang Berkembang',
+            'Penjualan rendah dan margin laba kecil'
+            ],
+            ] as $cat => $style)
             <div @click="activeFilter = activeFilter === '{{ $cat }}' ? 'ALL' : '{{ $cat }}'"
                 class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden group cursor-pointer transition-all duration-200"
                 :class="{ 'ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-gray-900': activeFilter === '{{ $cat }}', 'opacity-60 grayscale': activeFilter !== 'ALL' && activeFilter !== '{{ $cat }}' }">
