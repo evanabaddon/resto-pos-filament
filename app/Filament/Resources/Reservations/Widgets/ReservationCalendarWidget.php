@@ -716,7 +716,7 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->relationship()
                             ->schema([
                                 Select::make('product_id')
-                                    ->relationship('product', 'name')
+                                    ->relationship('product', 'name', fn(Builder $query) => $query->where('is_sellable', true))
                                     ->label('Menu')
                                     ->required()
                                     ->searchable()
@@ -798,7 +798,7 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->relationship()
                             ->schema([
                                 Select::make('product_id')
-                                    ->relationship('product', 'name')
+                                    ->relationship('product', 'name', fn(Builder $query) => $query->where('is_sellable', true))
                                     ->label('Menu')
                                     ->required()
                                     ->searchable()
