@@ -42,7 +42,7 @@ class MenuEngineeringService
             $cogs = 0;
             if ($product->recipes->isNotEmpty()) {
                 foreach ($product->recipes as $recipe) {
-                    $ingredientPrice = $recipe->ingredient->base_price ?? 0;
+                    $ingredientPrice = $recipe->ingredient->price_per_base_unit ?? 0;
                     $cogs += ($ingredientPrice * $recipe->quantity);
                 }
             } else {

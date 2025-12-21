@@ -36,7 +36,7 @@
         <div class="flex flex-col items-center justify-center py-12 bg-white dark:bg-gray-900 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
             <x-heroicon-o-chart-bar-square class="w-16 h-16 text-gray-300 mb-4" />
             <h3 class="text-lg font-medium text-gray-900 dark:text-white">Belum Ada Analisis</h3>
-            <p class="text-sm text-gray-500 mb-6 text-center max-w-xs">Scan performa menu Anda untuk melihat klasifikasi Stars, Plowhorses, Puzzles, dan Dogs.</p>
+            <p class="text-sm text-gray-500 mb-6 text-center max-w-xs">Scan performa menu Anda untuk melihat klasifikasi Unit Unggulan, Unit Andalan, Unit Potensial, dan Unit Tidak Tertarik.</p>
             <x-filament::button wire:click="generateMatrix" size="lg" icon="heroicon-m-sparkles" wire:loading.attr="disabled">
                 <span wire:loading.remove wire:target="generateMatrix">Generate Analisis Sekarang</span>
                 <span wire:loading wire:target="generateMatrix">Sedang Menganalisa...</span>

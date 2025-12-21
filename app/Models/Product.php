@@ -82,7 +82,7 @@ class Product extends Model
         }
 
         $recipeCost = $this->recipes->sum(function ($r) {
-            return ($r->ingredient->base_price ?? 0) * $r->quantity;
+            return ($r->ingredient->price_per_base_unit ?? 0) * $r->quantity;
         });
 
         return $recipeCost + ($this->additional_cost ?? 0);
