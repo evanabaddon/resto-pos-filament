@@ -66,7 +66,7 @@ Full-suite manajemen sumber daya manusia yang terintegrasi penuh dengan keuangan
 
 ### 🧩 Modular Architecture (On-Demand Features)
 Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
-- **Toggleable Modules**: Aktifkan/Matikan modul CRM, HRM, KDS, Fiskal, atau **AI Forecasting** sesuai kebutuhan.
+- **Toggleable Modules**: Bebas aktifkan/matikan fitur sesuai skala bisnis Anda, mulai dari **CRM (Loyalty)**, **HRM (Payroll)**, **KDS (Kitchen)**, **WhatsApp Center**, **Fiscal Planning**, hingga modul cerdas **AI Forecasting** dan **AI Menu Engineering**.
 - **Centralized Settings**: Panel pengaturan terpusat untuk semua konfigurasi modul.
 
 ### 🧠 AI-Powered Intelligence (Powered by Nirmala AI) 🚀
@@ -88,13 +88,18 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
         - **"Neutral"**: AI memberikan sentuhan ramah tentang cuaca yang bersahabat.
     - **Visual Weather Widget**: Widget prakiraan cuaca 12-jam (per 3 jam) di dashboard yang mengambil data real-time dari kode wilayah kelurahan setempat.
     - **🗺️ BMKG Location Sync**: Konfigurasi lokasi cuaca presisi hingga tingkat Kelurahan menggunakan Kode Wilayah BMKG untuk akurasi data.
-- **📉 Smart Inventory Forecasting (AI Restock) [PRO] [READY]**:
+- 📉 **Smart Inventory Forecasting (AI Restock) [PRO] [READY]**:
     - **Predictive Restocking**: AI memprediksi kebutuhan bahan baku untuk 7 hari ke depan berdasarkan tren historis dan sisa stok saat ini.
-    - **Recipe-Aware Analytics**: Otomatis menghitung kebutuhan *raw material* (misal: biji kopi) berdasarkan penjualan menu (misal: Latte) menggunakan data resep.
+    - **Recipe-Aware Analytics**: Otomatis menghitung kebutuhan *raw material* (misal: biji kopi) berdasarkan penjualan menu (misal: Latte) menggunakan data resep dengan **Unit Conversion Logic** (Gram/Kg/Pcs).
     - **Persistence & Speed**: Hasil analisis disimpan dalam cache selama 24 jam untuk akses instan tanpa perlu generate ulang setiap kali halaman dibuka.
     - **Urgency Insights**: Memberikan label urgensi (High/Medium/Low) dan alasan logis di balik setiap saran restock.
     - **📄 Professional PDF Export**: Generate laporan restock resmi dalam format PDF yang rapi, lengkap dengan tabel rekomendasi, tingkat urgensi, dan alasan logis AI.
-    - **Clean Data**: Secara otomatis mengevaluasi item non-inventori (seperti Down Payment) agar tidak mengganggu akurasi prediksi.
+- 🍳 **AI Menu Engineering (Profit & Popularity Matrix) [READY]**:
+    - **Strategic Classification**: AI mengklasifikasikan menu ke dalam 4 kategori strategis: **Unit Unggulan** (Stars), **Unit Andalan** (Plowhorses), **Unit Potensial** (Puzzles), dan **Unit Kurang Berkembang** (Dogs).
+    - **Ultra-Accurate COGS**: Perhitungan HPP super akurat yang mendukung **Unit Conversion Rate** (misal: Harga beli sak/karung dikonversi otomatis ke gram pada resep).
+    - **AI Strategic Advice**: Dapatkan saran taktis langsung dari AI (misal: saran kenaikan harga 10%, pengecilkan porsi, atau rekomendasi promosi khusus).
+    - **Premium Matrix UI**: Dashboard visual dengan bar popularitas, badge kategori indigo, dan insight box gradient yang elegan.
+    - **📄 Integrated PDF Report**: Ekspor hasil analisis ke PDF dengan layout profesional yang siap dipresentasikan di rapat manajemen.
 
 ### 💬 Integrated WhatsApp Center (Native Chat) 🚀
 Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
@@ -128,11 +133,10 @@ Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
 
 Rencana pengembangan fitur masa depan untuk memaksimalkan ROI dan efisiensi operasional.
 
-### 1. 🍳 AI Menu Engineering (Profit & Popularity Matrix) [NEXT]
-- **Stars, Plowhorses, Puzzles, & Dogs**: AI mengklasifikasikan menu berdasarkan profitabilitas vs popularitas.
-- **Dynamic Pricing Advice**: AI menyarankan kenaikan harga atau penggantian bahan baku untuk menu yang populer tapi kurang menguntungkan.
+### 1. 🍳 AI Menu Engineering (Profit & Popularity Matrix) [COMPLETED]
+- Sudah diimplementasikan dengan fitur klasifikasi Unit Unggulan & Ekspor PDF.
 
-### 2. 💌 Loyalty Automation 2.0 (The AI CRM Agent)
+### 2. 💌 Loyalty Automation 2.0 (The AI CRM Agent) [NEXT]
 - **Automatic Re-engagement**: Pesan otomatis ke pelanggan yang tidak datang >30 hari.
 - **Birthday & Milestone Alerts**: Pengiriman otomatis gift dan ucapan untuk meningkatkan *Retention Rate*.
 
