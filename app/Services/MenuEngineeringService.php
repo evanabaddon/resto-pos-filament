@@ -46,6 +46,18 @@ class MenuEngineeringService
                 $cogs = $product->base_price;
             }
 
+            // TARGETED DEBUGGING
+            if (stripos($product->name, 'PEACH') !== false) {
+                \Log::info("DEBUG PEACH: {$product->name}", [
+                    'id' => $product->id,
+                    'base_price_raw' => $product->base_price,
+                    'sell_price' => $product->sell_price,
+                    'recipes_count' => $product->recipes->count(),
+                    'computed_hpp' => $product->computed_hpp,
+                    'final_cogs' => $cogs,
+                ]);
+            }
+
             if ($cogs == 0 && $product->sell_price > 0) {
                 \Log::warning("MenuEngineering: Found HPP 0 for Product ID: {$product->id}", [
                     'name' => $product->name,
