@@ -41,8 +41,9 @@ class MenuEngineeringService
             // Use standardized HPP calculation from Product Model
             $cogs = $product->computed_hpp;
 
-            // Defensive check: If HPP is still 0 but Sell Price > 0, fallback to Base Price
-            if ($cogs == 0 && ($product->base_price > 0)) {
+            // Defensive check: If HPP is too low (likely unit conversion error) but Base Price exists, use Base Price
+            // Using 50 threshold because 0.0034 is technically > 0 but effectively 0 in IDR
+            if ($cogs < 50 && ($product->base_price > 50)) {
                 $cogs = $product->base_price;
             }
 
