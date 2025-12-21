@@ -46,6 +46,17 @@ class MenuEngineeringService
                 $cogs = $product->base_price;
             }
 
+            if ($cogs == 0 && $product->sell_price > 0) {
+                \Log::warning("MenuEngineering: Found HPP 0 for Product ID: {$product->id}", [
+                    'name' => $product->name,
+                    'type' => $product->type,
+                    'sell_price' => $product->sell_price,
+                    'base_price' => $product->base_price,
+                    'recipes_count' => $product->recipes->count(),
+                    'raw_computed_hpp' => $product->computed_hpp
+                ]);
+            }
+
             $contributionMargin = $product->sell_price - $cogs;
 
             $matrix[] = [
