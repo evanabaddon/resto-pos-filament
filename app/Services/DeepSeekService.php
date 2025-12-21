@@ -198,6 +198,7 @@ class DeepSeekService
         - Tanggal: {$reservationData['date']}
         - Jam: {$reservationData['time']}
         - Jumlah Tamu: {$reservationData['guests']}
+        - Pre-Order Menu: " . ($reservationData['preorder_items'] ?? '-') . "
         - Permintaan Khusus: " . ($reservationData['special_requests'] ?? '-') . "
 
         TEMPLATE REFERENSI (Opsional - gunakan sebagai inspirasi data):
@@ -207,9 +208,10 @@ class DeepSeekService
         1. Jangan hanya menyalin template. Buatlah terasa lebih mengalir dan 'manusiawi'.
         2. Gunakan EMOJI yang relevan agar suasana ceria.
         3. Pastikan informasi Tanggal, Jam, dan Jumlah Tamu TERTERA JELAS.
-        4. Akhiri balasan dengan signature nama Anda: '- {$aiName}'.
-        5. Berikan isi balasan SAJA.
-        6. Jika ada Permintaan Khusus, sebutkan bahwa tim akan berusaha memenuhinya.";
+        4. Jika ada Pre-Order Menu, sebutkan kembali menu yang dipesan agar pelanggan yakin.
+        5. Akhiri balasan dengan signature nama Anda: '- {$aiName}'.
+        6. Berikan isi balasan SAJA.
+        7. Jika ada Permintaan Khusus, sebutkan bahwa tim akan berusaha memenuhinya.";
 
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],

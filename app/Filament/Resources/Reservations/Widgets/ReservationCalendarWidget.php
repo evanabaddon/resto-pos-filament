@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Reservations\Widgets;
 use Filament\Forms;
 use App\Models\Reservation;
 use Filament\Actions\Action;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Guava\Calendar\CalendarEvent;
 use Illuminate\Support\HtmlString;
@@ -408,6 +410,12 @@ class ReservationCalendarWidget extends CalendarWidget
                                         $date = $record->reservation_date->translatedFormat('d F Y');
                                         $time = $record->reservation_date->format('H:i');
 
+                                        // Format items for AI
+                                        $preorderItems = $record->items->map(function ($item) {
+                                            $note = $item->note ? " (Catatan: {$item->note})" : "";
+                                            return "{$item->product->name} x{$item->quantity}{$note}";
+                                        })->join(', ');
+
                                         try {
                                             $aiService = app(\App\Services\DeepSeekService::class);
                                             $message = $aiService->generateReservationConfirmation([
@@ -415,6 +423,7 @@ class ReservationCalendarWidget extends CalendarWidget
                                                 'date' => $date,
                                                 'time' => $time,
                                                 'guests' => $record->party_size,
+                                                'preorder_items' => $preorderItems,
                                                 'special_requests' => $record->special_requests,
                                             ], $template);
                                         } catch (\Exception $e) {
@@ -722,9 +731,9 @@ class ReservationCalendarWidget extends CalendarWidget
                                     ->searchable()
                                     ->preload()
                                     ->live()
-                                    ->afterStateUpdated(function ($state, \Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get) {
+                                    ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                         $product = \App\Models\Product::find($state);
-                                        $price = $product?->price ?? 0;
+                                        $price = $product?->sell_price ?? $product?->price ?? 0;
                                         $set('unit_price', $price);
                                         $set('total_price', $price * (int) ($get('quantity') ?? 1));
                                     }),
@@ -733,15 +742,25 @@ class ReservationCalendarWidget extends CalendarWidget
                                     ->numeric()
                                     ->default(1)
                                     ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function ($state, \Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get) {
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                         $price = (float) $get('unit_price');
                                         $set('total_price', $price * (int) $state);
                                     }),
+                                TextInput::make('unit_price')
+                                    ->label('Harga')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->numeric()
+                                    ->prefix('Rp'),
+                                TextInput::make('total_price')
+                                    ->label('Total')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->numeric()
+                                    ->prefix('Rp'),
                                 TextInput::make('note')
                                     ->label('Catatan'),
-                                Hidden::make('unit_price')->default(0)->dehydrated(),
-                                Hidden::make('total_price')->default(0)->dehydrated(),
                             ])
                             ->columns(3)
                             ->collapsed(),
@@ -802,12 +821,36 @@ class ReservationCalendarWidget extends CalendarWidget
                                     ->label('Menu')
                                     ->required()
                                     ->searchable()
-                                    ->preload(),
+                                    ->preload()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                        $product = \App\Models\Product::find($state);
+                                        $price = $product?->sell_price ?? $product?->price ?? 0;
+                                        $set('unit_price', $price);
+                                        $set('total_price', $price * (int) ($get('quantity') ?? 1));
+                                    }),
                                 TextInput::make('quantity')
                                     ->label('Qty')
                                     ->numeric()
                                     ->default(1)
-                                    ->required(),
+                                    ->required()
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                        $price = (float) $get('unit_price');
+                                        $set('total_price', $price * (int) $state);
+                                    }),
+                                TextInput::make('unit_price')
+                                    ->label('Harga')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->numeric()
+                                    ->prefix('Rp'),
+                                TextInput::make('total_price')
+                                    ->label('Total')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->numeric()
+                                    ->prefix('Rp'),
                                 TextInput::make('note')
                                     ->label('Catatan'),
                             ])
