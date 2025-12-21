@@ -27,7 +27,7 @@ class MenuEngineeringService
                 $query->where('name', 'not like', '%Down Payment%')
                     ->where('name', 'not like', '%DP%');
             })
-            ->with(['recipes.ingredient', 'unit'])
+            ->with(['recipes.ingredient', 'recipes.unit', 'unit'])
             ->get();
 
         $matrix = [];
@@ -43,7 +43,8 @@ class MenuEngineeringService
             if ($product->recipes->isNotEmpty()) {
                 foreach ($product->recipes as $recipe) {
                     $ingredientPrice = $recipe->ingredient->price_per_base_unit ?? 0;
-                    $cogs += ($ingredientPrice * $recipe->quantity);
+                    $conversionRate = $recipe->unit->conversion_rate ?: 1;
+                    $cogs += ($ingredientPrice * ($recipe->quantity / $conversionRate));
                 }
             } else {
                 // Retail/Service uses base_price
