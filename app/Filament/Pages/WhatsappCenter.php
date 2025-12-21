@@ -104,7 +104,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 ]);
 
                 $this->checkMemberStatus(); // Refresh status
-
+    
                 Notification::make()
                     ->title('Member Created')
                     ->success()
@@ -596,18 +596,39 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     public function logout()
     {
         try {
-            Http::post($this->getGatewayUrl() . '/logout');
-
-            // Clear all messages from database as requested
-            \App\Models\WhatsappMessage::truncate();
-
-            $this->selectedJid = null;
-            $this->activeChatMessages = [];
-
-            $this->checkConnection();
-            Notification::make()->title('Logged out & Data Cleared')->success()->send();
+            // Attempt to call gateway logout
+            // We use a short timeout because if the node is dead, we still want to proceed with local cleanup
+            Http::timeout(3)->post($this->getGatewayUrl() . '/logout');
         } catch (\Exception $e) {
+            // Ignore connection errors during logout, effectively "Force Logout"
+            Log::warning("Gateway logout failed (likely offline), proceeding with local cleanup: " . $e->getMessage());
         }
+
+        // FORCE CLEANUP: Session & Media
+        // 1. Delete all downloaded media to save storage
+        \Illuminate\Support\Facades\Storage::disk('public')->deleteDirectory('whatsapp-media');
+
+        // 2. Clear all messages from database
+        \App\Models\WhatsappMessage::truncate();
+
+        // 3. Reset Local State
+        $this->status = 'disconnected';
+        $this->qrCode = null;
+        $this->userAvatar = null;
+        $this->userName = null;
+
+        $this->selectedJid = null;
+        $this->activeChatMessages = [];
+
+        // 4. Notify User
+        Notification::make()
+            ->title('Logged Out & Storage Cleared')
+            ->body('Sesi telah direset dan folder media local telah dikosongkan.')
+            ->success()
+            ->send();
+
+        // 5. Trigger re-check in UI
+        $this->checkConnection();
     }
 
     public function generateAiReply(\App\Services\DeepSeekService $aiService)

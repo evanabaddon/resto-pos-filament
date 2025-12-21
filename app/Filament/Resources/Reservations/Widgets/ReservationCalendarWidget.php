@@ -340,7 +340,8 @@ class ReservationCalendarWidget extends CalendarWidget
 
     private function formatToJid(?string $phoneNumber): ?string
     {
-        if (empty($phoneNumber)) return null;
+        if (empty($phoneNumber))
+            return null;
 
         $phone = preg_replace('/[^0-9]/', '', $phoneNumber);
 
@@ -677,8 +678,7 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->maxLength(255),
                         TextInput::make('customer_phone')
                             ->label('Telepon')
-                            ->required()
-                            ->tel(),
+                            ->required(),
                     ])->columns(2),
 
                 Section::make('Detail Reservasi')
