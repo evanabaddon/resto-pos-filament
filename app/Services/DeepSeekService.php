@@ -296,8 +296,10 @@ class DeepSeekService
 
         $content = $response['choices'][0]['message']['content'] ?? '{}';
 
-        // Clean up markdown code blocks if AI included them despite instructions
-        $content = preg_replace('/^```json\s*|\s*```$/i', '', trim($content));
+        // More robust JSON extraction
+        if (preg_match('/\{.*\}/s', $content, $matches)) {
+            $content = $matches[0];
+        }
 
         return json_decode($content, true);
     }
@@ -339,7 +341,20 @@ class DeepSeekService
         1. Berikan saran yang KONKRIT dan TEKNIS.
         2. Berikan data JSON SAJA tanpa penjelasan tambahan di luar JSON.";
 
-        $userPrompt = "Berikut adalah data Menu Matrix untuk dianalisa:\n" . json_encode($matrixData, JSON_PRETTY_PRINT);
+        // Limit matrix data to avoid token limits
+        // Prioritize items with sales, then take top 50
+        $limitedItems = collect($matrixData['items'])
+            ->sortByDesc('popularity')
+            ->take(50)
+            ->values()
+            ->toArray();
+
+        $dataForAi = [
+            'items' => $limitedItems,
+            'averages' => $matrixData['averages'] ?? []
+        ];
+
+        $userPrompt = "Berikut adalah data Menu Matrix untuk dianalisa (Terbatas pada 50 menu terpopuler):\n" . json_encode($dataForAi, JSON_PRETTY_PRINT);
 
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
@@ -352,7 +367,11 @@ class DeepSeekService
         ]);
 
         $content = $response['choices'][0]['message']['content'] ?? '{}';
-        $content = preg_replace('/^```json\s*|\s*```$/i', '', trim($content));
+
+        // More robust JSON extraction
+        if (preg_match('/\{.*\}/s', $content, $matches)) {
+            $content = $matches[0];
+        }
 
         return json_decode($content, true);
     }

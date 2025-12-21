@@ -53,8 +53,13 @@ class MenuEngineering extends Page
             $this->matrixData = $service->getMatrix(30);
 
             $deepSeek = new DeepSeekService();
-            $this->aiAdvice = $deepSeek->analyzeMenuMatrix($this->matrixData);
+            $advice = $deepSeek->analyzeMenuMatrix($this->matrixData);
 
+            if (!$advice || !isset($advice['overall_analysis'])) {
+                throw new \Exception('Gagal mendapatkan saran strategis dari AI. Silakan coba lagi.');
+            }
+
+            $this->aiAdvice = $advice;
             $this->lastGeneratedAt = now()->format('d M Y, H:i');
 
             // Cache for 24 hours
