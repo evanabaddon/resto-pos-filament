@@ -101,6 +101,8 @@ Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
 - **🔄 Smart Conversion Actions**:
   - **Quick Member**: Konversi chat pelanggan baru menjadi Member CRM langsung dari header chat. Auto-detect jika sudah terdaftar.
   - **Create Reservation**: Buat jadwal reservasi langsung saat chatting tanpa perlu pindah menu.
+- **⚙️ Storage Management**:
+  - **Auto Download Control**: Opsi *"Auto Download Media Whatsapp"* di menu Settings untuk menghemat penyimpanan server. Jika dinonaktifkan, media hanya akan diunduh saat tombol "Unduh" diklik.
 
 ### 📊 Financial Intelligence
 - **Realtime COGS Calculation**: Menghitung HPP setiap detik untuk akurasi laba bersih.
