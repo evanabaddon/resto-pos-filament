@@ -246,4 +246,59 @@ class DeepSeekService
 
         return $response['choices'][0]['message']['content'] ?? '';
     }
+    /**
+     * Generate an AI-powered stock forecast and restocking recommendation
+     */
+    public function forecastStock(array $consumptionData, int $forecastDays = 7)
+    {
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $aiName = $settings->ai_assistant_name ?? 'Business Assistant';
+        $appName = $settings->app_name ?? 'Restoran Kami';
+
+        $systemPrompt = "Anda adalah {$aiName}, Pakar Manajemen Inventaris untuk '{$appName}'.
+        
+        TUGAS:
+        Diberikan data konsumsi bahan baku historis dan stok saat ini, berikan prediksi kebutuhan stok untuk {$forecastDays} hari ke depan.
+        
+        FORMAT OUTPUT (JSON):
+        Anda WAJIB memberikan jawaban dalam format JSON murni agar bisa diparsing oleh sistem:
+        {
+            \"analysis\": \"Analisis singkat tentang tren konsumsi (1-2 kalimat).\",
+            \"recommendations\": [
+                {
+                    \"product_id\": 1,
+                    \"product_name\": \"Nama Produk\",
+                    \"predicted_need\": 10.5,
+                    \"suggested_restock\": 5.0,
+                    \"urgency\": \"high|medium|low\",
+                    \"reason\": \"Alasan singkat\"
+                }
+            ]
+        }
+        
+        ATURAN:
+        1. Predicted_need: Estimasi total pemakaian untuk {$forecastDays} hari ke depan berdasarkan rata-rata harian.
+        2. Suggested_restock: (Predicted_need + buffer 20%) - Current_stock. Jika hasilnya <= 0, berikan 0.
+        3. Urgency: 'high' jika stok saat ini < safety stock (buffer 20% dari predicted_need), 'medium' jika stok menipis, 'low' jika aman.
+        4. Berikan data JSON SAJA tanpa penjelasan tambahan di luar JSON.";
+
+        $userPrompt = "Berikut adalah data konsumsi untuk dianalisa:\n" . json_encode($consumptionData, JSON_PRETTY_PRINT);
+
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt],
+            ['role' => 'user', 'content' => $userPrompt]
+        ];
+
+        $response = $this->chat($messages, [
+            'temperature' => 0.3, // Lower temperature for structured output
+            'response_format' => ['type' => 'json_object'] // Ensure JSON if supported by model version
+        ]);
+
+        $content = $response['choices'][0]['message']['content'] ?? '{}';
+
+        // Clean up markdown code blocks if AI included them despite instructions
+        $content = preg_replace('/^```json\s*|\s*```$/i', '', trim($content));
+
+        return json_decode($content, true);
+    }
 }

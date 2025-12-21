@@ -32,6 +32,9 @@ class GeneralSettings extends Settings
     public ?string $wa_license_key;
     public bool $wa_auto_download_media;
 
+    public bool $enable_ai_forecasting;
+    public ?string $ai_forecasting_license_key;
+
     public string $printer_width;
     public bool $enable_table_number;
 
@@ -92,6 +95,8 @@ class GeneralSettings extends Settings
             'enable_wa_center' => false,
             'wa_license_key' => '',
             'wa_auto_download_media' => true,
+            'enable_ai_forecasting' => false,
+            'ai_forecasting_license_key' => null,
             'printer_width' => '58mm',
             'enable_table_number' => false,
             'bmkg_location_code' => null, // Default null

@@ -66,7 +66,7 @@ Full-suite manajemen sumber daya manusia yang terintegrasi penuh dengan keuangan
 
 ### 🧩 Modular Architecture (On-Demand Features)
 Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
-- **Toggleable Modules**: Aktifkan/Matikan modul CRM, HRM, KDS, atau Fiskal sesuai kebutuhan.
+- **Toggleable Modules**: Aktifkan/Matikan modul CRM, HRM, KDS, Fiskal, atau **AI Forecasting** sesuai kebutuhan.
 - **Centralized Settings**: Panel pengaturan terpusat untuk semua konfigurasi modul.
 
 ### 🧠 AI-Powered Intelligence (Powered by Nirmala AI) 🚀
@@ -87,6 +87,11 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
         - **"Panas"**: AI menyarankan menu minuman dingin yang menyegarkan.
         - **"Neutral"**: AI memberikan sentuhan ramah tentang cuaca yang bersahabat.
     - **Visual Weather Widget**: Widget prakiraan cuaca 12-jam (per 3 jam) di dashboard yang mengambil data real-time dari kode wilayah kelurahan setempat.
+- **📉 Smart Inventory Forecasting (AI Restock) [PRO] [READY]**:
+    - **Predictive Restocking**: AI memprediksi kebutuhan bahan baku untuk 7 hari ke depan berdasarkan tren historis dan sisa stok saat ini.
+    - **Recipe-Aware Analytics**: Otomatis menghitung kebutuhan *raw material* (misal: biji kopi) berdasarkan penjualan menu (misal: Latte) menggunakan data resep.
+    - **Urgency Insights**: Memberikan label urgensi (High/Medium/Low) dan alasan logis di balik setiap saran restock.
+    - **Clean Data**: Secara otomatis mengevaluasi item non-inventori (seperti Down Payment) agar tidak mengganggu akurasi prediksi.
 
 ### 💬 Integrated WhatsApp Center (Native Chat) 🚀
 Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
@@ -133,10 +138,7 @@ Rencana pengembangan fitur masa depan untuk memaksimalkan ROI dan efisiensi oper
 - **Preparation Time Tracking**: Melacak durasi masak per item dari KDS masuk hingga selesai.
 - **Kitchen Bottleneck Detection**: Menganalisis menu mana yang paling sering membuat antrean dapur macet.
 
-### 4. 📉 Smart Inventory Forecasting
-- **Predictive Restocking**: AI memprediksi kebutuhan bahan baku minggu depan berdasarkan tren historis dan sisa stok saat ini.
-
-### 5. 💰 Integrated P&L Dashboard (Daily Net Profit)
+### 4. 💰 Integrated P&L Dashboard (Daily Net Profit)
 - **Expense vs Revenue**: Dashboard laba rugi harian otomatis yang sudah memotong Gaji, Operasional, dan HPP.
 
 ---

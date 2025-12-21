@@ -20,9 +20,6 @@ class WeatherWidget extends Widget
 
     public function mount()
     {
-        // The weather data fetching logic is now handled by getData() using BmkgWeatherService.
-        // This mount method can be used to set locationName if needed, or removed if not.
-        // For now, we'll keep it as is, but its weatherData fetching part is effectively superseded.
         $settings = app(GeneralSettings::class);
         $code = $settings->bmkg_location_code;
 
@@ -33,11 +30,7 @@ class WeatherWidget extends Widget
         // Cache Key based on location code
         $cacheKey = "bmkg_weather_{$code}";
 
-        // Cache for 1 hour
-        // This part is now redundant if getData() fetches its own data.
-        // However, if the view relies on $this->weatherData or $this->locationName directly,
-        // this mount method might still be needed to populate them.
-        // For this specific change, we are only replacing getData's logic.
+        // Cache 
         $this->weatherData = Cache::remember($cacheKey, 3600, function () use ($code) {
             try {
                 $response = Http::timeout(5)->get("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={$code}");
