@@ -13,6 +13,7 @@ use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Tables\Table;
 
 class SaleResource extends Resource
@@ -23,7 +24,28 @@ class SaleResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Transaksi';
 
-    protected static ?string $navigationLabel = 'Penjualan';
+    protected static ?string $navigationLabel = 'Riwayat Transaksi';
+
+    // RBAC: super_admin, admin, cashier, accountant (view only)
+    public static function canViewAny(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier', 'accountant']);
+    }
+
+    public static function canCreate(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier']); // Accountant cannot create sales
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']); // Only admins can edit past sales
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']); // Only admins can delete
+    }
 
     public static function form(Schema $schema): Schema
     {

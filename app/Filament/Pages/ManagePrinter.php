@@ -21,7 +21,14 @@ class ManagePrinter extends SettingsPage
 
     protected static string $settings = PrinterSettings::class;
 
-    protected static string | UnitEnum | null $navigationGroup = 'Settings';
+    protected static string|UnitEnum|null $navigationGroup = 'Settings';
+
+    protected static ?int $navigationSort = 2;
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()->role === 'super_admin';
+    }
 
     public function form(Schema $schema): Schema
     {
@@ -40,10 +47,10 @@ class ManagePrinter extends SettingsPage
                             ->live()
                             ->required(),
                     ]),
-                
+
                 Section::make('USB Printer Settings')
                     ->description('Konfigurasi untuk USB Printer - Bisa gunakan satu printer untuk semua atau printer terpisah')
-                    ->visible(fn ($get) => $get('printer_type') === 'usb')
+                    ->visible(fn($get) => $get('printer_type') === 'usb')
                     ->schema([
                         Select::make('usb_printer_mode')
                             ->label('Mode USB Printer')
@@ -54,36 +61,36 @@ class ManagePrinter extends SettingsPage
                             ->default('single')
                             ->live()
                             ->required(),
-                        
+
                         TextInput::make('usb_printer_name')
                             ->label('Nama Printer USB (Utama)')
                             ->placeholder('POS-58')
                             ->helperText('Digunakan jika mode "Satu Printer" atau sebagai fallback')
                             ->default('POS-58')
                             ->required(),
-                            
+
                         TextInput::make('usb_kitchen_printer_name')
                             ->label('Nama Printer Dapur')
                             ->placeholder('Kitchen-POS-58')
                             ->helperText('Kosongkan jika menggunakan printer utama')
-                            ->visible(fn ($get) => $get('usb_printer_mode') === 'multiple'),
-                            
+                            ->visible(fn($get) => $get('usb_printer_mode') === 'multiple'),
+
                         TextInput::make('usb_bar_printer_name')
                             ->label('Nama Printer Bar')
                             ->placeholder('Bar-POS-58')
                             ->helperText('Kosongkan jika menggunakan printer utama')
-                            ->visible(fn ($get) => $get('usb_printer_mode') === 'multiple'),
-                            
+                            ->visible(fn($get) => $get('usb_printer_mode') === 'multiple'),
+
                         TextInput::make('usb_general_printer_name')
                             ->label('Nama Printer Umum')
                             ->placeholder('General-POS-58')
                             ->helperText('Kosongkan jika menggunakan printer utama')
-                            ->visible(fn ($get) => $get('usb_printer_mode') === 'multiple'),
+                            ->visible(fn($get) => $get('usb_printer_mode') === 'multiple'),
                     ]),
-                
+
                 Section::make('Network Printer Settings')
                     ->description('Konfigurasi untuk Network Printer')
-                    ->visible(fn ($get) => $get('printer_type') === 'network')
+                    ->visible(fn($get) => $get('printer_type') === 'network')
                     ->schema([
                         TextInput::make('kitchen_printer_ip')
                             ->label('Kitchen Printer IP')
@@ -95,7 +102,7 @@ class ManagePrinter extends SettingsPage
                             ->placeholder('9100')
                             ->default(9100)
                             ->required(),
-                            
+
                         TextInput::make('bar_printer_ip')
                             ->label('Bar Printer IP')
                             ->placeholder('192.168.1.101')
@@ -106,7 +113,7 @@ class ManagePrinter extends SettingsPage
                             ->placeholder('9100')
                             ->default(9100)
                             ->required(),
-                            
+
                         TextInput::make('general_printer_ip')
                             ->label('General Printer IP')
                             ->placeholder('192.168.1.102')
@@ -136,7 +143,7 @@ class ManagePrinter extends SettingsPage
         try {
             $printService = new ReceiptPrintService();
             $detectedPrinters = $printService->detectUsbPrinters();
-            
+
             // ✅ FIX: Pastikan $detectedPrinters adalah array
             if (empty($detectedPrinters)) {
                 Notification::make()
@@ -146,16 +153,16 @@ class ManagePrinter extends SettingsPage
                     ->send();
                 return;
             }
-            
+
             // ✅ FIX: Gunakan implode hanya jika array tidak empty
             $message = "USB Printers Detected:\n" . implode("\n", $detectedPrinters);
-            
+
             Notification::make()
                 ->title('USB Printers Detection')
                 ->body($message)
                 ->success()
                 ->send();
-                
+
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Detection Failed')
@@ -175,13 +182,13 @@ class ManagePrinter extends SettingsPage
             if (($settings->printer_type ?? 'usb') === 'usb') {
                 // TEST USB PRINTERS
                 $printService = new ReceiptPrintService();
-                
+
                 if (($settings->usb_printer_mode ?? 'single') === 'single') {
                     // Test single printer
                     $printerName = $settings->usb_printer_name ?? 'BAR';
                     try {
                         $testResult = $printService->testPrinter($printerName);
-                        $results[] = $testResult['success'] 
+                        $results[] = $testResult['success']
                             ? "✅ USB Printer (All): SUCCESS - {$printerName}"
                             : "❌ USB Printer (All): FAILED - {$testResult['error']}";
                     } catch (\Exception $e) {
@@ -195,7 +202,7 @@ class ManagePrinter extends SettingsPage
                         'Bar' => $settings->usb_bar_printer_name ?? $settings->usb_printer_name ?? 'BAR',
                         'General' => $settings->usb_general_printer_name ?? $settings->usb_printer_name ?? 'BAR',
                     ];
-                    
+
                     foreach ($printers as $division => $printerName) {
                         try {
                             $testResult = $printService->testPrinter($printerName);
@@ -215,7 +222,7 @@ class ManagePrinter extends SettingsPage
 
             // ✅ FIX: Pastikan $results tidak null
             $message = "Test Results:\n" . (!empty($results) ? implode("\n", $results) : "No tests performed");
-            
+
             Notification::make()
                 ->title('Printer Test Results')
                 ->body($message)

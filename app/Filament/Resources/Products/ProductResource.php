@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Products;
 
 use UnitEnum;
 use BackedEnum;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Model;
 use App\Models\Product;
 use Filament\Tables\Table;
 use Filament\Schemas\Schema;
@@ -26,6 +28,27 @@ class ProductResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Produk';
 
     protected static ?string $navigationLabel = 'Produk';
+
+    // RBAC: super_admin, admin, inventory
+    public static function canViewAny(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory']);
+    }
+
+    public static function canCreate(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory']);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory']);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory']);
+    }
 
     public static function form(Schema $schema): Schema
     {

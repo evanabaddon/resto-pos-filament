@@ -14,6 +14,7 @@ use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class ShiftResource extends Resource
 {
@@ -22,6 +23,8 @@ class ShiftResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+
+    protected static ?string $cluster = HrmCluster::class;
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -33,6 +36,11 @@ class ShiftResource extends Resource
     protected static ?string $navigationLabel = 'Jadwal Shift';
 
     protected static ?string $modelLabel = 'Shift Kerja';
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -70,10 +78,12 @@ class ShiftResource extends Resource
             ])
             ->actions([
                 EditAction::make(),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
             ])
             ->bulkActions([
-                DeleteBulkAction::make(),
+                DeleteBulkAction::make()
+                    ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
             ]);
     }
 

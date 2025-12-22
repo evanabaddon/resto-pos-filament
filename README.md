@@ -98,13 +98,13 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
         - **"Neutral"**: AI memberikan sentuhan ramah tentang cuaca yang bersahabat.
     - **Visual Weather Widget**: Widget prakiraan cuaca 12-jam (per 3 jam) di dashboard yang mengambil data real-time dari kode wilayah kelurahan setempat.
     - **🗺️ BMKG Location Sync**: Konfigurasi lokasi cuaca presisi hingga tingkat Kelurahan menggunakan Kode Wilayah BMKG untuk akurasi data.
-- 📉 **Smart Inventory Forecasting (AI Restock) [PRO] [READY]**:
+- 📉 **Forecasting Stok (AI) [PRO] [READY]**:
     - **Predictive Restocking**: AI memprediksi kebutuhan bahan baku untuk 7 hari ke depan berdasarkan tren historis dan sisa stok saat ini.
     - **Recipe-Aware Analytics**: Otomatis menghitung kebutuhan *raw material* (misal: biji kopi) berdasarkan penjualan menu (misal: Latte) menggunakan data resep dengan **Unit Conversion Logic** (Gram/Kg/Pcs).
     - **Persistence & Speed**: Hasil analisis disimpan dalam cache selama 24 jam untuk akses instan tanpa perlu generate ulang setiap kali halaman dibuka.
     - **Urgency Insights**: Memberikan label urgensi (High/Medium/Low) dan alasan logis di balik setiap saran restock.
     - **📄 Professional PDF Export**: Generate laporan restock resmi dalam format PDF yang rapi, lengkap dengan tabel rekomendasi, tingkat urgensi, dan alasan logis AI.
-- 🍳 **AI Menu Engineering (Profit & Popularity Matrix) [READY]**:
+- 🍳 **Menu Engineering (AI) (Profit & Popularity Matrix) [READY]**:
     - **Strategic Classification**: AI mengklasifikasikan menu ke dalam 4 kategori strategis: **Unit Unggulan** (Stars), **Unit Andalan** (Plowhorses), **Unit Potensial** (Puzzles), dan **Unit Kurang Berkembang** (Dogs).
     - **Ultra-Accurate COGS**: Perhitungan HPP super akurat yang mendukung **Unit Conversion Rate** (misal: Harga beli sak/karung dikonversi otomatis ke gram pada resep).
     - **AI Strategic Advice**: Dapatkan saran taktis langsung dari AI (misal: saran kenaikan harga 10%, pengecilkan porsi, atau rekomendasi promosi khusus).
@@ -138,8 +138,21 @@ Pusat kendali data yang menggabungkan kecerdasan buatan dan perhitungan fiskal a
 
 - 🏛️ **Laporan Pajak (Fiskal)**: Perencanaan pajak yang fleksibel dengan fitur Target Omzet.
 - 📈 **Laba/Rugi (Profit & Loss)**: Dashboard laba bersih harian yang menghitung HPP (COGS) secara realtime.
-- 📦 **Prediksi Restock (AI)**: Analisis kebutuhan bahan baku 7 hari ke depan berbasis tren historis.
+- 📦 **Forecasting Stok (AI)**: Analisis kebutuhan bahan baku 7 hari ke depan berbasis tren historis.
 - 🍽️ **Analisis Menu (AI)**: Klasifikasi profitabilitas menu (Stars, Plowhorses, etc.) dengan saran strategis AI.
+
+### 🛡️ Role-Based Access Control (RBAC) [NEW]
+Sistem keamanan bertingkat yang ketat. **Tombol Delete** secara global **DISEMBUNYIKAN** (Hidden) dari tampilan untuk seluruh role kecuali **Super Admin** & **Admin**.
+
+| Role | Deskripsi & Akses Utama |
+| :--- | :--- |
+| **Super Admin** | **Akses Penuh** & Root Privileges. Satu-satunya yang bisa Mengelola User System, Backup, & Audit Log. |
+| **Admin Operasional** | Kelola Produk, Stok, Karyawan. **Bisa Delete Data**. Tidak bisa akses User System & Settings Inti. |
+| **Accountant** | Akses Penuh Keuangan (Laba/Rugi, Payroll). **Read-only** ke Stok & Transaksi. **NO DELETE** (Tombol Hidden). |
+| **Inventory** | Full Akses Stok & Pembelian. **Harga Jual & Profit Hidden** (Blind Access). **NO DELETE** (Tombol Hidden). |
+| **Kitchen** | Akses Khusus KDS & Lapor Stok. **Tidak bisa lihat** Harga/Customer. **NO DELETE**. |
+| **Cashier** | Akses Khusus POS & CRM Member. Edit Terbatas. **Tidak bisa lihat** Laporan/Profit. **NO DELETE** (Void Transaksi Hidden). |
+| **Waiter** | Input Order Only. View KDS Status. **No Access** to Data Member/Finance. **NO DELETE**. |
 
 ---
 

@@ -17,7 +17,7 @@ class UnitsTable
                 TextColumn::make('name'),
                 TextColumn::make('symbol'),
                 TextColumn::make('baseUnit.name')->label('Base Unit'),
-                TextColumn::make('conversion_rate')->label('Rate')->formatStateUsing(fn ($state) => number_format($state, 0, '.', ',')),
+                TextColumn::make('conversion_rate')->label('Rate')->formatStateUsing(fn($state) => number_format($state, 0, '.', ',')),
             ])
             ->filters([
                 //
@@ -27,7 +27,8 @@ class UnitsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
                 ]),
             ]);
     }

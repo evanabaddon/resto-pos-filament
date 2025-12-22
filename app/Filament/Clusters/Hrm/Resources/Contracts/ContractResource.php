@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class ContractResource extends Resource
 {
@@ -24,12 +25,19 @@ class ContractResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    protected static ?string $cluster = HrmCluster::class;
+
     public static function shouldRegisterNavigation(): bool
     {
         return app(\App\Settings\GeneralSettings::class)->enable_hrm;
     }
 
     protected static ?string $navigationLabel = 'Kontrak Kerja';
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
 
     public static function form(Schema $schema): Schema
     {

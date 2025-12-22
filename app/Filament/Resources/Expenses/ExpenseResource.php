@@ -13,6 +13,7 @@ use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Tables\Table;
 
 class ExpenseResource extends Resource
@@ -21,11 +22,32 @@ class ExpenseResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
 
-    protected static string | UnitEnum | null $navigationGroup = 'Transaksi';
+    protected static string|UnitEnum|null $navigationGroup = 'Transaksi';
 
     protected static ?string $navigationLabel = 'Pengeluaran';
 
-     protected static ?string $recordTitleAttribute = 'reference';
+    // RBAC: super_admin, admin, accountant
+    public static function canViewAny(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+    }
+
+    public static function canCreate(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
+
+    protected static ?string $recordTitleAttribute = 'reference';
 
     public static function form(Schema $schema): Schema
     {

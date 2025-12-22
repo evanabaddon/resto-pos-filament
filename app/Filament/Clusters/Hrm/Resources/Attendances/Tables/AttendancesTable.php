@@ -98,11 +98,13 @@ class AttendancesTable
             ])
             ->actions([
                 EditAction::make(),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
                 ]),
             ]);
     }

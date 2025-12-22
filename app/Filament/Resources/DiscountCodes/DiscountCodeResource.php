@@ -13,6 +13,7 @@ use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Tables\Table;
 
 class DiscountCodeResource extends Resource
@@ -21,9 +22,30 @@ class DiscountCodeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-ticket';
 
-    protected static string | UnitEnum | null $navigationGroup = 'Master Data';
-    
-    protected static ?string $navigationLabel = 'Kode Diskon';
+    protected static string|UnitEnum|null $navigationGroup = 'Master Data';
+
+    protected static ?string $navigationLabel = 'Kode Promo / Diskon';
+
+    // RBAC: super_admin, admin only
+    public static function canViewAny(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
+
+    public static function canCreate(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
 
     public static function form(Schema $schema): Schema
     {

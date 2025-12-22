@@ -36,6 +36,15 @@ class PosCreateMemberModal extends Component
 
     public function save()
     {
+        // Auto format phone number: 08xx -> 628xx
+        $phone = preg_replace('/[^0-9]/', '', $this->phone);
+        if (str_starts_with($phone, '08')) {
+            $phone = '62' . substr($phone, 1);
+        } elseif (str_starts_with($phone, '8')) {
+            $phone = '62' . $phone;
+        }
+        $this->phone = $phone;
+
         $this->validate();
 
         // Cari Tier Default (Terendah)

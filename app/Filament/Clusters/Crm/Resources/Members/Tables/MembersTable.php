@@ -16,6 +16,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use App\Filament\Pages\WhatsappCenter;
 use Illuminate\Support\Facades\DB;
+use Ysfkaya\FilamentPhoneInput\PhoneInputNumberType;
+use Ysfkaya\FilamentPhoneInput\Tables\PhoneColumn;
 
 class MembersTable
 {
@@ -26,8 +28,11 @@ class MembersTable
                 TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('phone')
+                PhoneColumn::make('phone')
+                    ->label('Nomor HP')
                     ->searchable()
+                    ->defaultCountry('ID')
+                    ->displayFormat(PhoneInputNumberType::INTERNATIONAL)
                     ->copyable(),
                 TextColumn::make('tier.name')
                     ->label('Level')
@@ -93,8 +98,8 @@ class MembersTable
                             // 2. Gather Business Context (Settings & Active Discounts)
                             $activePromos = DiscountCode::where('is_active', true)
                                 ->where(function ($q) {
-                                    $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
-                                })
+                                $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
+                            })
                                 ->limit(3)
                                 ->get(['code', 'name', 'type', 'value', 'min_purchase']);
 
@@ -217,8 +222,10 @@ class MembersTable
                             $record->update(['last_contacted_at' => now()]);
                             $settings = app(GeneralSettings::class);
                             $phone = preg_replace('/[^0-9]/', '', $record->phone);
-                            if (substr($phone, 0, 1) == '0') $phone = '62' . substr($phone, 1);
-                            elseif (substr($phone, 0, 1) == '8') $phone = '62' . $phone;
+                            if (substr($phone, 0, 1) == '0')
+                                $phone = '62' . substr($phone, 1);
+                            elseif (substr($phone, 0, 1) == '8')
+                                $phone = '62' . $phone;
                             $jid = $phone . '@s.whatsapp.net';
 
                             return redirect()->to(WhatsappCenter::getUrl([
@@ -235,8 +242,10 @@ class MembersTable
                             $record->update(['last_contacted_at' => now()]);
                             $settings = app(GeneralSettings::class);
                             $phone = preg_replace('/[^0-9]/', '', $record->phone);
-                            if (substr($phone, 0, 1) == '0') $phone = '62' . substr($phone, 1);
-                            elseif (substr($phone, 0, 1) == '8') $phone = '62' . $phone;
+                            if (substr($phone, 0, 1) == '0')
+                                $phone = '62' . substr($phone, 1);
+                            elseif (substr($phone, 0, 1) == '8')
+                                $phone = '62' . $phone;
                             $jid = $phone . '@s.whatsapp.net';
 
                             return redirect()->to(WhatsappCenter::getUrl([
@@ -253,8 +262,10 @@ class MembersTable
                             $record->update(['last_contacted_at' => now()]);
                             $settings = app(GeneralSettings::class);
                             $phone = preg_replace('/[^0-9]/', '', $record->phone);
-                            if (substr($phone, 0, 1) == '0') $phone = '62' . substr($phone, 1);
-                            elseif (substr($phone, 0, 1) == '8') $phone = '62' . $phone;
+                            if (substr($phone, 0, 1) == '0')
+                                $phone = '62' . substr($phone, 1);
+                            elseif (substr($phone, 0, 1) == '8')
+                                $phone = '62' . $phone;
                             $jid = $phone . '@s.whatsapp.net';
 
                             return redirect()->to(WhatsappCenter::getUrl([
@@ -286,7 +297,8 @@ class MembersTable
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
                 ]),
             ]);
     }

@@ -19,6 +19,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Schemas\Schema;
 use BackedEnum;
 use Filament\Tables\Table;
@@ -33,6 +35,31 @@ class MemberResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $modelLabel = 'Member';
+
+    protected static ?string $navigationLabel = 'Member / Pelanggan';
+
+    protected static ?string $cluster = CrmCluster::class;
+
+    // RBAC: super_admin, admin, cashier
+    public static function canViewAny(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier']);
+    }
+
+    public static function canCreate(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier']);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier']);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
 
     public static function shouldRegisterNavigation(): bool
     {

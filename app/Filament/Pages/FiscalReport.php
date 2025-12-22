@@ -33,6 +33,11 @@ class FiscalReport extends Page implements HasForms, HasTable
     protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
     protected static ?string $title = 'Laporan Pajak (Fiskal)';
     protected static ?string $navigationLabel = 'Laporan Pajak (Fiskal)';
+
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+    }
     protected static ?int $navigationSort = 1;
 
     protected string $view = 'filament.pages.fiscal-report';
@@ -166,7 +171,7 @@ class FiscalReport extends Page implements HasForms, HasTable
                     ]);
 
                     return response()->streamDownload(
-                        fn() => print($pdf->output()),
+                        fn() => print ($pdf->output()),
                         'rekap-pajak-' . now()->timestamp . '.pdf'
                     );
                 }),

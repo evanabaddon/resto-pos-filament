@@ -14,6 +14,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use BackedEnum;
 use UnitEnum;
+use Illuminate\Database\Eloquent\Model;
 
 class LoyaltyTierResource extends Resource
 {
@@ -23,7 +24,15 @@ class LoyaltyTierResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-star';
 
+    protected static ?string $cluster = CrmCluster::class;
+
     protected static ?string $modelLabel = 'Level';
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         return app(\App\Settings\GeneralSettings::class)->enable_crm;

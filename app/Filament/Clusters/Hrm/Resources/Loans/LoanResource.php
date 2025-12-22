@@ -15,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use UnitEnum;
+use Illuminate\Database\Eloquent\Model;
 
 class LoanResource extends Resource
 {
@@ -28,9 +29,16 @@ class LoanResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
+    protected static ?string $cluster = HrmCluster::class;
+
     public static function shouldRegisterNavigation(): bool
     {
         return app(\App\Settings\GeneralSettings::class)->enable_hrm;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
     }
 
     public static function form(Schema $schema): Schema

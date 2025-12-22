@@ -36,6 +36,11 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chat-bubble-left-right';
     protected static ?string $navigationLabel = 'WhatsApp Center';
+
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
     protected static ?string $title = 'WhatsApp Gateway Integration';
     protected static string|UnitEnum|null $navigationGroup = 'Super Chat';
     protected static ?int $navigationSort = 10;

@@ -15,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use UnitEnum;
+use Illuminate\Database\Eloquent\Model;
 
 class LeaveRequestResource extends Resource
 {
@@ -23,6 +24,13 @@ class LeaveRequestResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::CalendarDays;
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+
+    protected static ?string $cluster = HrmCluster::class;
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
 
     public static function shouldRegisterNavigation(): bool
     {

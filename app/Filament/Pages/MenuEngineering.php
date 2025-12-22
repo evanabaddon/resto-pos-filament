@@ -13,7 +13,12 @@ use UnitEnum;
 class MenuEngineering extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-presentation-chart-line';
-    protected static ?string $navigationLabel = 'Analisis Menu (AI)';
+    protected static ?string $navigationLabel = 'Menu Engineering (AI)';
+
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
     protected static ?string $title = 'AI Menu Engineering';
     protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
     protected static ?int $navigationSort = 5;
@@ -102,7 +107,7 @@ class MenuEngineering extends Page
             ]);
 
             return response()->streamDownload(
-                fn() => print($pdf->output()),
+                fn() => print ($pdf->output()),
                 'menu-engineering-analysis-' . now()->timestamp . '.pdf'
             );
         } catch (\Exception $e) {

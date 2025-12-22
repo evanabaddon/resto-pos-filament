@@ -20,14 +20,14 @@ class PaymentMethodsTable
                     ->label('Nama Metode')
                     ->searchable()
                     ->sortable(),
-                
+
                 TextColumn::make('code')
                     ->label('Kode')
                     ->searchable()
                     ->sortable()
                     ->badge()
                     ->color('gray'),
-                
+
                 IconColumn::make('is_active')
                     ->label('Status')
                     ->boolean()
@@ -35,17 +35,17 @@ class PaymentMethodsTable
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('danger'),
-                
+
                 TextColumn::make('expenses_count')
                     ->label('Pengeluaran')
                     ->counts('expenses')
                     ->sortable(),
-                
+
                 TextColumn::make('sales_count')
                     ->label('Penjualan')
                     ->counts('sales')
                     ->sortable(),
-                
+
                 TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d/m/Y H:i')
@@ -65,7 +65,8 @@ class PaymentMethodsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
                 ]),
             ]);
     }

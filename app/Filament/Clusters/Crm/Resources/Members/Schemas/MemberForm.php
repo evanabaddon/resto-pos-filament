@@ -7,6 +7,8 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
+use Ysfkaya\FilamentPhoneInput\PhoneInputNumberType;
 
 class MemberForm
 {
@@ -17,12 +19,15 @@ class MemberForm
                 ->label('Nama Lengkap')
                 ->required()
                 ->maxLength(255),
-            TextInput::make('phone')
+            PhoneInput::make('phone')
                 ->label('Nomor HP')
-                ->tel()
                 ->required()
                 ->unique(ignoreRecord: true)
-                ->maxLength(255),
+                ->defaultCountry('ID')
+                ->inputNumberFormat(PhoneInputNumberType::INTERNATIONAL)
+                ->displayNumberFormat(PhoneInputNumberType::INTERNATIONAL)
+                ->dehydrateStateUsing(fn($state) => (string) str($state)->replace('+', ''))
+                ->required(),
             TextInput::make('email')
                 ->email()
                 ->maxLength(255),

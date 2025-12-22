@@ -25,6 +25,11 @@ class FinancialReport extends Page implements HasForms
     protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
     protected static ?string $title = 'Laporan Keuangan (Laba/Rugi)';
     protected static ?string $navigationLabel = 'Laba/Rugi (Profit & Loss)';
+
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+    }
     protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.pages.financial-report';

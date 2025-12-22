@@ -92,7 +92,8 @@ class ProductsTable
 
                 TextColumn::make('sell_price')
                     ->label('Harga Jual')
-                    ->money('IDR'),
+                    ->money('IDR')
+                    ->hidden(fn() => auth()->user()->role === 'inventory'),
 
                 TextColumn::make('profit')
                     ->label('Keuntungan')
@@ -125,7 +126,8 @@ class ProductsTable
                     ->sortable(
                         query: fn($query, $direction) =>
                         $query->orderByRaw('(sell_price - base_price) ' . $direction)
-                    ),
+                    )
+                    ->hidden(fn() => auth()->user()->role === 'inventory'),
             ])
             ->defaultSort('name')
             ->filters([

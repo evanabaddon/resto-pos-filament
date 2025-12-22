@@ -16,7 +16,12 @@ class InventoryForecasting extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar';
     protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
-    protected static ?string $navigationLabel = 'Prediksi Restock (AI)';
+    protected static ?string $navigationLabel = 'Forecasting Stok (AI)';
+
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory']);
+    }
     protected static ?string $title = 'AI Smart Inventory';
     protected static ?int $navigationSort = 5;
 
@@ -105,7 +110,7 @@ class InventoryForecasting extends Page
             ]);
 
             return response()->streamDownload(
-                fn() => print($pdf->output()),
+                fn() => print ($pdf->output()),
                 'forecasting-report-' . now()->timestamp . '.pdf'
             );
         } catch (\Exception $e) {

@@ -20,12 +20,12 @@ class ExpenseCategoriesTable
                     ->label('Nama Kategori')
                     ->searchable()
                     ->sortable(),
-                
+
                 TextColumn::make('description')
                     ->label('Deskripsi')
                     ->limit(50)
                     ->searchable(),
-                
+
                 IconColumn::make('is_active')
                     ->label('Status')
                     ->boolean()
@@ -33,12 +33,12 @@ class ExpenseCategoriesTable
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('danger'),
-                
+
                 TextColumn::make('expenses_count')
                     ->label('Jumlah Pengeluaran')
                     ->counts('expenses')
                     ->sortable(),
-                
+
                 TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d/m/Y H:i')
@@ -58,7 +58,8 @@ class ExpenseCategoriesTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
                 ]),
             ]);
     }

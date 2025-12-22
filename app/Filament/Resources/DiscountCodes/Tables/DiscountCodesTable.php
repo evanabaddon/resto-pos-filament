@@ -26,10 +26,11 @@ class DiscountCodesTable
                     ]),
                 TextColumn::make('value')
                     ->label('Nilai')
-                    ->formatStateUsing(fn ($record) =>
+                    ->formatStateUsing(
+                        fn($record) =>
                         $record->type === 'percentage'
-                            ? "{$record->value}%"
-                            : 'Rp ' . number_format($record->value, 0, ',', '.')
+                        ? "{$record->value}%"
+                        : 'Rp ' . number_format($record->value, 0, ',', '.')
                     ),
                 TextColumn::make('valid_until')->label('Berlaku Sampai'),
                 IconColumn::make('is_active')->boolean()->label('Aktif'),
@@ -43,7 +44,8 @@ class DiscountCodesTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
                 ]),
             ]);
     }

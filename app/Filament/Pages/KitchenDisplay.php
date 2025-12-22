@@ -10,8 +10,13 @@ use UnitEnum;
 class KitchenDisplay extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-computer-desktop';
-    protected static ?string $navigationLabel = 'Layar Order (KDS)';
-    protected static ?string $title = 'Pesanan';
+    protected static ?string $navigationLabel = 'Layar Dapur (KDS)';
+    protected static ?string $title = 'Layar Dapur (KDS)';
+
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'kitchen', 'waiter']);
+    }
 
     protected static string|UnitEnum|null $navigationGroup = 'Transaksi';
 

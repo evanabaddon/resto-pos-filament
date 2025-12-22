@@ -9,6 +9,7 @@ use App\Models\Reservation;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Model;
 use App\Filament\Resources\Reservations\Pages\EditReservation;
 use App\Filament\Resources\Reservations\Pages\ListReservations;
 use App\Filament\Resources\Reservations\Pages\CreateReservation;
@@ -24,7 +25,28 @@ class ReservationResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Transaksi';
 
-    protected static ?string $navigationLabel = 'Reservasi';
+    protected static ?string $navigationLabel = 'Reservasi Meja';
+
+    // RBAC: super_admin, admin, cashier, waiter
+    public static function canViewAny(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier', 'waiter']);
+    }
+
+    public static function canCreate(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier', 'waiter']);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier']); // Waiter create only? Let's allow edit for now or strict? Let's allow edit.
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']); // Only admins can delete
+    }
 
     protected static ?int $navigationSort = 3;
 

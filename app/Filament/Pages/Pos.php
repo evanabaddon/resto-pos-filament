@@ -41,6 +41,12 @@ class Pos extends Page
 
     protected static ?string $navigationLabel = 'POS';
 
+    // RBAC: super_admin, admin, cashier, waiter
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier', 'waiter']);
+    }
+
     protected $listeners = [
         'refreshCart' => '$refresh',
         'scanProduct' => 'scanProduct',
@@ -65,6 +71,49 @@ class Pos extends Page
         'refreshSalesList' => 'refreshSalesList',
         'applyManualDiscount' => 'applyManualDiscount',
     ];
+
+    /**
+     * Override handlePaymentRequested to block Waiter
+     */
+    public function handlePaymentRequested($saleId)
+    {
+        if (auth()->user()->role === 'waiter') {
+            $this->dispatch('show-notification', message: 'Akses Ditolak: Waiter tidak dapat memproses pembayaran (hanya input order).', type: 'error');
+            return;
+        }
+
+        $this->openPaymentModal($saleId);
+    }
+
+    /**
+     * Override openPaymentModalMobile to block Waiter
+     */
+    public function openPaymentModalMobile()
+    {
+        if (auth()->user()->role === 'waiter') {
+            $this->dispatch('show-notification', message: 'Akses Ditolak: Waiter tidak dapat memproses pembayaran (hanya input order).', type: 'error');
+            return;
+        }
+
+        // Call trait logic manually since we can't easily call "parent trait"
+        // Original logic from HasPayment::openPaymentModalMobile
+        if (!$this->saleId) {
+            // Jika tidak ada saleId, coba simpan dulu
+            if (!empty($this->items)) {
+                $this->saveSale();
+
+                // 🔹 Prevent continue if save failed (e.g. no customer name)
+                if (!$this->saleId) {
+                    return;
+                }
+            } else {
+                $this->dispatch('showNotification', 'Keranjang kosong! Tambahkan produk terlebih dahulu.', 'error');
+                return;
+            }
+        }
+
+        $this->dispatch('openPaymentModal', saleId: $this->saleId);
+    }
 
     public $showCashInModal = true;
     public $cashInHand = 0;

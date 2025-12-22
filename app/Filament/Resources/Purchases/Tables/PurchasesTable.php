@@ -17,7 +17,7 @@ class PurchasesTable
     {
         return $table
             ->columns([
-                TextColumn::make('date')->label('Tanggal')->formatStateUsing(fn ($state) => Carbon::parse($state)->isoFormat('D MMMM Y')),
+                TextColumn::make('date')->label('Tanggal')->formatStateUsing(fn($state) => Carbon::parse($state)->isoFormat('D MMMM Y')),
                 TextColumn::make('invoice_number')
                     ->label('Nomor Nota')
                     ->searchable()
@@ -38,7 +38,8 @@ class PurchasesTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
                 ]),
             ])->defaultSort('created_at', 'desc');
     }

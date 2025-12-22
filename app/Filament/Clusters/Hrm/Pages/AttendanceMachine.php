@@ -20,6 +20,8 @@ class AttendanceMachine extends Page
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
 
+    protected static ?string $cluster = HrmCluster::class;
+
     public static function shouldRegisterNavigation(): bool
     {
         return app(\App\Settings\GeneralSettings::class)->enable_hrm;

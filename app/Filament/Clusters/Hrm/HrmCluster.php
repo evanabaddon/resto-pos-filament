@@ -13,4 +13,9 @@ class HrmCluster extends Cluster
     protected static ?string $navigationLabel = 'HRM';
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+    }
 }

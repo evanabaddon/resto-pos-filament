@@ -11,6 +11,7 @@ use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Forms\Components\Placeholder;
 use UnitEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -24,6 +25,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\TextSize;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,6 +42,8 @@ class PayrollResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
 
+    protected static ?string $cluster = HrmCluster::class;
+
     public static function shouldRegisterNavigation(): bool
     {
         return app(\App\Settings\GeneralSettings::class)->enable_hrm;
@@ -46,7 +51,28 @@ class PayrollResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
-    protected static ?string $navigationLabel = 'Penggajian';
+    protected static ?string $navigationLabel = 'Penggajian (Payroll)';
+
+    // RBAC: super_admin, admin, accountant
+    public static function canViewAny(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+    }
+
+    public static function canCreate(): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -265,11 +291,12 @@ class PayrollResource extends Resource
                     ->color('gray'),
                 ViewAction::make(),
                 EditAction::make()->visible(fn($record) => $record->status !== 'paid'),
-                DeleteAction::make()->visible(fn($record) => $record->status !== 'paid'),
+                DeleteAction::make()->visible(fn($record) => $record->status !== 'paid' && in_array(auth()->user()->role, ['super_admin', 'admin'])),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
                     BulkAction::make('mark_paid_bulk')
                         ->label('Tandai Lunas (Terpilih)')
                         ->icon('heroicon-o-check-circle')
@@ -378,19 +405,19 @@ class PayrollResource extends Resource
                             $leaves = $employee->leaveRequests()
                                 ->where('status', 'approved')
                                 ->where(function ($q) use ($startOfMonth, $endOfMonth) {
-                                    $q->whereBetween('start_date', [$startOfMonth, $endOfMonth])
-                                        ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
-                                        ->orWhere(function ($sub) use ($startOfMonth, $endOfMonth) {
-                                            $sub->where('start_date', '<', $startOfMonth)
-                                                ->where('end_date', '>', $endOfMonth);
-                                        });
-                                })
+                                $q->whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                                    ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
+                                    ->orWhere(function ($sub) use ($startOfMonth, $endOfMonth) {
+                                        $sub->where('start_date', '<', $startOfMonth)
+                                            ->where('end_date', '>', $endOfMonth);
+                                    });
+                            })
                                 ->get();
 
                             $sickDays = 0;
                             $permissionDays = 0; // Izin (Unpaid)
                             $paidLeaveDays = 0; // Cuti Tahunan (Paid usually)
-
+            
                             foreach ($leaves as $leave) {
                                 // Calculate days falling in this month
                                 $s = Carbon::parse($leave->start_date);
@@ -417,7 +444,7 @@ class PayrollResource extends Resource
                             // Sakit -> Paid (Add to attendance)
                             // Izin -> Unpaid (Do nothing, day is missing from attendance)
                             // Cuti Tahunan -> Paid (Add to attendance)
-
+            
                             $attendanceDays = $attendances->count() + $sickDays + $paidLeaveDays;
 
                             // DYNAMIC FORMULA CHECK
@@ -450,9 +477,9 @@ class PayrollResource extends Resource
                                         // Otherwise prepend return (for simple expressions)
                                         $result = null;
                                         if (str_contains($script, 'return')) {
-                                            $result = eval($script);
+                                            $result = eval ($script);
                                         } else {
-                                            $result = eval("return $script;");
+                                            $result = eval ("return $script;");
                                         }
 
                                         if (is_array($result)) {
@@ -496,7 +523,7 @@ class PayrollResource extends Resource
                             $deductions += $totalLoanDeduction;
                             $totalPayout -= $totalLoanDeduction;
                             // --------------------
-
+            
                             Log::info("Total Payout Calculated: {$totalPayout}");
 
                             Payroll::create([
