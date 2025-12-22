@@ -53,9 +53,10 @@ Sistem reservasi yang terintegrasi langsung dengan komunikasi pelanggan dan mana
 
 ### 📱 QR Self-Order Menu (Table Ordering) [PRO] 🆕
 - **Scan to Order**: Pelanggan scan QR di meja -> Pilih Menu -> Order masuk otomatis ke KDS/POS linked dengan sesi kasir aktif.
-- **Glassmorphism UI**: Antarmuka modern yang estetik dengan animasi smooth dan dukungan **Dark Mode** ready.
+- **✨ Premium QR Generator**: Sistem cerdas untuk generate kartu QR meja dengan desain estetik, menyertakan Nama Resto & Sosial Media otomatis.
+- **🖨️ One-Click Printing**: Fitur cetak QR langsung dari dashboard ke printer atau simpan sebagai PDF dengan layout kartu yang sudah dioptimasi.
+- **Glassmorphism UI**: Antarmuka menu mobile yang modern dengan navigasi kategori yang halus dan animasi transisi.
 - **AI-Powered Notifications**: Notifikasi WhatsApp otomatis yang *personalized* menggunakan AI (DeepSeek) setelah pesanan diterima.
-- **Omzet Booster**: Mengurangi beban waiter dan potensi *Upselling* otomatis via rekomendasi menu di layar HP pelanggan.
 - **Pro Module**: Fitur ini adalah modul berbayar yang dilindungi lisensi (`EnsureSelfOrderEnabled` Middleware).
 
 ### ‍🍳 Intelligent Kitchen Display System (KDS) & Printing
