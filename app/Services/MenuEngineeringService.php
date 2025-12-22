@@ -38,14 +38,8 @@ class MenuEngineeringService
         foreach ($products as $product) {
             $qty = $salesData->get($product->id)->total_qty ?? 0;
 
-            // Use standardized HPP calculation from Product Model
-            $cogs = $product->computed_hpp;
-
-            // Defensive check: If HPP is too low (likely unit conversion error) but Base Price exists, use Base Price
-            // Using 50 threshold because 0.0034 is technically > 0 but effectively 0 in IDR
-            if ($cogs < 50 && ($product->base_price > 50)) {
-                $cogs = $product->base_price;
-            }
+            // Use Base Price as the single source of truth for Cost of Goods Sold (HPP)
+            $cogs = $product->base_price;
 
             // TARGETED DEBUGGING
             if (stripos($product->name, 'PEACH') !== false) {
