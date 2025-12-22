@@ -14,7 +14,7 @@ class StockMovementForm
         return $schema
             ->components([
                 Select::make('product_id')
-                    ->relationship('product', 'name')
+                    ->relationship('product', 'name', fn($query) => $query->whereIn('type', ['raw', 'retail']))
                     ->label('Produk')
                     ->searchable()
                     ->preload()
