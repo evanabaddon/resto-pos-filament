@@ -35,7 +35,7 @@ class AppSettings extends SettingsPage
 
     public static function canAccess(): bool
     {
-        return auth()->user()->role === 'super_admin';
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin;
     }
 
     public function form(Schema $schema): Schema
@@ -392,8 +392,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul SDM.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul SDM.'
                                             ),
                                     ]),
 
@@ -426,8 +426,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul KDS.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul KDS.'
                                             ),
                                     ]),
 
@@ -458,8 +458,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('fiscal_license_key') ?? '', 'FISCAL-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan fitur target omzet harian dan randomizer.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan fitur target omzet harian dan randomizer.'
                                             ),
                                     ]),
 
@@ -490,8 +490,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('crm_license_key') ?? '', 'CRM-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul Kemitraan.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul Kemitraan.'
                                             ),
                                     ]),
 
@@ -522,8 +522,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('wa_license_key') ?? '', 'WA-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul WhatsApp Center.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul WhatsApp Center.'
                                             ),
 
                                         Toggle::make('wa_auto_download_media')
@@ -560,8 +560,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('ai_forecasting_license_key') ?? '', 'AI-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul prediksi restock cerdas.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul prediksi restock cerdas.'
                                             ),
                                     ]),
 
@@ -592,8 +592,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('menu_engineering_license_key') ?? '', 'MENU-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul klasifikasi menu cerdas.'
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul klasifikasi menu cerdas.'
                                             ),
                                     ]),
                             ]),

@@ -20,7 +20,7 @@ class InventoryForecasting extends Page
 
     public static function canAccess(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
     protected static ?string $title = 'AI Smart Inventory';
     protected static ?int $navigationSort = 5;
@@ -110,7 +110,7 @@ class InventoryForecasting extends Page
             ]);
 
             return response()->streamDownload(
-                fn() => print ($pdf->output()),
+                fn() => print($pdf->output()),
                 'forecasting-report-' . now()->timestamp . '.pdf'
             );
         } catch (\Exception $e) {

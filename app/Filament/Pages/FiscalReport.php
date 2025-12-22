@@ -36,7 +36,7 @@ class FiscalReport extends Page implements HasForms, HasTable
 
     public static function canAccess(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
     protected static ?int $navigationSort = 1;
 
@@ -171,7 +171,7 @@ class FiscalReport extends Page implements HasForms, HasTable
                     ]);
 
                     return response()->streamDownload(
-                        fn() => print ($pdf->output()),
+                        fn() => print($pdf->output()),
                         'rekap-pajak-' . now()->timestamp . '.pdf'
                     );
                 }),

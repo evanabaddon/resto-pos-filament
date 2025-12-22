@@ -27,7 +27,7 @@ class ManagePrinter extends SettingsPage
 
     public static function canAccess(): bool
     {
-        return auth()->user()->role === 'super_admin';
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 
     public function form(Schema $schema): Schema
@@ -162,7 +162,6 @@ class ManagePrinter extends SettingsPage
                 ->body($message)
                 ->success()
                 ->send();
-
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Detection Failed')
@@ -214,7 +213,6 @@ class ManagePrinter extends SettingsPage
                         }
                     }
                 }
-
             } else {
                 // TEST NETWORK PRINTERS - Untuk hosting, skip network test
                 $results[] = "ℹ️ Network printer test skipped in hosting environment";
@@ -228,7 +226,6 @@ class ManagePrinter extends SettingsPage
                 ->body($message)
                 ->success()
                 ->send();
-
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Test Failed')

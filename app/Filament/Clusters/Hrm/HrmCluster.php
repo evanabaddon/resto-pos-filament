@@ -16,6 +16,6 @@ class HrmCluster extends Cluster
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 }

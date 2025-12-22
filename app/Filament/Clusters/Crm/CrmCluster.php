@@ -18,6 +18,6 @@ class CrmCluster extends Cluster
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier']);
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Cashier]);
     }
 }

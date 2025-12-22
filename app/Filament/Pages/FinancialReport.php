@@ -28,7 +28,7 @@ class FinancialReport extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
     protected static ?int $navigationSort = 2;
 

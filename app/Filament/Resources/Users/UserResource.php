@@ -29,22 +29,22 @@ class UserResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->role === 'super_admin';
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin;
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()->role === 'super_admin';
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin;
     }
 
     public static function canEdit(Model $record): bool
     {
-        return auth()->user()->role === 'super_admin';
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin;
     }
 
     public static function canDelete(Model $record): bool
     {
-        return auth()->user()->role === 'super_admin';
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin;
     }
 
     public static function form(Schema $schema): Schema

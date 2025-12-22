@@ -47,12 +47,29 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => \App\Enums\UserRole::class,
         ];
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
         // return str_ends_with($this->email, '@admin.com') && $this->hasVerifiedEmail();
-        return $this->hasVerifiedEmail();
+        return $this->hasVerifiedEmail() && $this->role !== null;
+    }
+
+    public function hasRole(string|\App\Enums\UserRole ...$roles): bool
+    {
+        foreach ($roles as $role) {
+            $roleValue = $role instanceof \App\Enums\UserRole ? $role : \App\Enums\UserRole::tryFrom($role);
+            if ($this->role === $roleValue) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === \App\Enums\UserRole::SuperAdmin;
     }
 }

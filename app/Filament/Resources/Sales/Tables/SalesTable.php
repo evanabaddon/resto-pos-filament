@@ -122,7 +122,7 @@ class SalesTable
                     \Filament\Actions\DeleteAction::make()
                         ->label('Void Transaksi')
                         ->modalHeading('Void Transaksi & Restore Stok')
-                        ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin']))
+                        ->hidden(fn() => !in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin]))
                         ->action(function (Sale $record) {
                             try {
                                 $orderService = new \App\Services\OrderService();

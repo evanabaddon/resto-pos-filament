@@ -44,7 +44,7 @@ class Pos extends Page
     // RBAC: super_admin, admin, cashier, waiter
     public static function canAccess(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier', 'waiter']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Cashier || auth()->user()->role === \App\Enums\UserRole::Waiter;
     }
 
     protected $listeners = [
@@ -77,7 +77,7 @@ class Pos extends Page
      */
     public function handlePaymentRequested($saleId)
     {
-        if (auth()->user()->role === 'waiter') {
+        if (auth()->user()->role === \App\Enums\UserRole::Waiter) {
             $this->dispatch('show-notification', message: 'Akses Ditolak: Waiter tidak dapat memproses pembayaran (hanya input order).', type: 'error');
             return;
         }
@@ -90,7 +90,7 @@ class Pos extends Page
      */
     public function openPaymentModalMobile()
     {
-        if (auth()->user()->role === 'waiter') {
+        if (auth()->user()->role === \App\Enums\UserRole::Waiter) {
             $this->dispatch('show-notification', message: 'Akses Ditolak: Waiter tidak dapat memproses pembayaran (hanya input order).', type: 'error');
             return;
         }

@@ -29,22 +29,22 @@ class SaleResource extends Resource
     // RBAC: super_admin, admin, cashier, accountant (view only)
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier', 'accountant']);
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Cashier, \App\Enums\UserRole::Accountant]);
     }
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier']); // Accountant cannot create sales
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Cashier]); // Accountant cannot create sales
     }
 
     public static function canEdit(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']); // Only admins can edit past sales
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin]); // Only admins can edit past sales
     }
 
     public static function canDelete(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']); // Only admins can delete
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin]); // Only admins can delete
     }
 
     public static function form(Schema $schema): Schema
