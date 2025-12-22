@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Settings\GeneralSettings;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -441,5 +442,49 @@ class DeepSeekService
         }
 
         return json_decode($content, true);
+    }
+
+    /**
+     * Generate an AI-powered order confirmation message
+     */
+    public function generateOrderConfirmation(array $orderData, string $template = '')
+    {
+        $settings = app(GeneralSettings::class);
+        $aiName = $settings->ai_assistant_name ?? 'Admin';
+        $appName = $settings->app_name ?? 'Restoran Kami';
+        $instagram = $settings->app_instagram ?? 'Instagram';
+        $tiktok = $settings->app_tiktok ?? 'Tiktok';
+
+
+        $systemPrompt = "Anda adalah {$aiName}, AI Assistant untuk restoran '{$appName}'.
+        
+        TUGAS:
+        Buat pesan WhatsApp konfirmasi pesanan yang RAMAH, ANTUSIAS, dan PERSONAL.
+        
+        DATA PESANAN:
+        - Nama: {$orderData['customer_name']}
+        - Invoice: {$orderData['invoice_number']}
+        - Meja: {$orderData['table_number']}
+        - Total: {$orderData['total_formatted']}
+        - Item: " . implode(', ', $orderData['items']) . "
+        
+        ATURAN:
+        1. Gunakan banyak EMOJI yang relevan 🍕🍹😊.
+        2. Gaya bahasa santai tapi sopan.
+        3. Konfirmasi bahwa pesanan sedang diproses/disiapkan.
+        4. Akhiri dengan signature '- {$aiName}'.
+        5. Berikan isi pesan SAJA.
+        6. Sampaikan jika total sudah include pajak
+        7. Sampaikan media sosial resmi restoran {$instagram} dan {$tiktok}
+        ";
+
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt],
+            ['role' => 'user', 'content' => "Buat konfirmasi untuk pesanan kak {$orderData['customer_name']}."]
+        ];
+
+        $response = $this->chat($messages, ['temperature' => 0.8]);
+
+        return $response['choices'][0]['message']['content'] ?? '';
     }
 }

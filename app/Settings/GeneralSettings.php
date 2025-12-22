@@ -49,6 +49,9 @@ class GeneralSettings extends Settings
     public bool $enable_menu_engineering;
     public ?string $menu_engineering_license_key;
 
+    public bool $enable_self_order;
+    public ?string $self_order_license_key;
+
     public string $printer_width;
     public bool $enable_table_number;
 
@@ -117,6 +120,8 @@ class GeneralSettings extends Settings
             'ai_forecasting_license_key' => null,
             'enable_menu_engineering' => false,
             'menu_engineering_license_key' => null,
+            'enable_self_order' => false,
+            'self_order_license_key' => null,
             'ai_provider' => 'deepseek',
             'ai_model' => 'deepseek-chat',
             'ai_base_url' => 'https://api.deepseek.com',

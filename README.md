@@ -51,6 +51,13 @@ Sistem reservasi yang terintegrasi langsung dengan komunikasi pelanggan dan mana
   - **Double-Transaction Protection**: Tombol konversi otomatis hilang setelah digunakan (ketika status berubah menjadi `Seated`), mencegah duplikasi data penjualan.
 - **Snapshot Integrity**: Nama produk disnapshot saat konversi untuk memastikan data historis tetap akurat meskipun produk asli dihapus atau diubah.
 
+### 📱 QR Self-Order Menu (Table Ordering) [PRO] 🆕
+- **Scan to Order**: Pelanggan scan QR di meja -> Pilih Menu -> Order masuk otomatis ke KDS/POS linked dengan sesi kasir aktif.
+- **Glassmorphism UI**: Antarmuka modern yang estetik dengan animasi smooth dan dukungan **Dark Mode** ready.
+- **AI-Powered Notifications**: Notifikasi WhatsApp otomatis yang *personalized* menggunakan AI (DeepSeek) setelah pesanan diterima.
+- **Omzet Booster**: Mengurangi beban waiter dan potensi *Upselling* otomatis via rekomendasi menu di layar HP pelanggan.
+- **Pro Module**: Fitur ini adalah modul berbayar yang dilindungi lisensi (`EnsureSelfOrderEnabled` Middleware).
+
 ### ‍🍳 Intelligent Kitchen Display System (KDS) & Printing
 Orkestrasi dapur digital tanpa kertas dengan sistem penyaringan cerdas.
 - **Zero-Latency Realtime Sync**: Pesanan muncul di dapur detik itu juga saat kasir klik simpan.
@@ -164,10 +171,6 @@ Rencana pengembangan fitur masa depan untuk memaksimalkan ROI dan efisiensi oper
 - **Tampilan Denah Resto**: Editor "Drag & Drop" untuk mengatur posisi meja sesuai denah asli.
 - **Live Status Indicator**: Indikator visual real-time (Meja Kosong = Hijau, Terisi = Merah, Kotor = Kuning).
 - **Impact**: Meningkatkan *Look & Feel* aplikasi menjadi premium dan memudahkan waiter memantau meja.
-
-### 📱 QR Self-Order Menu (Table Ordering) [TOP PRIORITY 🚀]
-- **Scan to Order**: Pelanggan scan QR di meja -> Pilih Menu -> Order masuk otomatis ke KDS/POS.
-- **Omzet Booster**: Mengurangi beban waiter dan potensi *Upselling* otomatis via rekomendasi menu di layar HP pelanggan.
 
 ### 📊 Real-time Dashboard 2.0 (Live Analytics) [HIGH PRIORITY]
 - **Live Widgets**: Menambahkan widget "Live Sales Tick", "Top Items Today", dan "Hourly Heatmap" (Jam sibuk).

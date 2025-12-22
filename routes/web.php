@@ -13,6 +13,23 @@ Route::get('/', function () {
 // Webhook routes
 require __DIR__ . '/webhook.php';
 
+// QR Self Order Routes
+Route::middleware(['web', 'self-order.enabled'])->group(function () {
+    Route::get('/scan/{slug}', function ($slug) {
+        $table = \App\Models\Table::where('slug', $slug)->firstOrFail();
+
+        // Check if table is available or occupied (doesn't matter much for ordering, but good to know)
+        // Store table info in session
+        session(['table_id' => $table->id, 'table_slug' => $table->slug]);
+
+        return redirect()->route('order.menu');
+    })->name('order.scan');
+
+    Route::get('/order/menu', \App\Livewire\SelfOrder\Menu::class)->name('order.menu');
+    Route::get('/order/cart', \App\Livewire\SelfOrder\Cart::class)->name('order.cart');
+    Route::get('/order/checkout', \App\Livewire\SelfOrder\Checkout::class)->name('order.checkout');
+});
+
 Route::get('/kiosk', App\Livewire\AttendanceKiosk::class);
 
 

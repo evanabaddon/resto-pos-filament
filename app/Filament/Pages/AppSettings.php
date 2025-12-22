@@ -749,6 +749,38 @@ class AppSettings extends SettingsPage
                                                     : 'Aktifkan modul klasifikasi menu cerdas.'
                                             ),
                                     ]),
+
+                                Section::make('Self Order (QR Menu)')
+                                    ->description('Turn your tables into revenue generators with AI-powered Self Order.')
+                                    ->schema([
+                                        TextInput::make('self_order_license_key')
+                                            ->label('License Key')
+                                            ->password()
+                                            ->revealable()
+                                            ->helperText('Masukkan lisensi, format: ORDER-PRO-XXXX')
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(function ($state, Set $set) {
+                                                if ($state && str_starts_with($state, 'ORDER-PRO-')) {
+                                                    // Valid
+                                                } else {
+                                                    $set('enable_self_order', false);
+                                                }
+                                            }),
+
+                                        Toggle::make('enable_self_order')
+                                            ->label('Enable Self Order Module')
+                                            ->inline(false)
+                                            ->disabled(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('self_order_license_key') ?? '', 'ORDER-PRO-')
+                                            )
+                                            ->helperText(
+                                                fn(Get $get) =>
+                                                !str_starts_with($get('self_order_license_key') ?? '', 'ORDER-PRO-')
+                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                    : 'Aktifkan modul Self Order QR.'
+                                            ),
+                                    ]),
                             ]),
                     ])
             ]);
