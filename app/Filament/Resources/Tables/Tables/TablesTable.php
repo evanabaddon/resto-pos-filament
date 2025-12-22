@@ -2,10 +2,11 @@
 
 namespace App\Filament\Resources\Tables\Tables;
 
+use Filament\Tables\Table;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Tables\Table;
 
 class TablesTable
 {
@@ -34,6 +35,14 @@ class TablesTable
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('qr_code')
+                    ->icon('heroicon-o-qr-code')
+                    ->label('QR Menu')
+                    ->modalContent(fn($record) => view('filament.tables.actions.qr-code', ['record' => $record]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelAction(false)
+                    ->color('info')
+                    ->modalWidth('md'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

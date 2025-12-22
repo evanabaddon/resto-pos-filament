@@ -13,12 +13,17 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class TableResource extends Resource
 {
     protected static ?string $model = Table1::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Master Data';
+
+    protected static ?string $label = 'Meja';
 
     public static function form(Schema $schema): Schema
     {
