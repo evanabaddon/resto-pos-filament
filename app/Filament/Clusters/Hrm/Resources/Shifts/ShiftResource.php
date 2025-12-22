@@ -26,6 +26,22 @@ class ShiftResource extends Resource
 
     protected static ?string $cluster = HrmCluster::class;
 
+    // RBAC: super_admin, admin
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         return app(\App\Settings\GeneralSettings::class)->enable_hrm;
@@ -36,11 +52,6 @@ class ShiftResource extends Resource
     protected static ?string $navigationLabel = 'Jadwal Shift';
 
     protected static ?string $modelLabel = 'Shift Kerja';
-
-    public static function canDelete(Model $record): bool
-    {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']);
-    }
 
     public static function form(Schema $schema): Schema
     {

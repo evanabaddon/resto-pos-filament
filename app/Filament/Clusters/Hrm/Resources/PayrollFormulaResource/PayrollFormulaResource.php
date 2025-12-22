@@ -24,6 +24,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class PayrollFormulaResource extends Resource
 {
@@ -35,9 +36,25 @@ class PayrollFormulaResource extends Resource
 
     protected static ?string $cluster = HrmCluster::class;
 
-    public static function shouldRegisterNavigation(): bool
+    // RBAC: super_admin, admin, accountant
+    public static function canViewAny(): bool
     {
-        return app(\App\Settings\GeneralSettings::class)->enable_hrm;
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Accountant;
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Accountant;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Accountant;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 
     protected static ?int $navigationSort = 6;

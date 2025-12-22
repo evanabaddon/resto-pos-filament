@@ -51,44 +51,197 @@ class AppSettings extends SettingsPage
                             ->schema([
                                 Grid::make(2)
                                     ->schema([
-                                        Section::make('Integrasi Cuaca (BMKG)')
-                                            ->columnSpan(2)
-                                            ->description('Tampilkan cuaca di Dashboard & digunakan AI untuk rekomendasi menu.')
+                                        Section::make('Alamat & Lokasi')
+                                            ->description('Pengaturan alamat lengkap dan wilayah (Integrasi Wilayah.id).')
                                             ->schema([
-                                                TextInput::make('bmkg_location_code')
-                                                    ->label('Kode Wilayah (ADM4)')
-                                                    ->placeholder('Contoh: 31.71.03.1001 (Kemayoran)')
-                                                    ->helperText('Cari kode kelurahan/desa Anda di https://wilayah.id atau dokumentasi BMKG.')
-                                                    ->suffixAction(
-                                                        Action::make('test_bmkg')
-                                                            ->icon('heroicon-o-beaker')
-                                                            ->label('Test')
-                                                            ->action(function ($state) {
-                                                                if (!$state) {
-                                                                    \Filament\Notifications\Notification::make()->title('Masukkan kode terlebih dahulu')->warning()->send();
-                                                                    return;
-                                                                }
-
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        Select::make('province_code')
+                                                            ->label('Provinsi')
+                                                            ->searchable()
+                                                            ->live()
+                                                            ->options(function () {
                                                                 try {
-                                                                    $response = \Illuminate\Support\Facades\Http::get("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={$state}");
+                                                                    // Fetch provinces
+                                                                    $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get('https://wilayah.id/api/provinces.json');
                                                                     if ($response->successful()) {
-                                                                        $data = $response->json();
-                                                                        $lokasi = $data['lokasi'] ?? [];
-                                                                        $nama = "{$lokasi['desa']}, {$lokasi['kecamatan']}, {$lokasi['kotkab']}";
-
-                                                                        \Filament\Notifications\Notification::make()
-                                                                            ->title('Kode Valid!')
-                                                                            ->body("Lokasi ditemukan: {$nama}")
-                                                                            ->success()
-                                                                            ->send();
-                                                                    } else {
-                                                                        \Filament\Notifications\Notification::make()->title('Gagal mengambil data.')->body('Pastikan kode benar.')->danger()->send();
+                                                                        return collect($response->json('data'))->pluck('name', 'code');
                                                                     }
                                                                 } catch (\Exception $e) {
-                                                                    \Filament\Notifications\Notification::make()->title('Connection Error')->body($e->getMessage())->danger()->send();
                                                                 }
+                                                                return [];
                                                             })
-                                                    ),
+                                                            ->afterStateUpdated(function (Set $set, $state) {
+                                                                $set('regency_code', null);
+                                                                $set('district_code', null);
+                                                                $set('village_code', null);
+
+                                                                // Set Name
+                                                                if ($state) {
+                                                                    try {
+                                                                        $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get('https://wilayah.id/api/provinces.json');
+                                                                        if ($response->successful()) {
+                                                                            $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
+                                                                            $set('province_name', $name);
+                                                                        }
+                                                                    } catch (\Exception $e) {
+                                                                    }
+                                                                }
+                                                            }),
+
+                                                        Select::make('regency_code')
+                                                            ->label('Kabupaten/Kota')
+                                                            ->searchable()
+                                                            ->live()
+                                                            ->disabled(fn(Get $get) => !$get('province_code'))
+                                                            ->options(function (Get $get) {
+                                                                $code = $get('province_code');
+                                                                if (!$code) return [];
+
+                                                                try {
+                                                                    $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/regencies/{$code}.json");
+                                                                    if ($response->successful()) {
+                                                                        return collect($response->json('data'))->pluck('name', 'code');
+                                                                    }
+                                                                } catch (\Exception $e) {
+                                                                }
+                                                                return [];
+                                                            })
+                                                            ->afterStateUpdated(function (Set $set, $state, Get $get) {
+                                                                $set('district_code', null);
+                                                                $set('village_code', null);
+
+                                                                // Set Name
+                                                                if ($state) {
+                                                                    try {
+                                                                        $pCode = $get('province_code');
+                                                                        $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/regencies/{$pCode}.json");
+                                                                        if ($response->successful()) {
+                                                                            $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
+                                                                            $set('regency_name', $name);
+                                                                        }
+                                                                    } catch (\Exception $e) {
+                                                                    }
+                                                                }
+                                                            }),
+
+                                                        Select::make('district_code')
+                                                            ->label('Kecamatan')
+                                                            ->searchable()
+                                                            ->live()
+                                                            ->disabled(fn(Get $get) => !$get('regency_code'))
+                                                            ->options(function (Get $get) {
+                                                                $code = $get('regency_code');
+                                                                if (!$code) return [];
+
+                                                                try {
+                                                                    $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/districts/{$code}.json");
+                                                                    if ($response->successful()) {
+                                                                        return collect($response->json('data'))->pluck('name', 'code');
+                                                                    }
+                                                                } catch (\Exception $e) {
+                                                                }
+                                                                return [];
+                                                            })
+                                                            ->afterStateUpdated(function (Set $set, $state, Get $get) {
+                                                                $set('village_code', null);
+
+                                                                // Set Name
+                                                                if ($state) {
+                                                                    try {
+                                                                        $rCode = $get('regency_code');
+                                                                        $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/districts/{$rCode}.json");
+                                                                        if ($response->successful()) {
+                                                                            $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
+                                                                            $set('district_name', $name);
+                                                                        }
+                                                                    } catch (\Exception $e) {
+                                                                    }
+                                                                }
+                                                            }),
+
+                                                        Select::make('village_code')
+                                                            ->label('Kelurahan/Desa')
+                                                            ->searchable()
+                                                            ->live()
+                                                            ->disabled(fn(Get $get) => !$get('district_code'))
+                                                            ->options(function (Get $get) {
+                                                                $code = $get('district_code');
+                                                                if (!$code) return [];
+
+                                                                try {
+                                                                    $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/villages/{$code}.json");
+                                                                    if ($response->successful()) {
+                                                                        return collect($response->json('data'))->pluck('name', 'code');
+                                                                    }
+                                                                } catch (\Exception $e) {
+                                                                }
+                                                                return [];
+                                                            })
+                                                            ->afterStateUpdated(function (Set $set, $state, Get $get) {
+                                                                // Set Name
+                                                                if ($state) {
+                                                                    try {
+                                                                        $dCode = $get('district_code');
+                                                                        $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/villages/{$dCode}.json");
+                                                                        if ($response->successful()) {
+                                                                            $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
+                                                                            $set('village_name', $name);
+                                                                        }
+                                                                    } catch (\Exception $e) {
+                                                                    }
+
+                                                                    // Auto Set BMKG Code
+                                                                    // BMKG usually uses ADM4 code (Village Code)
+                                                                    $set('bmkg_location_code', $state);
+                                                                }
+                                                            }),
+
+                                                        TextInput::make('postal_code')
+                                                            ->label('Kode Pos')
+                                                            ->numeric(),
+
+                                                        TextInput::make('bmkg_location_code')
+                                                            ->label('Kode Lokasi BMKG (Auto)')
+                                                            ->readOnly()
+                                                            ->columnSpan(2)
+                                                            ->helperText('Otomatis terisi berdasarkan Kelurahan/Desa yang dipilih. Digunakan untuk fitur cuaca.')
+                                                            ->suffixAction(
+                                                                Action::make('test_bmkg')
+                                                                    ->icon('heroicon-o-beaker')
+                                                                    ->label('Test')
+                                                                    ->action(function ($state) {
+                                                                        if (!$state) {
+                                                                            \Filament\Notifications\Notification::make()->title('Kode belum terisi')->warning()->send();
+                                                                            return;
+                                                                        }
+
+                                                                        try {
+                                                                            $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={$state}");
+
+                                                                            if (!$response) {
+                                                                                throw new \Exception('Gagal menghubungi server BMKG (Empty Response).');
+                                                                            }
+
+                                                                            if ($response->successful()) {
+                                                                                $data = $response->json();
+                                                                                $lokasi = $data['lokasi'] ?? [];
+                                                                                $nama = "{$lokasi['desa']}, {$lokasi['kecamatan']}, {$lokasi['kotkab']}";
+
+                                                                                \Filament\Notifications\Notification::make()
+                                                                                    ->title('Kode Valid!')
+                                                                                    ->body("Lokasi ditemukan: {$nama}")
+                                                                                    ->success()
+                                                                                    ->send();
+                                                                            } else {
+                                                                                \Filament\Notifications\Notification::make()->title('Gagal mengambil data.')->body('Pastikan kode benar/server BMKG sedang bermasalah.')->danger()->send();
+                                                                            }
+                                                                        } catch (\Exception $e) {
+                                                                            \Filament\Notifications\Notification::make()->title('Connection Error')->body($e->getMessage())->danger()->send();
+                                                                        }
+                                                                    })
+                                                            ),
+                                                    ]),
                                             ]),
 
                                         Section::make('Identitas Aplikasi')

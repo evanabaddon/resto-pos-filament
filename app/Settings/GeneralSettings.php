@@ -17,6 +17,17 @@ class GeneralSettings extends Settings
     public ?string $company_address;
     public ?string $company_phone;
     public ?string $company_email;
+    public ?string $postal_code;
+
+    // Region Fields
+    public ?string $province_code;
+    public ?string $province_name;
+    public ?string $regency_code;
+    public ?string $regency_name;
+    public ?string $district_code;
+    public ?string $district_name;
+    public ?string $village_code;
+    public ?string $village_name;
 
     // Modules
     public bool $enable_hrm;
@@ -113,6 +124,15 @@ class GeneralSettings extends Settings
             'printer_width' => '58mm',
             'enable_table_number' => false,
             'bmkg_location_code' => null, // Default null
+            'province_code' => null,
+            'province_name' => null,
+            'regency_code' => null,
+            'regency_name' => null,
+            'district_code' => null,
+            'district_name' => null,
+            'village_code' => null,
+            'village_name' => null,
+            'postal_code' => null,
             // Fiscal Defaults
             'template_path' => null,
             'start_row' => 2,
