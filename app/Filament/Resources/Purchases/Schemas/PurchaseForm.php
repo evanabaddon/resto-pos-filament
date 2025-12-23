@@ -2,8 +2,9 @@
 
 namespace App\Filament\Resources\Purchases\Schemas;
 
-use App\Models\Product;
+use App\Models\Purchase;
 use Filament\Schemas\Schema;
+use App\Models\Product;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
@@ -41,6 +42,13 @@ class PurchaseForm
                     ->default('draft')
                     ->required(),
 
+                Select::make('fund_source')
+                    ->label('Sumber Dana')
+                    ->options(Purchase::getFundSources())
+                    ->default(Purchase::FUND_SOURCE_CASHIER)
+                    ->required()
+                    ->native(false),
+
                 Repeater::make('items')
                     ->relationship()
                     ->table([
@@ -55,7 +63,7 @@ class PurchaseForm
                             ->relationship(
                                 name: 'product',
                                 titleAttribute: 'name',
-                                modifyQueryUsing: fn (Builder $query) => $query->whereIn('type', ['raw', 'retail'])
+                                modifyQueryUsing: fn(Builder $query) => $query->whereIn('type', ['raw', 'retail'])
                             )
                             ->searchable()
                             ->preload()
@@ -71,7 +79,7 @@ class PurchaseForm
                                 // Reset unit dan price ketika produk berubah
                                 $set('unit_id', null);
                                 $set('price', null);
-                                
+
                                 if ($state) {
                                     $product = Product::find($state);
                                     if ($product) {
@@ -85,7 +93,7 @@ class PurchaseForm
                                         }
                                     }
                                 }
-                                
+
                                 // Hitung ulang subtotal
                                 $set('subtotal', ($get('price') ?? 0) * ($get('quantity') ?? 0));
                             }),
@@ -95,12 +103,12 @@ class PurchaseForm
                             ->options(function (callable $get, $state) {
                                 // Dapatkan product_id dari state repeater
                                 $productId = $get('product_id');
-                                
+
                                 if (!$productId) {
                                     // Jika belum ada produk yang dipilih, tampilkan semua unit
                                     return \App\Models\Unit::all()->pluck('name', 'id');
                                 }
-                                
+
                                 // Ambil produk dan unit yang terkait
                                 $product = \App\Models\Product::find($productId);
                                 if ($product && $product->unit_id) {
@@ -108,7 +116,7 @@ class PurchaseForm
                                     return \App\Models\Unit::where('id', $product->unit_id)
                                         ->pluck('name', 'id');
                                 }
-                                
+
                                 return \App\Models\Unit::all()->pluck('name', 'id');
                             })
                             ->searchable()
@@ -159,5 +167,5 @@ class PurchaseForm
                     ->columnSpanFull(),
             ]);
     }
-    
+
 }

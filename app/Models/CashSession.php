@@ -38,12 +38,19 @@ class CashSession extends Model
         return $this->hasMany(Expense::class)->where('fund_source', Expense::FUND_SOURCE_CASHIER);
     }
 
+    // 🔹 Relasi ke purchases dari cash session ini
+    public function cashPurchases(): HasMany
+    {
+        return $this->hasMany(Purchase::class)->where('fund_source', Purchase::FUND_SOURCE_CASHIER)->where('status', 'received');
+    }
+
     public function getSessionSummaryAttribute()
     {
         return [
             'cash_in_hand' => $this->cash_in_hand,
             'total_cash_sales' => $this->total_cash_sales,
             'total_cash_expenses' => $this->total_cash_expenses,
+            'total_cash_purchases' => $this->total_cash_purchases,
             'expected_cash' => $this->expected_cash,
             'total_completed_sales' => $this->total_completed_sales,
             'total_transactions' => $this->transaction_count,
@@ -54,6 +61,12 @@ class CashSession extends Model
     public function getTotalCashExpensesAttribute(): float
     {
         return $this->cashExpenses()->sum('amount');
+    }
+
+    // 🔹 TOTAL pembelian CASH dari session ini
+    public function getTotalCashPurchasesAttribute(): float
+    {
+        return $this->cashPurchases()->sum('total');
     }
 
     // 🔹 TOTAL penjualan CASH yang COMPLETED
@@ -83,10 +96,10 @@ class CashSession extends Model
             ->sum('final_total');
     }
 
-    // 🔹 Uang yang seharusnya ada di laci (kas awal + penjualan cash - pengeluaran cash)
+    // 🔹 Uang yang seharusnya ada di laci (kas awal + penjualan cash - pengeluaran cash - pembelian cash)
     public function getExpectedCashAttribute(): float
     {
-        return $this->cash_in_hand + $this->total_cash_sales - $this->total_cash_expenses;
+        return $this->cash_in_hand + $this->total_cash_sales - $this->total_cash_expenses - $this->total_cash_purchases;
     }
 
     // 🔹 Selisih kas aktual dengan kas seharusnya

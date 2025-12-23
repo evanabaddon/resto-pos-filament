@@ -68,6 +68,7 @@ class CashSessionResource extends Resource
     {
         return [
             RelationManagers\CashExpensesRelationManager::class,
+            RelationManagers\CashPurchasesRelationManager::class,
         ];
     }
 

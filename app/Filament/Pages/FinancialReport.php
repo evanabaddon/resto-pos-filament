@@ -6,6 +6,7 @@ use UnitEnum;
 use BackedEnum;
 use App\Models\Sale;
 use App\Models\Expense;
+use App\Models\Purchase;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Actions\Action;
@@ -43,13 +44,17 @@ class FinancialReport extends Page implements HasForms
 
     // Stats properties
     public float $totalRevenue = 0;
-    public float $totalCogs = 0;
+    public float $totalCogs = 0; // Estimated based on sales
+    public float $totalPurchases = 0; // Actual stock purchases
+    public float $totalHpp = 0; // Sum of both (or combined HPP)
     public float $totalGrossProfit = 0;
-    public float $totalExpenses = 0;
+    public float $totalExpenses = 0; // Operational only
     public float $netProfit = 0;
     public float $grossMargin = 0;
 
     public array $expenseBreakdown = [];
+    public array $granularExpenseBreakdown = [];
+    public array $purchaseBreakdown = [];
     public array $hppContributors = [];
     public array $profitContributors = [];
 
@@ -203,8 +208,34 @@ class FinancialReport extends Page implements HasForms
         usort($sortByProfit, fn($a, $b) => $b['total_profit'] <=> $a['total_profit']);
         $this->profitContributors = array_slice($sortByProfit, 0, 5);
 
-        // 3. Gross Profit
-        $this->totalGrossProfit = $this->totalRevenue - $this->totalCogs;
+        // 3. Gross Profit (Revenue - HPP)
+        // Fetch Purchases first to include in HPP
+        $purchases = Purchase::with('items.product')
+            ->where('status', 'received')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->get();
+
+        $this->totalPurchases = $purchases->sum('total');
+
+        // Breakdown purchases by Product Name
+        $productPurchases = [];
+        foreach ($purchases as $purchase) {
+            foreach ($purchase->items as $item) {
+                $productName = $item->product_name ?? ($item->product->name ?? 'Unknown Product');
+                if (!isset($productPurchases[$productName])) {
+                    $productPurchases[$productName] = 0;
+                }
+                $productPurchases[$productName] += ($item->price * $item->quantity);
+            }
+        }
+
+        // Sort by amount descending
+        arsort($productPurchases);
+        $this->purchaseBreakdown = $productPurchases;
+
+        // We consider HPP as Estimated COGS (from sales) + Total Purchases for this report
+        $this->totalHpp = $this->totalCogs + $this->totalPurchases;
+        $this->totalGrossProfit = $this->totalRevenue - $this->totalHpp;
         $this->grossMargin = $this->totalRevenue > 0 ? ($this->totalGrossProfit / $this->totalRevenue) * 100 : 0;
 
         // 4. Expenses (Biaya Operasional) - Approved only
@@ -215,12 +246,19 @@ class FinancialReport extends Page implements HasForms
 
         $this->totalExpenses = $expenses->sum('amount');
 
-        // Breakdown expenses by category
+        // Breakdown expenses by category (Operational ONLY)
         $this->expenseBreakdown = $expenses->groupBy('category.name')
             ->map(fn($group) => $group->sum('amount'))
             ->toArray();
 
-        // 5. Net Profit (Laba Bersih)
+        // Granular Breakdown by Description (Items)
+        $granular = $expenses->groupBy('description')
+            ->map(fn($group) => $group->sum('amount'))
+            ->toArray();
+        arsort($granular);
+        $this->granularExpenseBreakdown = $granular;
+
+        // 6. Net Profit (Laba Bersih)
         $this->netProfit = $this->totalGrossProfit - $this->totalExpenses;
     }
 

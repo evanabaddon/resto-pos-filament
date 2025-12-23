@@ -51,6 +51,13 @@ class EditPurchase extends EditRecord
                     $product = $item->product;
                     $product->increment('stock', $item->quantity);
 
+                    // Jika produk adalah RETAIL (produk jadi), update harga pokok (HPP)
+                    if ($product->type === 'retail') {
+                        $product->update([
+                            'base_price' => $item->price ?? 0,
+                        ]);
+                    }
+
                     StockMovement::create([
                         'product_id' => $product->id,
                         'quantity' => $item->quantity,

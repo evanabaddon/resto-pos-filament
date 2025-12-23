@@ -61,6 +61,11 @@ class CashSessionInfolist
                                     ->money('IDR')
                                     ->color('danger'),
 
+                                TextEntry::make('total_cash_purchases')
+                                    ->label('(-) Pembelian Tunai')
+                                    ->money('IDR')
+                                    ->color('danger'),
+
                                 TextEntry::make('expected_cash')
                                     ->label('(=) Total Uang Seharusnya')
                                     ->money('IDR')

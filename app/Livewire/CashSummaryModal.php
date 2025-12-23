@@ -48,6 +48,9 @@ class CashSummaryModal extends Component
             },
             'cashExpenses' => function ($query) {
                 $query->where('status', 'approved');
+            },
+            'cashPurchases' => function ($query) {
+                $query->where('status', 'received');
             }
         ])->find($sessionId);
 
@@ -74,6 +77,7 @@ class CashSummaryModal extends Component
     {
         $sales = $this->session->sales;
         $expenses = $this->session->cashExpenses; // Hanya expenses dari kasir
+        $purchases = $this->session->cashPurchases; // Hanya pembelian dari kasir
 
         // Hitung penjualan berdasarkan payment method
         $paymentMethodSales = [];
@@ -94,11 +98,14 @@ class CashSummaryModal extends Component
         // Hitung total pengeluaran dari kasir
         $totalCashExpenses = $expenses->sum('amount');
 
+        // Hitung total pembelian dari kasir
+        $totalCashPurchases = $purchases->sum('total');
+
         // Cash sales khusus untuk perhitungan expected cash
         $cashSales = $paymentMethodSales['cash'] ?? 0;
 
-        // Expected cash = kas awal + penjualan cash - pengeluaran cash
-        $expectedCash = $this->session->cash_in_hand + $cashSales - $totalCashExpenses;
+        // Expected cash = kas awal + penjualan cash - pengeluaran cash - pembelian cash
+        $expectedCash = $this->session->cash_in_hand + $cashSales - $totalCashExpenses - $totalCashPurchases;
 
         // Jika sudah ada cash_out yang diisi, hitung selisih
         $cashDifference = null;
@@ -112,11 +119,13 @@ class CashSummaryModal extends Component
             'total_sales' => $totalSales,
             'cash_sales' => $cashSales,
             'total_cash_expenses' => $totalCashExpenses,
+            'total_cash_purchases' => $totalCashPurchases,
             'expected_cash' => $expectedCash,
             'cash_out' => $this->session->cash_out,
             'cash_difference' => $cashDifference,
             'transaction_count' => $sales->count(),
             'expense_count' => $expenses->count(),
+            'purchase_count' => $purchases->count(),
             'average_transaction' => $sales->count() > 0 ? $totalSales / $sales->count() : 0,
             'session_duration' => $this->session->opened_at->diffForHumans(now(), true),
         ];

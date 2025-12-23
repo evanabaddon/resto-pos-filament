@@ -28,6 +28,16 @@ class PurchasesTable
                 TextColumn::make('status')
                     ->badge()
                     ->colors(['warning' => 'draft', 'success' => 'received']),
+                TextColumn::make('fund_source')
+                    ->label('Sumber Dana')
+                    ->formatStateUsing(fn($state) => \App\Models\Purchase::getFundSources()[$state] ?? $state)
+                    ->badge()
+                    ->color(fn($state) => match ($state) {
+                        \App\Models\Purchase::FUND_SOURCE_CASHIER => 'success',
+                        \App\Models\Purchase::FUND_SOURCE_PETTY_CASH => 'info',
+                        \App\Models\Purchase::FUND_SOURCE_TRANSFER => 'warning',
+                        default => 'gray',
+                    }),
                 TextColumn::make('total')->money('IDR')->summarize(Sum::make()->money('IDR')->label('Total Pembelian')),
             ])
             ->filters([

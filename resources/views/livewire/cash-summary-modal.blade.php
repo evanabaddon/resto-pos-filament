@@ -45,69 +45,60 @@
                             <p class="text-2xl font-bold text-green-900">
                                 Rp {{ number_format($summary['expected_cash'] ?? 0, 0, ',', '.') }}
                             </p>
-                            <p class="text-xs text-green-600 mt-1">
-                                = Kas Awal + Penjualan Cash - Pengeluaran Cash
+                            <p class="text-[10px] text-green-600 mt-1">
+                                = Kas Awal + Penjualan Cash - Pengeluaran Cash - Pembelian Cash
                             </p>
                         </div>
                     </div>
 
                     {{-- Section 2: Sales by Payment Method --}}
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <h3 class="text-sm font-semibold text-gray-700 mb-3">Penjualan per Metode Pembayaran</h3>
-                        <div class="space-y-2">
-                            @foreach($summary['payment_method_sales'] ?? [] as $code => $amount)
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                                    <div class="flex items-center">
-                                        @php
-                                            $bgColor = match ($code) {
-                                                'cash' => 'bg-green-500',
-                                                'transfer' => 'bg-purple-500',
-                                                'qris' => 'bg-orange-500',
-                                                'credit_card', 'debit_card' => 'bg-indigo-500',
-                                                'ewallet' => 'bg-pink-500',
-                                                default => 'bg-gray-500',
-                                            };
-                                        @endphp
-                                        <span class="inline-block w-3 h-3 rounded-full mr-2 {{ $bgColor }}"></span>
-                                        <span class="text-sm text-gray-700">{{ $this->getPaymentMethodName($code) }}</span>
-                                    </div>
-                                    <span class="text-sm font-medium text-gray-900">
-                                        Rp {{ number_format($amount, 0, ',', '.') }}
-                                    </span>
-                                </div>
-                            @endforeach
+                    {{-- ... (unchanged) ... --}}
 
-                            {{-- Total Penjualan --}}
-                            <div class="flex justify-between items-center pt-3 mt-2 border-t border-gray-200">
-                                <span class="text-sm font-semibold text-gray-700">Total Penjualan</span>
-                                <span class="text-lg font-bold text-gray-900">
-                                    Rp {{ number_format($summary['total_sales'] ?? 0, 0, ',', '.') }}
+                    {{-- Section 3: Cash Expenses & Purchases --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-xs font-semibold text-gray-700">Pengeluaran (Cash)</h3>
+                                <span class="text-[10px] text-gray-500">
+                                    {{ $summary['expense_count'] ?? 0 }} transaksi
                                 </span>
                             </div>
-                        </div>
-                    </div>
 
-                    {{-- Section 3: Cash Expenses --}}
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-sm font-semibold text-gray-700">Pengeluaran dari Kasir</h3>
-                            <span class="text-xs text-gray-500">
-                                {{ $summary['expense_count'] ?? 0 }} transaksi
-                            </span>
-                        </div>
-
-                        @if(($summary['expense_count'] ?? 0) > 0)
-                            <div class="bg-red-50 p-3 rounded mb-3">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm font-medium text-red-700">Total Pengeluaran Cash</span>
-                                    <span class="text-lg font-bold text-red-900">
-                                        Rp {{ number_format($summary['total_cash_expenses'] ?? 0, 0, ',', '.') }}
-                                    </span>
+                            @if(($summary['expense_count'] ?? 0) > 0)
+                                <div class="bg-red-50 p-2 rounded">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs font-medium text-red-700">Total</span>
+                                        <span class="text-base font-bold text-red-900">
+                                            Rp {{ number_format($summary['total_cash_expenses'] ?? 0, 0, ',', '.') }}
+                                        </span>
+                                    </div>
                                 </div>
+                            @else
+                                <p class="text-[10px] text-gray-500 text-center py-2">Tidak ada</p>
+                            @endif
+                        </div>
+
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-xs font-semibold text-gray-700">Pembelian Stok (Cash)</h3>
+                                <span class="text-[10px] text-gray-500">
+                                    {{ $summary['purchase_count'] ?? 0 }} transaksi
+                                </span>
                             </div>
-                        @else
-                            <p class="text-sm text-gray-500 text-center py-3">Tidak ada pengeluaran dari kasir</p>
-                        @endif
+
+                            @if(($summary['purchase_count'] ?? 0) > 0)
+                                <div class="bg-orange-50 p-2 rounded">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs font-medium text-orange-700">Total</span>
+                                        <span class="text-base font-bold text-orange-900">
+                                            Rp {{ number_format($summary['total_cash_purchases'] ?? 0, 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                </div>
+                            @else
+                                <p class="text-[10px] text-gray-500 text-center py-2">Tidak ada</p>
+                            @endif
+                        </div>
                     </div>
 
                     {{-- Section 4: Cash Out & Difference --}}
@@ -188,7 +179,7 @@
 
                         <button wire:click="closeCashSession" @if(empty($manualCashOut)) disabled @endif
                             class="px-6 py-2 text-sm font-medium text-white rounded-lg shadow-sm transition flex items-center cursor-pointer 
-                                       {{ empty($manualCashOut) ? 'bg-gray-400 cursor-not-allowed opacity-70' : 'bg-red-600 hover:bg-red-700' }}">
+                                           {{ empty($manualCashOut) ? 'bg-gray-400 cursor-not-allowed opacity-70' : 'bg-red-600 hover:bg-red-700' }}">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

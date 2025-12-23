@@ -94,12 +94,12 @@ class Expense extends Model
             if (empty($expense->user_id)) {
                 $expense->user_id = auth()->id();
             }
-            
+
             // Jika sumber dana dari kasir, otomatis set payment method ke CASH
             if ($expense->fund_source === self::FUND_SOURCE_CASHIER && empty($expense->payment_method_id)) {
                 $expense->payment_method_id = self::getCashPaymentMethodId();
             }
-            
+
             // Jika sumber dana dari kasir, assign cash session aktif
             if ($expense->affectsCashSession() && empty($expense->cash_session_id)) {
                 $activeSession = CashSession::where('user_id', $expense->user_id ?? auth()->id())
@@ -108,40 +108,13 @@ class Expense extends Model
                 $expense->cash_session_id = $activeSession?->id;
             }
         });
-
-        // Setelah expense dibuat/approved, update cash session
-        static::created(function ($expense) {
-            if ($expense->affectsCashSession() && $expense->status === 'approved' && $expense->cashSession) {
-                $expense->cashSession->increment('cash_out', $expense->amount);
-            }
-        });
-
-        // Handle ketika expense di-update
-        static::updated(function ($expense) {
-            if ($expense->affectsCashSession() && $expense->cashSession) {
-                $originalAmount = $expense->getOriginal('amount');
-                $newAmount = $expense->amount;
-                
-                if ($originalAmount != $newAmount) {
-                    $difference = $newAmount - $originalAmount;
-                    $expense->cashSession->increment('cash_out', $difference);
-                }
-            }
-        });
-
-        // Handle ketika expense dihapus
-        static::deleted(function ($expense) {
-            if ($expense->affectsCashSession() && $expense->cashSession) {
-                $expense->cashSession->decrement('cash_out', $expense->amount);
-            }
-        });
     }
 
     public static function generateReference(): string
     {
         $prefix = 'EXP';
         $date = now()->format('Ymd');
-        
+
         do {
             $number = str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
             $reference = "{$prefix}{$date}{$number}";
