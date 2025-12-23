@@ -182,22 +182,22 @@ class OrderService
                 $conversion = $ingredientRate / $recipeRate;
                 $totalUsed = $recipe->quantity * $qty * $conversion;
 
-                $recipe->ingredient->decrement('stock', $totalUsed);
+                // $recipe->ingredient->decrement('stock', $totalUsed); // REMOVED: Handled by Observer
 
                 StockMovement::create([
                     'product_id' => $recipe->ingredient->id,
-                    'quantity' => -$totalUsed,
+                    'quantity' => $totalUsed, // Absolute quantity
                     'type' => 'decrease',
                     'reason' => 'POS Sale #' . $sale->invoice_number,
                     'notes' => 'Bahan untuk produk ' . $product->name . ' dijual (' . auth()->user()->name . ')',
                 ]);
             }
         } else {
-            $product->decrement('stock', $qty);
+            // $product->decrement('stock', $qty); // REMOVED: Handled by Observer
 
             StockMovement::create([
                 'product_id' => $product->id,
-                'quantity' => -$qty,
+                'quantity' => $qty, // Absolute quantity
                 'type' => 'decrease',
                 'reason' => 'POS Sale #' . $sale->invoice_number,
                 'notes' => 'Penjualan langsung produk oleh ' . auth()->user()->name,

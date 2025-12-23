@@ -104,12 +104,18 @@ class ProductsTable
                     ->label('Keuntungan')
                     ->money('IDR')
                     ->getStateUsing(function ($record) {
+                        if (!$record->is_sellable)
+                            return null; // Hide for ingredients
+            
                         $basePrice = $record->base_price ?? 0;
                         $sellPrice = $record->sell_price ?? 0;
 
                         return $sellPrice - $basePrice;
                     })
                     ->color(function ($record) {
+                        if (!$record->is_sellable)
+                            return 'gray';
+
                         $basePrice = $record->base_price ?? 0;
                         $sellPrice = $record->sell_price ?? 0;
                         $profit = $sellPrice - $basePrice;
@@ -117,6 +123,9 @@ class ProductsTable
                         return $profit >= 0 ? 'success' : 'danger';
                     })
                     ->description(function ($record) {
+                        if (!$record->is_sellable)
+                            return 'Not for sale';
+
                         $basePrice = $record->base_price ?? 0;
                         $sellPrice = $record->sell_price ?? 0;
 

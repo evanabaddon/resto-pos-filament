@@ -63,15 +63,5 @@ class Purchase extends Model
                 $purchase->cash_session_id = $activeSession?->id;
             }
         });
-
-        static::creating(function ($purchase) {
-            // Assign cash session aktif jika sumber dana dari kasir
-            if ($purchase->affectsCashSession() && empty($purchase->cash_session_id)) {
-                $activeSession = CashSession::where('user_id', auth()->id())
-                    ->where('status', 'open')
-                    ->first();
-                $purchase->cash_session_id = $activeSession?->id;
-            }
-        });
     }
 }

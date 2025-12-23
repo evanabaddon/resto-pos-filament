@@ -11,7 +11,7 @@ class CreatePurchase extends CreateRecord
 {
     protected static string $resource = PurchaseResource::class;
 
-    protected static ?string $title = 'Tambah Pembelian'; 
+    protected static ?string $title = 'Tambah Pembelian';
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
@@ -32,15 +32,13 @@ class CreatePurchase extends CreateRecord
                 foreach ($this->record->items as $item) {
                     $product = $item->product;
 
-                    // Tambah stok
-                    $product->increment('stock', $item->quantity);
+                    // Note: Stock increment is automatically handled by StockMovement boot observer
 
-                    // Jika produk adalah RETAIL (produk jadi), update harga pokok
-                    if ($product->type === 'retail') {
-                        $product->update([
-                            'base_price' => $item->price ?? $item->purchase_price ?? 0,
-                        ]);
-                    }
+                    // Update harga pokok untuk SEMUA tipe produk (termasuk Raw Material)
+                    // Ini penting agar HPP produk jadi (Produce) yang menggunakan bahan ini ikut terupdate
+                    $product->update([
+                        'base_price' => $item->price ?? $item->purchase_price ?? 0,
+                    ]);
 
                     // Catat pergerakan stok
                     StockMovement::create([

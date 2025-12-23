@@ -1,53 +1,61 @@
 <x-filament-panels::page>
-    {{ $this->form }}
-
-    {{-- Diagnosis Alert --}}
-    @if($totalRevenue > 0 && $grossMargin < 10)
-        <div class="mt-4 p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
-            <span class="font-medium">⚠️ Peringatan Data:</span> Margin Keuntungan Kotor hanya
-            <strong>{{ number_format($grossMargin, 1) }}%</strong> (Sangat Rendah).
-            <p class="mt-1">
-                Sistem mendeteksi selisih kecil antara Omzet dan HPP.
-                Kemungkinan besar <strong>Harga Pokok (HPP)</strong> di data Produk diinput sama dengan atau mendekati
-                <strong>Harga Jual</strong>.
-                Silakan cek menu <em>Produk -> Edit -> Harga Pokok</em>.
-            </p>
+    <div class="flex items-center justify-between mb-2">
+        <div>
+            <h2 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-white">Laba & Rugi (P&L)</h2>
+            <p class="text-sm text-gray-500">Analisis performa keuangan berdasarkan modal barang terjual (Accrual).</p>
         </div>
-    @endif
+        <div class="flex items-center gap-3">
+            {{-- Filter status info --}}
+            <div class="hidden md:flex flex-col items-end">
+                <span class="text-[10px] font-bold text-gray-400 uppercase">Periode Laporan</span>
+                <span class="text-xs font-medium text-gray-600">
+                    {{ \Carbon\Carbon::parse($date_start)->format('d M Y') }} -
+                    {{ \Carbon\Carbon::parse($date_end)->format('d M Y') }}
+                </span>
+            </div>
+        </div>
+    </div>
 
-    {{-- Summary Cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
-        {{-- Total Revenue --}}
+    {{-- Filter Form --}}
+    <div class="mb-6">
+        {{ $this->form }}
+    </div>
+
+    {{-- Stats Grid --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {{-- Net Sales --}}
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
             <div class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-green-50 to-transparent"></div>
             <div class="relative z-10">
-                <p class="text-sm font-medium text-gray-500 mb-1">Total Omzet (Revenue)</p>
-                <h3 class="text-2xl font-bold text-gray-900">
+                <p class="text-sm font-medium text-gray-500 mb-1">Net Sales (Omzet)</p>
+                <h3 class="text-2xl font-bold text-green-600">
                     Rp {{ number_format($totalRevenue, 0, ',', '.') }}
                 </h3>
+                <p class="text-[10px] text-green-400 mt-1">Gross: Rp {{ number_format($totalGrossSales, 0, ',', '.') }}
+                </p>
             </div>
             <div class="absolute bottom-4 right-4 text-green-500 opacity-20 group-hover:opacity-100 transition-opacity">
-                <x-heroicon-o-currency-dollar class="w-12 h-12" />
+                <x-heroicon-o-presentation-chart-line class="w-12 h-12" />
             </div>
         </div>
 
-        {{-- Total HPP (COGS) --}}
+        {{-- Total HPP --}}
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
             <div class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-orange-50 to-transparent"></div>
             <div class="relative z-10">
-                <p class="text-sm font-medium text-gray-500 mb-1">Total HPP (COGS)</p>
+                <p class="text-sm font-medium text-gray-500 mb-1">Total HPP (Accrual)</p>
                 <h3 class="text-2xl font-bold text-orange-600">
                     Rp {{ number_format($totalHpp, 0, ',', '.') }}
                 </h3>
-                <p class="text-[10px] text-orange-400 mt-1">Estimasi HPP + Pembelian Stok</p>
+                <p class="text-[10px] text-orange-400 mt-1">Estimasi Modal Penjualan</p>
             </div>
             <div
                 class="absolute bottom-4 right-4 text-orange-500 opacity-20 group-hover:opacity-100 transition-opacity">
-                <x-heroicon-o-shopping-bag class="w-12 h-12" />
+                <x-heroicon-o-circle-stack class="w-12 h-12" />
             </div>
         </div>
 
-        {{-- Total Expenses (Operational) --}}
+        {{-- Expenses --}}
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
             <div class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-red-50 to-transparent"></div>
             <div class="relative z-10">
@@ -55,10 +63,10 @@
                 <h3 class="text-2xl font-bold text-red-600">
                     Rp {{ number_format($totalExpenses, 0, ',', '.') }}
                 </h3>
-                <p class="text-[10px] text-red-400 mt-1">Listrik, Sewa, Gaji, dll</p>
+                <p class="text-[10px] text-red-400 mt-1">Ops + Gaji (Payroll)</p>
             </div>
             <div class="absolute bottom-4 right-4 text-red-500 opacity-20 group-hover:opacity-100 transition-opacity">
-                <x-heroicon-o-receipt-percent class="w-12 h-12" />
+                <x-heroicon-o-banknotes class="w-12 h-12" />
             </div>
         </div>
 
@@ -66,7 +74,7 @@
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
             <div class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-blue-50 to-transparent"></div>
             <div class="relative z-10">
-                <p class="text-sm font-medium text-gray-500 mb-1">Laba Bersih (Net Profit)</p>
+                <p class="text-sm font-medium text-gray-500 mb-1">Net Profit (Laba Bersih)</p>
                 <h3 class="text-2xl font-bold {{ $netProfit >= 0 ? 'text-blue-600' : 'text-red-600' }}">
                     Rp {{ number_format($netProfit, 0, ',', '.') }}
                 </h3>
@@ -75,7 +83,7 @@
                 </p>
             </div>
             <div class="absolute bottom-4 right-4 text-blue-500 opacity-20 group-hover:opacity-100 transition-opacity">
-                <x-heroicon-o-banknotes class="w-12 h-12" />
+                <x-heroicon-o-currency-dollar class="w-12 h-12" />
             </div>
         </div>
     </div>
@@ -84,41 +92,90 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {{-- Profit Calculation Flow --}}
         <div class="lg:col-span-1 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">Perhitungan Laba Rugi</h3>
+            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 border-b pb-2">Laporan Laba Rugi
+            </h3>
 
             <div class="space-y-4">
-                {{-- Income --}}
-                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span class="text-xs text-gray-600">Pendapatan (Revenue)</span>
-                    <span class="font-bold text-gray-900">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</span>
+                {{-- Income Flow --}}
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-gray-500">Pendapatan Kotor (Gross)</span>
+                        <span class="font-medium text-gray-900">Rp
+                            {{ number_format($totalGrossSales, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-gray-500">(-) Potongan / Diskon</span>
+                        <span class="font-medium text-red-500">(Rp
+                            {{ number_format($totalDiscounts, 0, ',', '.') }})</span>
+                    </div>
+                    <div
+                        class="flex justify-between items-center py-2 bg-gray-50 px-3 rounded border border-dashed border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Pendapatan Bersih (Net)</span>
+                        <span class="text-sm font-bold text-gray-900">Rp
+                            {{ number_format($totalRevenue, 0, ',', '.') }}</span>
+                    </div>
                 </div>
 
-                {{-- HPP --}}
-                <div class="space-y-1 py-2 border-b border-gray-100">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs text-gray-600">(-) Total HPP</span>
-                        <span class="font-bold text-orange-600">(Rp {{ number_format($totalHpp, 0, ',', '.') }})</span>
+                {{-- HPP Flow --}}
+                <div class="pt-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-gray-500">(-) Harga Pokok Penjualan</span>
+                        <span class="font-medium text-orange-600">(Rp
+                            {{ number_format($totalHpp, 0, ',', '.') }})</span>
                     </div>
                 </div>
 
                 {{-- Gross Profit Result --}}
-                <div class="flex justify-between items-center py-3 bg-gray-50 px-3 rounded-lg border border-gray-200">
-                    <span class="text-xs font-bold text-gray-700 uppercase">Gross Profit</span>
-                    <span class="font-bold text-gray-900">Rp {{ number_format($totalGrossProfit, 0, ',', '.') }}</span>
+                <div class="flex justify-between items-center py-3 bg-blue-50 px-3 rounded-lg border border-blue-100">
+                    <span class="text-xs font-bold text-blue-800 uppercase">Gross Profit</span>
+                    <span class="font-bold text-blue-900 text-lg">Rp
+                        {{ number_format($totalGrossProfit, 0, ',', '.') }}</span>
                 </div>
 
                 {{-- Expenses --}}
-                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span class="text-xs text-gray-600">(-) Biaya Operasional</span>
-                    <span class="font-bold text-red-600">(Rp {{ number_format($totalExpenses, 0, ',', '.') }})</span>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-gray-500">(-) Biaya Operasional</span>
+                        <span class="font-medium text-red-600">(Rp
+                            {{ number_format($totalExpenses, 0, ',', '.') }})</span>
+                    </div>
+                    @if($totalPayroll > 0)
+                        <div class="flex justify-between items-center text-[10px] italic text-gray-400 pl-2">
+                            <span>(Termasuk Gaji: Rp {{ number_format($totalPayroll, 0, ',', '.') }})</span>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Net Profit Result --}}
                 <div
-                    class="flex justify-between items-center py-4 bg-violet-50 px-4 rounded-xl border border-violet-100">
-                    <span class="text-sm font-bold text-violet-800 uppercase">Net Profit</span>
-                    <span class="text-lg font-bold text-violet-800">Rp
+                    class="flex justify-between items-center py-5 bg-violet-600 px-5 rounded-2xl shadow-lg shadow-violet-200">
+                    <span class="text-sm font-bold text-white uppercase tracking-wider">Net Profit</span>
+                    <span class="text-xl font-bold text-white">Rp
                         {{ number_format($netProfit, 0, ',', '.') }}</span>
+                </div>
+
+                <div class="pt-4 mt-4 border-t border-gray-100">
+                    <div class="flex justify-between items-center text-[10px] text-gray-400 italic">
+                        <span>Titipan Pajak (PB1)</span>
+                        <span>Rp {{ number_format($totalTaxes, 0, ',', '.') }}</span>
+                    </div>
+                    <p class="text-[9px] text-gray-400 mt-1 leading-tight">
+                        * Pajak (PB1) tidak dihitung sebagai pendapatan maupun biaya dalam laporan Laba/Rugi bersih
+                        (Non-Revenue).
+                    </p>
+                </div>
+
+                {{-- Asset Information --}}
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <div
+                        class="flex justify-between items-center py-2 bg-yellow-50 px-3 rounded-lg border border-yellow-100">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-yellow-800 uppercase">Nilai Aset Stok</span>
+                            <span class="text-[9px] text-yellow-600">Snapshot Saat Ini</span>
+                        </div>
+                        <span class="font-bold text-yellow-900 text-sm">Rp
+                            {{ number_format($currentStockValue, 0, ',', '.') }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -145,7 +202,7 @@
                     @endforeach
                 </div>
                 <div class="pt-2 italic text-[9px] text-gray-400 mt-2">
-                    * Menampilkan daftar belanja stok kumulatif per item.
+                    * Menampilkan daftar belanja stok kumulatif per item (Informasional).
                 </div>
             @else
                 <div class="flex flex-col items-center justify-center h-40 text-gray-400">
@@ -158,7 +215,7 @@
         {{-- Expense Breakdown (Operational) --}}
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Biaya Operasional per Kategori</h3>
+                <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Biaya per Kategori</h3>
                 <span class="text-xs font-bold text-red-600">Rp
                     {{ number_format($totalExpenses, 0, ',', '.') }}</span>
             </div>
@@ -167,7 +224,7 @@
                 <div class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                     @foreach($expenseBreakdown as $category => $amount)
                         <div class="flex justify-between items-center text-xs">
-                            <span class="text-gray-600 truncate mr-2">{{ $category ?: 'Tanpa Kategori' }}</span>
+                            <span class="text-gray-600 truncate mr-2">{{ $category ?: 'Lainnya' }}</span>
                             <span class="font-medium text-gray-900 shrink-0">Rp {{ number_format($amount, 0, ',', '.') }}</span>
                         </div>
                         <div class="w-full bg-gray-100 rounded-full h-1 mb-2">
@@ -177,92 +234,81 @@
                     @endforeach
                 </div>
                 <div class="pt-2 italic text-[9px] text-gray-400 mt-2">
-                    * Menampilkan daftar biaya operasional kumulatif per kategori.
+                    * Menampilkan daftar biaya kumulatif per kategori (Ops + Gaji).
                 </div>
             @else
                 <div class="flex flex-col items-center justify-center h-40 text-gray-400">
                     <x-heroicon-o-clipboard-document-list class="w-10 h-10 mb-2" />
-                    <p class="text-xs">Tidak ada data operasional</p>
+                    <p class="text-xs">Tidak ada data biaya</p>
                 </div>
             @endif
         </div>
     </div>
-    {{-- Analysis Section --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {{-- Top Cost Contributors --}}
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">🏆 Top Cost (Penyumbang HPP)</h3>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-500">
-                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3">Produk</th>
-                            <th class="px-4 py-3 text-right">Total HPP</th>
-                            <th class="px-4 py-3 text-right">%</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($hppContributors as $item)
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="px-4 py-3 font-medium text-gray-900">
-                                    {{ $item['name'] }}
-                                    <div class="text-xs text-gray-400">{{ $item['qty'] }} Sold</div>
-                                </td>
-                                <td class="px-4 py-3 text-right font-bold text-orange-600">
-                                    Rp {{ number_format($item['total_hpp'], 0, ',', '.') }}
-                                </td>
-                                <td class="px-4 py-3 text-right text-gray-400">
-                                    {{ $totalCogs > 0 ? number_format(($item['total_hpp'] / $totalCogs) * 100, 1) : 0 }}%
-                                </td>
-                            </tr>
-                        @endforeach
-                        @if(empty($hppContributors))
-                            <tr>
-                                <td colspan="3" class="px-4 py-8 text-center text-gray-400">No Data</td>
-                            </tr>
-                        @endif
-                    </tbody>
-                </table>
+    {{-- Top Contributors Grid --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {{-- Top HPP Contributors --}}
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-widest border-b pb-2">Top 5 Modal (HPP)
+            </h3>
+            <div class="space-y-4">
+                @foreach($hppContributors as $item)
+                    <div class="flex justify-between items-center">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-gray-900">{{ $item['name'] }}</span>
+                            <span class="text-[10px] text-gray-400">{{ $item['qty'] }} terjual</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-bold text-orange-600">Rp
+                                {{ number_format($item['total_hpp'], 0, ',', '.') }}</span>
+                            <div class="text-[10px] text-gray-400">Modal per porsi: Rp
+                                {{ number_format($item['unit_hpp'], 0, ',', '.') }}
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
 
         {{-- Top Profit Contributors --}}
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">💎 Top Profit (Penyumbang Laba)</h3>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-500">
-                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3">Produk</th>
-                            <th class="px-4 py-3 text-right">Total Profit</th>
-                            <th class="px-4 py-3 text-right">%</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($profitContributors as $item)
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="px-4 py-3 font-medium text-gray-900">
-                                    {{ $item['name'] }}
-                                    <div class="text-xs text-gray-400">{{ $item['qty'] }} Sold</div>
-                                </td>
-                                <td class="px-4 py-3 text-right font-bold text-green-600">
-                                    Rp {{ number_format($item['total_profit'], 0, ',', '.') }}
-                                </td>
-                                <td class="px-4 py-3 text-right text-gray-400">
-                                    {{ $totalGrossProfit > 0 ? number_format(($item['total_profit'] / $totalGrossProfit) * 100, 1) : 0 }}%
-                                </td>
-                            </tr>
-                        @endforeach
-                        @if(empty($profitContributors))
-                            <tr>
-                                <td colspan="3" class="px-4 py-8 text-center text-gray-400">No Data</td>
-                            </tr>
-                        @endif
-                    </tbody>
-                </table>
+            <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-widest border-b pb-2">Top 5 Profit Maker
+            </h3>
+            <div class="space-y-4">
+                @foreach($profitContributors as $item)
+                    <div class="flex justify-between items-center">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-gray-900">{{ $item['name'] }}</span>
+                            <span class="text-[10px] text-gray-400">{{ $item['qty'] }} terjual</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-bold text-green-600">Rp
+                                {{ number_format($item['total_profit'], 0, ',', '.') }}</span>
+                            <div class="text-[10px] text-gray-400">Realisasi Cuan per porsi</div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #cbd5e1;
+        }
+    </style>
 </x-filament-panels::page>

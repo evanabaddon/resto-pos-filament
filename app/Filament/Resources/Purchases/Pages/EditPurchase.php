@@ -19,52 +19,71 @@ class EditPurchase extends EditRecord
         ];
     }
 
+    protected $oldStatus;
+    protected $oldItemsSnapshot = [];
+
     protected function beforeSave(): void
     {
-        // 🧠 Simpan status lama sebelum update
+        // 🧠 Simpan status lama dan snapshot items sebelum update
         $this->oldStatus = $this->record->status;
+
+        // Simpan snapshot item lama (id produk & qty) untuk keperluan revert
+        $this->oldItemsSnapshot = $this->record->items->map(function ($item) {
+            return [
+                'product_id' => $item->product_id,
+                'quantity' => $item->quantity,
+            ];
+        })->toArray();
     }
 
     protected function afterSave(): void
     {
         $record = $this->record;
-        $oldStatus = $this->oldStatus; // ambil status lama yang disimpan di beforeSave
+        $oldStatus = $this->oldStatus;
+        $oldItems = $this->oldItemsSnapshot;
 
-        DB::transaction(function () use ($record, $oldStatus) {
+        DB::transaction(function () use ($record, $oldStatus, $oldItems) {
             // Hitung ulang total
             $total = $record->items->sum('subtotal');
             $record->update(['total' => $total]);
 
-            // 🧠 Jika sebelumnya "received" dan sekarang "draft" → kembalikan stok
-            if ($oldStatus === 'received' && $record->status === 'draft') {
-                foreach ($record->items as $item) {
-                    $item->product->decrement('stock', $item->quantity);
+            // 1. REVERT Old State (Jika status sebelumnya 'received')
+            //    Kita harus mengembalikan stok berdasarkan snapshot items LAMA
+            if ($oldStatus === 'received') {
+                foreach ($oldItems as $itemData) {
+                    // Cari produk terkait
+                    $product = \App\Models\Product::find($itemData['product_id']);
+                    if ($product) {
+                        $product->decrement('stock', $itemData['quantity']);
+                    }
                 }
+
+                // Hapus log movement lama
+                StockMovement::where('notes', 'Pembelian ' . $record->invoice_number)->delete();
             }
 
-            // 🧹 Hapus StockMovement lama agar tidak double
-            StockMovement::where('notes', 'Pembelian ' . $record->invoice_number)->delete();
-
-            // 📦 Jika sekarang "received" → tambah stok & buat stock movement baru
+            // 2. APPLY New State (Jika status sekarang 'received')
+            //    Kita tambahkan stok berdasarkan items BARU (yang sudah tersimpan di DB)
             if ($record->status === 'received') {
                 foreach ($record->items as $item) {
                     $product = $item->product;
-                    $product->increment('stock', $item->quantity);
+                    if ($product) {
+                        // Stock increment is handled by StockMovement boot obsever
 
-                    // Jika produk adalah RETAIL (produk jadi), update harga pokok (HPP)
-                    if ($product->type === 'retail') {
+                        // Update harga pokok untuk SEMUA tipe produk (Retail, Raw, etc)
                         $product->update([
                             'base_price' => $item->price ?? 0,
                         ]);
-                    }
 
-                    StockMovement::create([
-                        'product_id' => $product->id,
-                        'quantity' => $item->quantity,
-                        'type' => 'increase',
-                        'reason' => 'purchase',
-                        'notes' => 'Pembelian ' . $record->invoice_number,
-                    ]);
+                        // Catat movement baru
+                        StockMovement::create([
+                            'product_id' => $product->id,
+                            'quantity' => $item->quantity,
+                            'type' => 'increase',
+                            'reason' => 'purchase',
+                            'notes' => 'Pembelian ' . $record->invoice_number,
+                        ]);
+                    }
                 }
             }
         });

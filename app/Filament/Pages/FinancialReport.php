@@ -7,6 +7,7 @@ use BackedEnum;
 use App\Models\Sale;
 use App\Models\Expense;
 use App\Models\Purchase;
+use App\Models\Payroll;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Actions\Action;
@@ -43,14 +44,19 @@ class FinancialReport extends Page implements HasForms
     public ?int $filter_year = null;
 
     // Stats properties
-    public float $totalRevenue = 0;
-    public float $totalCogs = 0; // Estimated based on sales
-    public float $totalPurchases = 0; // Actual stock purchases
-    public float $totalHpp = 0; // Sum of both (or combined HPP)
+    public float $totalGrossSales = 0;
+    public float $totalDiscounts = 0;
+    public float $totalTaxes = 0;
+    public float $totalRevenue = 0; // Net Sales
+    public float $totalCogs = 0; // Estimated based on sales (Accrual HPP)
+    public float $totalPurchases = 0; // Informational (Cash Out for Stock)
+    public float $totalHpp = 0; // primary HPP for profit
     public float $totalGrossProfit = 0;
     public float $totalExpenses = 0; // Operational only
+    public float $totalPayroll = 0; // Salaries
     public float $netProfit = 0;
     public float $grossMargin = 0;
+    public float $currentStockValue = 0; // Value of unsold inventory
 
     public array $expenseBreakdown = [];
     public array $granularExpenseBreakdown = [];
@@ -58,13 +64,12 @@ class FinancialReport extends Page implements HasForms
     public array $hppContributors = [];
     public array $profitContributors = [];
 
-    public function mount(): void
+    public function mount()
     {
-        $this->date_start = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $this->date_end = Carbon::now()->endOfMonth()->format('Y-m-d');
-
-        $this->filter_month = Carbon::now()->month;
-        $this->filter_year = Carbon::now()->year;
+        $this->date_start = now()->startOfMonth()->format('Y-m-d');
+        $this->date_end = now()->endOfMonth()->format('Y-m-d');
+        $this->filter_month = date('n');
+        $this->filter_year = date('Y');
 
         $this->form->fill([
             'date_start' => $this->date_start,
@@ -76,105 +81,117 @@ class FinancialReport extends Page implements HasForms
         $this->calculateStats();
     }
 
-    public function updateDatesByMonth()
+    protected function getFormSchema(): array
     {
-        if ($this->filter_month && $this->filter_year) {
-            $date = Carbon::createFromDate($this->filter_year, $this->filter_month, 1);
+        return [
+            Section::make('Filter Laporan')
+                ->schema([
+                    Grid::make(4)
+                        ->schema([
+                            Select::make('filter_month')
+                                ->label('Bulan')
+                                ->options([
+                                    1 => 'Januari',
+                                    2 => 'Februari',
+                                    3 => 'Maret',
+                                    4 => 'April',
+                                    5 => 'Mei',
+                                    6 => 'Juni',
+                                    7 => 'Juli',
+                                    8 => 'Agustus',
+                                    9 => 'September',
+                                    10 => 'Oktober',
+                                    11 => 'November',
+                                    12 => 'Desember'
+                                ])
+                                ->live()
+                                ->afterStateUpdated(function ($state, $set, $get) {
+                                    if ($state) {
+                                        $year = $get('filter_year') ?: date('Y');
+                                        $start = Carbon::createFromDate($year, $state)->startOfMonth()->format('Y-m-d');
+                                        $end = Carbon::createFromDate($year, $state)->endOfMonth()->format('Y-m-d');
 
-            $this->date_start = $date->startOfMonth()->format('Y-m-d');
-            $this->date_end = $date->endOfMonth()->format('Y-m-d');
+                                        $set('date_start', $start);
+                                        $set('date_end', $end);
 
-            $this->form->fill([
-                'date_start' => $this->date_start,
-                'date_end' => $this->date_end,
-                'filter_month' => $this->filter_month,
-                'filter_year' => $this->filter_year,
-            ]);
+                                        $this->date_start = $start;
+                                        $this->date_end = $end;
+                                        $this->calculateStats();
+                                    }
+                                }),
 
-            $this->calculateStats();
-        }
-    }
+                            Select::make('filter_year')
+                                ->label('Tahun')
+                                ->options(array_combine(range(date('Y') - 5, date('Y') + 1), range(date('Y') - 5, date('Y') + 1)))
+                                ->live()
+                                ->afterStateUpdated(function ($state, $set, $get) {
+                                    if ($state) {
+                                        $month = $get('filter_month') ?: date('n');
+                                        $start = Carbon::createFromDate($state, $month)->startOfMonth()->format('Y-m-d');
+                                        $end = Carbon::createFromDate($state, $month)->endOfMonth()->format('Y-m-d');
 
-    public function form(Schema $schema): Schema
-    {
-        return $schema
-            ->schema([
-                Section::make('Filter Periode')
-                    ->schema([
-                        Grid::make(4)
-                            ->schema([
-                                Select::make('filter_month')
-                                    ->label('Bulan')
-                                    ->options([
-                                        1 => 'Januari',
-                                        2 => 'Februari',
-                                        3 => 'Maret',
-                                        4 => 'April',
-                                        5 => 'Mei',
-                                        6 => 'Juni',
-                                        7 => 'Juli',
-                                        8 => 'Agustus',
-                                        9 => 'September',
-                                        10 => 'Oktober',
-                                        11 => 'November',
-                                        12 => 'Desember'
-                                    ])
-                                    ->live()
-                                    ->afterStateUpdated(fn() => $this->updateDatesByMonth()),
+                                        $set('date_start', $start);
+                                        $set('date_end', $end);
 
-                                Select::make('filter_year')
-                                    ->label('Tahun')
-                                    ->options(function () {
-                                        $years = [];
-                                        for ($i = date('Y'); $i >= date('Y') - 5; $i--) {
-                                            $years[$i] = $i;
-                                        }
-                                        return $years;
-                                    })
-                                    ->live()
-                                    ->afterStateUpdated(fn() => $this->updateDatesByMonth()),
+                                        $this->date_start = $start;
+                                        $this->date_end = $end;
+                                        $this->calculateStats();
+                                    }
+                                }),
 
-                                DatePicker::make('date_start')
-                                    ->label('Tanggal Mulai')
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(fn() => $this->calculateStats()),
+                            DatePicker::make('date_start')
+                                ->label('Dari Tanggal')
+                                ->live()
+                                ->afterStateUpdated(function ($state) {
+                                    $this->date_start = $state;
+                                    $this->calculateStats();
+                                }),
 
-                                DatePicker::make('date_end')
-                                    ->label('Tanggal Akhir')
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(fn() => $this->calculateStats()),
-                            ]),
-                    ]),
-            ]);
+                            DatePicker::make('date_end')
+                                ->label('Sampai Tanggal')
+                                ->live()
+                                ->afterStateUpdated(function ($state) {
+                                    $this->date_end = $state;
+                                    $this->calculateStats();
+                                }),
+                        ]),
+                ])
+                ->collapsible(),
+        ];
     }
 
     public function calculateStats()
     {
+        if (!$this->date_start || !$this->date_end)
+            return;
+
         $startDate = Carbon::parse($this->date_start)->startOfDay();
         $endDate = Carbon::parse($this->date_end)->endOfDay();
 
         // 1. Revenue (Omzet) - Paid Sales only
-        $sales = Sale::with(['items.product.recipes.ingredient', 'items.product.unit'])
+        $sales = Sale::with(['items.product.recipes.ingredient', 'items.product.unit', 'paymentMethod'])
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->get();
 
-        $this->totalRevenue = $sales->sum('final_total');
+        $this->totalGrossSales = $sales->sum('subtotal');
+        $this->totalDiscounts = $sales->sum('discount');
+        $this->totalTaxes = $sales->sum('tax');
 
-        // 2. COGS (HPP) - Estimated based on current Product HPP
+        // Net Revenue = Gross Sales - Discounts (Tax is excluded from Revenue)
+        $this->totalRevenue = $this->totalGrossSales - $this->totalDiscounts;
+
+        // 2. COGS (HPP) - Accrual (Modal barang terjual)
         $this->totalCogs = 0;
         $contributors = [];
 
         foreach ($sales as $sale) {
             foreach ($sale->items as $item) {
                 if ($item->product) {
-                    $hpp = $item->product->base_price ?? 0;
+                    $hpp = (float) $item->product->computed_hpp;
                     $totalItemHpp = $hpp * $item->quantity;
                     $this->totalCogs += $totalItemHpp;
 
-                    // Track contributors
                     if (!isset($contributors[$item->product->name])) {
                         $contributors[$item->product->name] = [
                             'name' => $item->product->name,
@@ -187,37 +204,45 @@ class FinancialReport extends Page implements HasForms
                     }
                     $contributors[$item->product->name]['qty'] += $item->quantity;
                     $contributors[$item->product->name]['total_hpp'] += $totalItemHpp;
-
-                    // Profit Calc
-                    $itemRevenue = $item->subtotal; // Assuming subtotal is after discount? verify? No, subtotal is unit_price * qty
-                    // Wait, sale_items has subtotal.
                     $contributors[$item->product->name]['total_revenue'] += $item->subtotal;
                     $contributors[$item->product->name]['total_profit'] += ($item->subtotal - $totalItemHpp);
                 }
             }
         }
 
-        // Sort and take top 5 HPP
-        // Need to clone for separate sorting
+        // Sort Top Lists
         $sortByHpp = $contributors;
         usort($sortByHpp, fn($a, $b) => $b['total_hpp'] <=> $a['total_hpp']);
         $this->hppContributors = array_slice($sortByHpp, 0, 5);
 
-        // Sort and take top 5 Profit
         $sortByProfit = $contributors;
         usort($sortByProfit, fn($a, $b) => $b['total_profit'] <=> $a['total_profit']);
         $this->profitContributors = array_slice($sortByProfit, 0, 5);
 
-        // 3. Gross Profit (Revenue - HPP)
-        // Fetch Purchases first to include in HPP
+        // 3. Gross Profit (Accrual)
+        $this->totalHpp = $this->totalCogs;
+        $this->totalGrossProfit = $this->totalRevenue - $this->totalHpp;
+        $this->grossMargin = $this->totalRevenue > 0 ? ($this->totalGrossProfit / $this->totalRevenue) * 100 : 0;
+
+        // 4. Operational Expenses
+        $expenses = Expense::with('category')
+            ->where('status', 'approved')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->get();
+
+        // 5. Payroll Integration
+        $payrolls = Payroll::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', 'paid')
+            ->get();
+        $this->totalPayroll = (float) $payrolls->sum('total_payout');
+
+        // 6. Purchases (Informational)
         $purchases = Purchase::with('items.product')
             ->where('status', 'received')
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
+        $this->totalPurchases = (float) $purchases->sum('total');
 
-        $this->totalPurchases = $purchases->sum('total');
-
-        // Breakdown purchases by Product Name
         $productPurchases = [];
         foreach ($purchases as $purchase) {
             foreach ($purchase->items as $item) {
@@ -228,37 +253,28 @@ class FinancialReport extends Page implements HasForms
                 $productPurchases[$productName] += ($item->price * $item->quantity);
             }
         }
-
-        // Sort by amount descending
         arsort($productPurchases);
         $this->purchaseBreakdown = $productPurchases;
 
-        // We consider HPP as Estimated COGS (from sales) + Total Purchases for this report
-        $this->totalHpp = $this->totalCogs + $this->totalPurchases;
-        $this->totalGrossProfit = $this->totalRevenue - $this->totalHpp;
-        $this->grossMargin = $this->totalRevenue > 0 ? ($this->totalGrossProfit / $this->totalRevenue) * 100 : 0;
-
-        // 4. Expenses (Biaya Operasional) - Approved only
-        $expenses = Expense::with('category')
-            ->where('status', 'approved')
-            ->whereBetween('date', [$startDate, $endDate])
-            ->get();
-
-        $this->totalExpenses = $expenses->sum('amount');
-
-        // Breakdown expenses by category (Operational ONLY)
+        // Final Totals
+        $this->totalExpenses = (float) $expenses->sum('amount') + $this->totalPayroll;
         $this->expenseBreakdown = $expenses->groupBy('category.name')
             ->map(fn($group) => $group->sum('amount'))
             ->toArray();
 
-        // Granular Breakdown by Description (Items)
-        $granular = $expenses->groupBy('description')
-            ->map(fn($group) => $group->sum('amount'))
-            ->toArray();
-        arsort($granular);
-        $this->granularExpenseBreakdown = $granular;
+        if ($this->totalPayroll > 0) {
+            $this->expenseBreakdown['Gaji & Tunjangan'] = $this->totalPayroll;
+        }
 
-        // 6. Net Profit (Laba Bersih)
+        // 7. Current Asset Value (Nilai Aset Stok Saat Ini)
+        // Ini snapshot saat ini, bukan berdasarkan range tanggal
+        $this->currentStockValue = \App\Models\Product::where('is_sellable', true)
+            ->orWhere('type', 'raw')
+            ->get()
+            ->sum(function ($product) {
+                return $product->stock * $product->base_price;
+            });
+
         $this->netProfit = $this->totalGrossProfit - $this->totalExpenses;
     }
 
