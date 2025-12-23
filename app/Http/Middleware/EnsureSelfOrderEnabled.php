@@ -16,10 +16,8 @@ class EnsureSelfOrderEnabled
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $settings = app(GeneralSettings::class);
-
-        if (!$settings->enable_self_order) {
-            abort(403, 'Self Order Module is disabled.');
+        if (!app(\App\Services\LicenseService::class)->isValid('self_order')) {
+            abort(403, 'Self Order Module is disabled or license invalid.');
         }
 
         return $next($request);

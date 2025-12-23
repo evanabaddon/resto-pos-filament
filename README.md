@@ -87,6 +87,10 @@ Full-suite manajemen sumber daya manusia yang terintegrasi penuh dengan keuangan
 - **Automated Payroll Engine**:
   - **Dynamic & Flexible Formula**: Rumus penggajian yang bisa dikustomisasi sepenuhnya (Gaji Pokok, Tunjangan, Overtime, Denda).
   - **Employee Loan System**: Manajemen pinjaman dengan fitur **Auto-Deduction** pada slip gaji bulanan.
+- **📑 Digital Leave & Permit Management**:
+  - **Multi-Type Requests**: Pengajuan Izin (Sakit, Cuti Tahunan, Keperluan Khusus) secara digital.
+  - **Attachment Support**: Unggah dokumen pendukung (Surat Dokter/Lampiran) langsung di sistem.
+  - **Approval Workflow**: Sistem persetujuan berjenjang (Pending/Approved/Rejected) dengan catatan alasan penolakan transparan.
 
 ### 🧩 Modular Architecture (On-Demand Features)
 Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.

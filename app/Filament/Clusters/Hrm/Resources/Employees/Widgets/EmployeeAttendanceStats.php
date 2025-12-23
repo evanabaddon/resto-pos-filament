@@ -21,7 +21,7 @@ class EmployeeAttendanceStats extends BaseWidget
 
     public static function canView(): bool
     {
-        return app(\App\Settings\GeneralSettings::class)->enable_hrm;
+        return app(\App\Services\LicenseService::class)->isValid('hrm');
     }
 
     protected static ?string $heading = 'Statistik Absensi Bulanan';

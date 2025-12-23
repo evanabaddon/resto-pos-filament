@@ -52,9 +52,9 @@ class Cart extends Component
         $this->dispatch('cart-updated');
     }
 
+    #[\Livewire\Attributes\Layout('components.layouts.mobile')]
     public function render()
     {
-        return view('livewire.self-order.cart')
-            ->layout('components.layouts.mobile');
+        return view('livewire.self-order.cart');
     }
 }

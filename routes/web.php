@@ -207,11 +207,14 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
     $url = "$gatewayUrl/avatar/$jid";
 
     try {
+        /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::timeout(5)->get($url);
         if ($response->successful()) {
             return response($response->body())
-                ->header('Content-Type', $response->header('Content-Type', 'image/jpeg'))
-                ->header('Cache-Control', 'public, max-age=3600');
+                ->withHeaders([
+                    'Content-Type' => $response->header('Content-Type') ?: 'image/jpeg',
+                    'Cache-Control' => 'public, max-age=3600'
+                ]);
         }
     } catch (\Exception $e) {
         // Fallback or error logging

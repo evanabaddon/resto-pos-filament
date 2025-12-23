@@ -323,6 +323,7 @@ class OrderPrintService
             ]);
 
             // 🔥 RETRY LOGIC (3x Attempts)
+            /** @var \Illuminate\Http\Client\Response $response */
             $response = Http::timeout(15)
                 ->retry(3, 1000) // Retry 3 kali, delay 1000ms
                 ->withOptions([
@@ -421,6 +422,7 @@ class OrderPrintService
             $testContent .= "Status: Webhook Test\n";
             $testContent .= "===================\n\n\n";
 
+            /** @var \Illuminate\Http\Client\Response $response */
             $response = Http::timeout(10)
                 ->withOptions(['verify' => false])
                 ->withHeaders([

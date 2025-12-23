@@ -99,9 +99,9 @@ class WaiterCart extends Component
         // }
     }
 
+    #[\Livewire\Attributes\Layout('components.layouts.waiter')]
     public function render()
     {
-        return view('livewire.waiter-order.cart')
-            ->layout('components.layouts.waiter');
+        return view('livewire.waiter-order.cart');
     }
 }

@@ -63,7 +63,7 @@ class MemberResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return app(\App\Settings\GeneralSettings::class)->enable_crm;
+        return app(\App\Services\LicenseService::class)->isValid('crm');
     }
 
     public static function form(Schema $schema): Schema

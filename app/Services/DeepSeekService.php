@@ -35,6 +35,7 @@ class DeepSeekService
         return \Illuminate\Support\Facades\Cache::remember("ai_models_{$provider}", 3600 * 24, function () use ($provider) {
             try {
                 if ($provider === 'openrouter') {
+                    /** @var \Illuminate\Http\Client\Response $response */
                     $response = Http::withOptions([
                         'verify' => config('services.deepseek.verify', true)
                     ])
@@ -82,6 +83,7 @@ class DeepSeekService
                 $headers['X-Title'] = config('app.name');
             }
 
+            /** @var \Illuminate\Http\Client\Response $response */
             $response = Http::withHeaders($headers)
                 ->withOptions([
                     'verify' => config('services.deepseek.verify', true)

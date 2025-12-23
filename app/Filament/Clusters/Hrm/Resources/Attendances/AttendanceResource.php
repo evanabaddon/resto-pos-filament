@@ -25,7 +25,7 @@ class AttendanceResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return app(\App\Settings\GeneralSettings::class)->enable_hrm;
+        return app(\App\Services\LicenseService::class)->isValid('hrm');
     }
 
     protected static ?string $cluster = HrmCluster::class;

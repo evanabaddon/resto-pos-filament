@@ -225,9 +225,9 @@ class Checkout extends Component
         }
     }
 
+    #[\Livewire\Attributes\Layout('components.layouts.mobile')]
     public function render()
     {
-        return view('livewire.self-order.checkout')
-            ->layout('components.layouts.mobile');
+        return view('livewire.self-order.checkout');
     }
 }

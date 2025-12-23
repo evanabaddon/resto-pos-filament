@@ -20,7 +20,7 @@ class KitchenDisplay extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return app(\App\Settings\GeneralSettings::class)->enable_kds;
+        return app(\App\Services\LicenseService::class)->isValid('kds');
     }
 
     public function mount(): void

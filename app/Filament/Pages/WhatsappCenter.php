@@ -48,7 +48,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     // Only show if module is enabled
     public static function shouldRegisterNavigation(): bool
     {
-        return app(\App\Settings\GeneralSettings::class)->enable_wa_center;
+        return app(\App\Services\LicenseService::class)->isValid('wa_center');
     }
 
     protected string $view = 'filament.pages.whatsapp-center';
@@ -109,7 +109,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 ]);
 
                 $this->checkMemberStatus(); // Refresh status
-
+    
                 Notification::make()
                     ->title('Member Created')
                     ->success()
@@ -313,7 +313,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     public function mount(?string $jid = null)
     {
         // Block access if module is disabled
-        if (!app(\App\Settings\GeneralSettings::class)->enable_wa_center) {
+        if (!app(\App\Services\LicenseService::class)->isValid('wa_center')) {
             return redirect('/admin');
         }
 

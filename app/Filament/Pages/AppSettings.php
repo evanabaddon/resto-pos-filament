@@ -38,6 +38,31 @@ class AppSettings extends SettingsPage
         return auth()->user()->role === \App\Enums\UserRole::SuperAdmin;
     }
 
+    protected function validateLicense(string $module, ?string $key, Set $set): void
+    {
+        if (!$key) {
+            $set("enable_{$module}", false);
+            return;
+        }
+
+        $result = app(\App\Services\LicenseService::class)->validateAndCache($module, $key);
+
+        if (!$result['valid']) {
+            $set("enable_{$module}", false);
+            \Filament\Notifications\Notification::make()
+                ->title("Lisensi {$module} Invalid")
+                ->body($result['error'] ?? 'Gagal memverifikasi lisensi.')
+                ->danger()
+                ->send();
+        } else {
+            \Filament\Notifications\Notification::make()
+                ->title("Lisensi {$module} Valid!")
+                ->body("Berlaku hingga: " . ($result['expires_at'] ?? 'Selamanya'))
+                ->success()
+                ->send();
+        }
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema
@@ -63,6 +88,7 @@ class AppSettings extends SettingsPage
                                                             ->options(function () {
                                                                 try {
                                                                     // Fetch provinces
+                                                                    /** @var \Illuminate\Http\Client\Response $response */
                                                                     $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get('https://wilayah.id/api/provinces.json');
                                                                     if ($response->successful()) {
                                                                         return collect($response->json('data'))->pluck('name', 'code');
@@ -79,6 +105,7 @@ class AppSettings extends SettingsPage
                                                                 // Set Name
                                                                 if ($state) {
                                                                     try {
+                                                                        /** @var \Illuminate\Http\Client\Response $response */
                                                                         $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get('https://wilayah.id/api/provinces.json');
                                                                         if ($response->successful()) {
                                                                             $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
@@ -100,6 +127,7 @@ class AppSettings extends SettingsPage
                                                                     return [];
 
                                                                 try {
+                                                                    /** @var \Illuminate\Http\Client\Response $response */
                                                                     $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/regencies/{$code}.json");
                                                                     if ($response->successful()) {
                                                                         return collect($response->json('data'))->pluck('name', 'code');
@@ -116,6 +144,7 @@ class AppSettings extends SettingsPage
                                                                 if ($state) {
                                                                     try {
                                                                         $pCode = $get('province_code');
+                                                                        /** @var \Illuminate\Http\Client\Response $response */
                                                                         $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/regencies/{$pCode}.json");
                                                                         if ($response->successful()) {
                                                                             $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
@@ -137,6 +166,7 @@ class AppSettings extends SettingsPage
                                                                     return [];
 
                                                                 try {
+                                                                    /** @var \Illuminate\Http\Client\Response $response */
                                                                     $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/districts/{$code}.json");
                                                                     if ($response->successful()) {
                                                                         return collect($response->json('data'))->pluck('name', 'code');
@@ -152,6 +182,7 @@ class AppSettings extends SettingsPage
                                                                 if ($state) {
                                                                     try {
                                                                         $rCode = $get('regency_code');
+                                                                        /** @var \Illuminate\Http\Client\Response $response */
                                                                         $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/districts/{$rCode}.json");
                                                                         if ($response->successful()) {
                                                                             $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
@@ -173,6 +204,7 @@ class AppSettings extends SettingsPage
                                                                     return [];
 
                                                                 try {
+                                                                    /** @var \Illuminate\Http\Client\Response $response */
                                                                     $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/villages/{$code}.json");
                                                                     if ($response->successful()) {
                                                                         return collect($response->json('data'))->pluck('name', 'code');
@@ -186,6 +218,7 @@ class AppSettings extends SettingsPage
                                                                 if ($state) {
                                                                     try {
                                                                         $dCode = $get('district_code');
+                                                                        /** @var \Illuminate\Http\Client\Response $response */
                                                                         $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/villages/{$dCode}.json");
                                                                         if ($response->successful()) {
                                                                             $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
@@ -220,6 +253,7 @@ class AppSettings extends SettingsPage
                                                                         }
 
                                                                         try {
+                                                                            /** @var \Illuminate\Http\Client\Response $response */
                                                                             $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={$state}");
 
                                                                             if (!$response) {
@@ -380,7 +414,7 @@ class AppSettings extends SettingsPage
 
                         // TAB: KEMITRAAN (Loyalty)
                         Tab::make('Kemitraan')
-                            ->visible(fn() => app(GeneralSettings::class)->enable_crm)
+                            ->visible(fn() => app(\App\Services\LicenseService::class)->isValid('crm'))
                             ->icon('heroicon-o-user-group')
                             ->schema([
                                 Section::make('Konfigurasi Dasar')
@@ -537,33 +571,22 @@ class AppSettings extends SettingsPage
                                     ->schema([
                                         TextInput::make('hrm_license_key')
                                             ->label('License Key')
-                                            ->password() // Hide characters
+                                            ->password()
                                             ->revealable()
                                             ->helperText('Masukkan lisensi, format: HRM-PRO-XXXX')
-                                            ->live(onBlur: true) // Validate on blur
-                                            ->afterStateUpdated(function ($state, Set $set) {
-                                                // Simple Logic: Key must start with HRM-PRO-
-                                                if ($state && str_starts_with($state, 'HRM-PRO-')) {
-                                                    // Valid
-                                                } else {
-                                                    // Invalid: Force disable toggle
-                                                    $set('enable_hrm', false);
-                                                }
-                                            }),
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn($state, Set $set) => $this->validateLicense('hrm', $state, $set)),
 
                                         Toggle::make('enable_hrm')
                                             ->label('Enable HRM Module')
                                             ->inline(false)
-                                            ->disabled(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
-                                            )
-                                            ->helperText(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul SDM.'
-                                            ),
+                                            ->disabled(fn() => !app(\App\Services\LicenseService::class)->isValid('hrm'))
+                                            ->helperText(function () {
+                                                $info = app(\App\Services\LicenseService::class)->getLicenseInfo('hrm');
+                                                if (!$info)
+                                                    return 'Lisensi belum diverifikasi atau tidak valid.';
+                                                return "Aktifkan modul SDM. Berlaku hibgga: " . ($info['expires_at'] ?? 'N/A');
+                                            }),
                                     ]),
 
                                 Section::make('KDS (Kitchen Display System)')
@@ -571,33 +594,22 @@ class AppSettings extends SettingsPage
                                     ->schema([
                                         TextInput::make('kds_license_key')
                                             ->label('License Key')
-                                            ->password() // Hide characters
+                                            ->password()
                                             ->revealable()
                                             ->helperText('Masukkan lisensi, format: KDS-PRO-XXXX')
-                                            ->live(onBlur: true) // Validate on blur
-                                            ->afterStateUpdated(function ($state, Set $set) {
-                                                // Simple Logic: Key must start with KDS-PRO-
-                                                if ($state && str_starts_with($state, 'KDS-PRO-')) {
-                                                    // Valid
-                                                } else {
-                                                    // Invalid: Force disable toggle
-                                                    $set('enable_kds', false);
-                                                }
-                                            }),
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn($state, Set $set) => $this->validateLicense('kds', $state, $set)),
 
                                         Toggle::make('enable_kds')
                                             ->label('Enable KDS Module')
                                             ->inline(false)
-                                            ->disabled(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
-                                            )
-                                            ->helperText(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul KDS.'
-                                            ),
+                                            ->disabled(fn() => !app(\App\Services\LicenseService::class)->isValid('kds'))
+                                            ->helperText(function () {
+                                                $info = app(\App\Services\LicenseService::class)->getLicenseInfo('kds');
+                                                if (!$info)
+                                                    return 'Lisensi belum diverifikasi atau tidak valid.';
+                                                return "Aktifkan modul KDS. Berlaku hingga: " . ($info['expires_at'] ?? 'N/A');
+                                            }),
                                     ]),
 
                                 Section::make('Fiscal (Tax & Planning)')
@@ -609,27 +621,18 @@ class AppSettings extends SettingsPage
                                             ->revealable()
                                             ->helperText('Masukkan lisensi, format: FISCAL-PRO-XXXX')
                                             ->live(onBlur: true)
-                                            ->afterStateUpdated(function ($state, Set $set) {
-                                                if ($state && str_starts_with($state, 'FISCAL-PRO-')) {
-                                                    // Valid
-                                                } else {
-                                                    $set('enable_fiscal_planning', false);
-                                                }
-                                            }),
+                                            ->afterStateUpdated(fn($state, Set $set) => $this->validateLicense('fiscal', $state, $set)),
 
                                         Toggle::make('enable_fiscal_planning')
                                             ->label('Aktifkan Modul Perencanaan Fiskal')
                                             ->inline(false)
-                                            ->disabled(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('fiscal_license_key') ?? '', 'FISCAL-PRO-')
-                                            )
-                                            ->helperText(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('fiscal_license_key') ?? '', 'FISCAL-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan fitur target omzet harian dan randomizer.'
-                                            ),
+                                            ->disabled(fn() => !app(\App\Services\LicenseService::class)->isValid('fiscal'))
+                                            ->helperText(function () {
+                                                $info = app(\App\Services\LicenseService::class)->getLicenseInfo('fiscal');
+                                                if (!$info)
+                                                    return 'Lisensi belum diverifikasi atau tidak valid.';
+                                                return "Aktifkan fitur target omzet harian. Berlaku hingga: " . ($info['expires_at'] ?? 'N/A');
+                                            }),
                                     ]),
 
                                 Section::make('CRM (Loyalty & Member)')
@@ -641,27 +644,18 @@ class AppSettings extends SettingsPage
                                             ->revealable()
                                             ->helperText('Masukkan lisensi, format: CRM-PRO-XXXX')
                                             ->live(onBlur: true)
-                                            ->afterStateUpdated(function ($state, Set $set) {
-                                                if ($state && str_starts_with($state, 'CRM-PRO-')) {
-                                                    // Valid
-                                                } else {
-                                                    $set('enable_crm', false);
-                                                }
-                                            }),
+                                            ->afterStateUpdated(fn($state, Set $set) => $this->validateLicense('crm', $state, $set)),
 
                                         Toggle::make('enable_crm')
                                             ->label('Enable CRM Module')
                                             ->inline(false)
-                                            ->disabled(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('crm_license_key') ?? '', 'CRM-PRO-')
-                                            )
-                                            ->helperText(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('crm_license_key') ?? '', 'CRM-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul Kemitraan.'
-                                            ),
+                                            ->disabled(fn() => !app(\App\Services\LicenseService::class)->isValid('crm'))
+                                            ->helperText(function () {
+                                                $info = app(\App\Services\LicenseService::class)->getLicenseInfo('crm');
+                                                if (!$info)
+                                                    return 'Lisensi belum diverifikasi atau tidak valid.';
+                                                return "Aktifkan modul Kemitraan. Berlaku hingga: " . ($info['expires_at'] ?? 'N/A');
+                                            }),
                                     ]),
 
                                 Section::make('WhatsApp Center (Official Style)')
@@ -673,27 +667,18 @@ class AppSettings extends SettingsPage
                                             ->revealable()
                                             ->helperText('Masukkan lisensi, format: WA-PRO-XXXX')
                                             ->live(onBlur: true)
-                                            ->afterStateUpdated(function ($state, Set $set) {
-                                                if ($state && str_starts_with($state, 'WA-PRO-')) {
-                                                    // Valid
-                                                } else {
-                                                    $set('enable_wa_center', false);
-                                                }
-                                            }),
+                                            ->afterStateUpdated(fn($state, Set $set) => $this->validateLicense('wa_center', $state, $set)),
 
                                         Toggle::make('enable_wa_center')
                                             ->label('Enable WhatsApp Center')
                                             ->inline(false)
-                                            ->disabled(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('wa_license_key') ?? '', 'WA-PRO-')
-                                            )
-                                            ->helperText(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('wa_license_key') ?? '', 'WA-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul WhatsApp Center.'
-                                            ),
+                                            ->disabled(fn() => !app(\App\Services\LicenseService::class)->isValid('wa_center'))
+                                            ->helperText(function () {
+                                                $info = app(\App\Services\LicenseService::class)->getLicenseInfo('wa_center');
+                                                if (!$info)
+                                                    return 'Lisensi belum diverifikasi atau tidak valid.';
+                                                return "Aktifkan modul WhatsApp Center. Berlaku hingga: " . ($info['expires_at'] ?? 'N/A');
+                                            }),
 
                                         Toggle::make('wa_auto_download_media')
                                             ->label('Auto Download Media')
@@ -711,27 +696,18 @@ class AppSettings extends SettingsPage
                                             ->revealable()
                                             ->helperText('Masukkan lisensi, format: AI-PRO-XXXX')
                                             ->live(onBlur: true)
-                                            ->afterStateUpdated(function ($state, Set $set) {
-                                                if ($state && str_starts_with($state, 'AI-PRO-')) {
-                                                    // Valid
-                                                } else {
-                                                    $set('enable_ai_forecasting', false);
-                                                }
-                                            }),
+                                            ->afterStateUpdated(fn($state, Set $set) => $this->validateLicense('ai_forecasting', $state, $set)),
 
                                         Toggle::make('enable_ai_forecasting')
                                             ->label('Enable AI Forecasting Module')
                                             ->inline(false)
-                                            ->disabled(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('ai_forecasting_license_key') ?? '', 'AI-PRO-')
-                                            )
-                                            ->helperText(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('ai_forecasting_license_key') ?? '', 'AI-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul prediksi restock cerdas.'
-                                            ),
+                                            ->disabled(fn() => !app(\App\Services\LicenseService::class)->isValid('ai_forecasting'))
+                                            ->helperText(function () {
+                                                $info = app(\App\Services\LicenseService::class)->getLicenseInfo('ai_forecasting');
+                                                if (!$info)
+                                                    return 'Lisensi belum diverifikasi atau tidak valid.';
+                                                return "Aktifkan modul prediksi restock cerdas. Berlaku hingga: " . ($info['expires_at'] ?? 'N/A');
+                                            }),
                                     ]),
 
                                 Section::make('AI Menu Engineering (Profit Matrix)')
@@ -743,27 +719,18 @@ class AppSettings extends SettingsPage
                                             ->revealable()
                                             ->helperText('Masukkan lisensi, format: MENU-PRO-XXXX')
                                             ->live(onBlur: true)
-                                            ->afterStateUpdated(function ($state, Set $set) {
-                                                if ($state && str_starts_with($state, 'MENU-PRO-')) {
-                                                    // Valid
-                                                } else {
-                                                    $set('enable_menu_engineering', false);
-                                                }
-                                            }),
+                                            ->afterStateUpdated(fn($state, Set $set) => $this->validateLicense('menu_engineering', $state, $set)),
 
                                         Toggle::make('enable_menu_engineering')
                                             ->label('Enable AI Menu Engineering Module')
                                             ->inline(false)
-                                            ->disabled(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('menu_engineering_license_key') ?? '', 'MENU-PRO-')
-                                            )
-                                            ->helperText(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('menu_engineering_license_key') ?? '', 'MENU-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul klasifikasi menu cerdas.'
-                                            ),
+                                            ->disabled(fn() => !app(\App\Services\LicenseService::class)->isValid('menu_engineering'))
+                                            ->helperText(function () {
+                                                $info = app(\App\Services\LicenseService::class)->getLicenseInfo('menu_engineering');
+                                                if (!$info)
+                                                    return 'Lisensi belum diverifikasi atau tidak valid.';
+                                                return "Aktifkan modul klasifikasi menu cerdas. Berlaku hingga: " . ($info['expires_at'] ?? 'N/A');
+                                            }),
                                     ]),
 
                                 Section::make('Self Order (QR Menu)')
@@ -775,27 +742,18 @@ class AppSettings extends SettingsPage
                                             ->revealable()
                                             ->helperText('Masukkan lisensi, format: ORDER-PRO-XXXX')
                                             ->live(onBlur: true)
-                                            ->afterStateUpdated(function ($state, Set $set) {
-                                                if ($state && str_starts_with($state, 'ORDER-PRO-')) {
-                                                    // Valid
-                                                } else {
-                                                    $set('enable_self_order', false);
-                                                }
-                                            }),
+                                            ->afterStateUpdated(fn($state, Set $set) => $this->validateLicense('self_order', $state, $set)),
 
                                         Toggle::make('enable_self_order')
                                             ->label('Enable Self Order Module')
                                             ->inline(false)
-                                            ->disabled(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('self_order_license_key') ?? '', 'ORDER-PRO-')
-                                            )
-                                            ->helperText(
-                                                fn(Get $get) =>
-                                                !str_starts_with($get('self_order_license_key') ?? '', 'ORDER-PRO-')
-                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                : 'Aktifkan modul Self Order QR.'
-                                            ),
+                                            ->disabled(fn() => !app(\App\Services\LicenseService::class)->isValid('self_order'))
+                                            ->helperText(function () {
+                                                $info = app(\App\Services\LicenseService::class)->getLicenseInfo('self_order');
+                                                if (!$info)
+                                                    return 'Lisensi belum diverifikasi atau tidak valid.';
+                                                return "Aktifkan modul Self Order QR. Berlaku hingga: " . ($info['expires_at'] ?? 'N/A');
+                                            }),
                                     ]),
                             ]),
                     ])

@@ -62,6 +62,7 @@ class WaiterMenu extends Component
             ->send();
     }
 
+    #[\Livewire\Attributes\Layout('components.layouts.waiter')]
     public function render()
     {
         // 1. Get Featured Products (Upselling)
@@ -96,6 +97,6 @@ class WaiterMenu extends Component
         return view('livewire.waiter-order.menu', [
             'products' => $products,
             'featuredProducts' => $featuredProducts
-        ])->layout('components.layouts.waiter');
+        ]);
     }
 }
