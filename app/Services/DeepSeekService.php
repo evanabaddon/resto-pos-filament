@@ -14,7 +14,7 @@ class DeepSeekService
 
     public function __construct()
     {
-        $settings = app(\App\Settings\GeneralSettings::class);
+        $settings = app(GeneralSettings::class);
 
         // Priority: Settings > Config > Env
         $this->apiKey = $settings->ai_api_key ?? config('services.deepseek.key', env('DEEPSEEK_API_KEY'));
@@ -29,7 +29,7 @@ class DeepSeekService
      */
     public function getAvailableModels(?string $provider = null): array
     {
-        $settings = app(\App\Settings\GeneralSettings::class);
+        $settings = app(GeneralSettings::class);
         $provider = $provider ?: ($settings->ai_provider ?? 'deepseek');
 
         return \Illuminate\Support\Facades\Cache::remember("ai_models_{$provider}", 3600 * 24, function () use ($provider) {
@@ -116,7 +116,7 @@ class DeepSeekService
      */
     public function analyzeBusiness(array $history, string $context = '')
     {
-        $settings = app(\App\Settings\GeneralSettings::class);
+        $settings = app(GeneralSettings::class);
         $aiName = $settings->ai_assistant_name ?? 'Asisten Pintar';
 
         $systemPrompt = "Anda adalah {$aiName}, Business Intelligence AI untuk restoran.
@@ -137,7 +137,7 @@ class DeepSeekService
      */
     public function generatePersonalizedMessage(array $memberData, array $companyData = [], ?string $customPrompt = null)
     {
-        $settings = app(\App\Settings\GeneralSettings::class);
+        $settings = app(GeneralSettings::class);
         $aiName = $settings->ai_assistant_name ?? 'Admin';
 
         $defaultPrompt = "Anda adalah {$aiName}, CRM Specialist untuk sebuah restoran bernama '{app_name}'. 
@@ -183,7 +183,7 @@ class DeepSeekService
      */
     public function generateReplySuggestion(array $chatHistory, string $senderName, string $context = '')
     {
-        $settings = app(\App\Settings\GeneralSettings::class);
+        $settings = app(GeneralSettings::class);
         $aiName = $settings->ai_assistant_name ?? 'Business Assistant';
         $appName = $settings->app_name ?? 'Restoran Kami';
         $programName = $settings->loyalty_program_name ?? 'Member';
@@ -236,7 +236,7 @@ class DeepSeekService
      */
     public function generateReservationConfirmation(array $reservationData, string $template = '')
     {
-        $settings = app(\App\Settings\GeneralSettings::class);
+        $settings = app(GeneralSettings::class);
         $aiName = $settings->ai_assistant_name ?? 'Admin';
         $appName = $settings->app_name ?? 'Restoran Kami';
         $programName = $settings->loyalty_program_name ?? 'Member';
@@ -319,7 +319,7 @@ class DeepSeekService
      */
     public function forecastStock(array $consumptionData, int $forecastDays = 7)
     {
-        $settings = app(\App\Settings\GeneralSettings::class);
+        $settings = app(GeneralSettings::class);
         $aiName = $settings->ai_assistant_name ?? 'Business Assistant';
         $appName = $settings->app_name ?? 'Restoran Kami';
 
@@ -377,7 +377,7 @@ class DeepSeekService
      */
     public function analyzeMenuMatrix(array $matrixData)
     {
-        $settings = app(\App\Settings\GeneralSettings::class);
+        $settings = app(GeneralSettings::class);
         $aiName = $settings->ai_assistant_name ?? 'Business Assistant';
         $appName = $settings->app_name ?? 'Restoran Kami';
 
