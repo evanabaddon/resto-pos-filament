@@ -52,19 +52,30 @@ Sistem reservasi yang terintegrasi langsung dengan komunikasi pelanggan dan mana
 - **Snapshot Integrity**: Nama produk disnapshot saat konversi untuk memastikan data historis tetap akurat meskipun produk asli dihapus atau diubah.
 
 ### 📱 QR Self-Order Menu (Table Ordering) [PRO] 🆕
-- **Scan to Order**: Pelanggan scan QR di meja -> Pilih Menu -> Order masuk otomatis ke KDS/POS linked dengan sesi kasir aktif.
+Sistem pemesanan mandiri yang elegan untuk pelanggan langsung dari meja mereka.
+- **Scan to Order**: Pelanggan scan QR di meja -> Pilih Menu -> Pesanan terkirim otomatis ke KDS/POS linked dengan sesi kasir aktif.
 - **✨ Premium QR Generator**: Sistem cerdas untuk generate kartu QR meja dengan desain estetik, menyertakan Nama Resto & Sosial Media otomatis.
-- **🖨️ One-Click Printing**: Fitur cetak QR langsung dari dashboard ke printer atau simpan sebagai PDF dengan layout kartu yang sudah dioptimasi.
+- **�️ One-Click Printing**: Fitur cetak QR langsung dari dashboard ke printer atau simpan sebagai PDF dengan layout kartu yang sudah dioptimasi.
 - **Glassmorphism UI**: Antarmuka menu mobile yang modern dengan navigasi kategori yang halus dan animasi transisi.
-- **AI-Powered Notifications**: Notifikasi WhatsApp otomatis yang *personalized* menggunakan AI (DeepSeek) setelah pesanan diterima.
+- **🚀 PWA Enabled**: Dapat diinstal sebagai aplikasi smartphone untuk kemudahan akses pelanggan reguler.
+- **🤖 Automated AI WhatsApp Broadcast**: Jika pelanggan mengisi nomor WhatsApp saat checkout, sistem akan mengirimkan pesan konfirmasi **otomatis** yang drafnya digenerate secara cerdas oleh AI (DeepSeek).
+- **AI-Powered Notifications**: Notifikasi WhatsApp otomatis yang *personalized* menggunakan AI setelah pesanan diterima.
 - **Pro Module**: Fitur ini adalah modul berbayar yang dilindungi lisensi (`EnsureSelfOrderEnabled` Middleware).
+
+### 🤵 Waiter Digital Order Panel 🆕
+Pusat komando mobile untuk waiter guna mempercepat pelayanan dan meningkatkan omzet.
+- **High-Speed Ordering**: Input pesanan pelanggan secara instan via smartphone/tablet dengan sinkronisasi realtime ke kasir.
+- **� Featured Upselling Section**: AI secara cerdas menampilkan menu favorit atau menu dengan margin tinggi di bagian atas untuk memudahkan waiter menyarankan menu terbaik (Upselling).
+- **🚀 Mobile PWA App**: Dapat diinstal di HP waiter sebagai aplikasi native (Progressive Web App), memastikan performa tinggi dan akses satu-klik dari home screen.
+- **🔄 Flexible Table Mapping**: Mendukung penginputan nomor meja secara fleksibel sesuai kondisi lapangan.
+- **🤖 Automated AI WhatsApp Broadcast**: Sama seperti *Self-Order*, jika nomor WhatsApp diisi oleh Waiter, sistem akan otomatis mengirimkan pesan konfirmasi ke nomor pelanggan dengan gaya bahasa natural dari AI.
+- **🖨️ Automated Division Printing**: Setiap pesanan otomatis mencantumkan detail krusial (**Nomor Meja**, **Tipe Order**, **Notes**) dan dikirim ke printer divisi terkait (Dapur/Bar).
 
 ### ‍🍳 Intelligent Kitchen Display System (KDS) & Printing
 Orkestrasi dapur digital tanpa kertas dengan sistem penyaringan cerdas.
-- **Zero-Latency Realtime Sync**: Pesanan muncul di dapur detik itu juga saat kasir klik simpan.
-- **Smart Task Batching**: Menggabungkan item yang sama untuk efisiensi masak.
 - **Department Routing & Auto-Print**: Memisahkan otomatis pesanan Bar (Minuman) dan Dapur (Makanan). Order otomatis terwujud dalam bentuk **Print-Out di masing-masing divisi** begitu pesanan disimpan oleh kasir.
-- **🚫 System Item Filtering**: Item finansial seperti "Down Payment (DP)" secara cerdas difilter agar tidak muncul di KDS maupun struk pesanan dapur/bar, menjaga fokus area produksi pada menu yang harus disiapkan.
+- **🔍 Detailed Print-Outs**: Setiap struk pesanan (Kitchen/Bar/General) kini menyertakan informasi lengkap: **Nomor Meja**, **Tipe Order**, dan **Catatan Khusus (Notes)** per item.
+- **🚫 System Item Filtering**: Item finansial seperti "Down Payment (DP)" secara cerdas difilter agar tidak muncul di KDS maupun struk pesanan dapur/bar.
 - **Status Workflow**: *Pending* ➝ *Cooking* ➝ *Ready* ➝ *Served*.
 
 ### 👥 Modern HRM (Payroll & Attendance)
