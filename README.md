@@ -22,6 +22,7 @@ Antarmuka kasir yang dirancang untuk kecepatan dan pengalaman pengguna (User Exp
 - **Smart Cart Logic**: Split payment, merged tables, dan draft order (pending transaction).
 - **🖨️ Multi-Printer Infrastructure**: Mendukung banyak printer sekaligus (Kasir, Dapur, & Bar) via **Electron Agent** (Mendukung USB/LAN/Bluetooth).
 - **Direct Printing**: Pencetakan struk dan order otomatis tanpa dialog print browser, memberikan kecepatan transaksi maksimal.
+- **🔄 Dynamic Cash Session Orchestration**: Perhitungan `Expected Cash` (Uang Seharusnya) dilakukan secara dinamis dan real-time dengan menjumlahkan Penjualan (Cash) serta mengurangi Biaya (Expenses) dan Pembelian (Purchases) yang menggunakan dana kasir.
 
 ### 🤝 Advanced CRM & Loyalty (Smart SOP) 🆕
 Bukan sekadar mencatat data pelanggan, tapi membangun hubungan jangka panjang.
@@ -156,9 +157,10 @@ Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
 Pusat kendali data yang menggabungkan kecerdasan buatan dan perhitungan fiskal akurat.
 
 - 🏛️ **Laporan Pajak (Fiskal)**: Perencanaan pajak yang fleksibel dengan fitur Target Omzet.
-- 📈 **Laba/Rugi (Profit & Loss)**: Dashboard laba bersih harian yang menghitung HPP (COGS) secara realtime.
+- 📈 **Laba/Rugi (Profit & Loss) 2.0**: Dashboard laba bersih yang menghitung margin kotor secara akurat dengan memisahkan **Biaya Operasional** (Listrik, Sewa) dan **Beban Pokok Penjualan/HPP** (Belanja Stok & Estimasi Resep).
 - 📦 **Forecasting Stok (AI)**: Analisis kebutuhan bahan baku 7 hari ke depan berbasis tren historis.
 - 🍽️ **Analisis Menu (AI)**: Klasifikasi profitabilitas menu (Stars, Plowhorses, etc.) dengan saran strategis AI.
+- 🔍 **Granular Cost Analysis**: Breakdown belanja stok **per produk** dan rincian biaya operasional **per kategori** dengan visualisasi progress bar untuk kontrol biaya yang ketat.
 
 ### 🛡️ Role-Based Access Control (RBAC) [NEW]
 Sistem keamanan bertingkat yang ketat. **Tombol Delete** secara global **DISEMBUNYIKAN** (Hidden) dari tampilan untuk seluruh role kecuali **Super Admin** & **Admin**.
