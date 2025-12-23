@@ -127,6 +127,7 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
 - 🍳 **Menu Engineering (AI) (Profit & Popularity Matrix) [READY]**:
     - **Strategic Classification**: AI mengklasifikasikan menu ke dalam 4 kategori strategis: **Unit Unggulan** (Stars), **Unit Andalan** (Plowhorses), **Unit Potensial** (Puzzles), dan **Unit Kurang Berkembang** (Dogs).
     - **Ultra-Accurate COGS**: Perhitungan HPP super akurat yang mendukung **Unit Conversion Rate** (misal: Harga beli sak/karung dikonversi otomatis ke gram pada resep).
+    - **🧙‍♂️ One-Click HPP Calibration (Magic Button)**: Fitur "Hitung Ulang Semua HPP" yang secara otomatis memperbaiki harga modal bahan baku berdasarkan pembelian terakhir dan mengkalkulasi ulang HPP seluruh resep menu secara massal. Solusi ampuh jika terjadi lonjakan harga bahan baku.
     - **AI Strategic Advice**: Dapatkan saran taktis langsung dari AI (misal: saran kenaikan harga 10%, pengecilkan porsi, atau rekomendasi promosi khusus).
     - **Premium Matrix UI**: Dashboard visual dengan bar popularitas, badge kategori indigo, dan insight box gradient yang elegan.
     - **📄 Integrated PDF Report**: Ekspor hasil analisis ke PDF dengan layout profesional yang siap dipresentasikan di rapat manajemen.
@@ -155,9 +156,8 @@ Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
 
 ### 📊 Laporan & Analisis (Financial & Analytical Intelligence) 🚀
 Pusat kendali data yang menggabungkan kecerdasan buatan dan perhitungan fiskal akurat.
-
 - 🏛️ **Laporan Pajak (Fiskal)**: Perencanaan pajak yang fleksibel dengan fitur Target Omzet.
-- 📈 **Laba/Rugi (Profit & Loss) 2.0**: Dashboard laba bersih yang menghitung margin kotor secara akurat dengan memisahkan **Biaya Operasional** (Listrik, Sewa) dan **Beban Pokok Penjualan/HPP** (Belanja Stok & Estimasi Resep).
+- 📈 **Laba/Rugi (Profit & Loss) 2.0**: Dashboard laba bersih yang menghitung margin kotor secara akurat dengan memisahkan **Biaya Operasional** (Listrik, Sewa) dan **Beban Pokok Penjualan/HPP** (Belanja Stok & Estimasi Resep). Dilengkapi fitur **Enterprise PDF Export** dengan layout profesional.
 - 📦 **Forecasting Stok (AI)**: Analisis kebutuhan bahan baku 7 hari ke depan berbasis tren historis.
 - 🍽️ **Analisis Menu (AI)**: Klasifikasi profitabilitas menu (Stars, Plowhorses, etc.) dengan saran strategis AI.
 - 🔍 **Granular Cost Analysis**: Breakdown belanja stok **per produk** dan rincian biaya operasional **per kategori** dengan visualisasi progress bar untuk kontrol biaya yang ketat.
@@ -276,7 +276,7 @@ Schedule::command('queue:work --stop-when-empty')->everyMinute();
 ---
 
 ### 🛠️ Persyaratan Sistem (Requirements)
-- **PHP 8.2+** (Extension: BCMath, Ctype, Fileinfo, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML)
+- **PHP 8.2+** (Extension: BCMath, Ctype, Fileinfo, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML, GD)
 - **MySQL 8.0+** / MariaDB 10.4+
 - **AI API Integrated**: Mendukung DeepSeek, OpenRouter, atau OpenAI-compatible API.
     - **Quick Setup**: Pilih provider (DeepSeek/OpenRouter) di menu Settings untuk konfigurasi otomatis.
