@@ -745,7 +745,8 @@ class OrderPrintService
         $content .= $line;
         $content .= "No: {$sale->invoice_number}\n";
         $content .= "Cust: " . substr($sale->customer_name ?? 'Umum', 0, 24) . "\n";
-        $content .= "Time: " . now()->format('H:i') . " | " . ($sale->order_type ?? 'Dine In') . "\n";
+        $content .= "Table: " . ($sale->table_number ?? 'UnSet') . "\n";
+        $content .= "Time: " . now()->format('H:i') . " | " . (strtoupper(str_replace('_', ' ', $sale->order_type ?? 'Dine In'))) . "\n";
 
         // ✅ TAMBAHKAN INFORMASI NOTES KESELURUHAN JIKA ADA
         $hasAnyNotes = false;
@@ -792,7 +793,7 @@ class OrderPrintService
                 foreach ($notesLines as $noteLine) {
                     $trimmedNote = trim($noteLine);
                     if (!empty($trimmedNote)) {
-                        $content .= " : " . substr($trimmedNote, 0, 28) . "\n";
+                        $content .= ": " . substr($trimmedNote, 0, 30) . "\n";
                     }
                 }
             }
@@ -820,8 +821,9 @@ class OrderPrintService
         $content .= "========================\n";
         $content .= "No: {$sale->invoice_number}\n";
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
+        $content .= "Table: " . ($sale->table_number ?? 'UnSet') . "\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
-        $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
+        $content .= "Type: " . (strtoupper(str_replace('_', ' ', $sale->order_type ?? 'Dine In'))) . "\n";
         // $content .= "========================\n";
         $content .= "ITEMS:\n";
 
@@ -854,8 +856,9 @@ class OrderPrintService
         $content .= "========================\n";
         $content .= "No: {$sale->invoice_number}\n";
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
+        $content .= "Table: " . ($sale->table_number ?? 'UnSet') . "\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
-        $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
+        $content .= "Type: " . (strtoupper(str_replace('_', ' ', $sale->order_type ?? 'Dine In'))) . "\n";
         $content .= "========================\n";
         $content .= "MINUMAN:\n";
 
@@ -887,8 +890,9 @@ class OrderPrintService
         $content .= "========================\n";
         $content .= "No: {$sale->invoice_number}\n";
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
+        $content .= "Table: " . ($sale->table_number ?? 'UnSet') . "\n";
         $content .= "Time: " . now()->format('H:i:s') . "\n";
-        $content .= "Type: " . ($sale->order_type ?? 'Dine In') . "\n";
+        $content .= "Type: " . (strtoupper(str_replace('_', ' ', $sale->order_type ?? 'Dine In'))) . "\n";
         // $content .= "========================\n";
         $content .= "ITEMS:\n";
 
@@ -924,7 +928,8 @@ class OrderPrintService
         $content .= $line;
         $content .= "No: {$sale->invoice_number}\n";
         $content .= "Cust: " . substr($sale->customer_name ?? 'Umum', 0, 24) . "\n";
-        $content .= "Time: " . now()->format('H:i') . "\n";
+        $content .= "Table: " . ($sale->table_number ?? 'UnSet') . "\n";
+        $content .= "Time: " . now()->format('H:i') . " | " . (strtoupper(str_replace('_', ' ', $sale->order_type ?? 'Dine In'))) . "\n";
 
         // ✅ TAMBAHKAN INFORMASI NOTES KESELURUHAN JIKA ADA
         $hasAnyNotes = false;
@@ -962,7 +967,7 @@ class OrderPrintService
                 foreach ($notesLines as $noteLine) {
                     $trimmedNote = trim($noteLine);
                     if (!empty($trimmedNote)) {
-                        $content .= "  📝 " . substr($trimmedNote, 0, 28) . "\n";
+                        $content .= " 📝 " . substr($trimmedNote, 0, 29) . "\n";
                     }
                 }
             }

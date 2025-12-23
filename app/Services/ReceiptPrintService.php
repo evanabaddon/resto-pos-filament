@@ -294,7 +294,8 @@ class ReceiptPrintService
         $content .= "Tanggal: " . $sale->created_at->format('d/m/Y H:i') . "\n";
         $content .= "Kasir: " . ($sale->user->name ?? 'System') . "\n";
         $content .= "Customer: " . ($sale->customer_name ?? 'Umum') . "\n";
-        $content .= "Tipe Order: " . $sale->order_type . "\n";
+        $content .= "Meja: " . ($sale->table_number ?? 'UnSet') . "\n";
+        $content .= "Tipe Order: " . (strtoupper(str_replace('_', ' ', $sale->order_type ?? 'Dine In'))) . "\n";
         $content .= "========================\n\n";
 
         // Items
@@ -312,7 +313,7 @@ class ReceiptPrintService
 
             // TAMBAHKAN NOTES JIKA ADA
             if (!empty($item->notes)) {
-                $content .= "  📝 " . $item->notes . "\n";
+                $content .= " 📝 " . $item->notes . "\n";
             }
 
             $quantityLine = sprintf(
@@ -520,7 +521,8 @@ class ReceiptPrintService
         $printer->text("Tanggal: " . $sale->created_at->format('d/m/Y H:i') . "\n");
         $printer->text("Kasir: " . ($sale->user->name ?? 'System') . "\n");
         $printer->text("Customer: " . ($sale->customer_name ?? 'Umum') . "\n");
-        $printer->text("Tipe Order: " . $sale->order_type . "\n");
+        $printer->text("Meja: " . ($sale->table_number ?? 'UnSet') . "\n");
+        $printer->text("Tipe Order: " . (strtoupper(str_replace('_', ' ', $sale->order_type ?? 'Dine In'))) . "\n");
         $printer->text("========================\n");
         $printer->feed();
     }
@@ -547,7 +549,7 @@ class ReceiptPrintService
             // TAMBAHKAN NOTES JIKA ADA
             if (!empty($item->notes)) {
                 $printer->setEmphasis(true);
-                $printer->text("  📝 " . $item->notes . "\n");
+                $printer->text(" 📝 " . $item->notes . "\n");
                 $printer->setEmphasis(false);
             }
 

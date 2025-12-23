@@ -498,8 +498,15 @@ async function printReceiptTemplate(printer, data, config, width = 32) {
     }
 
     // TABLE INFO
-    if (sale.table_name) {
-        printer.println(`Table: ${sale.table_name}`);
+    const tableInfo = sale.table_name || sale.table_number || data.table;
+    if (tableInfo) {
+        printer.println(`Table: ${tableInfo}`);
+    }
+
+    // ORDER TYPE
+    const orderType = sale.order_type || data.order_type;
+    if (orderType) {
+        printer.println(`Type: ${orderType.toUpperCase().replace('_', ' ')}`);
     }
 
     printer.drawLine();
@@ -508,7 +515,7 @@ async function printReceiptTemplate(printer, data, config, width = 32) {
     data.items.forEach(item => {
         printer.alignLeft();
         printer.println(item.product_name);
-        if (item.notes) printer.println(`  (${item.notes})`);
+        if (item.notes) printer.println(` (${item.notes})`);
 
         // Dashed Line Look
         const left = `${parseInt(item.quantity)} x ${formatMoney(item.unit_price)}`;
@@ -658,6 +665,12 @@ async function printOrderTemplate(printer, data, division, config, width) {
         printer.bold(false);
     }
 
+    // ORDER TYPE
+    const orderType = data.order_type || (data.sale && data.sale.order_type);
+    if (orderType) {
+        printer.println(`TYPE: ${orderType.toUpperCase().replace('_', ' ')}`);
+    }
+
     printer.drawLine();
 
     // 3. ITEMS - dengan ukuran teks yang sesuai
@@ -676,8 +689,8 @@ async function printOrderTemplate(printer, data, division, config, width) {
 
             // Print NOTES dengan ukuran besar juga (tidak reset ke normal)
             if (item.notes) {
-                applyTextSize(printer, noteSize); // Apply size untuk note
-                printer.print("   "); // Indent note
+                applyTextSize(printer, noteSize); // Apply size for note
+                printer.print(" "); // Reduced indent from 3 spaces to 1
                 printer.println(`NOTE: ${item.notes}`);
             }
 

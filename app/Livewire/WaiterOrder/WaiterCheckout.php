@@ -93,7 +93,7 @@ class WaiterCheckout extends Component
             $sale = Sale::create([
                 'invoice_number' => 'INV-W-' . date('YmdHis') . '-' . rand(100, 999), // W for Waiter
                 'customer_name' => $this->name,
-                'table_number' => $this->tableNumber ?: 'Dine in',
+                'table_number' => $this->tableNumber ?: 'UnSet',
                 'user_id' => $userId,
                 'member_id' => $memberId,
                 'cash_session_id' => $sessionId,
