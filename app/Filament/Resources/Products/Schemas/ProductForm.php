@@ -311,6 +311,13 @@ class ProductForm
                     ->inline()
                     ->label('Bisa Dijual di POS?')
                     ->default(fn(callable $get) => in_array($get('type'), ['produced', 'bar', 'retail'])),
+
+                // ⭐ Menu Unggulan (Upselling)
+                Toggle::make('is_favorite')
+                    ->inline()
+                    ->label('Menu Unggulan (Upselling)')
+                    ->helperText('Produk ini akan muncul di bagian "Rekomendasi" pada Waiter Order.')
+                    ->default(false),
             ]);
     }
 

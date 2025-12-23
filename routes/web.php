@@ -10,6 +10,10 @@ Route::get('/', function () {
     return redirect('/admin');
 });
 
+Route::get('/login', function () {
+    return redirect()->route('filament.admin.auth.login');
+})->name('login');
+
 // Webhook routes
 require __DIR__ . '/webhook.php';
 
@@ -28,6 +32,13 @@ Route::middleware(['web', 'self-order.enabled'])->group(function () {
     Route::get('/order/menu', \App\Livewire\SelfOrder\Menu::class)->name('order.menu');
     Route::get('/order/cart', \App\Livewire\SelfOrder\Cart::class)->name('order.cart');
     Route::get('/order/checkout', \App\Livewire\SelfOrder\Checkout::class)->name('order.checkout');
+});
+
+// Waiter Order Routes
+Route::middleware(['web', 'auth'])->prefix('waiter')->name('waiter.')->group(function () {
+    Route::get('/order', \App\Livewire\WaiterOrder\WaiterMenu::class)->name('order');
+    Route::get('/cart', \App\Livewire\WaiterOrder\WaiterCart::class)->name('cart');
+    Route::get('/checkout', \App\Livewire\WaiterOrder\WaiterCheckout::class)->name('checkout');
 });
 
 Route::get('/kiosk', App\Livewire\AttendanceKiosk::class);

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Products\Tables;
 use Dom\Text;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
@@ -29,6 +30,10 @@ class ProductsTable
                     ->circular(true)
                     ->width(50)
                     ->disk('public'),
+
+                ToggleColumn::make('is_favorite')
+                    ->label('Fav')
+                    ->sortable(),
 
                 TextColumn::make('name')
                     ->label('Nama')
