@@ -96,7 +96,8 @@ class AppSettings extends SettingsPage
                                                             ->disabled(fn(Get $get) => !$get('province_code'))
                                                             ->options(function (Get $get) {
                                                                 $code = $get('province_code');
-                                                                if (!$code) return [];
+                                                                if (!$code)
+                                                                    return [];
 
                                                                 try {
                                                                     $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/regencies/{$code}.json");
@@ -132,7 +133,8 @@ class AppSettings extends SettingsPage
                                                             ->disabled(fn(Get $get) => !$get('regency_code'))
                                                             ->options(function (Get $get) {
                                                                 $code = $get('regency_code');
-                                                                if (!$code) return [];
+                                                                if (!$code)
+                                                                    return [];
 
                                                                 try {
                                                                     $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/districts/{$code}.json");
@@ -167,7 +169,8 @@ class AppSettings extends SettingsPage
                                                             ->disabled(fn(Get $get) => !$get('district_code'))
                                                             ->options(function (Get $get) {
                                                                 $code = $get('district_code');
-                                                                if (!$code) return [];
+                                                                if (!$code)
+                                                                    return [];
 
                                                                 try {
                                                                     $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/villages/{$code}.json");
@@ -289,6 +292,19 @@ class AppSettings extends SettingsPage
                                                 Toggle::make('enable_table_number')
                                                     ->label('Aktifkan Nomor Meja')
                                                     ->helperText('Tampilkan input nomor meja saat transaksi Dine In'),
+
+                                                Toggle::make('enable_tax')
+                                                    ->label('Aktifkan Pajak')
+                                                    ->live()
+                                                    ->helperText('Jika aktif, pajak akan dihitung pada setiap transaksi'),
+
+                                                TextInput::make('tax_percentage')
+                                                    ->label('Persentase Pajak (%)')
+                                                    ->numeric()
+                                                    ->suffix('%')
+                                                    ->visible(fn(Get $get) => $get('enable_tax'))
+                                                    ->default(0),
+
                                                 Select::make('printer_width')
                                                     ->label('Ukuran Printer')
                                                     ->options([
@@ -545,8 +561,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul SDM.'
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul SDM.'
                                             ),
                                     ]),
 
@@ -579,8 +595,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul KDS.'
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul KDS.'
                                             ),
                                     ]),
 
@@ -611,8 +627,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('fiscal_license_key') ?? '', 'FISCAL-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan fitur target omzet harian dan randomizer.'
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan fitur target omzet harian dan randomizer.'
                                             ),
                                     ]),
 
@@ -643,8 +659,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('crm_license_key') ?? '', 'CRM-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul Kemitraan.'
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul Kemitraan.'
                                             ),
                                     ]),
 
@@ -675,8 +691,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('wa_license_key') ?? '', 'WA-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul WhatsApp Center.'
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul WhatsApp Center.'
                                             ),
 
                                         Toggle::make('wa_auto_download_media')
@@ -713,8 +729,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('ai_forecasting_license_key') ?? '', 'AI-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul prediksi restock cerdas.'
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul prediksi restock cerdas.'
                                             ),
                                     ]),
 
@@ -745,8 +761,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('menu_engineering_license_key') ?? '', 'MENU-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul klasifikasi menu cerdas.'
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul klasifikasi menu cerdas.'
                                             ),
                                     ]),
 
@@ -777,8 +793,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('self_order_license_key') ?? '', 'ORDER-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul Self Order QR.'
+                                                ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
+                                                : 'Aktifkan modul Self Order QR.'
                                             ),
                                     ]),
                             ]),

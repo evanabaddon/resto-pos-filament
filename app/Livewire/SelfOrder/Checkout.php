@@ -37,7 +37,9 @@ class Checkout extends Component
         }
 
         $this->subtotal = collect($this->cartItems)->sum(fn($item) => $item['price'] * $item['qty']);
-        $this->tax = $this->subtotal * 0.11; // 11% PB1
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $taxRate = $settings->enable_tax ? ($settings->tax_percentage / 100) : 0;
+        $this->tax = $this->subtotal * $taxRate;
         $this->total = $this->subtotal + $this->tax;
     }
 

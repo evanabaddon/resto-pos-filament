@@ -329,7 +329,9 @@ class ReceiptPrintService
 
         // Summary
         $content .= "Subtotal: " . $this->formatCurrency($sale->subtotal) . "\n";
-        $content .= "Pajak (10%): " . $this->formatCurrency($sale->tax) . "\n";
+        $settings = app(GeneralSettings::class);
+        $taxLabel = "Pajak (" . ($settings->enable_tax ? $settings->tax_percentage : 0) . "%): ";
+        $content .= $taxLabel . $this->formatCurrency($sale->tax) . "\n";
 
         if ($sale->discount > 0) {
             $content .= "Potongan: -" . $this->formatCurrency($sale->discount) . "\n";
@@ -572,7 +574,9 @@ class ReceiptPrintService
         $printer->setJustification(Printer::JUSTIFY_RIGHT);
 
         $printer->text("Subtotal: " . $this->formatCurrency($sale->subtotal) . "\n");
-        $printer->text("Pajak (10%): " . $this->formatCurrency($sale->tax) . "\n");
+        $settings = app(GeneralSettings::class);
+        $taxLabel = "Pajak (" . ($settings->enable_tax ? $settings->tax_percentage : 0) . "%): ";
+        $printer->text($taxLabel . $this->formatCurrency($sale->tax) . "\n");
 
         if ($sale->discount > 0) {
             $printer->text("Potongan: -" . $this->formatCurrency($sale->discount) . "\n");

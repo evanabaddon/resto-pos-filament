@@ -284,7 +284,10 @@ class OrderService
 
             // Hitung Ulang Total
             $newSubtotal = collect($mergedItems)->sum('subtotal');
-            $newTax = $newSubtotal * 0.10; // 10% tax
+
+            $settings = app(\App\Settings\GeneralSettings::class);
+            $taxRate = $settings->enable_tax ? ($settings->tax_percentage / 100) : 0;
+            $newTax = $newSubtotal * $taxRate;
             $newFinal = $newSubtotal + $newTax;
 
             $targetSale->update([

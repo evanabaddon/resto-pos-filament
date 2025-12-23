@@ -171,7 +171,7 @@ class FiscalReport extends Page implements HasForms, HasTable
                     ]);
 
                     return response()->streamDownload(
-                        fn() => print($pdf->output()),
+                        fn() => print ($pdf->output()),
                         'rekap-pajak-' . now()->timestamp . '.pdf'
                     );
                 }),
@@ -214,7 +214,8 @@ class FiscalReport extends Page implements HasForms, HasTable
                     $row = $settings->start_row;
                     foreach ($data as $record) {
                         $final = $record->total_sales;
-                        $tax = $final - ($final / 1.1);
+                        $taxRate = $settings->enable_tax ? ($settings->tax_percentage / 100) : 0;
+                        $tax = $final - ($final / (1 + $taxRate));
 
                         $sheet->setCellValue($settings->date_column . $row, Carbon::parse($record->date)->format('d/m/Y'));
                         $sheet->setCellValue($settings->amount_column . $row, $final);

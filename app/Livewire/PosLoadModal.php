@@ -260,7 +260,9 @@ class PosLoadModal extends Component
 
                 if ($assignedQty > 0) {
                     $assignedSubtotal = ($itemSubtotal / $item->quantity) * $assignedQty;
-                    $assignedTax = $assignedSubtotal * 0.10; // 10% tax
+                    $settings = app(\App\Settings\GeneralSettings::class);
+                    $taxRate = $settings->enable_tax ? ($settings->tax_percentage / 100) : 0;
+                    $assignedTax = $assignedSubtotal * $taxRate;
                     $assignedTotal = $assignedSubtotal + $assignedTax;
 
                     $this->splitAssignments[$i]['subtotal'] += $assignedSubtotal;

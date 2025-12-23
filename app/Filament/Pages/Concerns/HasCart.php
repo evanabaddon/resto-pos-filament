@@ -11,7 +11,8 @@ trait HasCart
     public function addProduct($productId)
     {
         $product = Product::find($productId);
-        if (!$product) return;
+        if (!$product)
+            return;
 
         $foundKey = null;
         foreach ($this->items as $key => $item) {
@@ -68,8 +69,10 @@ trait HasCart
         // Calculate subtotal from items
         $this->total = collect($this->items)->sum('subtotal');
 
-        // Calculate Tax (Default 10% - logic should be configurable ideally)
-        $this->tax = $this->total * 0.10;
+        // Calculate Tax
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $taxRate = $settings->enable_tax ? ($settings->tax_percentage / 100) : 0;
+        $this->tax = $this->total * $taxRate;
 
         // Calculate Final
         $this->finalTotal = max(0, $this->total + $this->tax - $this->discount);
@@ -103,7 +106,7 @@ trait HasCart
             })
             ->first();
 
-        if (! $discount) {
+        if (!$discount) {
             $this->discountMessage = 'Kode diskon tidak valid atau sudah kedaluwarsa.';
             $this->discountApplied = false;
             $this->discount = 0;

@@ -812,7 +812,10 @@ class Pos extends Page
     {
         // Gunakan array_sum untuk performance lebih baik
         $this->total = array_sum(array_column($this->items, 'subtotal'));
-        $this->tax = $this->total * 0.10;
+
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $taxRate = $settings->enable_tax ? ($settings->tax_percentage / 100) : 0;
+        $this->tax = $this->total * $taxRate;
 
         // Final Total Calculation with discount validation
         $final = $this->total + $this->tax - $this->discount;

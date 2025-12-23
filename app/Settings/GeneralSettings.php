@@ -61,6 +61,8 @@ class GeneralSettings extends Settings
     public string $date_column;
     public string $amount_column; // Omzet
     public string $tax_column;    // Pajak
+    public bool $enable_tax;
+    public float $tax_percentage;
     public bool $enable_fiscal_planning;
     public ?string $fiscal_license_key;
 
@@ -144,6 +146,8 @@ class GeneralSettings extends Settings
             'date_column' => 'A',
             'amount_column' => 'B',
             'tax_column' => 'C',
+            'enable_tax' => false,
+            'tax_percentage' => 0,
             'enable_fiscal_planning' => false,
             'fiscal_license_key' => null,
             // Loyalty Defaults
