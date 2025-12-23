@@ -1,6 +1,7 @@
 const CACHE_NAME = 'resto-pos-v1';
 const urlsToCache = [
     '/kiosk',
+    '/waiter/order',
     '/offline.html',
     '/js/face-api.min.js'
 ];
