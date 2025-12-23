@@ -204,6 +204,13 @@ class Pos extends Page
             $this->showCashInModal = false;
             $this->cashSessionId = $session->id;
             session(['cash_session_id' => $session->id]);
+
+            // 🔹 Handle Deep Link from Notification (Load Sale ID)
+            if (request()->has('sale_id')) {
+                $saleId = request()->query('sale_id');
+                // Ensure we call this AFTER setting cash session, as loading sale might depend on it
+                $this->loadSale($saleId);
+            }
         } else {
             $this->dispatch('openCashInModal');
         }
