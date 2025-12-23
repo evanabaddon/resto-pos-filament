@@ -165,18 +165,7 @@
                     </p>
                 </div>
 
-                {{-- Asset Information --}}
-                <div class="mt-4 pt-4 border-t border-gray-100">
-                    <div
-                        class="flex justify-between items-center py-2 bg-yellow-50 px-3 rounded-lg border border-yellow-100">
-                        <div class="flex flex-col">
-                            <span class="text-xs font-bold text-yellow-800 uppercase">Nilai Aset Stok</span>
-                            <span class="text-[9px] text-yellow-600">Snapshot Saat Ini</span>
-                        </div>
-                        <span class="font-bold text-yellow-900 text-sm">Rp
-                            {{ number_format($currentStockValue, 0, ',', '.') }}</span>
-                    </div>
-                </div>
+
             </div>
         </div>
 
@@ -242,6 +231,53 @@
                     <p class="text-xs">Tidak ada data biaya</p>
                 </div>
             @endif
+        </div>
+    </div>
+
+    {{-- Asset Analysis Section --}}
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-lg font-bold text-gray-800">Analisis Aset Stok</h3>
+                <p class="text-xs text-gray-500">Valuasi stok barang saat ini berdasarkan harga modal (HPP).</p>
+            </div>
+            <div class="flex flex-col items-end">
+                <span class="text-xs font-bold text-yellow-600 uppercase">Total Nilai Aset</span>
+                <span class="text-2xl font-bold text-yellow-600">Rp
+                    {{ number_format($currentStockValue, 0, ',', '.') }}</span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50/50">
+                    <tr>
+                        <th scope="col" class="px-4 py-3">Nama Produk</th>
+                        <th scope="col" class="px-4 py-3 text-right">Stok</th>
+                        <th scope="col" class="px-4 py-3 text-right">Harga Modal</th>
+                        <th scope="col" class="px-4 py-3 text-right">Total Nilai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($topStockAssets as $asset)
+                        <tr class="border-b hover:bg-gray-50/50 transition duration-150">
+                            <td class="px-4 py-3 font-medium text-gray-900">{{ $asset['name'] }}</td>
+                            <td class="px-4 py-3 text-right">{{ number_format($asset['stock'], 2) }} {{ $asset['unit'] }}
+                            </td>
+                            <td class="px-4 py-3 text-right">Rp {{ number_format($asset['price'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right font-bold text-yellow-600">Rp
+                                {{ number_format($asset['total_value'], 0, ',', '.') }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-4 py-8 text-center text-gray-400">
+                                Belum ada data stok
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 

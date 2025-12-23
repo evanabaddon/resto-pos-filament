@@ -63,6 +63,8 @@ class FinancialReport extends Page implements HasForms
     public array $purchaseBreakdown = [];
     public array $hppContributors = [];
     public array $profitContributors = [];
+    public float $totalWastage = 0;
+    public array $topStockAssets = [];
 
     public function mount()
     {
@@ -257,7 +259,26 @@ class FinancialReport extends Page implements HasForms
         $this->purchaseBreakdown = $productPurchases;
 
         // Final Totals
-        $this->totalExpenses = (float) $expenses->sum('amount') + $this->totalPayroll;
+        // 7. Wastage (Barang Rusak/Basi)
+        // Hitung nilai kerugian dari barang yang rusak/basi
+        $wastageMovements = \App\Models\StockMovement::where('type', 'decrease')
+            ->where(function ($query) {
+                $query->where('reason', 'like', '%damage%')
+                    ->orWhere('reason', 'like', '%rusak%')
+                    ->orWhere('reason', 'like', '%basi%')
+                    ->orWhere('reason', 'like', '%expired%');
+            })
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->with('product') // Eager load product for base_price
+            ->get();
+
+        $this->totalWastage = $wastageMovements->sum(function ($movement) {
+            return $movement->quantity * ($movement->product->base_price ?? 0);
+        });
+
+        // Add Wastage to Expenses
+        $this->totalExpenses = (float) $expenses->sum('amount') + $this->totalPayroll + $this->totalWastage;
+
         $this->expenseBreakdown = $expenses->groupBy('category.name')
             ->map(fn($group) => $group->sum('amount'))
             ->toArray();
@@ -266,14 +287,33 @@ class FinancialReport extends Page implements HasForms
             $this->expenseBreakdown['Gaji & Tunjangan'] = $this->totalPayroll;
         }
 
-        // 7. Current Asset Value (Nilai Aset Stok Saat Ini)
-        // Ini snapshot saat ini, bukan berdasarkan range tanggal
-        $this->currentStockValue = \App\Models\Product::where('is_sellable', true)
+        if ($this->totalWastage > 0) {
+            $this->expenseBreakdown['Barang Rusak (Wastage)'] = $this->totalWastage;
+        }
+
+        // 8. Current Asset Value (Nilai Aset Stok Saat Ini)
+        $allProducts = \App\Models\Product::where('is_sellable', true)
             ->orWhere('type', 'raw')
-            ->get()
-            ->sum(function ($product) {
-                return $product->stock * $product->base_price;
-            });
+            ->get();
+
+        $this->currentStockValue = $allProducts->sum(function ($product) {
+            return $product->stock * ($product->base_price ?? 0);
+        });
+
+        // Top Stock Assets
+        $this->topStockAssets = $allProducts->map(function ($product) {
+            return [
+                'name' => $product->name,
+                'stock' => $product->stock,
+                'unit' => $product->unit->symbol ?? '',
+                'price' => $product->base_price ?? 0,
+                'total_value' => $product->stock * ($product->base_price ?? 0),
+            ];
+        })
+            ->sortByDesc('total_value')
+            ->take(10)
+            ->values()
+            ->toArray();
 
         $this->netProfit = $this->totalGrossProfit - $this->totalExpenses;
     }
