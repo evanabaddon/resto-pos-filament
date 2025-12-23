@@ -110,21 +110,23 @@ class ProductForm
                                 if (!$ingredientId)
                                     return [];
 
-                                $ingredient = Product::with('unit.baseUnit')->find($ingredientId);
+                                $ingredient = Product::with('unit')->find($ingredientId);
                                 if (!$ingredient || !$ingredient->unit)
                                     return [];
 
-                                $baseUnitId = $ingredient->unit->base_unit_id ?: $ingredient->unit->id;
+                                // Find the absolute root of the unit family
+                                $rootUnitId = $ingredient->unit->base_unit_id ?? $ingredient->unit->id;
 
+                                // Fetch all units in this family (Root itself, or children of Root)
                                 $units = Unit::query()
-                                    ->where('id', $baseUnitId)
-                                    ->orWhere('base_unit_id', $baseUnitId)
+                                    ->where('id', $rootUnitId)
+                                    ->orWhere('base_unit_id', $rootUnitId)
                                     ->get();
 
                                 return $units->mapWithKeys(function ($unit) {
                                     $label = $unit->name;
                                     if ($unit->conversion_rate && $unit->base_unit_id) {
-                                        $label;
+                                        $label .= " (x{$unit->conversion_rate})";
                                     }
                                     return [$unit->id => $label];
                                 });
@@ -353,12 +355,13 @@ class ProductForm
             return 0;
         }
 
-        // Konversi quantity ke unit dasar bahan baku
-        $convertedQuantity = self::convertQuantityToBaseUnit(
-            $quantity,
-            $unitId,
-            $ingredient->unit_id
-        );
+        // Use robust service
+        try {
+            $convertedQuantity = app(\App\Services\UnitConversionService::class)
+                ->convert($quantity, $unitId, $ingredient->unit_id);
+        } catch (\Exception $e) {
+            return 0;
+        }
 
         $materialPrice = ($ingredient->base_price ?? 0) * $convertedQuantity;
 
@@ -387,6 +390,7 @@ class ProductForm
 
         $recipes = $get('recipes') ?? [];
         $totalHpp = 0;
+        $converter = app(\App\Services\UnitConversionService::class);
 
         foreach ($recipes as $recipe) {
             $ingredientId = $recipe['ingredient_id'] ?? null;
@@ -402,14 +406,16 @@ class ProductForm
                 continue;
             }
 
-            // Konversi quantity ke unit dasar bahan baku
-            $convertedQuantity = self::convertQuantityToBaseUnit(
-                $quantity,
-                $unitId,
-                $ingredient->unit_id
-            );
+            try {
+                $convertedQuantity = $converter->convert(
+                    $quantity,
+                    $unitId,
+                    $ingredient->unit_id
+                );
 
-            $totalHpp += ($ingredient->base_price ?? 0) * $convertedQuantity;
+                $totalHpp += ($ingredient->base_price ?? 0) * $convertedQuantity;
+            } catch (\Exception $e) {
+            }
         }
 
         $additionalCost = $get('additional_cost') ?? 0;
@@ -422,35 +428,6 @@ class ProductForm
         if ($currentSellPrice <= $finalHpp || $currentSellPrice == 0) {
             $recommendedPrice = $finalHpp * 1.3; // 30% markup
             $set('sell_price', $recommendedPrice);
-        }
-    }
-
-    /**
-     * Konversi quantity ke unit dasar bahan baku
-     */
-    protected static function convertQuantityToBaseUnit($quantity, $fromUnitId, $ingredientBaseUnitId): float
-    {
-        if ($fromUnitId == $ingredientBaseUnitId) {
-            return $quantity;
-        }
-
-        $fromUnit = Unit::find($fromUnitId);
-        $ingredientBaseUnit = Unit::find($ingredientBaseUnitId);
-
-        if (!$fromUnit || !$ingredientBaseUnit) {
-            return $quantity;
-        }
-
-        $fromBaseUnitId = $fromUnit->base_unit_id ?: $fromUnit->id;
-
-        if ($fromBaseUnitId != $ingredientBaseUnitId) {
-            return $quantity;
-        }
-
-        if ($fromUnit->base_unit_id) {
-            return $quantity / $fromUnit->conversion_rate;
-        } else {
-            return $quantity;
         }
     }
 }
