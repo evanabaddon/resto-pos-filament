@@ -167,16 +167,55 @@ class ProductsTable
                     ->modalHeading('Hitung Ulang HPP?')
                     ->modalDescription('Proses ini akan menghitung ulang HPP untuk semua produk (Produced & Bar) berdasarkan harga bahan baku terbaru. Proses ini mungkin memakan waktu.')
                     ->action(function () {
+                        $converter = app(\App\Services\UnitConversionService::class);
+
+                        // PHASE 1: Fix Raw Materials from Last Purchase
+                        $rawProducts = \App\Models\Product::where('type', 'raw')->get();
+                        $fixedRawCount = 0;
+
+                        foreach ($rawProducts as $product) {
+                            $lastPurchaseItem = \App\Models\PurchaseItem::where('product_id', $product->id)
+                                ->whereHas('purchase', function ($query) {
+                                    $query->where('status', 'received');
+                                })
+                                ->latest()
+                                ->first();
+
+                            if ($lastPurchaseItem) {
+                                $newPrice = $lastPurchaseItem->price;
+
+                                // Apply Unit Conversion Fix
+                                if ($lastPurchaseItem->unit_id && $product->unit_id && $lastPurchaseItem->unit_id != $product->unit_id) {
+                                    try {
+                                        // Convert 1 Purchase Unit to Stock Unit
+                                        // e.g. 1 KG -> 1000 Grams
+                                        $factor = $converter->convert(1, $lastPurchaseItem->unit_id, $product->unit_id);
+                                        if ($factor > 0) {
+                                            $newPrice = $newPrice / $factor;
+                                        }
+                                    } catch (\Exception $e) {
+                                    }
+                                }
+
+                                // Only update if significantly different (to avoid noise)
+                                if (abs(($product->base_price ?? 0) - $newPrice) > 1) {
+                                    $product->update(['base_price' => $newPrice]);
+                                    $fixedRawCount++;
+                                }
+                            }
+                        }
+
+                        // PHASE 2: Recalculate Recipes (Cascade)
                         $products = \App\Models\Product::whereIn('type', ['produced', 'bar'])->get();
-                        $count = 0;
+                        $recalcCount = 0;
                         foreach ($products as $product) {
                             $product->recalculateHpp();
-                            $count++;
+                            $recalcCount++;
                         }
 
                         \Filament\Notifications\Notification::make()
-                            ->title('HPP Updated')
-                            ->body("Berhasil menghitung ulang HPP untuk {$count} produk.")
+                            ->title('Perbaikan HPP Selesai')
+                            ->body("Fixed Raw: {$fixedRawCount}, Recalculated Menu: {$recalcCount}. Laporan Anda sekarang seharusnya sudah normal.")
                             ->success()
                             ->send();
                     }),
