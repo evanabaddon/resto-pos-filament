@@ -86,7 +86,8 @@ class Product extends Model
         if ($this->recipes->isNotEmpty()) {
             $recipeCost = $this->recipes->sum(function ($r) {
                 // Defensive check for missing ingredient
-                if (!$r->ingredient) return 0;
+                if (!$r->ingredient)
+                    return 0;
 
                 $conversionRate = $r->unit->conversion_rate ?: 1;
                 $ingredientPrice = $r->ingredient->price_per_base_unit ?? 0;
@@ -101,7 +102,68 @@ class Product extends Model
         return $this->base_price ?? 0;
     }
 
-    // Di Model Product
+    protected static function booted()
+    {
+        static::updated(function ($product) {
+            // Cascade Update: Jika harga bahan baku berubah, update HPP produk yang menggunakannya
+            if ($product->isDirty('base_price')) {
+                $parentRecipes = $product->usedInRecipes()->with('product')->get();
+                foreach ($parentRecipes as $recipe) {
+                    if ($recipe->product) {
+                        // Gunakan job atau eksekusi langsung (langsung ok untuk skala kecil)
+                        $recipe->product->recalculateHpp();
+                    }
+                }
+            }
+        });
+    }
+
+    // Hitung ulang HPP berdasarkan resep terkini
+    public function recalculateHpp(): void
+    {
+        // Hanya hitung jika produk punya resep (Produced/Bar)
+        if ($this->recipes->isEmpty()) {
+            return;
+        }
+
+        $totalHpp = 0;
+        $converter = app(\App\Services\UnitConversionService::class);
+
+        // Load recipes with ingredient and units to prevent N+1
+        $this->loadMissing(['recipes.ingredient', 'recipes.unit']);
+
+        foreach ($this->recipes as $recipe) {
+            $ingredient = $recipe->ingredient;
+            if (!$ingredient)
+                continue;
+
+            try {
+                // Konversi quantity resep ke quantity unit bahan baku
+                // Contoh: Resep 100 Gram, Bahan Baku KG.
+                // convert(100, Gram, KG) -> 0.1 KG.
+                // Cost = 0.1 * Harga Per KG.
+
+                $qtyInIngredientUnit = $converter->convert(
+                    $recipe->quantity,
+                    $recipe->unit_id,
+                    $ingredient->unit_id
+                );
+
+                $totalHpp += $qtyInIngredientUnit * ($ingredient->base_price ?? 0);
+            } catch (\Exception $e) {
+                \Log::error("HPP Recalc Error for Product {$this->id}: " . $e->getMessage());
+            }
+        }
+
+        $totalHpp += ($this->additional_cost ?? 0);
+
+        // Simpan hanya jika berubah (untuk trigger event updated selanjutnya secara efisien)
+        if (abs(($this->base_price ?? 0) - $totalHpp) > 1) { // Toleransi 1 rupiah
+            $this->update(['base_price' => $totalHpp]);
+            \Log::info("Cascade HPP Updated for {$this->name}: {$totalHpp}");
+        }
+    }
+
     public function updateHppFromLastPurchase(): void
     {
         // Gunakan status 'received' dan kolom 'price'

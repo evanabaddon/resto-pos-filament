@@ -158,11 +158,28 @@ class ProductsTable
                     ->placeholder('Semua')
                     ->trueLabel('Stok < 10')
                     ->falseLabel('Stok ≥ 10')
-                    ->queries(
-                        true: fn($query) => $query->where('stock', '<', 10),
-                        false: fn($query) => $query->where('stock', '>=', 10),
-                        blank: fn($query) => $query
-                    ),
+            ])
+            ->headerActions([
+                Action::make('recalculateHpp')
+                    ->label('Hitung Ulang Semua HPP')
+                    ->icon('heroicon-o-calculator')
+                    ->requiresConfirmation()
+                    ->modalHeading('Hitung Ulang HPP?')
+                    ->modalDescription('Proses ini akan menghitung ulang HPP untuk semua produk (Produced & Bar) berdasarkan harga bahan baku terbaru. Proses ini mungkin memakan waktu.')
+                    ->action(function () {
+                        $products = \App\Models\Product::whereIn('type', ['produced', 'bar'])->get();
+                        $count = 0;
+                        foreach ($products as $product) {
+                            $product->recalculateHpp();
+                            $count++;
+                        }
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('HPP Updated')
+                            ->body("Berhasil menghitung ulang HPP untuk {$count} produk.")
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->recordActions([
                 EditAction::make(),
