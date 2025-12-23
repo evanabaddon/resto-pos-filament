@@ -127,8 +127,7 @@ class WhatsappWebhookController extends Controller
                     }
                 }
 
-                skip_name_match:
-                ;
+                skip_name_match:;
             }
             // ----------------------------
 
@@ -180,6 +179,39 @@ class WhatsappWebhookController extends Controller
             $attachmentType = $data['attachment_type'] ?? null;
             $mimeType = $data['attachment_mimetype'] ?? null;
             $caption = $data['caption'] ?? null;
+
+            // --- CONTACT MESSAGE PARSING ---
+            if (empty($data['message']) && empty($caption)) {
+                $msgData = $data['full_message']['message'] ?? [];
+
+                // Single Contact
+                if (isset($msgData['contactMessage'])) {
+                    $vcard = $msgData['contactMessage']['vcard'] ?? '';
+                    $displayName = $msgData['contactMessage']['displayName'] ?? 'Unknown Contact';
+                    $data['message'] = "👤 Shared Contact: {$displayName}\n" . $this->parseVCard($vcard);
+                }
+                // Multiple Contacts
+                elseif (isset($msgData['contactsArrayMessage'])) {
+                    $contacts = $msgData['contactsArrayMessage']['contacts'] ?? [];
+                    $contactList = [];
+                    foreach ($contacts as $contact) {
+                        $displayName = $contact['displayName'] ?? 'Unknown';
+                        $vcard = $contact['vcard'] ?? '';
+                        $contactList[] = "👤 {$displayName}: " . $this->parseVCard($vcard);
+                    }
+                    $data['message'] = "👥 Shared Contacts:\n" . implode("\n", $contactList);
+                }
+
+                // Fallback: Deep Text Extraction
+                if (empty($data['message'])) {
+                    $data['message'] = $msgData['conversation']
+                        ?? $msgData['extendedTextMessage']['text']
+                        ?? $msgData['extendedTextMessage']['description']
+                        ?? $msgData['imageMessage']['caption']
+                        ?? $msgData['videoMessage']['caption']
+                        ?? null;
+                }
+            }
 
             $settings = app(\App\Settings\GeneralSettings::class);
             $shouldDownload = $data['from_me'] || $settings->wa_auto_download_media;
@@ -274,5 +306,16 @@ class WhatsappWebhookController extends Controller
             Log::error('WA Webhook Error: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    private function parseVCard($vcard)
+    {
+        if (preg_match('/waid=([0-9]+):/', $vcard, $matches)) {
+            return '+' . $matches[1];
+        }
+        if (preg_match('/TEL;.*?:(.*?)[\r\n]/', $vcard, $matches)) {
+            return trim($matches[1]);
+        }
+        return '[No Number]';
     }
 }

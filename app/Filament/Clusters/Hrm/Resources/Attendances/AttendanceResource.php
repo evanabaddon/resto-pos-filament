@@ -35,22 +35,22 @@ class AttendanceResource extends Resource
     // RBAC: super_admin, admin, accountant
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'accountant']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Accountant;
     }
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 
     public static function canEdit(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 
     public static function canDelete(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 
     protected static ?int $navigationSort = 3;

@@ -22,6 +22,7 @@
         "mike42/escpos-php": "^4.0",
         "phpoffice/phpspreadsheet": "^5.3",
         "resma/filament-awin-theme": "^1.1",
+        "simplesoftwareio/simple-qrcode": "^4.2",
         "spatie/laravel-settings": "^3.5",
         "ysfkaya/filament-phone-input": "^4.0"
     },

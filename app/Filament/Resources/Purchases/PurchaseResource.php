@@ -29,22 +29,22 @@ class PurchaseResource extends Resource
     // RBAC: super_admin, admin, inventory, accountant
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory', 'accountant']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Inventory || auth()->user()->role === \App\Enums\UserRole::Accountant;
     }
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory', 'accountant']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Inventory || auth()->user()->role === \App\Enums\UserRole::Accountant;
     }
 
     public static function canEdit(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory', 'accountant']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Inventory || auth()->user()->role === \App\Enums\UserRole::Accountant;
     }
 
     public static function canDelete(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']); // Delete restricted to admins
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 
     public static function form(Schema $schema): Schema

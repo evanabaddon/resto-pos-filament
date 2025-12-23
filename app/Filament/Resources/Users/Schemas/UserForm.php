@@ -15,15 +15,7 @@ class UserForm
                 TextInput::make('name')->required(),
                 TextInput::make('email')->required(),
                 Select::make('role')
-                    ->options([
-                        'admin' => 'Staff Admin',
-                        'waiter' => 'Waiter',
-                        'cashier' => 'Cashier',
-                        'accountant' => 'Staff Keuangan',
-                        'inventory' => 'Staff Gudang',
-                        'kitchen' => 'Kitchen / Dapur',
-                        'super_admin' => 'Super Admin',
-                    ])
+                    ->options(\App\Enums\UserRole::class)
                     ->label('Role')
                     ->searchable(),
                 TextInput::make('password')

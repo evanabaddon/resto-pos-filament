@@ -17,7 +17,7 @@ class MenuEngineering extends Page
 
     public static function canAccess(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
     protected static ?string $title = 'AI Menu Engineering';
     protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
@@ -107,7 +107,7 @@ class MenuEngineering extends Page
             ]);
 
             return response()->streamDownload(
-                fn() => print ($pdf->output()),
+                fn() => print($pdf->output()),
                 'menu-engineering-analysis-' . now()->timestamp . '.pdf'
             );
         } catch (\Exception $e) {

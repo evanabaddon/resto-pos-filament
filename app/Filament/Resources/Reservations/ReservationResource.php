@@ -30,22 +30,22 @@ class ReservationResource extends Resource
     // RBAC: super_admin, admin, cashier, waiter
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier', 'waiter']);
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Cashier, \App\Enums\UserRole::Waiter]);
     }
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier', 'waiter']);
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Cashier, \App\Enums\UserRole::Waiter]);
     }
 
     public static function canEdit(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier']); // Waiter create only? Let's allow edit for now or strict? Let's allow edit.
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Cashier]); // Waiter create only? Let's allow edit for now or strict? Let's allow edit.
     }
 
     public static function canDelete(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']); // Only admins can delete
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin]); // Only admins can delete
     }
 
     protected static ?int $navigationSort = 3;

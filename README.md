@@ -51,6 +51,14 @@ Sistem reservasi yang terintegrasi langsung dengan komunikasi pelanggan dan mana
   - **Double-Transaction Protection**: Tombol konversi otomatis hilang setelah digunakan (ketika status berubah menjadi `Seated`), mencegah duplikasi data penjualan.
 - **Snapshot Integrity**: Nama produk disnapshot saat konversi untuk memastikan data historis tetap akurat meskipun produk asli dihapus atau diubah.
 
+### 📱 QR Self-Order Menu (Table Ordering) [PRO] 🆕
+- **Scan to Order**: Pelanggan scan QR di meja -> Pilih Menu -> Order masuk otomatis ke KDS/POS linked dengan sesi kasir aktif.
+- **✨ Premium QR Generator**: Sistem cerdas untuk generate kartu QR meja dengan desain estetik, menyertakan Nama Resto & Sosial Media otomatis.
+- **🖨️ One-Click Printing**: Fitur cetak QR langsung dari dashboard ke printer atau simpan sebagai PDF dengan layout kartu yang sudah dioptimasi.
+- **Glassmorphism UI**: Antarmuka menu mobile yang modern dengan navigasi kategori yang halus dan animasi transisi.
+- **AI-Powered Notifications**: Notifikasi WhatsApp otomatis yang *personalized* menggunakan AI (DeepSeek) setelah pesanan diterima.
+- **Pro Module**: Fitur ini adalah modul berbayar yang dilindungi lisensi (`EnsureSelfOrderEnabled` Middleware).
+
 ### ‍🍳 Intelligent Kitchen Display System (KDS) & Printing
 Orkestrasi dapur digital tanpa kertas dengan sistem penyaringan cerdas.
 - **Zero-Latency Realtime Sync**: Pesanan muncul di dapur detik itu juga saat kasir klik simpan.
@@ -160,16 +168,27 @@ Sistem keamanan bertingkat yang ketat. **Tombol Delete** secara global **DISEMBU
 
 Rencana pengembangan fitur masa depan untuk memaksimalkan ROI dan efisiensi operasional.
 
-### 💌 Loyalty Automation 2.0 (The AI CRM Agent) [NEXT]
+### 🗺️ Visual Table Management (Interactive Floor Plan) [MEDIUM PRIORITY]
+- **Tampilan Denah Resto**: Editor "Drag & Drop" untuk mengatur posisi meja sesuai denah asli.
+- **Live Status Indicator**: Indikator visual real-time (Meja Kosong = Hijau, Terisi = Merah, Kotor = Kuning).
+- **Impact**: Meningkatkan *Look & Feel* aplikasi menjadi premium dan memudahkan waiter memantau meja.
+
+### 📊 Real-time Dashboard 2.0 (Live Analytics) [HIGH PRIORITY]
+- **Live Widgets**: Menambahkan widget "Live Sales Tick", "Top Items Today", dan "Hourly Heatmap" (Jam sibuk).
+- **Owner Mode**: Mode tampilan ringkas khusus owner untuk pantau omzet dari HP secara real-time.
+
+### 💌 Loyalty Automation 2.0 (The AI CRM Agent)
 - **Automatic Re-engagement**: Pesan otomatis ke pelanggan yang tidak datang >30 hari.
 - **Birthday & Milestone Alerts**: Pengiriman otomatis gift dan ucapan untuk meningkatkan *Retention Rate*.
 
-### ⏱️ Kitchen Productivity & Performance Analytics
-- **Preparation Time Tracking**: Melacak durasi masak per item dari KDS masuk hingga selesai.
+### 🔔 KDS "Aging" & Smart Alerts
+- **Color-Coded Tickets**: Tiket berubah merah jika order >15 menit belum selesai (Aging System).
+- **Audio Notification**: Suara "Ting!" (Sound Alert) otomatis di layar dapur saat order baru masuk.
 - **Kitchen Bottleneck Detection**: Menganalisis menu mana yang paling sering membuat antrean dapur macet.
 
-### 💰 Integrated P&L Dashboard (Daily Net Profit)
-- **Expense vs Revenue**: Dashboard laba rugi harian otomatis yang sudah memotong Gaji, Operasional, dan HPP.
+### 📦 Smart Inventory (Stock Opname UI) [HIGH PRIORITY]
+- **Mass Adjustment UI**: Antarmuka khusus untuk Stock Opname (SO) bulanan dengan fitur *Bulk Input*.
+- **Variance Report**: Otomatis menghitung selisih (Variance) antara stok fisik vs sistem dan nominal kerugiannya.
 
 ---
 

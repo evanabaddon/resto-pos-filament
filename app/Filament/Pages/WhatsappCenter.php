@@ -39,7 +39,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
     public static function canAccess(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
     protected static ?string $title = 'WhatsApp Gateway Integration';
     protected static string|UnitEnum|null $navigationGroup = 'Super Chat';
@@ -109,7 +109,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 ]);
 
                 $this->checkMemberStatus(); // Refresh status
-    
+
                 Notification::make()
                     ->title('Member Created')
                     ->success()

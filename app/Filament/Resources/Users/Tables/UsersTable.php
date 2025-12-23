@@ -16,19 +16,7 @@ class UsersTable
             ->columns([
                 TextColumn::make('name'),
                 TextColumn::make('email'),
-                TextColumn::make('role')->label('Role')
-                    ->formatStateUsing(function ($state) {
-                        return match ($state) {
-                            'admin' => 'Staff Admin',
-                            'waiter' => 'Waiter',
-                            'cashier' => 'Cashier',
-                            'accountant' => 'Staff Keuangan',
-                            'inventory' => 'Staff Gudang',
-                            'kitchen' => 'Kitchen / Dapur',
-                            'super_admin' => 'Super Admin',
-                            default => $state,
-                        };
-                    }),
+                TextColumn::make('role')->label('Role')->sortable()->searchable(),
             ])
             ->filters([
                 //
@@ -40,7 +28,7 @@ class UsersTable
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->visible(function () {
-                            return auth()->user()->role === 'super_admin';
+                            return auth()->user()->role === \App\Enums\UserRole::SuperAdmin;
                         }),
                 ]),
             ]);

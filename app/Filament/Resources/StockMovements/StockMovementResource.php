@@ -29,23 +29,23 @@ class StockMovementResource extends Resource
     // RBAC: super_admin, admin, inventory, kitchen, accountant (read-only)
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory', 'kitchen', 'accountant']);
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Inventory, \App\Enums\UserRole::Kitchen, \App\Enums\UserRole::Accountant]);
     }
 
     public static function canCreate(): bool
     {
         // Accountant is explicitly excluded
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory', 'kitchen']);
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Inventory, \App\Enums\UserRole::Kitchen]);
     }
 
     public static function canEdit(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'inventory']);
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin, \App\Enums\UserRole::Inventory]);
     }
 
     public static function canDelete(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+        return in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin]);
     }
 
     public static function form(Schema $schema): Schema

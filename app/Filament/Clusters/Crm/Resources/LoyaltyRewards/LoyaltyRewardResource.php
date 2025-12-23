@@ -30,7 +30,7 @@ class LoyaltyRewardResource extends Resource
 
     public static function canDelete(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 
     public static function shouldRegisterNavigation(): bool

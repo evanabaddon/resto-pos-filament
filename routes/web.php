@@ -13,6 +13,23 @@ Route::get('/', function () {
 // Webhook routes
 require __DIR__ . '/webhook.php';
 
+// QR Self Order Routes
+Route::middleware(['web', 'self-order.enabled'])->group(function () {
+    Route::get('/scan/{slug}', function ($slug) {
+        $table = \App\Models\Table::where('slug', $slug)->firstOrFail();
+
+        // Check if table is available or occupied (doesn't matter much for ordering, but good to know)
+        // Store table info in session
+        session(['table_id' => $table->id, 'table_slug' => $table->slug]);
+
+        return redirect()->route('order.menu');
+    })->name('order.scan');
+
+    Route::get('/order/menu', \App\Livewire\SelfOrder\Menu::class)->name('order.menu');
+    Route::get('/order/cart', \App\Livewire\SelfOrder\Cart::class)->name('order.cart');
+    Route::get('/order/checkout', \App\Livewire\SelfOrder\Checkout::class)->name('order.checkout');
+});
+
 Route::get('/kiosk', App\Livewire\AttendanceKiosk::class);
 
 
@@ -73,28 +90,28 @@ Route::get('/test-webhook-debug', function () {
     ]);
 });
 
-Route::get('/test-api-basic', function () {
-    try {
-        $response = Http::timeout(10)
-            ->withOptions(['verify' => false])
-            ->get('https://pos.suralaya.id/api/webhook/test');
+// Route::get('/test-api-basic', function () {
+//     try {
+//         $response = Http::timeout(10)
+//             ->withOptions(['verify' => false])
+//             ->get('https://pos.suralaya.id/api/webhook/test');
 
-        if ($response instanceof \GuzzleHttp\Promise\PromiseInterface) {
-            $response = new \Illuminate\Http\Client\Response($response->wait());
-        }
+//         if ($response instanceof \GuzzleHttp\Promise\PromiseInterface) {
+//             $response = new \Illuminate\Http\Client\Response($response->wait());
+//         }
 
-        return response()->json([
-            'success' => $response->successful(),
-            'status' => $response->status(),
-            'data' => $response->json()
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage()
-        ]);
-    }
-});
+//         return response()->json([
+//             'success' => $response->successful(),
+//             'status' => $response->status(),
+//             'data' => $response->json()
+//         ]);
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'success' => false,
+//             'error' => $e->getMessage()
+//         ]);
+//     }
+// });
 
 // routes/web.php - tambahkan route debug
 Route::get('/debug-printing', function () {
@@ -125,46 +142,46 @@ Route::get('/debug-printing', function () {
 });
 
 // routes/web.php - temporary test routes
-Route::get('/test-api-routes', function () {
-    $tests = [];
+// Route::get('/test-api-routes', function () {
+//     $tests = [];
 
-    // Test 1: API test endpoint
-    try {
-        $response = Http::timeout(10)
-            ->withOptions(['verify' => false])
-            ->get('https://pos.suralaya.id/api/webhook/test');
+//     // Test 1: API test endpoint
+//     try {
+//         $response = Http::timeout(10)
+//             ->withOptions(['verify' => false])
+//             ->get('https://pos.suralaya.id/api/webhook/test');
 
-        if ($response instanceof \GuzzleHttp\Promise\PromiseInterface) {
-            $response = new \Illuminate\Http\Client\Response($response->wait());
-        }
+//         if ($response instanceof \GuzzleHttp\Promise\PromiseInterface) {
+//             $response = new \Illuminate\Http\Client\Response($response->wait());
+//         }
 
-        $tests['api_test'] = [
-            'success' => $response->successful(),
-            'status' => $response->status(),
-            'data' => $response->json()
-        ];
-    } catch (\Exception $e) {
-        $tests['api_test'] = [
-            'success' => false,
-            'error' => $e->getMessage()
-        ];
-    }
+//         $tests['api_test'] = [
+//             'success' => $response->successful(),
+//             'status' => $response->status(),
+//             'data' => $response->json()
+//         ];
+//     } catch (\Exception $e) {
+//         $tests['api_test'] = [
+//             'success' => false,
+//             'error' => $e->getMessage()
+//         ];
+//     }
 
-    // Test 2: Config check
-    $tests['config'] = [
-        'webhook_print_url' => config('app.webhook_print_url'),
-        'use_webhook_printing' => config('app.use_webhook_printing'),
-        'print_secret' => config('app.print_secret') ? '***' . substr(config('app.print_secret'), -4) : 'not set'
-    ];
+//     // Test 2: Config check
+//     $tests['config'] = [
+//         'webhook_print_url' => config('app.webhook_print_url'),
+//         'use_webhook_printing' => config('app.use_webhook_printing'),
+//         'print_secret' => config('app.print_secret') ? '***' . substr(config('app.print_secret'), -4) : 'not set'
+//     ];
 
-    // Test 3: Database check
-    $tests['database'] = [
-        'print_jobs_table' => Schema::hasTable('print_jobs'),
-        'pending_jobs' => PrintJob::where('status', 'pending')->count()
-    ];
+//     // Test 3: Database check
+//     $tests['database'] = [
+//         'print_jobs_table' => Schema::hasTable('print_jobs'),
+//         'pending_jobs' => PrintJob::where('status', 'pending')->count()
+//     ];
 
-    return response()->json($tests);
-});
+//     return response()->json($tests);
+// });
 
 // HRM Payroll Print Route
 Route::get('/payroll/{record}/print', function (\App\Models\Payroll $record) {

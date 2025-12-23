@@ -43,22 +43,22 @@ class MemberResource extends Resource
     // RBAC: super_admin, admin, cashier
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Cashier;
     }
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Cashier;
     }
 
     public static function canEdit(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin', 'cashier']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Cashier;
     }
 
     public static function canDelete(Model $record): bool
     {
-        return in_array(auth()->user()->role, ['super_admin', 'admin']);
+        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 
     public static function shouldRegisterNavigation(): bool

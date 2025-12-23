@@ -124,7 +124,7 @@ return [
     ],
 
     'use_webhook_printing' => env('USE_WEBHOOK_PRINTING', false),
-    'webhook_print_url' => env('WEBHOOK_PRINT_URL', 'https://pos.suralaya.id/api/webhook/print'),
+    'webhook_print_url' => env('WEBHOOK_PRINT_URL', 'https://pos.resto.id/api/webhook/print'),
     'print_secret' => env('PRINT_SECRET', 'default-print-secret-123'),
 
 ];
