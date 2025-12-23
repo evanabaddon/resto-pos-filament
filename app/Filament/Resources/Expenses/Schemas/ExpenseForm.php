@@ -23,7 +23,7 @@ class ExpenseForm
                             ->required()
                             ->default(now())
                             ->maxDate(now()),
-                        
+
                         TextInput::make('reference')
                             ->label('Referensi')
                             ->default(fn() => Expense::generateReference())
@@ -42,7 +42,7 @@ class ExpenseForm
                             ->options(Expense::getFundSources())
                             ->default(Expense::FUND_SOURCE_CASHIER)
                             ->reactive(),
-                        
+
                         TextInput::make('recipient')
                             ->label('Penerima')
                             ->maxLength(255)
@@ -66,22 +66,21 @@ class ExpenseForm
                                 Textarea::make('description')
                                     ->maxLength(500),
                             ]),
-                        
+
                         Textarea::make('description')
                             ->label('Deskripsi Pengeluaran')
                             ->required()
                             ->rows(3)
                             ->maxLength(500)
                             ->columnSpanFull(),
-                        
+
                         TextInput::make('amount')
                             ->label('Jumlah')
                             ->required()
                             ->numeric()
-                            ->prefix('Rp')
-                            ->step(1000),
+                            ->prefix('Rp'),
                     ])->columnSpanFull(),
-                
+
                 Section::make('Status & Catatan')
                     ->schema([
                         Select::make('status')
@@ -95,7 +94,7 @@ class ExpenseForm
                             ])
                             ->default('pending')
                             ->reactive(),
-                        
+
                         Textarea::make('notes')
                             ->label('Catatan')
                             ->rows(3)
