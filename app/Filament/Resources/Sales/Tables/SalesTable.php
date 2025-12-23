@@ -33,6 +33,10 @@ class SalesTable
                     ->label('Total Amount')
                     ->sortable()
                     ->money('IDR')->summarize(Sum::make()->money('IDR')->label('Total Penjualan')),
+                TextColumn::make('discount')
+                    ->label('Diskon')
+                    ->money('IDR')
+                    ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([

@@ -99,6 +99,9 @@ class SaleForm
                                         }
                                     }),
 
+                                Hidden::make('product_name')
+                                    ->dehydrated(),
+
                                 TextInput::make('quantity')
                                     ->label('Qty')
                                     ->numeric()
@@ -179,7 +182,7 @@ class SaleForm
                                     return number_format($get('subtotal') ?? 0, 0, ',', '.');
                                 }),
 
-                            TextInput::make('discount_total')
+                            TextInput::make('discount')
                                 ->label('Diskon Total')
                                 ->numeric()
                                 ->default(0)
@@ -193,13 +196,26 @@ class SaleForm
                             TextInput::make('tax_percentage')
                                 ->label('Pajak (%)')
                                 ->numeric()
-                                ->default(0)
+                                ->default(fn() => app(\App\Settings\GeneralSettings::class)->enable_tax ? app(\App\Settings\GeneralSettings::class)->tax_percentage : 0)
                                 ->minValue(0)
                                 ->maxValue(100)
                                 ->suffix('%')
                                 ->live()
                                 ->afterStateUpdated(function ($state, $set, $get) {
                                     static::recalculateTotals($set, $get);
+                                })
+                                ->afterStateHydrated(function ($component, $state, $get) {
+                                    if ($state === null && $get('tax') > 0) {
+                                        $subtotal = floatval($get('subtotal') ?? 0);
+                                        $discount = floatval($get('discount') ?? 0);
+                                        $tax = floatval($get('tax') ?? 0);
+                                        $taxableAmount = $subtotal - $discount;
+
+                                        if ($taxableAmount > 0) {
+                                            $percentage = ($tax / $taxableAmount) * 100;
+                                            $component->state(round($percentage, 2));
+                                        }
+                                    }
                                 }),
                         ])->columns(3),
 
@@ -211,7 +227,7 @@ class SaleForm
                                 ->prefix('Rp')
                                 ->default(0)
                                 ->formatStateUsing(function ($state, $get) {
-                                    return number_format($get('tax_amount') ?? 0, 0, ',', '.');
+                                    return number_format($get('tax') ?? 0, 0, ',', '.');
                                 }),
 
                             TextInput::make('final_total_display')
@@ -225,7 +241,7 @@ class SaleForm
                                 }),
 
                             Hidden::make('subtotal'),
-                            Hidden::make('tax_amount'),
+                            Hidden::make('tax'),
                             Hidden::make('final_total'),
                             Hidden::make('total'),
                         ])->columns(2),
@@ -324,7 +340,7 @@ class SaleForm
         $pathPrefix = $isInsideRepeater ? '../../' : '';
 
         // Get root-level values with prefix
-        $discountTotal = floatval($get($pathPrefix . 'discount_total') ?? 0);
+        $discountTotal = floatval($get($pathPrefix . 'discount') ?? 0);
         $taxPercentage = floatval($get($pathPrefix . 'tax_percentage') ?? 0);
 
         $taxAmount = ($subtotal - $discountTotal) * ($taxPercentage / 100);
@@ -332,7 +348,7 @@ class SaleForm
 
         // Set values using prefix
         $set($pathPrefix . 'subtotal', $subtotal);
-        $set($pathPrefix . 'tax_amount', $taxAmount);
+        $set($pathPrefix . 'tax', $taxAmount);
         $set($pathPrefix . 'final_total', $finalTotal);
         $set($pathPrefix . 'total', $finalTotal);
 
