@@ -67,11 +67,27 @@ class Checkout extends Component
             // 🔹 Handle Member Registration / Lookup
             $memberId = null;
             if ($this->phone && $this->name) {
+                // Feature: Normalize Phone Number (08 -> 62)
+                $normalizedPhone = preg_replace('/[^0-9]/', '', $this->phone);
+                if (str_starts_with($normalizedPhone, '08')) {
+                    $normalizedPhone = '62' . substr($normalizedPhone, 1);
+                } elseif (str_starts_with($normalizedPhone, '8')) {
+                    $normalizedPhone = '62' . $normalizedPhone;
+                }
+
                 // Cari atau Buat Member Baru
-                $member = Member::firstOrCreate(
-                    ['phone' => $this->phone],
-                    ['name' => $this->name, 'joined_at' => now()]
-                );
+                $member = Member::where('phone', $normalizedPhone)->first();
+
+                if (!$member) {
+                    $defaultTier = \App\Models\LoyaltyTier::orderBy('min_points', 'asc')->first();
+
+                    $member = Member::create([
+                        'name' => $this->name,
+                        'phone' => $normalizedPhone,
+                        'joined_at' => now(),
+                        'tier_id' => $defaultTier ? $defaultTier->id : 1, // Fallback to 1
+                    ]);
+                }
                 $memberId = $member->id;
             }
 
