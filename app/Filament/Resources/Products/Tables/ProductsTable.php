@@ -169,8 +169,8 @@ class ProductsTable
                     ->action(function () {
                         $converter = app(\App\Services\UnitConversionService::class);
 
-                        // PHASE 1: Fix Raw Materials from Last Purchase
-                        $rawProducts = \App\Models\Product::where('type', 'raw')->get();
+                        // PHASE 1: Fix Raw & Retail Materials from Last Purchase
+                        $rawProducts = \App\Models\Product::whereIn('type', ['raw', 'retail'])->get();
                         $fixedRawCount = 0;
 
                         foreach ($rawProducts as $product) {

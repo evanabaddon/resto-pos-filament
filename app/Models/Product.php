@@ -77,30 +77,11 @@ class Product extends Model
 
     public function getComputedHppAttribute()
     {
-        // 1. If Raw Material, use base_price
-        if ($this->type === 'raw') {
-            return $this->base_price ?? 0;
-        }
-
-        // 2. If has recipes, sum them up
-        if ($this->recipes->isNotEmpty()) {
-            $recipeCost = $this->recipes->sum(function ($r) {
-                // Defensive check for missing ingredient
-                if (!$r->ingredient)
-                    return 0;
-
-                $conversionRate = $r->unit->conversion_rate ?: 1;
-                $ingredientPrice = $r->ingredient->price_per_base_unit ?? 0;
-
-                return $ingredientPrice * ($r->quantity / $conversionRate);
-            });
-
-            return $recipeCost + ($this->additional_cost ?? 0);
-        }
-
-        // 3. Fallback: Retail/Service/Produced with no recipe -> Use base_price
+        // Use stored base_price (which is now reliably updated by Cascade/BatchFix)
+        // This avoids N+1 and unit conversion bugs in legacy calculation
         return $this->base_price ?? 0;
     }
+
 
     protected static function booted()
     {
