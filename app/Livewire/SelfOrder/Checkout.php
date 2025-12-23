@@ -101,7 +101,7 @@ class Checkout extends Component
                 'user_id' => $userId, // Assign to active cashier
                 'member_id' => $memberId, // 🔹 Assign Member
                 'cash_session_id' => $sessionId, // Assign to active session
-                'order_type' => 'dine_in',
+                'order_type' => 'Dine In',
                 'subtotal' => $this->subtotal,
                 'tax' => $this->tax,
                 'final_total' => $this->total,
