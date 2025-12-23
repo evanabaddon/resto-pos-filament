@@ -89,7 +89,6 @@
     </div>
 
     {{-- Detail Section --}}
-    <!-- <div class="grid grid-cols-1 lg:grid-cols-3 gap-6"> -->
     {{-- Profit Calculation Flow --}}
     <div class="lg:col-span-1 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 border-b pb-2">Laporan Laba Rugi
@@ -170,10 +169,8 @@
     </div>
 
     {{-- Detail Tables Section (New) --}}
-    <!-- <div class="grid grid-cols-1 gap-6 mb-6"> -->
-
     {{-- Table Breakdown COGS --}}
-    <x-filament::section collapsible collapsed="false">
+    <x-filament::section collapsible>
         <x-slot name="heading">
             Rincian Biaya Modal (HPP)
         </x-slot>
@@ -215,7 +212,7 @@
     </x-filament::section>
 
     {{-- Table Breakdown Expenses --}}
-    <x-filament::section collapsible collapsed="false">
+    <x-filament::section collapsible>
         <x-slot name="heading">
             Rincian Biaya Operasional
         </x-slot>
@@ -259,10 +256,7 @@
             </table>
         </div>
     </x-filament::section>
-    <!-- </div> -->
 
-    {{-- Top Contributors Grid --}}
-    <!-- <div class="grid grid-cols-1 lg:grid-cols-6 gap-6 mt-6"> -->
     {{-- Top HPP Contributors --}}
     <x-filament::section>
         <x-slot name="heading">
@@ -310,6 +304,5 @@
             @endforeach
         </div>
     </x-filament::section>
-    <!-- </div> -->
-    <!-- </div> -->
+
 </x-filament-panels::page>
