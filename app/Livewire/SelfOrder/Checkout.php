@@ -8,6 +8,8 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Table;
 use App\Services\DeepSeekService;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -124,7 +126,34 @@ class Checkout extends Component
                 ]);
             }
 
-            // 3. WhatsApp Notification
+            // 3. Auto Print to Kitchen/Bar
+            try {
+                $printService = new \App\Services\OrderPrintService();
+                $printService->printOrderByProductType($sale);
+            } catch (\Exception $e) {
+                Log::error("Self Order Auto Print Failed: " . $e->getMessage());
+            }
+
+            // 4. Notify POS Users (Database Notification)
+            $recipients = \App\Models\User::whereIn('role', [
+                \App\Enums\UserRole::SuperAdmin,
+                \App\Enums\UserRole::Admin,
+                \App\Enums\UserRole::Cashier,
+                \App\Enums\UserRole::Waiter
+            ])->get();
+
+            Notification::make()
+                ->title('New Self Order')
+                ->body("Order #{$sale->invoice_number} dari Meja {$tableNumber}")
+                ->success() // Or info
+                ->actions([
+                    Action::make('view')
+                        ->button()
+                        ->url(route('filament.admin.pages.pos', ['sale_id' => $sale->id]), shouldOpenInNewTab: true),
+                ])
+                ->sendToDatabase($recipients);
+
+            // 5. WhatsApp Notification
             if ($this->phone) {
                 $this->sendWhatsAppNotification($sale);
             }
