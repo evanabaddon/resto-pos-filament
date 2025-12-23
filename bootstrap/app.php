@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'self-order.enabled' => \App\Http\Middleware\EnsureSelfOrderEnabled::class,
         ]);
+
+        $middleware->redirectGuestsTo(fn() => route('filament.admin.auth.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
