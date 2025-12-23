@@ -36,8 +36,30 @@ class CreatePurchase extends CreateRecord
 
                     // Update harga pokok untuk SEMUA tipe produk (termasuk Raw Material)
                     // Ini penting agar HPP produk jadi (Produce) yang menggunakan bahan ini ikut terupdate
+
+                    $newBasePrice = $item->price ?? $item->purchase_price ?? 0;
+
+                    // Logic Konversi Unit (Jika unit beli != unit stok)
+                    if ($item->unit_id && $product->unit_id && $item->unit_id != $product->unit_id) {
+                        try {
+                            $converter = app(\App\Services\UnitConversionService::class);
+                            // Berapa 1 Unit Beli dalam Unit Stok?
+                            $conversionFactor = $converter->convert(1, $item->unit_id, $product->unit_id);
+
+                            if ($conversionFactor > 0) {
+                                // Harga per Unit Stok = Harga Beli / Faktor Konversi
+                                // Contoh: Beli 1 KG (1000g) Rp 10.000. Unit Stok Gram.
+                                // Faktor = 1000. Harga Stok = 10.000 / 1000 = 10 per gram.
+                                $newBasePrice = $newBasePrice / $conversionFactor;
+                            }
+                        } catch (\Exception $e) {
+                            // Fallback jika error, gunakan harga apa adanya (atau log error)
+                            \Log::error("Unit conversion error for Produce ID {$product->id}: " . $e->getMessage());
+                        }
+                    }
+
                     $product->update([
-                        'base_price' => $item->price ?? $item->purchase_price ?? 0,
+                        'base_price' => $newBasePrice,
                     ]);
 
                     // Catat pergerakan stok

@@ -71,8 +71,24 @@ class EditPurchase extends EditRecord
                         // Stock increment is handled by StockMovement boot obsever
 
                         // Update harga pokok untuk SEMUA tipe produk (Retail, Raw, etc)
+                        $newBasePrice = $item->price ?? 0;
+
+                        // Logic Konversi Unit (Jika unit beli != unit stok)
+                        if ($item->unit_id && $product->unit_id && $item->unit_id != $product->unit_id) {
+                            try {
+                                $converter = app(\App\Services\UnitConversionService::class);
+                                $conversionFactor = $converter->convert(1, $item->unit_id, $product->unit_id);
+
+                                if ($conversionFactor > 0) {
+                                    $newBasePrice = $newBasePrice / $conversionFactor;
+                                }
+                            } catch (\Exception $e) {
+                                \Log::error("Unit conversion error for Product ID {$product->id} in EditPurchase: " . $e->getMessage());
+                            }
+                        }
+
                         $product->update([
-                            'base_price' => $item->price ?? 0,
+                            'base_price' => $newBasePrice,
                         ]);
 
                         // Catat movement baru

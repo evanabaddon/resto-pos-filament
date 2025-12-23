@@ -73,9 +73,9 @@ class UnitConversionService
             return $quantity;
         }
 
-        // Current unit value in parent unit = quantity / conversion_rate
-        // e.g. 1000g (rate 1000) -> 1kg
-        $converted = $quantity / ($unit->conversion_rate ?? 1);
+        // Parent value = quantity * conversion_rate
+        // e.g. 1 KG (Rate 1000) -> 1 * 1000 = 1000 Grams
+        $converted = $quantity * ($unit->conversion_rate ?? 1);
 
         $parent = $this->units->get($unit->base_unit_id);
         return $this->convertToBase($converted, $parent);
@@ -90,8 +90,8 @@ class UnitConversionService
         $parent = $this->units->get($unit->base_unit_id);
         $quantityInParent = $this->convertFromBase($quantity, $parent);
 
-        // Parent value to current unit = quantity * conversion_rate
-        // e.g. 1kg -> 1000g (rate 1000)
-        return $quantityInParent * ($unit->conversion_rate ?? 1);
+        // Child value = quantityInParent / conversion_rate
+        // e.g. 1000 Grams -> 1000 / 1000 = 1 KG
+        return $quantityInParent / ($unit->conversion_rate ?? 1);
     }
 }
