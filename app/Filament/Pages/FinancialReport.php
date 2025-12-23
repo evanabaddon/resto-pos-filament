@@ -162,6 +162,11 @@ class FinancialReport extends Page implements HasForms
         ];
     }
 
+    public array $breakdownCogs = [];
+    public array $breakdownExpenses = [];
+
+
+
     public function calculateStats()
     {
         if (!$this->date_start || !$this->date_end)
@@ -212,7 +217,10 @@ class FinancialReport extends Page implements HasForms
             }
         }
 
-        // Sort Top Lists
+        // Prepare Full Breakdown for Table/PDF
+        $this->breakdownCogs = collect($contributors)->sortByDesc('total_hpp')->values()->toArray();
+
+        // Sort Top Lists (Existing logic)
         $sortByHpp = $contributors;
         usort($sortByHpp, fn($a, $b) => $b['total_hpp'] <=> $a['total_hpp']);
         $this->hppContributors = array_slice($sortByHpp, 0, 5);
@@ -231,6 +239,14 @@ class FinancialReport extends Page implements HasForms
             ->where('status', 'approved')
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
+
+        // Prepare Breakdown Expenses
+        $this->breakdownExpenses = $expenses->map(fn($e) => [
+            'date' => $e->date,
+            'category' => $e->category ? $e->category->name : 'Umum',
+            'description' => $e->description,
+            'amount' => $e->amount
+        ])->sortBy('date')->values()->toArray();
 
         // 5. Payroll Integration
         $payrolls = Payroll::whereBetween('created_at', [$startDate, $endDate])
@@ -321,6 +337,27 @@ class FinancialReport extends Page implements HasForms
     public function getHeaderActions(): array
     {
         return [
+            Action::make('exportPdf')
+                ->label('Download Laporan (PDF)')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('success')
+                ->action(function () {
+                    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.financial-report', [
+                        'startDate' => $this->date_start,
+                        'endDate' => $this->date_end,
+                        'totalRevenue' => $this->totalRevenue,
+                        'totalHpp' => $this->totalCogs,
+                        'grossProfit' => $this->totalRevenue - $this->totalCogs,
+                        'totalExpenses' => $this->totalExpenses + $this->totalPayroll, // Ops + Payroll
+                        'netProfit' => ($this->totalRevenue - $this->totalCogs) - ($this->totalExpenses + $this->totalPayroll),
+                        'breakdownCogs' => $this->breakdownCogs,
+                        'breakdownExpenses' => $this->breakdownExpenses,
+                    ]);
+
+                    return response()->streamDownload(function () use ($pdf) {
+                        echo $pdf->output();
+                    }, 'Laporan-Laba-Rugi-' . date('Ymd-His') . '.pdf');
+                }),
             Action::make('refresh')
                 ->label('Refresh Data')
                 ->icon('heroicon-o-arrow-path')
