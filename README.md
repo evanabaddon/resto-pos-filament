@@ -62,6 +62,7 @@ Sistem pemesanan mandiri yang elegan untuk pelanggan langsung dari meja mereka.
 - **🤖 Automated AI WhatsApp Broadcast**: Jika pelanggan mengisi nomor WhatsApp saat checkout, sistem akan mengirimkan pesan konfirmasi **otomatis** yang drafnya digenerate secara cerdas oleh AI (DeepSeek).
 - **AI-Powered Notifications**: Notifikasi WhatsApp otomatis yang *personalized* menggunakan AI setelah pesanan diterima.
 - **Pro Module**: Fitur ini adalah modul berbayar yang dilindungi lisensi (`EnsureSelfOrderEnabled` Middleware).
+- **📖 Dokumentasi**: Lihat [Panduan Self-Order](SYSTEM_GUIDE.md#2-qr-self-order-menu-table-ordering) untuk detail fitur.
 
 ### 🤵 Waiter Digital Order Panel 🆕
 Pusat komando mobile untuk waiter guna mempercepat pelayanan dan meningkatkan omzet.
@@ -71,6 +72,7 @@ Pusat komando mobile untuk waiter guna mempercepat pelayanan dan meningkatkan om
 - **🔄 Flexible Table Mapping**: Mendukung penginputan nomor meja secara fleksibel sesuai kondisi lapangan.
 - **🤖 Automated AI WhatsApp Broadcast**: Sama seperti *Self-Order*, jika nomor WhatsApp diisi oleh Waiter, sistem akan otomatis mengirimkan pesan konfirmasi ke nomor pelanggan dengan gaya bahasa natural dari AI.
 - **🖨️ Automated Division Printing**: Setiap pesanan otomatis mencantumkan detail krusial (**Nomor Meja**, **Tipe Order**, **Notes**) dan dikirim ke printer divisi terkait (Dapur/Bar).
+- **📖 Dokumentasi**: Lihat [Panduan Waiter App](SYSTEM_GUIDE.md#1-waiter-digital-order-panel) untuk alur kerja lengkap.
 
 ### ‍🍳 Intelligent Kitchen Display System (KDS) & Printing
 Orkestrasi dapur digital tanpa kertas dengan sistem penyaringan cerdas.
@@ -88,11 +90,6 @@ Full-suite manajemen sumber daya manusia yang terintegrasi penuh dengan keuangan
 - **Automated Payroll Engine**:
   - **Dynamic & Flexible Formula**: Rumus penggajian yang bisa dikustomisasi sepenuhnya (Gaji Pokok, Tunjangan, Overtime, Denda).
   - **Employee Loan System**: Manajemen pinjaman dengan fitur **Auto-Deduction** pada slip gaji bulanan.
-
-### 🧩 Modular Architecture (On-Demand Features)
-Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
-- **Toggleable Modules**: Bebas aktifkan/matikan fitur sesuai skala bisnis Anda, mulai dari **CRM (Loyalty)**, **HRM (Payroll)**, **KDS (Kitchen)**, **WhatsApp Center**, **Fiscal Planning**, hingga modul cerdas **AI Forecasting** dan **AI Menu Engineering**.
-- **Centralized Settings**: Panel pengaturan terpusat untuk semua konfigurasi modul.
 
 ### 🧠 AI-Powered Intelligence (Powered by Nirmala AI) 🚀
 Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih untuk keputusan bisnis yang lebih tajam.
@@ -195,6 +192,11 @@ Sistem keamanan bertingkat yang ketat. **Tombol Delete** secara global **DISEMBU
 | **Kitchen** | Akses Khusus KDS & Lapor Stok. **Tidak bisa lihat** Harga/Customer. **NO DELETE**. |
 | **Cashier** | Akses Khusus POS & CRM Member. Edit Terbatas. **Tidak bisa lihat** Laporan/Profit. **NO DELETE** (Void Transaksi Hidden). |
 | **Waiter** | Input Order Only. View KDS Status. **No Access** to Data Member/Finance. **NO DELETE**. |
+
+### 🧩 Modular Architecture (On-Demand Features)
+Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
+- **Toggleable Modules**: Bebas aktifkan/matikan fitur sesuai skala bisnis Anda, mulai dari **CRM (Loyalty)**, **HRM (Payroll)**, **KDS (Kitchen)**, **WhatsApp Center**, **Fiscal Planning**, hingga modul cerdas **AI Forecasting** dan **AI Menu Engineering**.
+- **Centralized Settings**: Panel pengaturan terpusat untuk semua konfigurasi modul.
 
 ---
 

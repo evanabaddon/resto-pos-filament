@@ -30,6 +30,10 @@
                         class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                         🤖 AI Features
                     </a>
+                    <a href="#ordering"
+                        class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        📱 Waiter & Self-Order
+                    </a>
                     <a href="#whatsapp"
                         class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                         💬 WhatsApp Center
@@ -72,9 +76,9 @@
                     <div class="text-3xl mb-2">📦</div>
                     <div class="font-semibold text-sm">Inventory</div>
                 </a>
-                <a href="#reports" class="bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-lg transition">
-                    <div class="text-3xl mb-2">📊</div>
-                    <div class="font-semibold text-sm">Laporan</div>
+                <a href="#ordering" class="bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-lg transition">
+                    <div class="text-3xl mb-2">📱</div>
+                    <div class="font-semibold text-sm">Self-Order</div>
                 </a>
             </div>
 
@@ -248,6 +252,36 @@
 
                 <hr class="border-gray-200 dark:border-gray-700">
 
+                {{-- Waiter & Self-Order Section --}}
+                <section id="ordering">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">📱</span>
+                        Waiter & Self-Order
+                    </h3>
+                    <div class="prose dark:prose-invert max-w-none">
+                        <h4 class="font-semibold text-lg">🤵 Waiter Digital Order</h4>
+                        <p>Pusat komando mobile untuk pelayan guna mempercepat pelayanan.</p>
+                        <ul class="list-disc pl-6 space-y-2">
+                            <li><strong>Akses & Login:</strong> Buka <code>/waiter/order</code> melalui smartphone.</li>
+                            <li><strong>Input Pesanan:</strong> Pilih menu, tambahkan catatan, dan tentukan nomor meja.</li>
+                            <li><strong>Auto-Sync:</strong> Pesanan langsung masuk ke KDS (Dapur/Bar) dan Dashboard POS kasir.</li>
+                        </ul>
+
+                        <h4 class="font-semibold text-lg mt-4">📱 QR Self-Order Menu</h4>
+                        <p>Sistem pemesanan mandiri oleh pelanggan langsung dari meja.</p>
+                        <ul class="list-disc pl-6 space-y-2">
+                            <li><strong>Scan to Order:</strong> Pelanggan scan QR di meja → Pilih menu → Checkout.</li>
+                            <li><strong>AI Broadcast:</strong> Konfirmasi pesanan dikirim otomatis via WhatsApp dengan teks dari AI.</li>
+                            <li><strong>Member Integration:</strong> Member terdeteksi otomatis via nomor WhatsApp saat checkout.</li>
+                        </ul>
+
+                        <h4 class="font-semibold text-lg mt-4">⚙️ Konfigurasi QR Meja</h4>
+                        <p>Generate dan cetak kartu QR meja melalui menu <strong>Table Management</strong> di Admin Panel.</p>
+                    </div>
+                </section>
+
+                <hr class="border-gray-200 dark:border-gray-700">
+
                 {{-- AI Features --}}
                 <section id="ai">
                     <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
@@ -409,7 +443,7 @@
     {{-- Smooth Scroll Script --}}
     <script>
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
+            anchor.addEventListener('click', function(e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {
