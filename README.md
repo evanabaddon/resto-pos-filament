@@ -175,12 +175,13 @@ Pusat kendali data yang menggabungkan kecerdasan buatan dan perhitungan fiskal a
     - **Auto Variance Calculation**: Sistem otomatis menghitung selisih antara system stock dan physical count.
     - **Monetary Loss Tracking**: Tracking nilai kerugian finansial dari variance negatif (kehilangan/kerusakan barang).
     - **One-Click Submission**: Submit semua variance sekaligus dengan konfirmasi modal Filament yang profesional.
-- 🤝 **Loyalty Automation (Re-engagement) 🆕**: Sistem otomatis untuk re-engage pelanggan tidak aktif.
-    - **Auto-detect Inactive Members**: Deteksi otomatis member yang tidak berkunjung >30 hari.
-    - **AI-Generated Messages**: Pesan WhatsApp personal yang di-generate oleh AI untuk setiap member.
-    - **Smart Scheduling**: Automated weekly execution (setiap Senin pagi) via Laravel scheduler.
-    - **Anti-spam Protection**: Cooldown 7 hari untuk mencegah spam ke member yang sama.
-    - **Dry-run Mode**: Mode testing untuk preview messages sebelum dikirim ke production.
+- 🤝 **Loyalty Automation (Re-engagement) 🆕**: Sistem otomatis bertenaga AI untuk mendekati kembali pelanggan yang sudah lama tidak berkunjung.
+    - **Soft-Greeting Strategy**: AI dilatih untuk menyapa secara emosional (menanyakan kabar & kesehatan), menghindari kesan *hard-selling* yang mengganggu.
+    - **Auto-detect Inactive Members**: Filter otomatis member dengan kunjungan terakhir >30 hari.
+    - **AI Assistant Persona**: Pesan diatur sesuai profil asisten digital (Asisten Nama, Gaya Bahasa) di Settings.
+    - **🚀 One-Click Manual Re-engage**: Tombol aksi langsung di dashboard CRM untuk mentrigger jangkauan AI secara manual per pelanggan.
+    - **Smart Scheduling**: Eksekusi massal otomatis setiap Senin pagi via scheduler.
+    - **Anti-spam Logic**: Cooldown followup selama 7 hari untuk menjaga kenyamanan pelanggan.
 
 ### 🛡️ Role-Based Access Control (RBAC) [NEW]
 Sistem keamanan bertingkat yang ketat. **Tombol Delete** secara global **DISEMBUNYIKAN** (Hidden) dari tampilan untuk seluruh role kecuali **Super Admin** & **Admin**.
@@ -206,26 +207,32 @@ Rencana pengembangan fitur masa depan untuk memaksimalkan ROI dan efisiensi oper
 - **Live Status Indicator**: Indikator visual real-time (Meja Kosong = Hijau, Terisi = Merah, Kotor = Kuning).
 - **Impact**: Meningkatkan *Look & Feel* aplikasi menjadi premium dan memudahkan waiter memantau meja.
 
-### 📊 Real-time Dashboard 2.0 (Live Analytics) [HIGH PRIORITY]
+### � Real-time Dashboard 2.0 (Live Analytics) [HIGH PRIORITY]
 - **Live Widgets**: Menambahkan widget "Live Sales Tick", "Top Items Today", dan "Hourly Heatmap" (Jam sibuk).
 - **Owner Mode**: Mode tampilan ringkas khusus owner untuk pantau omzet dari HP secara real-time.
 
-### 💌 Loyalty Automation 2.0 (The AI CRM Agent)
-- **Automatic Re-engagement**: Pesan otomatis ke pelanggan yang tidak datang >30 hari.
-- **Birthday & Milestone Alerts**: Pengiriman otomatis gift dan ucapan untuk meningkatkan *Retention Rate*.
-
-### 🔔 KDS "Aging" & Smart Alerts
-- **Color-Coded Tickets**: Tiket berubah merah jika order >15 menit belum selesai (Aging System).
-- **Audio Notification**: Suara "Ting!" (Sound Alert) otomatis di layar dapur saat order baru masuk.
-- **Kitchen Bottleneck Detection**: Menganalisis menu mana yang paling sering membuat antrean dapur macet.
-
-### 📦 Smart Inventory (Stock Opname UI) [HIGH PRIORITY]
-- **Mass Adjustment UI**: Antarmuka khusus untuk Stock Opname (SO) bulanan dengan fitur *Bulk Input*.
-- **Variance Report**: Otomatis menghitung selisih (Variance) antara stok fisik vs sistem dan nominal kerugiannya.
+### 💳 Intelligent Payment Gateway (Auto-Settlement)
+- **Dynamic QRIS**: Integrasi Midtrans/Xendit untuk pembayaran otomatis di Self-Order.
+- **Auto-Fulfillment**: Pesanan otomatis berubah "Terbayar" dan KDS berbunyi sesaat setelah dana diterima.
 
 ---
 
-## 🛠️ Stack Teknologi (Enterprise Grade)
+## � Akses Aplikasi Mobile (PWA)
+
+Sistem ini dirancang dengan pendekatan *Mobile-First*. Anda bisa mengakses halaman-halaman berikut melalui Google Chrome di smartphone dan pilih **"Tambahkan ke Layar Utama" (Add to Home Screen)** untuk menginstalnya sebagai aplikasi native (PWA).
+
+| Komponen | URL Akses | Deskripsi |
+| :--- | :--- | :--- |
+| **QR Self-Order** | `/scan/{meja-slug}` | Scan QR di meja untuk akses menu mandiri (PWA Pelanggan). |
+| **Waiter App** | `/waiter/order` | Pesanan instan di genggaman Waiter (PWA Waiter). |
+| **Kiosk Absensi** | `/kiosk` | Panel absensi wajah/biometrik di pintu masuk (PWA Kiosk). |
+
+> [!TIP]
+> **PWA Installation**: Setelah membuka URL di atas via Mobile Chrome/Safari, klik menu browser lalu pilih **"Install App"** agar aplikasi muncul di menu HP dengan performa yang lebih kencang dan stabil.
+
+---
+
+## �🛠️ Stack Teknologi (Enterprise Grade)
 
 Dibangun di atas pondasi teknologi paling modern dan stabil di tahun 2025.
 
@@ -235,7 +242,7 @@ Dibangun di atas pondasi teknologi paling modern dan stabil di tahun 2025.
 - **Styling**: [TailwindCSS v4](https://tailwindcss.com) & Vanilla CSS
 - **Database**: MySQL 8 / MariaDB
 - **State Management**: Alpine.js v3
-- **Local Agent**: Electron (Hardware Bridge)
+- **Local Agent**: [Electron Bridge](https://electronjs.org) (Hardware Bridge)
 
 ---
 
@@ -245,40 +252,34 @@ Agar orkestrasi WhatsApp dan AI berjalan secara *real-time*, service di bawah in
 
 ### 1. Queue & Scheduler Setup
 
-Pilih salah satu metode berdasarkan lingkungan server Anda:
-
-#### **A. VPS / Dedicated (Highly Recommended)**
-Gunakan **Supervisor** untuk menjaga worker tetap hidup.
-```ini
-[program:resto-pos-queue]
-command=php /path/to/project/artisan queue:work --sleep=3 --tries=3 --max-time=3600
-autostart=true
-autorestart=true
-user=www-data
-numprocs=2
-```
-
-#### **B. Modern Orchestration (PM2)**
-Cara termuda untuk mengelola Queue Laravel dan WhatsApp Gateway dalam satu panel.
+#### **A. Menggunakan PM2 (Windows/Desktop/VPS)**
+Metode paling stabil dan mudah untuk sistem manajemen service dalam satu panel.
 ```bash
-# Jalankan Worker Laravel
-pm2 start "php artisan queue:work" --name "resto-worker"
-
-# Jalankan WhatsApp Gateway
+# 1. Jalankan WhatsApp Gateway
 cd wa-gateway && pm2 start index.js --name "wa-gateway"
 
-# Simpan Konfigurasi
-pm2 save && pm2 startup
+# 2. Jalankan Laravel Scheduler (Otomasi AI & Laporan)
+pm2 start "php artisan schedule:work" --name "resto-scheduler"
+
+# 3. Jalankan Worker Laravel (Pengiriman Notifikasi)
+pm2 start "php artisan queue:work" --name "resto-worker"
 ```
 
-#### **C. Shared Hosting (Cron Job)**
-Gunakan jika Anda tidak memiliki akses SSH root. Tambahkan di menu Cron Jobs:
+#### **B. PM2 Windows Autostart**
+Agar semua proses langsung jalan otomatis saat Windows menyala/restart:
+1. Jalankan CMD/PowerShell sebagai **Administrator**.
+2. Install utilitas startup: `npm install pm2-windows-startup -g`.
+3. Pasang utilitas: `pm2-startup install`.
+4. Simpan konfigurasi aktif: `pm2 save`.
+
+#### **C. VPS / Shared Hosting (Standard Cron)**
+Tambahkan di Cron Jobs (`crontab -e`):
 ```bash
 * * * * * cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 > [!TIP]
-> **Optimasi Real-time (15 Detik):** Jika 1 menit terlalu lama, Anda bisa menyulap Cron Job menjadi per-15 detik dengan menambahkan 4 baris job menggunakan perintah `sleep 15`, `sleep 30`, dan `sleep 45`.
+> **Optimasi Windows Dev:** Gunakan PM2 untuk mematikan beban memori saat tidak digunakan dengan perintah `pm2 stop all`.
 
 ---
 

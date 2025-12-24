@@ -85,36 +85,6 @@ class Pos extends Page
         $this->openPaymentModal($saleId);
     }
 
-    /**
-     * Override openPaymentModalMobile to block Waiter
-     */
-    public function openPaymentModalMobile()
-    {
-        if (auth()->user()->role === \App\Enums\UserRole::Waiter) {
-            $this->dispatch('show-notification', message: 'Akses Ditolak: Waiter tidak dapat memproses pembayaran (hanya input order).', type: 'error');
-            return;
-        }
-
-        // Call trait logic manually since we can't easily call "parent trait"
-        // Original logic from HasPayment::openPaymentModalMobile
-        if (!$this->saleId) {
-            // Jika tidak ada saleId, coba simpan dulu
-            if (!empty($this->items)) {
-                $this->saveSale();
-
-                // 🔹 Prevent continue if save failed (e.g. no customer name)
-                if (!$this->saleId) {
-                    return;
-                }
-            } else {
-                $this->dispatch('showNotification', 'Keranjang kosong! Tambahkan produk terlebih dahulu.', 'error');
-                return;
-            }
-        }
-
-        $this->dispatch('openPaymentModal', saleId: $this->saleId);
-    }
-
     public $showCashInModal = true;
     public $cashInHand = 0;
     public $cashSessionId = null;
