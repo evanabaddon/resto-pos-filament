@@ -58,6 +58,16 @@ class FinancialReport extends Page implements HasForms
     public float $grossMargin = 0;
     public float $currentStockValue = 0; // Value of unsold inventory
 
+    // Comparison Stats
+    public float $prevTotalRevenue = 0;
+    public float $prevTotalHpp = 0;
+    public float $prevTotalExpenses = 0;
+    public float $prevNetProfit = 0;
+    public float $growthRevenue = 0;
+    public float $growthHpp = 0;
+    public float $growthExpenses = 0;
+    public float $growthNetProfit = 0;
+
     public array $expenseBreakdown = [];
     public array $granularExpenseBreakdown = [];
     public array $purchaseBreakdown = [];
@@ -332,6 +342,78 @@ class FinancialReport extends Page implements HasForms
             ->toArray();
 
         $this->netProfit = $this->totalGrossProfit - $this->totalExpenses;
+
+        $this->calculatePreviousStats($startDate, $endDate);
+    }
+
+    public function calculatePreviousStats($currentStart, $currentEnd)
+    {
+        // Determine previous period
+        $daysDiff = $currentStart->diffInDays($currentEnd) + 1;
+        $prevStart = $currentStart->copy()->subDays($daysDiff);
+        $prevEnd = $currentEnd->copy()->subDays($daysDiff);
+
+        // 1. Previous Revenue
+        $prevSales = Sale::where('status', 'completed')
+            ->whereBetween('created_at', [$prevStart, $prevEnd])
+            ->get();
+
+        $prevGrossSales = $prevSales->sum('subtotal');
+        $prevDiscounts = $prevSales->sum('discount');
+        $this->prevTotalRevenue = $prevGrossSales - $prevDiscounts;
+
+        // 2. Previous HPP (Simplified for performance, assuming same ratio or recalculate if needed)
+        // For accuracy we should recalculate exactly like main stats
+        $this->prevTotalHpp = 0;
+        foreach ($prevSales as $sale) {
+            foreach ($sale->items as $item) {
+                if ($item->product) {
+                    $hpp = (float) $item->product->computed_hpp;
+                    $this->prevTotalHpp += ($hpp * $item->quantity);
+                }
+            }
+        }
+
+        // 3. Previous Expenses + Payroll + Wastage
+        $prevExpenses = Expense::where('status', 'approved')
+            ->whereBetween('date', [$prevStart, $prevEnd])
+            ->sum('amount');
+
+        $prevPayroll = Payroll::whereBetween('created_at', [$prevStart, $prevEnd])
+            ->where('status', 'paid')
+            ->sum('total_payout');
+
+        $prevWastage = \App\Models\StockMovement::where('type', 'decrease')
+            ->where(function ($query) {
+                $query->where('reason', 'like', '%damage%')
+                    ->orWhere('reason', 'like', '%rusak%')
+                    ->orWhere('reason', 'like', '%basi%')
+                    ->orWhere('reason', 'like', '%expired%');
+            })
+            ->whereBetween('created_at', [$prevStart, $prevEnd])
+            ->get()
+            ->sum(function ($movement) {
+                return $movement->quantity * ($movement->product->base_price ?? 0);
+            });
+
+        $this->prevTotalExpenses = (float) $prevExpenses + (float) $prevPayroll + $prevWastage;
+
+        // 4. Previous Net Profit
+        $this->prevNetProfit = ($this->prevTotalRevenue - $this->prevTotalHpp) - $this->prevTotalExpenses;
+
+        // Calculate Growth %
+        $this->growthRevenue = $this->calculateGrowth($this->totalRevenue, $this->prevTotalRevenue);
+        $this->growthHpp = $this->calculateGrowth($this->totalHpp, $this->prevTotalHpp);
+        $this->growthExpenses = $this->calculateGrowth($this->totalExpenses, $this->prevTotalExpenses);
+        $this->growthNetProfit = $this->calculateGrowth($this->netProfit, $this->prevNetProfit);
+    }
+
+    protected function calculateGrowth($current, $previous)
+    {
+        if ($previous == 0) {
+            return $current > 0 ? 100 : 0;
+        }
+        return (($current - $previous) / $previous) * 100;
     }
 
     public function getHeaderActions(): array
@@ -352,6 +434,8 @@ class FinancialReport extends Page implements HasForms
                         'netProfit' => ($this->totalRevenue - $this->totalCogs) - ($this->totalExpenses + $this->totalPayroll),
                         'breakdownCogs' => $this->breakdownCogs,
                         'breakdownExpenses' => $this->breakdownExpenses,
+                        'currentStockValue' => $this->currentStockValue,
+                        'topStockAssets' => $this->topStockAssets,
                     ]);
 
                     return response()->streamDownload(function () use ($pdf) {

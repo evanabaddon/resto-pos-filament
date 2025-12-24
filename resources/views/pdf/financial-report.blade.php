@@ -150,7 +150,8 @@
             <tr>
                 <td><strong>Total Pendapatan (Net Revenue)</strong></td>
                 <td class="text-right font-bold text-green" style="font-size: 12px;">Rp
-                    {{ number_format($totalRevenue, 0, ',', '.') }}</td>
+                    {{ number_format($totalRevenue, 0, ',', '.') }}
+                </td>
             </tr>
             <tr>
                 <td>(Kurang) Harga Pokok Penjualan (HPP)</td>
@@ -159,7 +160,8 @@
             <tr>
                 <td style="background-color: #f9fafb;"><strong>Laba Kotor (Gross Profit)</strong></td>
                 <td class="text-right font-bold" style="background-color: #f9fafb;">Rp
-                    {{ number_format($grossProfit, 0, ',', '.') }}</td>
+                    {{ number_format($grossProfit, 0, ',', '.') }}
+                </td>
             </tr>
             <tr>
                 <td>(Kurang) Biaya Operasional & Gaji</td>
@@ -170,7 +172,8 @@
                         PROFIT)</strong></td>
                 <td class="text-right font-bold text-green"
                     style="font-size: 14px; background-color: #ecfccb; border-bottom: 2px solid #84cc16;">Rp
-                    {{ number_format($netProfit, 0, ',', '.') }}</td>
+                    {{ number_format($netProfit, 0, ',', '.') }}
+                </td>
             </tr>
         </tbody>
     </table>
@@ -205,7 +208,8 @@
                 <tr>
                     <td colspan="3" class="text-right font-bold" style="background: #fff7ed;">TOTAL HPP</td>
                     <td class="text-right font-bold text-orange" style="background: #fff7ed;">
-                        {{ number_format($totalHpp, 0, ',', '.') }}</td>
+                        {{ number_format($totalHpp, 0, ',', '.') }}
+                    </td>
                 </tr>
             </tfoot>
         </table>
@@ -243,9 +247,55 @@
                 <tr>
                     <td colspan="3" class="text-right font-bold" style="background: #fef2f2;">TOTAL BIAYA</td>
                     <td class="text-right font-bold text-red" style="background: #fef2f2;">
-                        {{ number_format($totalExpenses, 0, ',', '.') }}</td>
+                        {{ number_format($totalExpenses, 0, ',', '.') }}
+                    </td>
                 </tr>
             </tfoot>
+        </table>
+    </div>
+
+    <!-- D. VALUASI ASET (Current Stock Value) -->
+    <div style="page-break-inside: avoid;">
+        <div class="section-title">D. VALUASI ASET & STOK</div>
+        <table>
+            <tbody>
+                <tr>
+                    <td style="background-color: #eff6ff; border-bottom: 2px solid #3b82f6;"><strong>TOTAL NILAI ASET
+                            (STOK)</strong></td>
+                    <td class="text-right font-bold"
+                        style="font-size: 14px; background-color: #eff6ff; border-bottom: 2px solid #3b82f6; color: #1e40af;">
+                        Rp {{ number_format($currentStockValue, 0, ',', '.') }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 10px; margin-bottom: 5px; font-weight: bold; font-size: 10px; color: #666;">Top 10 Aset
+            Terbesar:</div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Produk</th>
+                    <th style="width: 20%; text-align: center;">Stok</th>
+                    <th style="width: 20%; text-align: right;">Harga Dasar</th>
+                    <th style="width: 20%; text-align: right;">Nilai Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($topStockAssets as $asset)
+                    <tr>
+                        <td>{{ $asset['name'] }}</td>
+                        <td class="text-center">{{ $asset['stock'] }} {{ $asset['unit'] }}</td>
+                        <td class="text-right">{{ number_format($asset['price'], 0, ',', '.') }}</td>
+                        <td class="text-right font-bold" style="color: #4338ca;">Rp
+                            {{ number_format($asset['total_value'], 0, ',', '.') }}
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="4" class="text-center" style="color: #999;">Tidak ada data aset.</td>
+                    </tr>
+                @endforelse
+            </tbody>
         </table>
     </div>
 

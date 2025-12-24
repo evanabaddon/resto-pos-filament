@@ -33,6 +33,12 @@
                 </h3>
                 <p class="text-[10px] text-green-400 mt-1">Gross: Rp {{ number_format($totalGrossSales, 0, ',', '.') }}
                 </p>
+                <div class="mt-2 text-xs flex items-center gap-1">
+                     <span class="{{ $growthRevenue >= 0 ? 'text-green-600' : 'text-red-600' }} font-bold">
+                        {{ $growthRevenue >= 0 ? '+' : '' }}{{ number_format($growthRevenue, 1) }}%
+                    </span>
+                    <span class="text-gray-400 text-[10px]">vs periode lalu</span>
+                </div>
             </div>
             <div class="absolute bottom-4 right-4 text-green-500 opacity-20 group-hover:opacity-100 transition-opacity">
                 <x-heroicon-o-presentation-chart-line class="w-12 h-12" />
@@ -48,6 +54,12 @@
                     Rp {{ number_format($totalHpp, 0, ',', '.') }}
                 </h3>
                 <p class="text-[10px] text-orange-400 mt-1">Estimasi Modal Penjualan</p>
+                 <div class="mt-2 text-xs flex items-center gap-1">
+                     <span class="{{ $growthHpp <= 0 ? 'text-green-600' : 'text-orange-600' }} font-bold">
+                        {{ $growthHpp >= 0 ? '+' : '' }}{{ number_format($growthHpp, 1) }}%
+                    </span>
+                    <span class="text-gray-400 text-[10px]">vs periode lalu</span>
+                </div>
             </div>
             <div
                 class="absolute bottom-4 right-4 text-orange-500 opacity-20 group-hover:opacity-100 transition-opacity">
@@ -64,6 +76,12 @@
                     Rp {{ number_format($totalExpenses, 0, ',', '.') }}
                 </h3>
                 <p class="text-[10px] text-red-400 mt-1">Ops + Gaji (Payroll)</p>
+                 <div class="mt-2 text-xs flex items-center gap-1">
+                     <span class="{{ $growthExpenses <= 0 ? 'text-green-600' : 'text-red-600' }} font-bold">
+                        {{ $growthExpenses >= 0 ? '+' : '' }}{{ number_format($growthExpenses, 1) }}%
+                    </span>
+                    <span class="text-gray-400 text-[10px]">vs periode lalu</span>
+                </div>
             </div>
             <div class="absolute bottom-4 right-4 text-red-500 opacity-20 group-hover:opacity-100 transition-opacity">
                 <x-heroicon-o-banknotes class="w-12 h-12" />
@@ -81,6 +99,12 @@
                 <p class="text-xs text-gray-400 mt-1">
                     Margin: {{ $totalRevenue > 0 ? number_format(($netProfit / $totalRevenue) * 100, 1) : 0 }}%
                 </p>
+                 <div class="mt-2 text-xs flex items-center gap-1">
+                     <span class="{{ $growthNetProfit >= 0 ? 'text-green-600' : 'text-red-600' }} font-bold">
+                        {{ $growthNetProfit >= 0 ? '+' : '' }}{{ number_format($growthNetProfit, 1) }}%
+                    </span>
+                    <span class="text-gray-400 text-[10px]">vs periode lalu</span>
+                </div>
             </div>
             <div class="absolute bottom-4 right-4 text-blue-500 opacity-20 group-hover:opacity-100 transition-opacity">
                 <x-heroicon-o-currency-dollar class="w-12 h-12" />

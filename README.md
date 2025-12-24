@@ -157,7 +157,9 @@ Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
 ### 📊 Laporan & Analisis (Financial & Analytical Intelligence) 🚀
 Pusat kendali data yang menggabungkan kecerdasan buatan dan perhitungan fiskal akurat.
 - 🏛️ **Laporan Pajak (Fiskal)**: Perencanaan pajak yang fleksibel dengan fitur Target Omzet.
-- 📈 **Laba/Rugi (Profit & Loss) 2.0**: Dashboard laba bersih yang menghitung margin kotor secara akurat dengan memisahkan **Biaya Operasional** (Listrik, Sewa) dan **Beban Pokok Penjualan/HPP** (Belanja Stok & Estimasi Resep). Dilengkapi fitur **Enterprise PDF Export** dengan layout profesional.
+- 📈 **Laba/Rugi (Profit & Loss) 2.0**: Dashboard laba bersih yang menghitung margin kotor secara akurat dengan memisahkan **Biaya Operasional** (Listrik, Sewa) dan **Beban Pokok Penjualan/HPP** (Belanja Stok & Estimasi Resep).
+    - **Period Comparison**: Fitur perbandingan performa (Omzet, HPP, Profit) dengan periode sebelumnya (Month-to-Month) beserta indikator pertumbuhan (Growth %).
+    - **Enterprise PDF Export**: Ekspor laporan keuangan profesional dalam format PDF.
 - 📦 **Forecasting Stok (AI)**: Analisis kebutuhan bahan baku 7 hari ke depan berbasis tren historis.
 - 🍽️ **Analisis Menu (AI)**: Klasifikasi profitabilitas menu (Stars, Plowhorses, etc.) dengan saran strategis AI.
 - 🔍 **Granular Cost Analysis**: Breakdown belanja stok **per produk** dan rincian biaya operasional **per kategori** dengan visualisasi progress bar untuk kontrol biaya yang ketat.
