@@ -84,27 +84,55 @@ class ReEngagementCommand extends Command
         $daysSinceVisit = $member->last_visit_at?->diffInDays(now()) ?? 999;
         $appName = $settings->app_name ?? 'Resto';
         $aiName = $settings->ai_assistant_name ?? 'Sarah';
+        $programName = $settings->loyalty_program_name ?? 'Member';
+
+        // Get CRM persona from settings
+        $personaInstructions = $settings->ai_crm_system_prompt ?? '';
+
+        // Variable replacement for persona
+        $replacements = [
+            '{app_name}' => $appName,
+            '{program_name}' => $programName,
+            '{ai_name}' => $aiName,
+            '{available_promos}' => 'Promo Aktif', // Simplified for re-engagement
+        ];
+        $personaInstructions = str_replace(array_keys($replacements), array_values($replacements), $personaInstructions);
 
         // Note: Promo model not implemented yet, using empty array for now
         $promos = [];
 
-        $prompt = sprintf(
-            "Generate a friendly, personalized WhatsApp re-engagement message for %s who hasn't visited %s in %d days. " .
-            "Tone: warm, not pushy. Mention we miss them. %s " .
-            "Sign off as %s. Keep it under 150 words. Use Indonesian language.",
-            $member->name,
-            $appName,
-            $daysSinceVisit,
-            !empty($promos) ? 'Mention these promos: ' . implode(', ', $promos) . '.' : 'No specific promo to mention.',
-            $aiName
-        );
+        $systemPrompt = "Anda adalah {$aiName}, AI Assistant untuk '{$appName}'.
+
+PERAN & PERSONA:
+{$personaInstructions}
+
+TUGAS SAAT INI:
+Buatlah pesan WhatsApp re-engagement yang HANGAT, PERSONAL, dan MENGUNDANG untuk member yang sudah {$daysSinceVisit} hari tidak berkunjung.
+
+DATA MEMBER:
+- Nama: {$member->name}
+- Terakhir berkunjung: {$daysSinceVisit} hari yang lalu
+- Program: {$programName}
+
+ATURAN PENTING:
+1. Gunakan gaya bahasa sesuai PERSONA di atas.
+2. Tunjukkan bahwa kami merindukan kehadiran mereka (jangan pushy).
+3. " . (!empty($promos) ? "Sebutkan promo aktif: " . implode(', ', $promos) : "Tidak perlu menyebutkan promo spesifik.") . "
+4. Gunakan EMOJI yang relevan untuk suasana hangat.
+5. Akhiri dengan signature '- {$aiName}'.
+6. Berikan isi pesan SAJA, tanpa pembuka 'Berikut pesan untuk...' atau sejenisnya.
+7. Maksimal 3-4 kalimat agar tidak terlalu panjang.";
+
+        $userPrompt = "Buat pesan re-engagement untuk {$member->name} yang sudah {$daysSinceVisit} hari tidak berkunjung.";
 
         try {
             // DeepSeekService chat method expects array of messages
             $response = $aiService->chat([
-                ['role' => 'user', 'content' => $prompt]
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user', 'content' => $userPrompt]
             ]);
-            return $response;
+            // Extract message content from API response
+            return $response['choices'][0]['message']['content'] ?? throw new \Exception('Invalid AI response format');
         } catch (\Exception $e) {
             // Fallback message if AI fails
             return sprintf(
