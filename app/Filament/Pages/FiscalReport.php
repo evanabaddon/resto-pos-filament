@@ -243,7 +243,7 @@ class FiscalReport extends Page implements HasForms, HasTable
                 ->color('primary')
                 ->icon('heroicon-o-cpu-chip')
                 ->requiresConfirmation()
-                ->visible(fn() => auth()->user()->role === 'super_admin' && $settings->enable_fiscal_planning)
+                ->visible(fn() => auth()->user()->role === \App\Enums\UserRole::SuperAdmin && $settings->enable_fiscal_planning)
                 ->action(function () {
                     $this->generateProposal();
                 }),
@@ -253,7 +253,7 @@ class FiscalReport extends Page implements HasForms, HasTable
                 ->color('danger')
                 ->icon('heroicon-o-trash')
                 ->requiresConfirmation()
-                ->visible(fn() => auth()->user()->role === 'super_admin' && $settings->enable_fiscal_planning)
+                ->visible(fn() => auth()->user()->role === \App\Enums\UserRole::SuperAdmin && $settings->enable_fiscal_planning)
                 ->action(function () {
                     $this->resetProposal();
                 }),

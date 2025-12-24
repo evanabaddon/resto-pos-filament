@@ -88,6 +88,77 @@
         </div>
     </div>
 
+    {{-- Valuation Section --}}
+    <x-filament::section>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="md:col-span-1">
+                <div class="bg-indigo-900 rounded-xl p-6 text-white shadow-lg relative overflow-hidden">
+                    <div
+                        class="absolute -right-6 -top-6 w-32 h-32 bg-white rounded-full opacity-10 blur-2xl pointer-events-none">
+                    </div>
+                    <div
+                        class="absolute -left-6 -bottom-6 w-32 h-32 bg-indigo-400 rounded-full opacity-10 blur-2xl pointer-events-none">
+                    </div>
+
+                    <div class="relative z-10">
+                        <h3 class="text-indigo-200 text-sm font-medium uppercase tracking-wider mb-2">Valuasi Aset Stok
+                        </h3>
+                        <div class="text-3xl font-bold mb-1">
+                            Rp {{ number_format($currentStockValue, 0, ',', '.') }}
+                        </div>
+                        <p class="text-xs text-indigo-300">Estimasi nilai jual seluruh stok saat ini</p>
+
+                        <div class="mt-6 pt-6 border-t border-white/10">
+                            <div class="flex items-center gap-2 text-xs text-indigo-200">
+                                <x-heroicon-o-information-circle class="w-4 h-4" />
+                                <span>Berdasarkan harga dasar (base price)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="md:col-span-2">
+                <x-filament::section>
+                    <x-slot name="heading">
+                        Top 10 Aset Terbesar
+                    </x-slot>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left divide-y divide-gray-200 dark:divide-white/5">
+                            <thead class="bg-gray-50 dark:bg-white/5">
+                                <tr>
+                                    <th class="px-4 py-3 font-medium text-gray-500">Produk</th>
+                                    <th class="px-4 py-3 font-medium text-gray-500 text-center">Stok</th>
+                                    <th class="px-4 py-3 font-medium text-gray-500 text-right">Nilai Total</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                                @foreach($topStockAssets as $asset)
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-white/5">
+                                        <td class="px-4 py-2">
+                                            <div class="font-medium text-gray-900 dark:text-white">{{ $asset['name'] }}
+                                            </div>
+                                            <div class="text-xs text-gray-500">@ Rp
+                                                {{ number_format($asset['price'], 0, ',', '.') }} /
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-2 text-center text-gray-600 dark:text-gray-400">
+                                            {{ $asset['stock'] }} {{ $asset['unit'] }}
+                                        </td>
+                                        <td class="px-4 py-2 text-right font-bold text-indigo-600 dark:text-indigo-400">
+                                            Rp {{ number_format($asset['total_value'], 0, ',', '.') }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </x-filament::section>
+            </div>
+        </div>
+    </x-filament::section>
+
     {{-- Detail Section --}}
     {{-- Profit Calculation Flow --}}
     <div class="lg:col-span-1 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
@@ -304,5 +375,7 @@
             @endforeach
         </div>
     </x-filament::section>
+
+
 
 </x-filament-panels::page>
