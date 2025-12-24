@@ -9,3 +9,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('queue:work --stop-when-empty')->everySecond();
+
+// Re-engage inactive members every Monday at 9 AM
+Schedule::command('loyalty:re-engage')->weeklyOn(1, '9:00');
+

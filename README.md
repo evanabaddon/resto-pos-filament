@@ -168,7 +168,19 @@ Pusat kendali data yang menggabungkan kecerdasan buatan dan perhitungan fiskal a
 - 📝 **Smart Stock Movement (Adjustment) 🆕**: Form penyesuaian stok yang cerdas dengan **Dynamic Unit Suffix** untuk mencegah kesalahan input operator.
     - **Auto Unit Display**: Suffix unit otomatis muncul di input jumlah saat produk dipilih (misal: `[1500] g`, `[2] Kg`).
     - **Base Unit Enforcement**: Sistem memastikan stock opname selalu menggunakan unit dasar untuk konsistensi data.
-    - **Reactive UX**: Unit langsung update secara real-time saat operator memilih produk berbeda.
+    - **Reactive UX**: Unit suffix update otomatis saat produk berubah tanpa reload halaman.
+- 📋 **Stock Opname (Bulk Input) 🆕**: Interface stock opname yang efisien untuk inventaris bulanan.
+    - **Bulk Input Table**: Input physical count untuk semua produk (Raw Material & Retail) dalam satu halaman.
+    - **Real-time Summary**: Dashboard summary yang menampilkan Items Checked, Total Variance, dan Value Loss secara real-time.
+    - **Auto Variance Calculation**: Sistem otomatis menghitung selisih antara system stock dan physical count.
+    - **Monetary Loss Tracking**: Tracking nilai kerugian finansial dari variance negatif (kehilangan/kerusakan barang).
+    - **One-Click Submission**: Submit semua variance sekaligus dengan konfirmasi modal Filament yang profesional.
+- 🤝 **Loyalty Automation (Re-engagement) 🆕**: Sistem otomatis untuk re-engage pelanggan tidak aktif.
+    - **Auto-detect Inactive Members**: Deteksi otomatis member yang tidak berkunjung >30 hari.
+    - **AI-Generated Messages**: Pesan WhatsApp personal yang di-generate oleh AI untuk setiap member.
+    - **Smart Scheduling**: Automated weekly execution (setiap Senin pagi) via Laravel scheduler.
+    - **Anti-spam Protection**: Cooldown 7 hari untuk mencegah spam ke member yang sama.
+    - **Dry-run Mode**: Mode testing untuk preview messages sebelum dikirim ke production.
 
 ### 🛡️ Role-Based Access Control (RBAC) [NEW]
 Sistem keamanan bertingkat yang ketat. **Tombol Delete** secara global **DISEMBUNYIKAN** (Hidden) dari tampilan untuk seluruh role kecuali **Super Admin** & **Admin**.
