@@ -60,6 +60,14 @@ class AiDailySuggestionWidget extends Widget
             ->limit(3)
             ->get();
 
+        $lowStockItemsWithIngredients = Product::where('stok', '<', 10)
+            ->where('is_sellable', true)
+            ->where('name', '!=', 'Down Payment (DP)')
+            ->whereHas('recipes') // Only track stock for items without recipes (Retail/Raw)
+            ->orderBy('stock', 'asc')
+            ->limit(3)
+            ->get();
+
         $lowStockIngredients = Product::where('stock', '<', 10)
             ->whereHas('usedInRecipes') // Only items used as ingredients
             ->orderBy('stock', 'asc')
@@ -76,6 +84,10 @@ class AiDailySuggestionWidget extends Widget
 
         if ($lowStockItems->isNotEmpty()) {
             $context .= "Produk Retail Kritis: " . $lowStockItems->map(fn($p) => "{$p->name} ({$p->stock})")->implode(', ') . ". ";
+        }
+
+        if ($lowStockItemsWithIngredients->isNotEmpty()) {
+            $context .= "Produk Kritis" . $lowStockItemsWithIngredients->map(fn($p) => "{$p->name} ({$p->stock})")->implode(', ') . ". ";
         }
 
         if ($lowStockIngredients->isNotEmpty()) {
