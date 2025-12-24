@@ -26,6 +26,8 @@ class StockOpname extends Page
     protected static ?string $title = 'Stock Opname (Bulk Input)';
 
     public $products = [];
+    public $searchQuery = '';
+    public $filterCategory = '';
 
     public static function canAccess(): bool
     {
@@ -86,6 +88,28 @@ class StockOpname extends Page
             $variance = ($product['physical_count'] ?? 0) - $product['system_stock'];
             return $variance < 0 ? abs($variance) * $product['base_price'] : 0;
         });
+    }
+
+    public function getFilteredProductsProperty(): array
+    {
+        return collect($this->products)->filter(function ($product) {
+            $matchSearch = empty($this->searchQuery) ||
+                stripos($product['name'], $this->searchQuery) !== false;
+            $matchCategory = empty($this->filterCategory) ||
+                $product['category'] === $this->filterCategory;
+            return $matchSearch && $matchCategory;
+        })->toArray(); // Keep original keys for wire:model mapping
+    }
+
+    public function getCategoriesProperty(): array
+    {
+        return collect($this->products)
+            ->pluck('category')
+            ->unique()
+            ->filter()
+            ->sort()
+            ->values()
+            ->toArray();
     }
 
     public function loadProducts(): void

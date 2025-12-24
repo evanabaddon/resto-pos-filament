@@ -24,16 +24,26 @@
 
         {{-- Search & Filter --}}
         <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow mb-4">
-            <div class="flex gap-4">
-                <input type="text" x-model="searchQuery" placeholder="Search products..."
-                    class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
-                <select x-model="filterCategory"
-                    class="rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
-                    <option value="">All Categories</option>
-                    <template x-for="cat in categories" :key="cat">
-                        <option :value="cat" x-text="cat"></option>
-                    </template>
-                </select>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Search Products
+                    </label>
+                    <input type="text" wire:model.live.debounce.300ms="searchQuery" placeholder="Type product name..."
+                        class="w-full px-4 py-3 text-base rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Filter by Category
+                    </label>
+                    <select wire:model.live="filterCategory"
+                        class="w-full px-4 py-3 text-base rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        <option value="">All Categories</option>
+                        @foreach($this->categories as $category)
+                            <option value="{{ $category }}">{{ $category }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -64,7 +74,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                        @foreach($products as $index => $product)
+                        @foreach($this->filteredProducts as $index => $product)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <td class="px-4 py-3">
                                     <div class="font-medium">{{ $product['name'] }}</div>
