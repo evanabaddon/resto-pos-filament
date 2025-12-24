@@ -98,8 +98,8 @@ class MembersTable
                             // 2. Gather Business Context (Settings & Active Discounts)
                             $activePromos = DiscountCode::where('is_active', true)
                                 ->where(function ($q) {
-                                $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
-                            })
+                                    $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
+                                })
                                 ->limit(3)
                                 ->get(['code', 'name', 'type', 'value', 'min_purchase']);
 
@@ -156,6 +156,35 @@ class MembersTable
                                 'jid' => $jid,
                                 'message' => $data['message']
                             ]));
+                        }),
+
+                    // 0.5. Re-engage (AI Automatic Background)
+                    Action::make('re_engage_ai')
+                        ->label('Re-engage (AI Automated)')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->modalHeading('Kirim Pesan Re-engagement?')
+                        ->modalDescription('AI akan langsung membuat dan mengirim pesan "Kami Merindukan Anda" ke nomor WhatsApp pelanggan ini secara otomatis di background.')
+                        ->action(function ($record) {
+                            try {
+                                \Illuminate\Support\Facades\Artisan::call('loyalty:re-engage', [
+                                    '--member-id' => $record->id,
+                                    '--dry-run' => false,
+                                ]);
+
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Re-engagement Berhasil Dikirim')
+                                    ->success()
+                                    ->body("Pesan AI telah dikirim ke WhatsApp {$record->name}")
+                                    ->send();
+                            } catch (\Exception $e) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Gagal mengirim re-engagement')
+                                    ->danger()
+                                    ->body($e->getMessage())
+                                    ->send();
+                            }
                         }),
 
                     // 1. Smart SOP Action

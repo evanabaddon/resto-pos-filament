@@ -185,7 +185,6 @@ class Checkout extends Component
 
             // 2. Generate AI Message
             $aiService = app(DeepSeekService::class);
-            // Use try-catch for AI generation to prevent blocking if AI is down
             try {
                 $message = $aiService->generateOrderConfirmation($orderData);
             } catch (\Exception $e) {
@@ -202,25 +201,9 @@ class Checkout extends Component
                 $message .= "Mohon tunggu sebentar ya, terima kasih!";
             }
 
-            // 3. Normalize Phone (08 -> 628)
-            $phone = preg_replace('/[^0-9]/', '', $this->phone);
-            if (\Illuminate\Support\Str::startsWith($phone, '08')) {
-                $phone = '628' . substr($phone, 2);
-            }
-
-            // 4. Send using /chat/send (Standard WA Gateway Endpoint)
-            $gatewayUrl = rtrim(env('WA_GATEWAY_URL', 'http://127.0.0.1:3000'), '/');
-            $endpoint = "$gatewayUrl/chat/send";
-
-            // Prepare Payload
-            $payload = [
-                'number' => $phone,
-                'message' => $message
-            ];
-
-            Http::post($endpoint, $payload);
+            // 3. Send via centralized WhatsAppService
+            app(\App\Services\WhatsAppService::class)->sendMessage($this->phone, $message);
         } catch (\Exception $e) {
-            // Log error but don't fail the order
             Log::error("WA Auto-Reply Failed: " . $e->getMessage());
         }
     }

@@ -10,22 +10,31 @@ use Illuminate\Support\Facades\Log;
 
 class ReEngagementCommand extends Command
 {
-    protected $signature = 'loyalty:re-engage {--dry-run : Run without sending messages}';
+    protected $signature = 'loyalty:re-engage 
+                            {--member-id= : Re-engage a specific member}
+                            {--dry-run : Run without sending messages}';
 
     protected $description = 'Re-engage inactive members (>30 days) with personalized WhatsApp messages';
 
-    public function handle(DeepSeekService $aiService, GeneralSettings $settings): int
+    public function handle(DeepSeekService $aiService, GeneralSettings $settings, \App\Services\WhatsAppService $waService): int
     {
         $this->info('🔍 Finding inactive members...');
 
-        // Find members who haven't visited in >30 days
-        $inactiveMembers = Member::where('last_visit_at', '<', now()->subDays(30))
-            ->where(function ($query) {
-                // Either never contacted, or last contacted >7 days ago (don't spam)
-                $query->whereNull('last_contacted_at')
-                    ->orWhere('last_contacted_at', '<', now()->subDays(7));
-            })
-            ->get();
+        $query = Member::query();
+
+        if ($this->option('member-id')) {
+            $query->where('id', $this->option('member-id'));
+        } else {
+            // Find members who haven't visited in >30 days
+            $query->where('last_visit_at', '<', now()->subDays(30))
+                ->where(function ($q) {
+                    // Either never contacted, or last contacted >7 days ago (don't spam)
+                    $q->whereNull('last_contacted_at')
+                        ->orWhere('last_contacted_at', '<', now()->subDays(7));
+                });
+        }
+
+        $inactiveMembers = $query->get();
 
         if ($inactiveMembers->isEmpty()) {
             $this->info('✅ No inactive members found.');
@@ -55,14 +64,18 @@ class ReEngagementCommand extends Command
             }
 
             try {
-                // Queue WhatsApp message
-                $this->sendWhatsAppMessage($member->phone, $message);
+                // Send WhatsApp message
+                $success = $waService->sendMessage($member->phone, $message);
 
-                // Update last_contacted_at
-                $member->update(['last_contacted_at' => now()]);
-
-                $sent++;
-                $this->info('    ✅ Message queued');
+                if ($success) {
+                    // Update last_contacted_at
+                    $member->update(['last_contacted_at' => now()]);
+                    $sent++;
+                    $this->info('    ✅ Message sent');
+                } else {
+                    $failed++;
+                    $this->error('    ❌ Gateway returned error');
+                }
             } catch (\Exception $e) {
                 $failed++;
                 $this->error('    ❌ Failed: ' . $e->getMessage());
@@ -107,7 +120,7 @@ PERAN & PERSONA:
 {$personaInstructions}
 
 TUGAS SAAT INI:
-Buatlah pesan WhatsApp re-engagement yang HANGAT, PERSONAL, dan MENGUNDANG untuk member yang sudah {$daysSinceVisit} hari tidak berkunjung.
+Buatlah pesan WhatsApp menyapa (re-engagement) yang SANGAT HANGAT, TULUS, dan MENYENTUH untuk member yang sudah {$daysSinceVisit} hari tidak berkunjung.
 
 DATA MEMBER:
 - Nama: {$member->name}
@@ -115,15 +128,16 @@ DATA MEMBER:
 - Program: {$programName}
 
 ATURAN PENTING:
-1. Gunakan gaya bahasa sesuai PERSONA di atas.
-2. Tunjukkan bahwa kami merindukan kehadiran mereka (jangan pushy).
-3. " . (!empty($promos) ? "Sebutkan promo aktif: " . implode(', ', $promos) : "Tidak perlu menyebutkan promo spesifik.") . "
-4. Gunakan EMOJI yang relevan untuk suasana hangat.
-5. Akhiri dengan signature '- {$aiName}'.
-6. Berikan isi pesan SAJA, tanpa pembuka 'Berikut pesan untuk...' atau sejenisnya.
-7. Maksimal 3-4 kalimat agar tidak terlalu panjang.";
+1. GUNAKAN GAYA BAHASA sesuai PERSONA di atas.
+2. FOKUS UTAMA: Menanyakan kabar pelanggan dengan tulus (Authentic relationship building).
+3. HINDARI HARD SELLING: Jangan langsung memaksa datang atau jualan menu secara agresif.
+4. Tunjukkan bahwa kami rindu kehadiran mereka tanpa kesan 'mengejar'.
+5. Gunakan EMOJI yang relevan untuk menciptakan suasana akrab.
+6. Akhiri dengan signature '- {$aiName}'.
+7. Berikan isi pesan SAJA, tanpa pembuka/penjelasan apapun.
+8. Maksimal 3-4 kalimat agar terasa ringan dan tidak membebani.";
 
-        $userPrompt = "Buat pesan re-engagement untuk {$member->name} yang sudah {$daysSinceVisit} hari tidak berkunjung.";
+        $userPrompt = "Tanyakan kabar {$member->name} yang sudah {$daysSinceVisit} hari tidak berkunjung dengan sangat halus.";
 
         try {
             // DeepSeekService chat method expects array of messages
@@ -137,30 +151,14 @@ ATURAN PENTING:
             // Fallback message if AI fails
             return sprintf(
                 "Halo %s! 👋\n\n" .
-                "Sudah lama tidak bertemu, kami kangen sama kamu! 🥺\n\n" .
-                "Yuk mampir lagi ke %s. %s\n\n" .
-                "Ditunggu ya! 😊\n\n" .
-                "Salam,\n%s",
+                    "Apa kabar? Semoga sehat dan bahagia selalu ya. �\n\n" .
+                    "Tiba-tiba terpikir, sudah cukup lama ya sejak terakhir kita bertemu di %s. Kami cuma mau menyapa dan bilang kalau kami rindu kehadiran Kakak. 🥺✨\n\n" .
+                    "Kapan-kapan kalau ada waktu luang, mampir menyapa ya. Ditunggu ceritanya!\n\n" .
+                    "Salam hangat,\n%s",
                 $member->name,
                 $appName,
-                !empty($promos) ? 'Ada promo spesial: ' . implode(', ', $promos) . ' 🎉' : 'Tim kami siap melayani kamu!',
                 $aiName
             );
         }
-    }
-
-    private function sendWhatsAppMessage(string $phone, string $message): void
-    {
-        // Queue WhatsApp message via your WhatsApp service
-        // This assumes you have a WhatsApp integration
-
-        // Example using a job queue:
-        // \App\Jobs\SendWhatsAppMessage::dispatch($phone, $message);
-
-        // For now, just log it (replace with actual implementation)
-        Log::info('WhatsApp Re-engagement queued', [
-            'phone' => $phone,
-            'message' => $message
-        ]);
     }
 }
