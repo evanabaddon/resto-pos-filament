@@ -45,7 +45,6 @@ class StockMovementForm
                 Select::make('reason')
                     ->label('Alasan')
                     ->options([
-                        'opname' => 'Stock Opname (Adjustment)',
                         'purchase' => 'Pembelian Baru',
                         'damage' => 'Barang Rusak/Expired',
                         'gift' => 'Hadiah/Bonus',

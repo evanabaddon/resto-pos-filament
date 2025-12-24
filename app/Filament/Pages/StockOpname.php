@@ -17,7 +17,7 @@ class StockOpname extends Page
 
     protected string $view = 'filament.pages.stock-opname';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Laporan & Analisis';
+    protected static UnitEnum|string|null $navigationGroup = 'Produk';
 
     protected static ?int $navigationSort = 50;
 

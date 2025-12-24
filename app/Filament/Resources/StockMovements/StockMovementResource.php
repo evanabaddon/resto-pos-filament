@@ -26,6 +26,8 @@ class StockMovementResource extends Resource
 
     protected static ?string $navigationLabel = 'Mutasi Stok';
 
+    protected static ?int $navigationSort = 49;
+
     // RBAC: super_admin, admin, inventory, kitchen, accountant (read-only)
     public static function canViewAny(): bool
     {
