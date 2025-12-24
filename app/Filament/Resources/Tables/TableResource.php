@@ -25,6 +25,8 @@ class TableResource extends Resource
 
     protected static ?string $label = 'Meja';
 
+    protected static ?string $pluralLabel = 'Meja';
+
     protected static ?string $navigationLabel = 'Manajemen Meja';
 
     public static function form(Schema $schema): Schema
