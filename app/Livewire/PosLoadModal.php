@@ -436,13 +436,13 @@ class PosLoadModal extends Component
                 ->withCount('items')
                 ->with(['items', 'paymentMethod']);
 
-            // Filter by Cash Session ONLY for completed transactions (Session History)
-            // For Drafts, we want to see ALL drafts (e.g. from yesterday)
-            if ($this->activeTab === 'completed' && $cashSessionId) {
+            // 1. Mandatory Filters: Current User and Active Cash Session
+            $query->where('user_id', auth()->id());
+            if ($cashSessionId) {
                 $query->where('cash_session_id', $cashSessionId);
             }
 
-            // Apply Status Filter
+            // 2. Tab Filter
             if ($this->activeTab !== 'all') {
                 $query->where('status', $this->activeTab);
             }

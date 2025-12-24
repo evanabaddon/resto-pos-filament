@@ -1400,9 +1400,7 @@
         .pb-safe {
             padding-bottom: constant(safe-area-inset-bottom);
             padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        overflow: hidden;
+            overflow: hidden;
         }
 
         .hide-scrollbar {
