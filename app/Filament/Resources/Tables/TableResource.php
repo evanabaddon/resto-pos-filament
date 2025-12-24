@@ -23,7 +23,7 @@ class TableResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Master Data';
 
-    protected static ?string $label = 'Meja';
+    protected static ?string $navigationLabel = 'Manajemen Meja';
 
     public static function form(Schema $schema): Schema
     {
