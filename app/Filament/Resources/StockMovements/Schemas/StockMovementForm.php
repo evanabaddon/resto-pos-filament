@@ -18,6 +18,13 @@ class StockMovementForm
                     ->label('Produk')
                     ->searchable()
                     ->preload()
+                    ->live()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        if ($state) {
+                            $product = \App\Models\Product::with('unit')->find($state);
+                            $set('_product_unit', $product?->unit?->symbol ?? '');
+                        }
+                    })
                     ->required(),
 
                 Select::make('type')
@@ -32,6 +39,7 @@ class StockMovementForm
                     ->numeric()
                     ->minValue(1)
                     ->label('Jumlah')
+                    ->suffix(fn($get) => $get('_product_unit') ?: '')
                     ->required(),
 
                 Select::make('reason')

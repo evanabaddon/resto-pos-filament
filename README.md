@@ -157,12 +157,18 @@ Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
 ### 📊 Laporan & Analisis (Financial & Analytical Intelligence) 🚀
 Pusat kendali data yang menggabungkan kecerdasan buatan dan perhitungan fiskal akurat.
 - 🏛️ **Laporan Pajak (Fiskal)**: Perencanaan pajak yang fleksibel dengan fitur Target Omzet.
-- 📈 **Laba/Rugi (Profit & Loss) 2.0**: Dashboard laba bersih yang menghitung margin kotor secara akurat dengan memisahkan **Biaya Operasional** (Listrik, Sewa) dan **Beban Pokok Penjualan/HPP** (Belanja Stok & Estimasi Resep).
-    - **Period Comparison**: Fitur perbandingan performa (Omzet, HPP, Profit) dengan periode sebelumnya (Month-to-Month) beserta indikator pertumbuhan (Growth %).
-    - **Enterprise PDF Export**: Ekspor laporan keuangan profesional dalam format PDF.
+- 📈 **Laporan Keuangan (Financial Report) 2.0**: Dashboard laba bersih yang menghitung margin kotor secara akurat dengan memisahkan **Biaya Operasional** (Listrik, Sewa) dan **Beban Pokok Penjualan/HPP** (Belanja Stok & Estimasi Resep).
+    - **Period Comparison**: Fitur perbandingan performa (Omzet, HPP, Expenses, Net Profit) dengan periode sebelumnya (Month-to-Month) beserta indikator pertumbuhan (Growth %) yang ditampilkan secara real-time di setiap metrik.
+    - **Stock Valuation Analysis**: Analisis valuasi stok inventaris dengan breakdown per kategori (Retail & Bahan Baku), menampilkan total nilai aset yang tersimpan di gudang.
+    - **Interactive Trend Chart**: Visualisasi grafik tren keuangan (Revenue vs Expenses) dengan filter periode yang responsif.
+    - **Enterprise PDF Export**: Ekspor laporan keuangan profesional dalam format PDF yang mencakup semua metrik utama, breakdown biaya operasional, valuasi stok, dan ringkasan eksekutif.
 - 📦 **Forecasting Stok (AI)**: Analisis kebutuhan bahan baku 7 hari ke depan berbasis tren historis.
 - 🍽️ **Analisis Menu (AI)**: Klasifikasi profitabilitas menu (Stars, Plowhorses, etc.) dengan saran strategis AI.
 - 🔍 **Granular Cost Analysis**: Breakdown belanja stok **per produk** dan rincian biaya operasional **per kategori** dengan visualisasi progress bar untuk kontrol biaya yang ketat.
+- 📝 **Smart Stock Movement (Adjustment) 🆕**: Form penyesuaian stok yang cerdas dengan **Dynamic Unit Suffix** untuk mencegah kesalahan input operator.
+    - **Auto Unit Display**: Suffix unit otomatis muncul di input jumlah saat produk dipilih (misal: `[1500] g`, `[2] Kg`).
+    - **Base Unit Enforcement**: Sistem memastikan stock opname selalu menggunakan unit dasar untuk konsistensi data.
+    - **Reactive UX**: Unit langsung update secara real-time saat operator memilih produk berbeda.
 
 ### 🛡️ Role-Based Access Control (RBAC) [NEW]
 Sistem keamanan bertingkat yang ketat. **Tombol Delete** secara global **DISEMBUNYIKAN** (Hidden) dari tampilan untuk seluruh role kecuali **Super Admin** & **Admin**.
