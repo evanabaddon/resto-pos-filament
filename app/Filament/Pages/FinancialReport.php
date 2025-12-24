@@ -36,6 +36,21 @@ class FinancialReport extends Page implements HasForms
 
     protected string $view = 'filament.pages.financial-report';
 
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Pages\FinancialReport\Widgets\FinancialTrendChart::class,
+        ];
+    }
+
+    public function getWidgetData(): array
+    {
+        return [
+            'date_start' => $this->date_start,
+            'date_end' => $this->date_end,
+        ];
+    }
+
     public ?string $date_start = null;
     public ?string $date_end = null;
 
@@ -343,7 +358,14 @@ class FinancialReport extends Page implements HasForms
 
         $this->netProfit = $this->totalGrossProfit - $this->totalExpenses;
 
+        $this->netProfit = $this->totalGrossProfit - $this->totalExpenses;
+
         $this->calculatePreviousStats($startDate, $endDate);
+
+        $this->dispatch('updateChart', [
+            'date_start' => $this->date_start,
+            'date_end' => $this->date_end,
+        ]);
     }
 
     public function calculatePreviousStats($currentStart, $currentEnd)
