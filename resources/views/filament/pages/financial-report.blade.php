@@ -159,7 +159,6 @@
         </div>
     </x-filament::section>
 
-    {{-- Detail Section --}}
     {{-- Profit Calculation Flow --}}
     <div class="lg:col-span-1 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 border-b pb-2">Laporan Laba Rugi
@@ -239,7 +238,6 @@
         </div>
     </div>
 
-    {{-- Detail Tables Section (New) --}}
     {{-- Table Breakdown COGS --}}
     <x-filament::section collapsible>
         <x-slot name="heading">

@@ -8,8 +8,8 @@ class Table extends Model
 {
     protected $fillable = ['name', 'slug', 'status'];
 
-    public function orders()
+    public function sales()
     {
-        return $this->hasMany(Order::class);
+        return $this->hasMany(Sale::class, 'table_number', 'name');
     }
 }
