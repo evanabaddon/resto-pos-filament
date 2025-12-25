@@ -20,12 +20,21 @@ class MenuEngineeringService
             ->get()
             ->keyBy('product_id');
 
-        // 2. Get All Sellable Products
+        // 2. Get All Sellable Products (Exclude Add-ons & Side Items)
         $products = Product::query()
             ->where('is_sellable', true)
             ->where(function ($query) {
                 $query->where('name', 'not like', '%Down Payment%')
-                    ->where('name', 'not like', '%DP%');
+                    ->where('name', 'not like', '%DP%')
+                    // Exclude common add-on/side items
+                    ->where('name', 'not like', '%Tambahan%')
+                    ->where('name', 'not like', '%Extra%')
+                    ->where('name', 'not like', '%Nasi Putih%')
+                    ->where('name', 'not like', '%Sega Putih%')
+                    ->where('name', 'not like', '%Nasi Saja%')
+                    ->where('name', 'not like', '%Ayam Saja%')
+                    // Exclude items with very low price (< Rp 5,000) - usually add-ons
+                    ->where('sell_price', '>=', 5000);
             })
             ->with(['recipes.ingredient', 'recipes.unit', 'unit'])
             ->get();
