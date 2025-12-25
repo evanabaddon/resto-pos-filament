@@ -102,20 +102,6 @@ class RecipeStockChecker
             ->where('product_id', $product->id)
             ->sum('quantity');
 
-        // Debug logging
-        \Illuminate\Support\Facades\Log::info("=== Stock Calc: {$product->name} ===");
-        \Illuminate\Support\Facades\Log::info("Recipes: " . $recipes->count());
-        foreach ($recipes as $recipe) {
-            $requiredPerPortion = $conversionService->convert(
-                $recipe->quantity,
-                $recipe->unit_id,
-                $recipe->ingredient->unit_id
-            );
-            $portionsFromIngredient = $requiredPerPortion > 0 ? floor($recipe->ingredient->stock / $requiredPerPortion) : 0;
-            \Illuminate\Support\Facades\Log::info("  {$recipe->ingredient->name}: need {$recipe->quantity} {$recipe->unit->name}, stock {$recipe->ingredient->stock} {$recipe->ingredient->unit->name}, converted need: {$requiredPerPortion}, portions: {$portionsFromIngredient}");
-        }
-        \Illuminate\Support\Facades\Log::info("Max portions: {$maxPortions}, Draft: {$draftQty}, Final: " . max(0, $maxPortions - (int) $draftQty));
-
         return max(0, $maxPortions - (int) $draftQty);
     }
 
