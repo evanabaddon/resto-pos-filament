@@ -89,15 +89,16 @@ class RecipeStockChecker
 
         // Subtract quantities from draft sales (only today's drafts)
         // This prevents old draft sales from blocking stock availability
+        // Fixed: Only count truly draft/pending sales, not completed sales with NULL payment
         $draftQty = \App\Models\SaleItem::whereHas('sale', function ($query) {
-            $query->where('status', 'draft')
-                ->orWhere('status', 'pending')
-                ->orWhereNull('payment_method');
-        })
-            ->whereHas('sale', function ($query) {
-                // Only consider drafts created today
-                $query->whereDate('created_at', today());
+            $query->where(function ($q) {
+                // Draft or pending status (regardless of payment method)
+                $q->where('status', 'draft')
+                    ->orWhere('status', 'pending');
             })
+                // Only consider drafts created today
+                ->whereDate('created_at', today());
+        })
             ->where('product_id', $product->id)
             ->sum('quantity');
 
