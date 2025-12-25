@@ -11,6 +11,48 @@ Ini bukan sekadar alat pencatat transaksi; ini adalah pusat komando digital yang
 
 ---
 
+## 📘 Fundamental Sistem
+
+### Sistem Akuntansi: Accrual Method
+Sistem ini menggunakan **Accrual Accounting** untuk perhitungan HPP (Harga Pokok Penjualan / COGS), bukan Cash Basis.
+
+**Prinsip Dasar:**
+- **Pembelian Bahan Baku ≠ Expense** - Pembelian dicatat sebagai **Aset (Stock Value)**, bukan biaya langsung.
+- **COGS/HPP dicatat saat penjualan** - Biaya bahan baku baru dikurangi dari profit saat menu terjual.
+- **Matching Principle** - Biaya di-match dengan revenue yang dihasilkan.
+
+**Contoh:**
+```
+Hari 1: Beli Beras 10kg @ Rp 15,000/kg = Rp 150,000
+├─ Cash: -Rp 150,000
+├─ Stock Value (Aset): +Rp 150,000
+├─ COGS: Rp 0 (belum ada penjualan)
+└─ Profit: Rp 0 (tidak berubah)
+
+Hari 2: Jual Nasi Goreng 5 porsi @ Rp 25,000
+├─ Revenue: +Rp 125,000
+├─ COGS: -Rp 40,000 (bahan baku terpakai)
+├─ Stock Value: -Rp 40,000 (beras berkurang 1kg)
+└─ Gross Profit: Rp 85,000 (Revenue - COGS)
+```
+
+### Sistem Inventory: Real-time Stock Tracking
+Setiap transaksi otomatis membuat `StockMovement` dan mengupdate stok secara real-time:
+- **Purchase** → Stock bertambah, Stock Value naik
+- **POS Sale** → Stock berkurang (via recipe), COGS dicatat
+- **Stock Opname** → Koreksi variance fisik vs sistem
+- **Wastage** → Stock berkurang, masuk Expense
+
+### Recipe System: Automatic Ingredient Deduction
+Menu dengan recipe otomatis mengurangi stok bahan baku saat terjual:
+- **Unit Conversion** - Sistem otomatis convert unit (misal: recipe pakai gram, stock dalam kg)
+- **Multi-Channel** - Berlaku untuk POS, Waiter App, dan Self-Order
+- **HPP Calculation** - HPP dihitung dari total harga bahan baku dalam recipe
+
+> **⚠️ Penting:** Pastikan setiap menu `produced` memiliki recipe yang lengkap agar HPP dan stock deduction akurat.
+
+---
+
 ## ⚡️ Keunggulan Utama (Highlight Features)
 
 ### 💎 Smart POS (Point of Sale)

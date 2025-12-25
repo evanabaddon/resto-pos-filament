@@ -6,6 +6,10 @@
                 class="sticky top-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
                 <h3 class="font-bold text-sm uppercase text-gray-500 dark:text-gray-400 mb-3">Daftar Isi</h3>
                 <nav class="space-y-1">
+                    <a href="#fundamentals"
+                        class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        ⚙️ Fundamental Sistem
+                    </a>
                     <a href="#getting-started"
                         class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                         🚀 Getting Started
@@ -84,6 +88,120 @@
 
             {{-- Main Documentation Content --}}
             <div class="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-8">
+
+                {{-- System Fundamentals --}}
+                <section id="fundamentals">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">⚙️</span>
+                        Fundamental Sistem
+                    </h3>
+                    <div class="prose dark:prose-invert max-w-none">
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 mb-4">
+                            <p class="font-semibold text-blue-900 dark:text-blue-100 mb-2">📘 Wajib Dibaca</p>
+                            <p class="text-sm text-blue-800 dark:text-blue-200">Pahami fundamental sistem ini sebelum
+                                menggunakan fitur-fitur lanjutan untuk menghindari kesalahan interpretasi data keuangan.
+                            </p>
+                        </div>
+
+                        <h4 class="font-semibold text-lg mt-4">💰 Sistem Akuntansi: Accrual Method</h4>
+                        <p>Sistem ini menggunakan <strong>Accrual Accounting</strong> untuk perhitungan HPP (Harga Pokok
+                            Penjualan / COGS).</p>
+
+                        <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg my-4">
+                            <p class="font-semibold mb-2">Prinsip Dasar:</p>
+                            <ul class="list-disc pl-6 space-y-2">
+                                <li><strong>Pembelian Bahan Baku ≠ Expense</strong> - Pembelian dicatat sebagai <em>Aset
+                                        (Stock Value)</em>, bukan biaya.</li>
+                                <li><strong>COGS/HPP dicatat saat penjualan</strong> - Biaya bahan baku baru dikurangi
+                                    dari profit saat menu terjual.</li>
+                                <li><strong>Matching Principle</strong> - Biaya di-match dengan revenue yang dihasilkan.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <h5 class="font-semibold mt-4">Contoh Ilustrasi:</h5>
+                        <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg my-3">
+                            <p class="font-semibold text-green-900 dark:text-green-100">✅ Hari 1: Beli Beras 10kg @ Rp
+                                15,000/kg = Rp 150,000</p>
+                            <ul class="text-sm mt-2 space-y-1">
+                                <li>• Cash: <span class="text-red-600">-Rp 150,000</span></li>
+                                <li>• Stock Value (Aset): <span class="text-green-600">+Rp 150,000</span></li>
+                                <li>• COGS: Rp 0 <em>(belum ada penjualan)</em></li>
+                                <li>• Profit: <strong>Rp 0</strong> <em>(tidak berubah)</em></li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg my-3">
+                            <p class="font-semibold text-blue-900 dark:text-blue-100">📊 Hari 2: Jual Nasi Goreng 5
+                                porsi @ Rp 25,000</p>
+                            <ul class="text-sm mt-2 space-y-1">
+                                <li>• Revenue: <span class="text-green-600">+Rp 125,000</span></li>
+                                <li>• COGS: <span class="text-red-600">-Rp 40,000</span> <em>(5 × 200g × Rp 15/g +
+                                        bumbu)</em></li>
+                                <li>• Stock Value: <span class="text-red-600">-Rp 40,000</span> <em>(beras berkurang
+                                        1kg)</em></li>
+                                <li>• Gross Profit: <strong class="text-green-600">Rp 85,000</strong> <em>(Revenue -
+                                        COGS)</em></li>
+                                <li>• Stock Value tersisa: Rp 110,000 <em>(9kg beras)</em></li>
+                            </ul>
+                        </div>
+
+                        <h4 class="font-semibold text-lg mt-6">📦 Sistem Inventory: Real-time Stock Tracking</h4>
+                        <p>Setiap transaksi yang melibatkan produk akan otomatis membuat <code>StockMovement</code> dan
+                            mengupdate stok secara real-time.</p>
+
+                        <table class="min-w-full border mt-3">
+                            <thead class="bg-gray-100 dark:bg-gray-700">
+                                <tr>
+                                    <th class="border px-3 py-2 text-left">Transaksi</th>
+                                    <th class="border px-3 py-2 text-left">Stock Movement</th>
+                                    <th class="border px-3 py-2 text-left">Dampak</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border px-3 py-2">Purchase (Pembelian)</td>
+                                    <td class="border px-3 py-2"><span class="text-green-600">+Increase</span></td>
+                                    <td class="border px-3 py-2">Stock bertambah, Stock Value naik</td>
+                                </tr>
+                                <tr>
+                                    <td class="border px-3 py-2">POS Sale (Menu terjual)</td>
+                                    <td class="border px-3 py-2"><span class="text-red-600">-Decrease</span></td>
+                                    <td class="border px-3 py-2">Stock berkurang, COGS dicatat</td>
+                                </tr>
+                                <tr>
+                                    <td class="border px-3 py-2">Stock Opname</td>
+                                    <td class="border px-3 py-2">+/- Adjustment</td>
+                                    <td class="border px-3 py-2">Koreksi variance fisik vs sistem</td>
+                                </tr>
+                                <tr>
+                                    <td class="border px-3 py-2">Wastage (Rusak/Basi)</td>
+                                    <td class="border px-3 py-2"><span class="text-red-600">-Decrease</span></td>
+                                    <td class="border px-3 py-2">Stock berkurang, masuk Expense</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4 class="font-semibold text-lg mt-6">🍳 Recipe System: Automatic Ingredient Deduction</h4>
+                        <p>Menu dengan recipe akan otomatis mengurangi stok bahan baku saat terjual.</p>
+                        <ul class="list-disc pl-6 space-y-2 mt-2">
+                            <li><strong>Unit Conversion</strong> - Sistem otomatis convert unit (misal: recipe pakai
+                                gram, stock dalam kg).</li>
+                            <li><strong>Multi-Channel</strong> - Berlaku untuk POS, Waiter App, dan Self-Order.</li>
+                            <li><strong>HPP Calculation</strong> - HPP dihitung dari total harga bahan baku dalam
+                                recipe.</li>
+                        </ul>
+
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 mt-4">
+                            <p class="font-semibold text-yellow-900 dark:text-yellow-100">⚠️ Penting</p>
+                            <p class="text-sm text-yellow-800 dark:text-yellow-200">Pastikan setiap menu
+                                <code>produced</code> memiliki recipe yang lengkap agar HPP dan stock deduction akurat.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="border-gray-200 dark:border-gray-700">
 
                 {{-- Getting Started --}}
                 <section id="getting-started">
@@ -263,20 +381,25 @@
                         <p>Pusat komando mobile untuk pelayan guna mempercepat pelayanan.</p>
                         <ul class="list-disc pl-6 space-y-2">
                             <li><strong>Akses & Login:</strong> Buka <code>/waiter/order</code> melalui smartphone.</li>
-                            <li><strong>Input Pesanan:</strong> Pilih menu, tambahkan catatan, dan tentukan nomor meja.</li>
-                            <li><strong>Auto-Sync:</strong> Pesanan langsung masuk ke KDS (Dapur/Bar) dan Dashboard POS kasir.</li>
+                            <li><strong>Input Pesanan:</strong> Pilih menu, tambahkan catatan, dan tentukan nomor meja.
+                            </li>
+                            <li><strong>Auto-Sync:</strong> Pesanan langsung masuk ke KDS (Dapur/Bar) dan Dashboard POS
+                                kasir.</li>
                         </ul>
 
                         <h4 class="font-semibold text-lg mt-4">📱 QR Self-Order Menu</h4>
                         <p>Sistem pemesanan mandiri oleh pelanggan langsung dari meja.</p>
                         <ul class="list-disc pl-6 space-y-2">
                             <li><strong>Scan to Order:</strong> Pelanggan scan QR di meja → Pilih menu → Checkout.</li>
-                            <li><strong>AI Broadcast:</strong> Konfirmasi pesanan dikirim otomatis via WhatsApp dengan teks dari AI.</li>
-                            <li><strong>Member Integration:</strong> Member terdeteksi otomatis via nomor WhatsApp saat checkout.</li>
+                            <li><strong>AI Broadcast:</strong> Konfirmasi pesanan dikirim otomatis via WhatsApp dengan
+                                teks dari AI.</li>
+                            <li><strong>Member Integration:</strong> Member terdeteksi otomatis via nomor WhatsApp saat
+                                checkout.</li>
                         </ul>
 
                         <h4 class="font-semibold text-lg mt-4">⚙️ Konfigurasi QR Meja</h4>
-                        <p>Generate dan cetak kartu QR meja melalui menu <strong>Table Management</strong> di Admin Panel.</p>
+                        <p>Generate dan cetak kartu QR meja melalui menu <strong>Table Management</strong> di Admin
+                            Panel.</p>
                     </div>
                 </section>
 
@@ -443,7 +566,7 @@
     {{-- Smooth Scroll Script --}}
     <script>
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
+            anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {

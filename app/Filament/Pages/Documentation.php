@@ -26,4 +26,21 @@ class Documentation extends Page
         // Accessible by all authenticated users
         return auth()->check();
     }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('exportPdf')
+                ->label('Download PDF')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('success')
+                ->action(function () {
+                    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.documentation');
+
+                    return response()->streamDownload(function () use ($pdf) {
+                        echo $pdf->output();
+                    }, 'Dokumentasi-Sistem-' . date('Ymd') . '.pdf');
+                }),
+        ];
+    }
 }
