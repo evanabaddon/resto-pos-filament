@@ -160,6 +160,7 @@ class StockOpname extends Page
                     'value_loss' => 0,
                 ];
             })
+            ->keyBy('id') // Use product ID as array key
             ->toArray();
     }
 

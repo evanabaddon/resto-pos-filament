@@ -115,7 +115,8 @@
                                         {{ $product['unit'] }}</span>
                                 </td>
                                 <td class="px-4 py-3 text-right">
-                                    <input type="number" step="0.01" wire:model.live="products.{{ $index }}.physical_count"
+                                    <input type="number" step="0.01"
+                                        wire:model.live="products.{{ $product['id'] }}.physical_count"
                                         class="w-32 text-right rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm">
                                     <span class="ml-1 text-sm text-gray-500">{{ $product['unit'] }}</span>
                                 </td>
