@@ -310,6 +310,130 @@
                             <li>Pilih bahan baku, input quantity + unit</li>
                             <li>Sistem otomatis hitung HPP berdasarkan harga bahan</li>
                         </ol>
+
+                        <h4 class="font-semibold text-lg mt-6">Recipe Stock Validation</h4>
+                        <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 mb-4">
+                            <p class="font-semibold text-green-900 dark:text-green-100">✅ Prevent Negative Stock</p>
+                            <p class="text-sm text-green-800 dark:text-green-200">Sistem validasi stok bahan baku yang
+                                mencegah overselling dan negative stock secara real-time.</p>
+                        </div>
+
+                        <p><strong>Fitur Utama:</strong></p>
+                        <ul class="list-disc pl-6 space-y-2">
+                            <li><strong>Real-time Availability Check</strong> - Cek ketersediaan bahan baku sebelum item
+                                ditambahkan ke cart</li>
+                            <li><strong>Draft Sales Consideration</strong> - Memperhitungkan qty yang sudah di draft
+                                sales hari ini (belum dibayar)</li>
+                            <li><strong>Cross-Channel Sync</strong> - Auto-refresh setiap 5 detik untuk sync antar POS,
+                                Waiter, dan Self-Order</li>
+                            <li><strong>Visual Indicators</strong> - Badge "Tersedia: X porsi" di POS/Waiter (hanya jika
+                                stock < 10), overlay "HABIS" saat stock habis</li>
+                            <li><strong>Cart Increment Protection</strong> - Validasi saat user increment qty di cart
+                            </li>
+                            <li><strong>Toast Notifications</strong> - Notifikasi real-time via Livewire events (tanpa
+                                page reload)</li>
+                        </ul>
+
+                        <p class="mt-4"><strong>Fitur per Channel:</strong></p>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full border border-gray-300 dark:border-gray-600">
+                                <thead class="bg-gray-100 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">
+                                            Feature</th>
+                                        <th class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">
+                                            POS</th>
+                                        <th class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">
+                                            Waiter App</th>
+                                        <th class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">
+                                            Self-Order</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2">Availability
+                                            Badge</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                            "Tersedia: X porsi"</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                            "X porsi"</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">❌
+                                            (validation only)</td>
+                                    </tr>
+                                    <tr class="bg-gray-50 dark:bg-gray-800">
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2">Stock
+                                            Validation</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2">Cart Increment
+                                            Check</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                    </tr>
+                                    <tr class="bg-gray-50 dark:bg-gray-800">
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2">Auto-disable
+                                            when out</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2">"HABIS"
+                                            Overlay</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                        </td>
+                                    </tr>
+                                    <tr class="bg-gray-50 dark:bg-gray-800">
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2">Toast
+                                            Notifications</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                            (Filament)</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                            (Alpine.js)</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                            (Alpine.js)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2">Auto-refresh
+                                            (Polling)</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                            5s</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                            5s</td>
+                                        <td class="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">✅
+                                            5s</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 mt-4">
+                            <p class="font-semibold text-yellow-900 dark:text-yellow-100">💡 Tips</p>
+                            <ul class="text-sm text-yellow-800 dark:text-yellow-200 list-disc pl-5 mt-2 space-y-1">
+                                <li>Badge hanya muncul jika stock < 10 porsi (untuk alert stock terbatas)</li>
+                                <li>Draft sales hanya consider yang dibuat hari ini (mencegah draft lama memblokir
+                                    stock)</li>
+                                <li>Polling 5 detik memastikan sync antar channel (max delay 5s)</li>
+                                <li>Toast notification muncul tanpa page reload (real-time feedback)</li>
+                            </ul>
+                        </div>
                     </div>
                 </section>
 

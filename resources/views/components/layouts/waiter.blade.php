@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Waiter Order' }}</title>
+    @inject('settings', 'App\Settings\GeneralSettings')
+    <title>{{ $title ?? $settings->app_name ?? 'Resto POS' }}</title>
 
     <!-- PWA -->
     <meta name="theme-color" content="#4f46e5">
