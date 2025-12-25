@@ -55,22 +55,52 @@
                         <tr>
                             <th
                                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                Product</th>
+                                <button wire:click="toggleSort('name')"
+                                    class="flex items-center gap-1 hover:text-primary-600 transition">
+                                    PRODUCTS
+                                    @if($sortBy === 'name')
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            @if($sortDirection === 'asc')
+                                                <path d="M5 10l5-5 5 5H5z" />
+                                            @else
+                                                <path d="M15 10l-5 5-5-5h10z" />
+                                            @endif
+                                        </svg>
+                                    @endif
+                                </button>
+                            </th>
                             <th
                                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                Category</th>
+                                CATEGORY
+                            </th>
                             <th
                                 class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                System Stock</th>
+                                <button wire:click="toggleSort('stock')"
+                                    class="flex items-center gap-1 hover:text-primary-600 transition ml-auto">
+                                    SYSTEM STOCK
+                                    @if($sortBy === 'stock')
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            @if($sortDirection === 'asc')
+                                                <path d="M5 10l5-5 5 5H5z" />
+                                            @else
+                                                <path d="M15 10l-5 5-5-5h10z" />
+                                            @endif
+                                        </svg>
+                                    @endif
+                                </button>
+                            </th>
                             <th
                                 class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                Physical Count</th>
+                                Physical Count
+                            </th>
                             <th
                                 class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                Variance</th>
+                                Variance
+                            </th>
                             <th
                                 class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                Value Loss</th>
+                                Value Loss
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-700">

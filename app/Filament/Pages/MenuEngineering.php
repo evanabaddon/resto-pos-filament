@@ -21,7 +21,7 @@ class MenuEngineering extends Page
     }
     protected static ?string $title = 'AI Menu Engineering';
     protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.pages.menu-engineering';
 
@@ -107,7 +107,7 @@ class MenuEngineering extends Page
             ]);
 
             return response()->streamDownload(
-                fn() => print($pdf->output()),
+                fn() => print ($pdf->output()),
                 'menu-engineering-analysis-' . now()->timestamp . '.pdf'
             );
         } catch (\Exception $e) {

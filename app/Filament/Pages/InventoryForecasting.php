@@ -23,7 +23,7 @@ class InventoryForecasting extends Page
         return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
     protected static ?string $title = 'AI Smart Inventory';
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 1;
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -110,7 +110,7 @@ class InventoryForecasting extends Page
             ]);
 
             return response()->streamDownload(
-                fn() => print($pdf->output()),
+                fn() => print ($pdf->output()),
                 'forecasting-report-' . now()->timestamp . '.pdf'
             );
         } catch (\Exception $e) {

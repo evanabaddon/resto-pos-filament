@@ -28,6 +28,8 @@ class StockOpname extends Page
     public $products = [];
     public $searchQuery = '';
     public $filterCategory = '';
+    public $sortBy = 'name'; // name, stock
+    public $sortDirection = 'asc'; // asc, desc
 
     public static function canAccess(): bool
     {
@@ -90,15 +92,40 @@ class StockOpname extends Page
         });
     }
 
+    public function toggleSort(string $field): void
+    {
+        if ($this->sortBy === $field) {
+            // Toggle direction if clicking same field
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            // New field, default to ascending
+            $this->sortBy = $field;
+            $this->sortDirection = 'asc';
+        }
+    }
+
     public function getFilteredProductsProperty(): array
     {
-        return collect($this->products)->filter(function ($product) {
+        $filtered = collect($this->products)->filter(function ($product) {
             $matchSearch = empty($this->searchQuery) ||
                 stripos($product['name'], $this->searchQuery) !== false;
             $matchCategory = empty($this->filterCategory) ||
                 $product['category'] === $this->filterCategory;
             return $matchSearch && $matchCategory;
-        })->toArray(); // Keep original keys for wire:model mapping
+        });
+
+        // Apply sorting
+        if ($this->sortBy === 'name') {
+            $filtered = $this->sortDirection === 'asc'
+                ? $filtered->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                : $filtered->sortByDesc('name', SORT_NATURAL | SORT_FLAG_CASE);
+        } elseif ($this->sortBy === 'stock') {
+            $filtered = $this->sortDirection === 'asc'
+                ? $filtered->sortBy('system_stock')
+                : $filtered->sortByDesc('system_stock');
+        }
+
+        return $filtered->toArray(); // Keep original keys for wire:model mapping
     }
 
     public function getCategoriesProperty(): array

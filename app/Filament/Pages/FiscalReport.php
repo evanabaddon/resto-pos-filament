@@ -38,7 +38,7 @@ class FiscalReport extends Page implements HasForms, HasTable
     {
         return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
 
     protected string $view = 'filament.pages.fiscal-report';
 
