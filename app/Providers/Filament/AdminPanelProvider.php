@@ -107,9 +107,9 @@ class AdminPanelProvider extends PanelProvider
                 'Master Data',
                 'Manajemen SDM',
                 'Kemitraan CRM',
-                'Laporan & Analisis',
                 'AI Intelligence',
                 'Super Chat',
+                'Laporan & Analisis',
                 'Settings'
             ]);
     }
