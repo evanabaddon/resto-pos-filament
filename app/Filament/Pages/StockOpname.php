@@ -88,7 +88,16 @@ class StockOpname extends Page
     {
         return collect($this->products)->sum(function ($product) {
             $variance = ($product['physical_count'] ?? 0) - $product['system_stock'];
-            return $variance < 0 ? abs($variance) * $product['base_price'] : 0;
+            if ($variance >= 0)
+                return 0;
+
+            // Convert base_price (per purchase unit) to price per stock unit
+            // Example: Galon Rp 20k (19kg), conversion_rate = 0.00005263 (1 gram = 0.00005263 galon)
+            // Price per gram = Rp 20k * 0.00005263 = Rp 1.05/gram
+            $conversionRate = $product['conversion_rate'] ?? 1;
+            $pricePerStockUnit = ($product['base_price'] ?? 0) * $conversionRate;
+
+            return abs($variance) * $pricePerStockUnit;
         });
     }
 
@@ -157,6 +166,7 @@ class StockOpname extends Page
                     'physical_count' => $product->stock, // Default to system stock
                     'variance' => 0,
                     'base_price' => $product->base_price,
+                    'conversion_rate' => $product->unit?->conversion_rate ?? 1,
                     'value_loss' => 0,
                 ];
             })
@@ -204,7 +214,12 @@ class StockOpname extends Page
                 $totalVariance += abs($variance);
 
                 if ($variance < 0) {
-                    $totalLoss += abs($variance) * $product->base_price;
+                    // Convert base_price (per purchase unit) to price per stock unit
+                    // Example: Galon Rp 20k (19kg), conversion_rate = 0.00005263
+                    // Price per gram = Rp 20k * 0.00005263 = Rp 1.05/gram
+                    $conversionRate = $product->unit?->conversion_rate ?? 1;
+                    $pricePerStockUnit = ($product->base_price ?? 0) * $conversionRate;
+                    $totalLoss += abs($variance) * $pricePerStockUnit;
                 }
             }
         }
