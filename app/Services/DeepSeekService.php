@@ -406,8 +406,9 @@ class DeepSeekService
         }
         
         ATURAN:
-        1. Berikan saran yang KONKRIT dan TEKNIS.
-        2. Berikan data JSON SAJA tanpa penjelasan tambahan di luar JSON.";
+        1. Untuk menu dengan harga jual di bawah Rp 15.000 (Menu Entry Level), toleransi margin profit dianggap 'Baik' jika di atas Rp 5.000, meskipun status di data adalah 'Unit Kurang Berkembang'.
+        2. Berikan saran yang KONKRIT dan TEKNIS.
+        3. Berikan data JSON SAJA tanpa penjelasan tambahan di luar JSON.";
 
         // Limit matrix data to avoid token limits
         // Prioritize items with sales, then take top 50
