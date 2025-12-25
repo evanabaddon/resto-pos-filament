@@ -14,6 +14,32 @@ trait HasCart
         if (!$product)
             return;
 
+        // Check stock availability for produced items with recipes
+        if (in_array($product->type, ['produced', 'bar'])) {
+            $stockChecker = app(\App\Services\RecipeStockChecker::class);
+            $availability = $stockChecker->checkAvailability($product, 1);
+
+            if (!$availability['available']) {
+                $maxPortions = $availability['max_portions'];
+                $limitingIngredient = $availability['limiting_ingredient'];
+
+                if ($maxPortions === 0) {
+                    $this->dispatch(
+                        'show-notification',
+                        message: "❌ {$product->name} tidak tersedia. Bahan baku '{$limitingIngredient}' habis.",
+                        type: 'error'
+                    );
+                    return;
+                } else {
+                    $this->dispatch(
+                        'show-notification',
+                        message: "⚠️ Hanya tersedia {$maxPortions} porsi {$product->name}.",
+                        type: 'warning'
+                    );
+                }
+            }
+        }
+
         $foundKey = null;
         foreach ($this->items as $key => $item) {
             if ($item['product_id'] == $productId) {
@@ -23,6 +49,23 @@ trait HasCart
         }
 
         if ($foundKey !== null) {
+            // Check if adding 1 more is still available
+            $newQuantity = $this->items[$foundKey]['quantity'] + 1;
+
+            if (in_array($product->type, ['produced', 'bar'])) {
+                $stockChecker = app(\App\Services\RecipeStockChecker::class);
+                $availability = $stockChecker->checkAvailability($product, $newQuantity);
+
+                if (!$availability['available']) {
+                    $this->dispatch(
+                        'show-notification',
+                        message: "⚠️ Hanya tersedia {$availability['max_portions']} porsi {$product->name}.",
+                        type: 'warning'
+                    );
+                    return;
+                }
+            }
+
             $this->items[$foundKey]['quantity'] += 1;
             $this->items[$foundKey]['subtotal'] = $this->items[$foundKey]['price'] * $this->items[$foundKey]['quantity'];
         } else {
@@ -141,6 +184,12 @@ trait HasCart
 
     public function clearCart()
     {
+        // Invalidate cache for all products in cart before clearing
+        $stockChecker = app(\App\Services\RecipeStockChecker::class);
+        foreach ($this->items as $item) {
+            $stockChecker->invalidateCache($item['product_id']);
+        }
+
         $this->items = [];
         $this->total = 0;
         $this->tax = 0;
@@ -152,5 +201,8 @@ trait HasCart
         $this->saleId = null;
         $this->customerName = '';
         $this->generateOrderNumber();
+
+        // Trigger component refresh to update badges
+        $this->dispatch('$refresh');
     }
 }

@@ -34,6 +34,22 @@ class Cart extends Component
     public function updateQty($id, $change)
     {
         if (isset($this->cartItems[$id])) {
+            // If incrementing, check stock availability
+            if ($change > 0) {
+                $product = \App\Models\Product::find($id);
+
+                if ($product && in_array($product->type, ['produced', 'bar'])) {
+                    $newQuantity = $this->cartItems[$id]['qty'] + $change;
+                    $stockChecker = app(\App\Services\RecipeStockChecker::class);
+                    $availability = $stockChecker->checkAvailability($product, $newQuantity);
+
+                    if (!$availability['available']) {
+                        $this->dispatch('notify', message: "⚠️ Stok terbatas. Hanya tersedia {$availability['max_portions']} porsi {$product->name}.", type: 'warning');
+                        return;
+                    }
+                }
+            }
+
             $this->cartItems[$id]['qty'] += $change;
             if ($this->cartItems[$id]['qty'] <= 0) {
                 unset($this->cartItems[$id]);

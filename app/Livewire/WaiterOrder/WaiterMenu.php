@@ -33,20 +33,44 @@ class WaiterMenu extends Component
         \Illuminate\Support\Facades\Log::info('Adding to cart (Waiter): ' . $productId);
         \Illuminate\Support\Facades\Log::info('Current Cart Before: ' . json_encode($this->cart));
 
+        $product = Product::find($productId);
+        if (!$product) {
+            $this->dispatch('notify', message: 'Produk tidak ditemukan', type: 'error');
+            return;
+        }
+
+        // Check stock availability for produced items with recipes
+        $requestedQty = isset($this->cart[$productId]) ? $this->cart[$productId]['qty'] + 1 : 1;
+
+        if (in_array($product->type, ['produced', 'bar'])) {
+            $stockChecker = app(\App\Services\RecipeStockChecker::class);
+            $availability = $stockChecker->checkAvailability($product, $requestedQty);
+
+            if (!$availability['available']) {
+                $maxPortions = $availability['max_portions'];
+                $limitingIngredient = $availability['limiting_ingredient'];
+
+                if ($maxPortions === 0) {
+                    $this->dispatch('notify', message: "❌ {$product->name} tidak tersedia. Bahan baku '{$limitingIngredient}' habis.", type: 'error');
+                    return;
+                } else {
+                    $this->dispatch('notify', message: "⚠️ Stok terbatas. Hanya tersedia {$maxPortions} porsi {$product->name}.", type: 'warning');
+                    return;
+                }
+            }
+        }
+
         if (isset($this->cart[$productId])) {
             $this->cart[$productId]['qty']++;
         } else {
-            $product = Product::find($productId);
-            if ($product) {
-                $this->cart[$productId] = [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $product->sell_price,
-                    'image' => $product->image,
-                    'qty' => 1,
-                    'note' => ''
-                ];
-            }
+            $this->cart[$productId] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->sell_price,
+                'image' => $product->image,
+                'qty' => 1,
+                'note' => ''
+            ];
         }
 
         \Illuminate\Support\Facades\Cache::put($cacheKey, $this->cart, now()->addHours(12));
@@ -55,11 +79,10 @@ class WaiterMenu extends Component
 
         $this->dispatch('cart-updated');
 
-        \Filament\Notifications\Notification::make()
-            ->title('Berhasil ditambahkan')
-            ->success()
-            ->duration(1000)
-            ->send();
+        // Trigger component refresh to update badges
+        $this->dispatch('$refresh');
+
+        $this->dispatch('notify', message: 'Berhasil ditambahkan ke keranjang', type: 'success');
     }
 
     public function render()

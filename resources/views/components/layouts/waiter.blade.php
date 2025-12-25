@@ -76,6 +76,36 @@
         <livewire:waiter-order.waiter-cart-counter />
     </div>
 
+    {{-- Toast Notification --}}
+    <div x-data="{ 
+        show: false, 
+        message: '', 
+        type: 'success'
+    }" @notify.window="
+        message = $event.detail.message;
+        type = $event.detail.type;
+        show = true;
+        setTimeout(() => { show = false }, 3000);
+    " x-show="show" x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 translate-y-4"
+        class="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] w-11/12 max-w-md" style="display: none;">
+        <div :class="{
+            'bg-green-500': type === 'success',
+            'bg-red-500': type === 'error',
+            'bg-amber-500': type === 'warning'
+        }" class="text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+            <div class="flex-1 font-medium text-sm" x-text="message"></div>
+            <button @click="show = false" class="text-white/80 hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
     @livewireScripts
     @filamentScripts
     @vite('resources/js/app.js')

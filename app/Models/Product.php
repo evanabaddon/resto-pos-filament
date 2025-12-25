@@ -165,4 +165,37 @@ class Product extends Model
             \Log::warning("No received purchase found for product {$this->name}");
         }
     }
+
+    /**
+     * Get maximum portions that can be made based on ingredient availability
+     * 
+     * @return int
+     */
+    public function getMaxPortionsAttribute(): int
+    {
+        return app(\App\Services\RecipeStockChecker::class)->getMaxPortions($this);
+    }
+
+    /**
+     * Check if product has sufficient ingredients for given quantity
+     * 
+     * @param int $quantity
+     * @return bool
+     */
+    public function hasIngredientsFor(int $quantity): bool
+    {
+        $check = app(\App\Services\RecipeStockChecker::class)->checkAvailability($this, $quantity);
+        return $check['available'];
+    }
+
+    /**
+     * Get availability info for this product
+     * 
+     * @param int $quantity
+     * @return array
+     */
+    public function getAvailabilityInfo(int $quantity = 1): array
+    {
+        return app(\App\Services\RecipeStockChecker::class)->checkAvailability($this, $quantity);
+    }
 }

@@ -40,6 +40,20 @@ class WaiterCart extends Component
     public function increment($productId)
     {
         if (isset($this->cartItems[$productId])) {
+            $product = \App\Models\Product::find($productId);
+
+            if ($product && in_array($product->type, ['produced', 'bar'])) {
+                // Check if we can add one more
+                $newQuantity = $this->cartItems[$productId]['qty'] + 1;
+                $stockChecker = app(\App\Services\RecipeStockChecker::class);
+                $availability = $stockChecker->checkAvailability($product, $newQuantity);
+
+                if (!$availability['available']) {
+                    $this->dispatch('notify', message: "⚠️ Stok terbatas. Hanya tersedia {$availability['max_portions']} porsi {$product->name}.", type: 'warning');
+                    return;
+                }
+            }
+
             $this->cartItems[$productId]['qty']++;
             $this->saveCart();
             $this->calculateTotal();

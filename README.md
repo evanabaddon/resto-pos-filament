@@ -51,6 +51,26 @@ Menu dengan recipe otomatis mengurangi stok bahan baku saat terjual:
 
 > **⚠️ Penting:** Pastikan setiap menu `produced` memiliki recipe yang lengkap agar HPP dan stock deduction akurat.
 
+### Recipe Stock Validation: Prevent Negative Stock
+Sistem validasi stok bahan baku yang mencegah overselling dan negative stock:
+- **Real-time Availability Check** - Cek ketersediaan bahan baku sebelum item ditambahkan ke cart
+- **Draft Sales Consideration** - Memperhitungkan qty yang sudah di draft sales (belum dibayar)
+- **Cross-Channel Sync** - Auto-refresh setiap 5 detik untuk sync antar POS, Waiter, dan Self-Order
+- **Visual Indicators** - Badge "Tersedia: X porsi" di POS/Waiter, overlay "HABIS" saat stock habis
+- **Cart Increment Protection** - Validasi saat user increment qty di cart
+- **Toast Notifications** - Notifikasi real-time via Livewire events (tanpa page reload)
+
+**Fitur per Channel:**
+| Feature | POS | Waiter App | Self-Order |
+|---------|-----|------------|------------|
+| Availability Badge | ✅ "Tersedia: X porsi" | ✅ "X porsi" | ❌ (validation only) |
+| Stock Validation | ✅ | ✅ | ✅ |
+| Cart Increment Check | ✅ | ✅ | ✅ |
+| Auto-disable when out | ✅ | ✅ | ✅ |
+| "HABIS" Overlay | ✅ | ✅ | ✅ |
+| Toast Notifications | ✅ (Filament) | ✅ (Alpine.js) | ✅ (Alpine.js) |
+| Auto-refresh (Polling) | ✅ 5s | ✅ 5s | ✅ 5s |
+
 ---
 
 ## ⚡️ Keunggulan Utama (Highlight Features)

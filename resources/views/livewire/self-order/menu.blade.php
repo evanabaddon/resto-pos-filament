@@ -28,10 +28,23 @@
     </div>
 
     <!-- Product Grid -->
-    <div class="px-5 py-4 grid grid-cols-2 gap-4">
+    <!-- Poll every 10s for cross-channel updates -->
+    <div wire:poll.5s class="px-5 py-4 grid grid-cols-2 gap-4">
         @forelse($products as $product)
+            @php
+                // Check if product is out of stock
+                $isOutOfStock = false;
+                if (in_array($product->type, ['produced', 'bar'])) {
+                    $cart = session()->get('cart', []);
+                    $maxPortions = $product->max_portions;
+                    $qtyInCart = isset($cart[$product->id]) ? $cart[$product->id]['qty'] : 0;
+                    $remainingPortions = max(0, $maxPortions - $qtyInCart);
+                    $isOutOfStock = $remainingPortions <= 0;
+                }
+            @endphp
             <div
-                class="bg-white rounded-3xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 group flex flex-col h-full border border-gray-100/50">
+                class="bg-white rounded-3xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 group flex flex-col h-full border border-gray-100/50 relative
+                    {{ $isOutOfStock ? 'opacity-60 grayscale' : 'hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]' }}">
                 <!-- Image -->
                 <div class="aspect-square w-full rounded-2xl overflow-hidden bg-gray-100 relative mb-3">
                     <img src="{{ $product->image_url }}" loading="lazy"
@@ -45,15 +58,26 @@
                     </div>
                 </div>
 
+                {{-- OUT OF STOCK OVERLAY --}}
+                @if($isOutOfStock)
+                <div class="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-3xl pointer-events-none">
+                    <span class="px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold rounded shadow-lg transform -rotate-6 tracking-wider">HABIS</span>
+                </div>
+                @endif
+
                 <!-- Content -->
                 <div class="flex flex-col flex-1">
                     <h3
                         class="font-bold text-gray-800 text-sm leading-snug line-clamp-2 mb-1 group-hover:text-primary-600 transition-colors">
-                        {{ $product->name }}</h3>
+                        {{ $product->name }}
+                    </h3>
 
                     <div class="mt-auto pt-3">
-                        <button wire:click="addToCart({{ $product->id }})" wire:loading.attr="disabled"
-                            class="w-full bg-gray-50 hover:bg-primary-50 text-gray-700 hover:text-primary-700 active:scale-95 border border-gray-200 hover:border-primary-200 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 group/btn relative overflow-hidden">
+                        <button wire:click="addToCart({{ $product->id }})" 
+                            wire:loading.attr="disabled"
+                            {{ $isOutOfStock ? 'disabled' : '' }}
+                            class="w-full py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 group/btn relative overflow-hidden
+                                {{ $isOutOfStock ? 'bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300' : 'bg-gray-50 hover:bg-primary-50 text-gray-700 hover:text-primary-700 active:scale-95 border border-gray-200 hover:border-primary-200' }}">
 
                             <span wire:loading.remove wire:target="addToCart({{ $product->id }})"
                                 class="flex items-center gap-1.5 z-10">

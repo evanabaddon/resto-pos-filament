@@ -425,10 +425,22 @@ class Pos extends Page
             return $product->stock > 0;
         }
 
-        // 2. Produced / Bar items
+        // 2. Produced / Bar items - check remaining portions after cart
         if (in_array($product->type, ['produced', 'bar'])) {
-            // Use existing logic (or optimization service if needed)
-            return $this->isProducedProductAvailable($product, app(UnitConversionService::class));
+            $maxPortions = $product->max_portions;
+
+            // Calculate quantity already in cart
+            $qtyInCart = 0;
+            foreach ($this->items as $item) {
+                if ($item['product_id'] == $product->id) {
+                    $qtyInCart += $item['quantity'];
+                }
+            }
+
+            // Remaining portions = max - already in cart
+            $remainingPortions = $maxPortions - $qtyInCart;
+
+            return $remainingPortions > 0;
         }
 
         return true;
@@ -757,6 +769,25 @@ class Pos extends Page
     public function incrementQuantity($index)
     {
         if (isset($this->items[$index])) {
+            $productId = $this->items[$index]['product_id'];
+            $product = Product::find($productId);
+
+            if ($product && in_array($product->type, ['produced', 'bar'])) {
+                // Check if we can add one more
+                $newQuantity = $this->items[$index]['quantity'] + 1;
+                $stockChecker = app(\App\Services\RecipeStockChecker::class);
+                $availability = $stockChecker->checkAvailability($product, $newQuantity);
+
+                if (!$availability['available']) {
+                    $this->dispatch(
+                        'show-notification',
+                        message: "⚠️ Hanya tersedia {$availability['max_portions']} porsi {$product->name}.",
+                        type: 'warning'
+                    );
+                    return;
+                }
+            }
+
             $this->items[$index]['quantity'] += 1;
             $this->items[$index]['subtotal'] = $this->items[$index]['price'] * $this->items[$index]['quantity'];
             $this->recalculateTotals();

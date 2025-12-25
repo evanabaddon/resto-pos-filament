@@ -75,10 +75,22 @@
     @endif
 
     <!-- Product Grid -->
-    <div class="px-5 py-4 grid grid-cols-2 gap-4">
+    <!-- Poll every 10s for cross-channel updates -->
+    <div wire:poll.5s class="px-5 py-4 grid grid-cols-2 gap-4">
         @forelse($products as $product)
+            @php
+                // Check if product is out of stock
+                $isOutOfStock = false;
+                if (in_array($product->type, ['produced', 'bar'])) {
+                    $maxPortions = $product->max_portions;
+                    $qtyInCart = isset($cart[$product->id]) ? $cart[$product->id]['qty'] : 0;
+                    $remainingPortions = max(0, $maxPortions - $qtyInCart);
+                    $isOutOfStock = $remainingPortions <= 0;
+                }
+            @endphp
             <div wire:key="product-{{ $product->id }}"
-                class="bg-white rounded-3xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 group flex flex-col h-full border border-gray-100/50">
+                class="bg-white rounded-3xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 group flex flex-col h-full border border-gray-100/50 relative
+                    {{ $isOutOfStock ? 'opacity-60 grayscale' : 'hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]' }}">
                 <!-- Image -->
                 <div class="aspect-square w-full rounded-2xl overflow-hidden bg-gray-100 relative mb-3">
                     <img src="{{ $product->image_url }}" loading="lazy"
@@ -90,6 +102,37 @@
                                 class="text-[10px] text-gray-500">rb</span>
                         </span>
                     </div>
+
+                    @if(in_array($product->type, ['produced', 'bar']))
+                        @php
+                            $maxPortions = $product->max_portions;
+                            // Calculate quantity already in cart
+                            $qtyInCart = 0;
+                            if (isset($cart[$product->id])) {
+                                $qtyInCart = $cart[$product->id]['qty'];
+                            }
+                            // Remaining portions = max - already in cart
+                            $remainingPortions = max(0, $maxPortions - $qtyInCart);
+                        @endphp
+                        @if($maxPortions < 10)
+                            <!-- Availability Badge -->
+                            <div class="absolute top-2 right-2">
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold shadow-sm border
+                                                    {{ $remainingPortions > 5 ? 'bg-emerald-500 text-white border-emerald-600' :
+                            ($remainingPortions > 0 ? 'bg-amber-500 text-white border-amber-600' : 'bg-rose-500 text-white border-rose-600') }}">
+                                    {{ $remainingPortions }} porsi
+                                </span>
+                            </div>
+                        @endif
+                    @endif
+                    
+                    {{-- OUT OF STOCK OVERLAY --}}
+                    @if($isOutOfStock)
+                    <div class="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-2xl pointer-events-none">
+                        <span class="px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold rounded shadow-lg transform -rotate-6 tracking-wider">HABIS</span>
+                    </div>
+                    @endif
                 </div>
 
                 <!-- Content -->
@@ -100,8 +143,11 @@
                     </h3>
 
                     <div class="mt-auto pt-3">
-                        <button wire:click="addToCart({{ $product->id }})" wire:loading.attr="disabled"
-                            class="w-full bg-gray-50 hover:bg-primary-50 text-gray-700 hover:text-primary-700 active:scale-95 border border-gray-200 hover:border-primary-200 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 group/btn relative overflow-hidden">
+                        <button wire:click="addToCart({{ $product->id }})" 
+                            wire:loading.attr="disabled"
+                            {{ $isOutOfStock ? 'disabled' : '' }}
+                            class="w-full py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 group/btn relative overflow-hidden
+                                {{ $isOutOfStock ? 'bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300' : 'bg-gray-50 hover:bg-primary-50 text-gray-700 hover:text-primary-700 active:scale-95 border border-gray-200 hover:border-primary-200' }}">
 
                             <span wire:loading.remove wire:target="addToCart({{ $product->id }})"
                                 class="flex items-center gap-1.5 z-10">
