@@ -89,38 +89,35 @@ class WaiterCheckout extends Component
                 $memberId = $member->id;
             }
 
-            // 1. Create Sale (Order)
-            $sale = Sale::create([
-                'invoice_number' => 'INV-W-' . date('YmdHis') . '-' . rand(100, 999), // W for Waiter
+            // Prepare data for OrderService
+            $saleData = [
+                'cash_session_id' => $sessionId,
+                'user_id' => $userId,
+                'invoice_number' => 'INV-W-' . date('YmdHis') . '-' . rand(100, 999),
                 'customer_name' => $this->name,
                 'table_number' => $this->tableNumber ?: 'UnSet',
-                'user_id' => $userId,
-                'member_id' => $memberId,
-                'cash_session_id' => $sessionId,
                 'order_type' => 'Dine In',
                 'subtotal' => $this->subtotal,
                 'tax' => $this->tax,
+                'discount' => 0,
                 'final_total' => $this->total,
-                'total' => $this->total,
-                'status' => 'draft', // KDS Pending
-                'payment_method' => 'cashier',
-                'is_paid' => false,
-                'is_tax_reported' => false
-            ]);
+                'member_id' => $memberId,
+            ];
 
-            // 2. Create Sale Items
-            foreach ($this->cartItems as $item) {
-                SaleItem::create([
-                    'sale_id' => $sale->id,
+            $items = collect($this->cartItems)->map(function ($item) {
+                return [
                     'product_id' => $item['id'],
-                    'product_name' => $item['name'],
+                    'name' => $item['name'],
                     'quantity' => $item['qty'],
-                    'unit_price' => $item['price'],
+                    'price' => $item['price'],
                     'subtotal' => $item['price'] * $item['qty'],
-                    'status' => 'pending',
-                    'notes' => $item['note'] ?? null
-                ]);
-            }
+                    'notes' => $item['note'] ?? '',
+                ];
+            })->toArray();
+
+            // Use OrderService to handle stock deduction
+            $orderService = new \App\Services\OrderService();
+            $sale = $orderService->processOrder($saleData, $items, false);
 
             // 3. Auto Print to Kitchen/Bar
             try {
