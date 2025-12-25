@@ -3,7 +3,7 @@
         {{ $this->form }}
     </x-filament::section>
 
-    <div class="mt-8">
+    <div class="">
         {{ $this->table }}
     </div>
 </x-filament-panels::page>

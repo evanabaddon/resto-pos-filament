@@ -17,12 +17,21 @@
     </div>
 
     {{-- Filter Form --}}
-    <div class="mb-6">
+    <div class="">
         {{ $this->form }}
     </div>
 
+    {{-- Header Widgets (Chart) --}}
+    <x-filament-widgets::widgets
+        :widgets="$this->getManualHeaderWidgets()"
+        :columns="[
+            'md' => 1,
+            'xl' => 1,
+        ]"
+        :data="$this->getWidgetData()" />
+
     {{-- Stats Grid --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {{-- Net Sales --}}
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
             <div class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-green-50 to-transparent"></div>
@@ -162,9 +171,9 @@
                         {{ number_format($totalExpenses, 0, ',', '.') }})</span>
                 </div>
                 @if($totalPayroll > 0)
-                    <div class="flex justify-between items-center text-[10px] italic text-gray-400 pl-2">
-                        <span>(Termasuk Gaji: Rp {{ number_format($totalPayroll, 0, ',', '.') }})</span>
-                    </div>
+                <div class="flex justify-between items-center text-[10px] italic text-gray-400 pl-2">
+                    <span>(Termasuk Gaji: Rp {{ number_format($totalPayroll, 0, ',', '.') }})</span>
+                </div>
                 @endif
             </div>
 
@@ -238,21 +247,21 @@
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-white/5">
                                 @foreach($topStockAssets as $asset)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-white/5">
-                                        <td class="px-4 py-2">
-                                            <div class="font-medium text-gray-900 dark:text-white">{{ $asset['name'] }}
-                                            </div>
-                                            <div class="text-xs text-gray-500">@ Rp
-                                                {{ number_format($asset['price'], 0, ',', '.') }} /
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-gray-600 dark:text-gray-400">
-                                            {{ $asset['stock'] }} {{ $asset['unit'] }}
-                                        </td>
-                                        <td class="px-4 py-2 text-right font-bold text-indigo-600 dark:text-indigo-400">
-                                            Rp {{ number_format($asset['total_value'], 0, ',', '.') }}
-                                        </td>
-                                    </tr>
+                                <tr class="hover:bg-gray-50 dark:hover:bg-white/5">
+                                    <td class="px-4 py-2">
+                                        <div class="font-medium text-gray-900 dark:text-white">{{ $asset['name'] }}
+                                        </div>
+                                        <div class="text-xs text-gray-500">@ Rp
+                                            {{ number_format($asset['price'], 0, ',', '.') }} /
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-2 text-center text-gray-600 dark:text-gray-400">
+                                        {{ $asset['stock'] }} {{ $asset['unit'] }}
+                                    </td>
+                                    <td class="px-4 py-2 text-right font-bold text-indigo-600 dark:text-indigo-400">
+                                        Rp {{ number_format($asset['total_value'], 0, ',', '.') }}
+                                    </td>
+                                </tr>
                                 @endforeach
                             </tbody>
                         </table>
@@ -285,19 +294,19 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-white/5">
                     @forelse ($breakdownCogs as $item)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-white/5">
-                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $item['name'] }}</td>
-                            <td class="px-4 py-3 text-center text-gray-500 dark:text-gray-400">{{ $item['qty'] }}
-                            </td>
-                            <td class="px-4 py-3 text-right text-orange-600 dark:text-orange-400 font-bold">Rp
-                                {{ number_format($item['total_hpp'], 0, ',', '.') }}
-                            </td>
-                        </tr>
+                    <tr class="hover:bg-gray-50 dark:hover:bg-white/5">
+                        <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $item['name'] }}</td>
+                        <td class="px-4 py-3 text-center text-gray-500 dark:text-gray-400">{{ $item['qty'] }}
+                        </td>
+                        <td class="px-4 py-3 text-right text-orange-600 dark:text-orange-400 font-bold">Rp
+                            {{ number_format($item['total_hpp'], 0, ',', '.') }}
+                        </td>
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="3" class="px-4 py-6 text-center text-gray-400 text-sm">Belum ada data
-                                penjualan.</td>
-                        </tr>
+                    <tr>
+                        <td colspan="3" class="px-4 py-6 text-center text-gray-400 text-sm">Belum ada data
+                            penjualan.</td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>
@@ -327,23 +336,23 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-white/5">
                     @forelse ($breakdownExpenses as $expense)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-white/5">
-                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
-                                {{ \Carbon\Carbon::parse($expense['date'])->format('d M Y') }}
-                            </td>
-                            <td class="px-4 py-3 text-gray-900 dark:text-white">
-                                <span class="block font-medium">{{ $expense['category'] }}</span>
-                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $expense['description'] }}</span>
-                            </td>
-                            <td class="px-4 py-3 text-right text-red-600 dark:text-red-400 font-bold whitespace-nowrap">
-                                Rp {{ number_format($expense['amount'], 0, ',', '.') }}
-                            </td>
-                        </tr>
+                    <tr class="hover:bg-gray-50 dark:hover:bg-white/5">
+                        <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                            {{ \Carbon\Carbon::parse($expense['date'])->format('d M Y') }}
+                        </td>
+                        <td class="px-4 py-3 text-gray-900 dark:text-white">
+                            <span class="block font-medium">{{ $expense['category'] }}</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ $expense['description'] }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-right text-red-600 dark:text-red-400 font-bold whitespace-nowrap">
+                            Rp {{ number_format($expense['amount'], 0, ',', '.') }}
+                        </td>
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="3" class="px-4 py-6 text-center text-gray-400 text-sm">Belum ada
-                                pengeluaran operasional.</td>
-                        </tr>
+                    <tr>
+                        <td colspan="3" class="px-4 py-6 text-center text-gray-400 text-sm">Belum ada
+                            pengeluaran operasional.</td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>
@@ -357,20 +366,20 @@
         </x-slot>
         <div class="space-y-4">
             @foreach($hppContributors as $item)
-                <div
-                    class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-white/5 last:border-0">
-                    <div class="flex flex-col">
-                        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $item['name'] }}</span>
-                        <span class="text-xs text-gray-500 dark:text-gray-400">{{ $item['qty'] }} terjual</span>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-sm font-bold text-orange-600 dark:text-orange-400">Rp
-                            {{ number_format($item['total_hpp'], 0, ',', '.') }}</span>
-                        <div class="text-[10px] text-gray-400">Modal per porsi: Rp
-                            {{ number_format($item['unit_hpp'], 0, ',', '.') }}
-                        </div>
+            <div
+                class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-white/5 last:border-0">
+                <div class="flex flex-col">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $item['name'] }}</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ $item['qty'] }} terjual</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-sm font-bold text-orange-600 dark:text-orange-400">Rp
+                        {{ number_format($item['total_hpp'], 0, ',', '.') }}</span>
+                    <div class="text-[10px] text-gray-400">Modal per porsi: Rp
+                        {{ number_format($item['unit_hpp'], 0, ',', '.') }}
                     </div>
                 </div>
+            </div>
             @endforeach
         </div>
     </x-filament::section>
@@ -382,18 +391,18 @@
         </x-slot>
         <div class="space-y-4">
             @foreach($profitContributors as $item)
-                <div
-                    class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-white/5 last:border-0">
-                    <div class="flex flex-col">
-                        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $item['name'] }}</span>
-                        <span class="text-xs text-gray-500 dark:text-gray-400">{{ $item['qty'] }} terjual</span>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-sm font-bold text-green-600 dark:text-green-400">Rp
-                            {{ number_format($item['total_profit'], 0, ',', '.') }}</span>
-                        <div class="text-[10px] text-gray-400">Realisasi Cuan per porsi</div>
-                    </div>
+            <div
+                class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-white/5 last:border-0">
+                <div class="flex flex-col">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $item['name'] }}</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ $item['qty'] }} terjual</span>
                 </div>
+                <div class="text-right">
+                    <span class="text-sm font-bold text-green-600 dark:text-green-400">Rp
+                        {{ number_format($item['total_profit'], 0, ',', '.') }}</span>
+                    <div class="text-[10px] text-gray-400">Realisasi Cuan per porsi</div>
+                </div>
+            </div>
             @endforeach
         </div>
     </x-filament::section>

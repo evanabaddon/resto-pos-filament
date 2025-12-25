@@ -36,7 +36,15 @@ class FinancialReport extends Page implements HasForms
 
     protected string $view = 'filament.pages.financial-report';
 
+    // Disabled auto header widgets to prevent double rendering
+    // Widgets are manually rendered in blade view for better positioning
     protected function getHeaderWidgets(): array
+    {
+        return [];
+    }
+
+    // Method to get widgets for manual rendering in blade
+    public function getManualHeaderWidgets(): array
     {
         return [
             \App\Filament\Pages\FinancialReport\Widgets\FinancialTrendChart::class,
