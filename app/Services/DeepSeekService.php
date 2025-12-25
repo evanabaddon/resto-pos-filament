@@ -407,7 +407,8 @@ class DeepSeekService
         
         ATURAN:
         1. Berikan saran yang KONKRIT dan TEKNIS.
-        2. Berikan data JSON SAJA tanpa penjelasan tambahan di luar JSON.";
+        2. Jika ada menu berupa nasi putih atau sega putih, maka tidak perlu dihitung dalam analisis profitabilitas karena menu tersebut adalah bahan baku yang digunakan untuk membuat menu lainnya.
+        3. Berikan data JSON SAJA tanpa penjelasan tambahan di luar JSON.";
 
         // Limit matrix data to avoid token limits
         // Prioritize items with sales, then take top 50
