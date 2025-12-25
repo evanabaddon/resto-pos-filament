@@ -96,6 +96,15 @@ class RecipeStockChecker
             ->where('product_id', $product->id)
             ->sum('quantity');
 
+        \Illuminate\Support\Facades\Log::info("=== Stock Calculation for {$product->name} (ID: {$product->id}) ===");
+        \Illuminate\Support\Facades\Log::info("Recipe count: " . $recipes->count());
+        foreach ($recipes as $recipe) {
+            \Illuminate\Support\Facades\Log::info("  Ingredient: {$recipe->ingredient->name}, Required: {$recipe->quantity} {$recipe->unit->name}, Stock: {$recipe->ingredient->stock} {$recipe->ingredient->unit->name}");
+        }
+        \Illuminate\Support\Facades\Log::info("Max from ingredients: {$maxPortions}");
+        \Illuminate\Support\Facades\Log::info("Draft sales qty: {$draftQty}");
+        \Illuminate\Support\Facades\Log::info("Final available: " . max(0, $maxPortions - (int) $draftQty));
+
         return max(0, $maxPortions - (int) $draftQty);
     }
 
