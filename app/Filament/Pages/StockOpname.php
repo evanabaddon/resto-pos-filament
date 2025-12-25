@@ -80,22 +80,22 @@ class StockOpname extends Page
     public function getTotalVarianceProperty(): float
     {
         return collect($this->products)->sum(function ($product) {
-            return ($product['physical_count'] ?? 0) - $product['system_stock'];
+            return (float) ($product['physical_count'] ?? 0) - (float) $product['system_stock'];
         });
     }
 
     public function getTotalLossProperty(): float
     {
         return collect($this->products)->sum(function ($product) {
-            $variance = ($product['physical_count'] ?? 0) - $product['system_stock'];
+            $variance = (float) ($product['physical_count'] ?? 0) - (float) $product['system_stock'];
             if ($variance >= 0)
                 return 0;
 
             // Convert base_price (per purchase unit) to price per stock unit
             // Example: Galon Rp 20k (19kg), conversion_rate = 0.00005263 (1 gram = 0.00005263 galon)
             // Price per gram = Rp 20k * 0.00005263 = Rp 1.05/gram
-            $conversionRate = $product['conversion_rate'] ?? 1;
-            $pricePerStockUnit = ($product['base_price'] ?? 0) * $conversionRate;
+            $conversionRate = (float) ($product['conversion_rate'] ?? 1);
+            $pricePerStockUnit = (float) ($product['base_price'] ?? 0) * $conversionRate;
 
             return abs($variance) * $pricePerStockUnit;
         });
