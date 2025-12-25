@@ -130,7 +130,10 @@ class StockOpname extends Page
                 : $filtered->sortByDesc('system_stock');
         }
 
-        return $filtered->toArray(); // Keep original keys for wire:model mapping
+        // CRITICAL FIX: Use values() to reset array keys to sequential integers
+        // This prevents Livewire from binding to wrong products when filtering
+        // The product ID is still preserved in $product['id'] for wire:model binding
+        return $filtered->values()->toArray();
     }
 
     public function getCategoriesProperty(): array
