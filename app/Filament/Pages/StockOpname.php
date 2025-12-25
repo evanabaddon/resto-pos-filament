@@ -91,13 +91,9 @@ class StockOpname extends Page
             if ($variance >= 0)
                 return 0;
 
-            // Convert base_price (per purchase unit) to price per stock unit
-            // Example: Galon Rp 20k (19kg), conversion_rate = 0.00005263 (1 gram = 0.00005263 galon)
-            // Price per gram = Rp 20k * 0.00005263 = Rp 1.05/gram
-            $conversionRate = (float) ($product['conversion_rate'] ?? 1);
-            $pricePerStockUnit = (float) ($product['base_price'] ?? 0) * $conversionRate;
-
-            return abs($variance) * $pricePerStockUnit;
+            // base_price is already per stock unit (same as variance unit)
+            // No conversion needed - variance and base_price are in same unit
+            return abs($variance) * (float) ($product['base_price'] ?? 0);
         });
     }
 
@@ -214,12 +210,9 @@ class StockOpname extends Page
                 $totalVariance += abs($variance);
 
                 if ($variance < 0) {
-                    // Convert base_price (per purchase unit) to price per stock unit
-                    // Example: Galon Rp 20k (19kg), conversion_rate = 0.00005263
-                    // Price per gram = Rp 20k * 0.00005263 = Rp 1.05/gram
-                    $conversionRate = $product->unit?->conversion_rate ?? 1;
-                    $pricePerStockUnit = ($product->base_price ?? 0) * $conversionRate;
-                    $totalLoss += abs($variance) * $pricePerStockUnit;
+                    // base_price is already per stock unit (same as variance unit)
+                    // No conversion needed
+                    $totalLoss += abs($variance) * (float) ($product->base_price ?? 0);
                 }
             }
         }
