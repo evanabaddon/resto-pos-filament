@@ -20,9 +20,10 @@ class MenuEngineeringService
             ->get()
             ->keyBy('product_id');
 
-        // 2. Get All Sellable Products (Exclude Add-ons & Side Items)
+        // 2. Get All Sellable Products (Exclude Add-ons, Side Items & Discontinued Products)
+        // Note: Discontinued products should have is_sellable = false to be excluded
         $products = Product::query()
-            ->where('is_sellable', true)
+            ->where('is_sellable', true) // Excludes discontinued products
             ->where(function ($query) {
                 $query->where('name', 'not like', '%Down Payment%')
                     ->where('name', 'not like', '%DP%')
