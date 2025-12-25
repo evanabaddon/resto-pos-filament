@@ -67,12 +67,12 @@ class MenuEngineering extends Page
             $this->aiAdvice = $advice;
             $this->lastGeneratedAt = now()->format('d M Y, H:i');
 
-            // Cache for 24 hours
+            // Cache for 7 days (data menu jarang berubah drastis)
             Cache::put('menu_engineering_analysis', [
                 'matrix' => $this->matrixData,
                 'advice' => $this->aiAdvice,
                 'timestamp' => $this->lastGeneratedAt,
-            ], now()->addHours(24));
+            ], now()->addDays(7));
 
             Notification::make()
                 ->title('Analisis Berhasil')
