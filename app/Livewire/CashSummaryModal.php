@@ -101,6 +101,23 @@ class CashSummaryModal extends Component
         // Hitung total pembelian dari kasir
         $totalCashPurchases = $purchases->sum('total');
 
+        // Calculate unpaid sales (draft/pending or NULL payment method)
+        $unpaidSales = $this->session->sales()
+            ->where(function ($query) {
+                $query->where('status', 'draft')
+                    ->orWhere('status', 'pending')
+                    ->orWhereNull('payment_method_id');
+            })
+            ->sum('final_total');
+
+        $unpaidCount = $this->session->sales()
+            ->where(function ($query) {
+                $query->where('status', 'draft')
+                    ->orWhere('status', 'pending')
+                    ->orWhereNull('payment_method_id');
+            })
+            ->count();
+
         // Cash sales khusus untuk perhitungan expected cash
         $cashSales = $paymentMethodSales['cash'] ?? 0;
 
@@ -120,6 +137,8 @@ class CashSummaryModal extends Component
             'cash_sales' => $cashSales,
             'total_cash_expenses' => $totalCashExpenses,
             'total_cash_purchases' => $totalCashPurchases,
+            'unpaid_sales' => $unpaidSales,
+            'unpaid_count' => $unpaidCount,
             'expected_cash' => $expectedCash,
             'cash_out' => $this->session->cash_out,
             'cash_difference' => $cashDifference,
