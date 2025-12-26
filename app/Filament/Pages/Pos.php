@@ -1189,10 +1189,6 @@ class Pos extends Page
         return is_array($this->items) ? $this->items : [];
     }
 
-
-
-
-
     protected function getViewData(): array
     {
         return [
