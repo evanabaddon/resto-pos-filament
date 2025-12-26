@@ -86,7 +86,7 @@
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <input wire:model.live.debounce.500ms="searchQuery" id="product-search-input" type="text"
+                    <input wire:model.live.debounce.700ms="searchQuery" id="product-search-input" type="text"
                         class="pl-9 block w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 rounded-lg text-xs py-1.5 transition-all font-medium placeholder-slate-400"
                         placeholder="Cari menu... (Ctrl+K)" autocomplete="off">
 
@@ -115,7 +115,7 @@
                     </button>
                     @foreach ($categories as $category)
                                     <button wire:click="setCategory('{{ $category->id }}')" class="whitespace-nowrap px-3 py-2 rounded-lg text-[10px] font-bold transition-all border shrink-0 touch-target
-                                                                                                                                {{ $selectedCategory == $category->id
+                                                                                                                                                {{ $selectedCategory == $category->id
                         ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
                         : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
                                         {{ $category->name }}
@@ -154,7 +154,7 @@
                                 @click="animateFlyToCart($event); $wire.quickAddProduct({{ $product->id }})"
                             wire:loading.class="opacity-50 cursor-wait" wire:target="quickAddProduct({{ $product->id }})" @endif
                                 class="group relative bg-white rounded-xl p-2 flex flex-col items-stretch transition-all duration-200 select-none touch-manipulation
-                                                                                                {{ $product->is_available
+                                                                                                            {{ $product->is_available
                     ? 'cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-slate-100 hover:border-violet-200'
                     : 'cursor-not-allowed opacity-60 grayscale bg-slate-50 border border-slate-100' }}">
 
@@ -164,81 +164,82 @@
                                             <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
                                                 <span
                                                     class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
-                                                                                                                                                                                    {{ $product->stock > 10 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
+                                                                                                                                                                                                            {{ $product->stock > 10 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
                                     ($product->stock > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
                                                     {{ intval($product->stock) }}
                                                 </span>
                                             </div>
                                 @else
                                     {{-- Availability Badge for Produced/Bar Items (OPTIMIZED) --}}
-                                                    @php
-                                                        // Use pre-calculated remaining portions from controller
-                                                        $remainingPortions = $product->remaining_portions ?? 0;
-                                                    @endphp
-                                                    @if($product->max_portions_display < 10)
-                                                                                    <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
-                                                                                        <span
-                                                                                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
-                                                                                                                                                                        {{ $remainingPortions > 5 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
-                                                        ($remainingPortions > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
-                                                                                            {{ $remainingPortions }} porsi
-                                                                                        </span>
-                                                                                    </div>
-                                                    @endif
+                                    @php
+                                        // Use pre-calculated remaining portions from controller
+                                        $remainingPortions = $product->remaining_portions ?? 0;
+                                    @endphp
+                                    @if($product->max_portions_display < 10)
+                                            <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
+                                                <span
+                                                    class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
+                                                                                                                                                                                                {{ $remainingPortions > 5 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
+                                        ($remainingPortions > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
+                                                    {{ $remainingPortions }} porsi
+                                                </span>
+                                            </div>
+                                    @endif
                                 @endif
 
-                                            {{-- OUT OF STOCK OVERLAY --}}
-                                            @if(!$product->is_available)
-                                                <div
-                                                    class="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-xl pointer-events-none">
-                                                    <span
-                                                        class="px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold rounded shadow-lg transform -rotate-6 tracking-wider">HABIS</span>
-                                                </div>
-                                            @endif
+                                {{-- OUT OF STOCK OVERLAY --}}
+                                @if(!$product->is_available)
+                                    <div
+                                        class="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-xl pointer-events-none">
+                                        <span
+                                            class="px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold rounded shadow-lg transform -rotate-6 tracking-wider">HABIS</span>
+                                    </div>
+                                @endif
 
-                                            {{-- Product Image (Compact 4:3) --}}
-                                            <div class="aspect-[4/3] w-full mb-2 rounded-lg bg-slate-100 overflow-hidden relative shadow-inner">
-                                                @if($product->image)
-                                                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
-                                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
-                                                        loading="lazy">
-                                                @else
-                                                    <div class="w-full h-full flex items-center justify-center text-slate-300">
-                                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                                            </path>
-                                                        </svg>
-                                                    </div>
-                                                @endif
+                                {{-- Product Image (Compact 4:3) --}}
+                                <div class="aspect-[4/3] w-full mb-2 rounded-lg bg-slate-100 overflow-hidden relative shadow-inner">
+                                    @if($product->image)
+                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+                                            loading="lazy"
+                                            onerror="this.onerror=null;this.src='https://placehold.co/200x200?text=No+Image';">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center text-slate-300">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                    @endif
 
-                                                {{-- Add Button Overlay (Mobile Visual Cue - Minimal) --}}
-                                                @if($product->is_available)
-                                                    <div class="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <div class="bg-violet-600/90 p-1 rounded-full shadow-sm text-white">
-                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                                                    d="M12 4v16m8-8H4"></path>
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                @endif
-                                            </div>
-
-                                            {{-- Product Info (Compact) --}}
-                                            <div class="flex-1 flex flex-col min-h-0">
-                                                <h3
-                                                    class="text-[11px] sm:text-xs font-bold text-slate-700 leading-tight line-clamp-2 mb-1 group-hover:text-violet-700 transition-colors">
-                                                    {{ $product->name }}
-                                                </h3>
-                                                <div class="mt-auto pt-0.5">
-                                                    <p class="text-xs sm:text-sm font-black text-violet-600 leading-none">
-                                                        <span
-                                                            class="text-[9px] font-normal text-violet-400 mr-0.5">Rp</span>{{ number_format($product->sell_price, 0, ',', '.') }}
-                                                    </p>
-                                                </div>
+                                    {{-- Add Button Overlay (Mobile Visual Cue - Minimal) --}}
+                                    @if($product->is_available)
+                                        <div class="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div class="bg-violet-600/90 p-1 rounded-full shadow-sm text-white">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                        d="M12 4v16m8-8H4"></path>
+                                                </svg>
                                             </div>
                                         </div>
+                                    @endif
+                                </div>
+
+                                {{-- Product Info (Compact) --}}
+                                <div class="flex-1 flex flex-col min-h-0">
+                                    <h3
+                                        class="text-[11px] sm:text-xs font-bold text-slate-700 leading-tight line-clamp-2 mb-1 group-hover:text-violet-700 transition-colors">
+                                        {{ $product->name }}
+                                    </h3>
+                                    <div class="mt-auto pt-0.5">
+                                        <p class="text-xs sm:text-sm font-black text-violet-600 leading-none">
+                                            <span
+                                                class="text-[9px] font-normal text-violet-400 mr-0.5">Rp</span>{{ number_format($product->sell_price, 0, ',', '.') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                 @empty
                     <div class="col-span-full flex flex-col items-center justify-center py-12 text-center text-slate-400">
                         <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
@@ -390,7 +391,7 @@
                                             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
                                 </div>
-                                <input type="text" wire:model.live.debounce.300ms="memberSearchQuery"
+                                <input type="text" wire:model.live.debounce.500ms="memberSearchQuery"
                                     class="block w-full pl-9 pr-3 py-1.5 border border-slate-200 bg-slate-50/50 rounded-lg text-xs placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm font-medium"
                                     placeholder="Cari Member...">
                             </div>
@@ -841,79 +842,79 @@
                         @else
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                 @foreach($salesData as $sale)
-                                                                @php
-                                                                    $saleId = $sale['id'];
-                                                                    $isSelected = in_array($saleId, $selectedSalesToMerge);
-                                                                    $isTarget = $mergeTargetSale == $saleId;
-                                                                @endphp
-                                                                <div wire:click="toggleSelectSale({{ $saleId }})"
-                                                                    class="group cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 
-                                                                                                                                                                 {{ $isTarget ? 'border-green-500 bg-green-50/50 ring-1 ring-green-500 shadow-md' :
+                                            @php
+                                                $saleId = $sale['id'];
+                                                $isSelected = in_array($saleId, $selectedSalesToMerge);
+                                                $isTarget = $mergeTargetSale == $saleId;
+                                            @endphp
+                                            <div wire:click="toggleSelectSale({{ $saleId }})"
+                                                class="group cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 
+                                                                                                                                                                                     {{ $isTarget ? 'border-green-500 bg-green-50/50 ring-1 ring-green-500 shadow-md' :
                                     ($isSelected ? 'border-purple-500 bg-purple-50/50 shadow-sm' : 'border-gray-200 bg-white hover:border-purple-300 hover:shadow-md') }}">
 
-                                                                    <!-- Checkbox Indicator -->
-                                                                    <div class="absolute top-3 right-3 z-10">
-                                                                        @if($isTarget)
-                                                                            <span
-                                                                                class="inline-flex items-center gap-1 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
-                                                                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                                                        d="M5 13l4 4L19 7"></path>
-                                                                                </svg>
-                                                                                TARGET
-                                                                            </span>
-                                                                        @elseif($isSelected)
-                                                                            <div
-                                                                                class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-sm transition-transform scale-100">
-                                                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                                                                        d="M5 13l4 4L19 7"></path>
-                                                                                </svg>
-                                                                            </div>
-                                                                        @else
-                                                                            <div
-                                                                                class="w-6 h-6 border-2 border-gray-300 rounded-full group-hover:border-purple-400 transition-colors">
-                                                                            </div>
-                                                                        @endif
-                                                                    </div>
+                                                <!-- Checkbox Indicator -->
+                                                <div class="absolute top-3 right-3 z-10">
+                                                    @if($isTarget)
+                                                        <span
+                                                            class="inline-flex items-center gap-1 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
+                                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M5 13l4 4L19 7"></path>
+                                                            </svg>
+                                                            TARGET
+                                                        </span>
+                                                    @elseif($isSelected)
+                                                        <div
+                                                            class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-sm transition-transform scale-100">
+                                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                                    d="M5 13l4 4L19 7"></path>
+                                                            </svg>
+                                                        </div>
+                                                    @else
+                                                        <div
+                                                            class="w-6 h-6 border-2 border-gray-300 rounded-full group-hover:border-purple-400 transition-colors">
+                                                        </div>
+                                                    @endif
+                                                </div>
 
-                                                                    <div class="pr-8">
-                                                                        <div class="font-bold text-gray-900 text-base font-mono mb-1">
-                                                                            {{ $sale['invoice_number'] }}
-                                                                        </div>
-                                                                        <div class="text-sm text-gray-600 font-medium truncate mb-2">
-                                                                            {{ $sale['customer_name'] ?? 'Pelanggan Umum' }}
-                                                                        </div>
-                                                                        <div class="flex items-end justify-between">
-                                                                            <div>
-                                                                                <span class="text-xs text-gray-400 block mb-0.5">Total</span>
-                                                                                <div class="font-bold text-purple-700 text-lg leading-none">
-                                                                                    Rp{{ number_format($sale['final_total'] ?? 0, 0, ',', '.') }}
-                                                                                </div>
-                                                                            </div>
-                                                                            <div class="text-right">
-                                                                                <span
-                                                                                    class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
-                                                                                    {{ isset($sale['items']) ? count($sale['items']) : 0 }} items
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
+                                                <div class="pr-8">
+                                                    <div class="font-bold text-gray-900 text-base font-mono mb-1">
+                                                        {{ $sale['invoice_number'] }}
+                                                    </div>
+                                                    <div class="text-sm text-gray-600 font-medium truncate mb-2">
+                                                        {{ $sale['customer_name'] ?? 'Pelanggan Umum' }}
+                                                    </div>
+                                                    <div class="flex items-end justify-between">
+                                                        <div>
+                                                            <span class="text-xs text-gray-400 block mb-0.5">Total</span>
+                                                            <div class="font-bold text-purple-700 text-lg leading-none">
+                                                                Rp{{ number_format($sale['final_total'] ?? 0, 0, ',', '.') }}
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <span
+                                                                class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                                                                {{ isset($sale['items']) ? count($sale['items']) : 0 }} items
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
-                                                                    <!-- Target Button Overlay -->
-                                                                    @if($isSelected && !$isTarget)
-                                                                        <div class="mt-3 pt-3 border-t border-purple-100/50 flex justify-end">
-                                                                            <button wire:click.stop="setMergeTarget({{ $saleId }})"
-                                                                                class="cursor-pointer text-xs font-bold text-green-700 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-sm">
-                                                                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                                                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                                                                </svg>
-                                                                                Jadikan Tujuan
-                                                                            </button>
-                                                                        </div>
-                                                                    @endif
-                                                                </div>
+                                                <!-- Target Button Overlay -->
+                                                @if($isSelected && !$isTarget)
+                                                    <div class="mt-3 pt-3 border-t border-purple-100/50 flex justify-end">
+                                                        <button wire:click.stop="setMergeTarget({{ $saleId }})"
+                                                            class="cursor-pointer text-xs font-bold text-green-700 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-sm">
+                                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                                            </svg>
+                                                            Jadikan Tujuan
+                                                        </button>
+                                                    </div>
+                                                @endif
+                                            </div>
                                 @endforeach
                             </div>
                         @endif
@@ -1024,7 +1025,7 @@
 
                                 <button wire:click="processMergeBill" wire:loading.attr="disabled"
                                     class="w-full py-3.5 px-4 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-bold rounded-xl shadow-lg shadow-purple-200 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center gap-2 cursor-pointer
-                                                    {{ count($selectedSalesToMerge) < 2 || !$mergeTargetSale ? 'opacity-50 pointer-events-none' : '' }}">
+                                                        {{ count($selectedSalesToMerge) < 2 || !$mergeTargetSale ? 'opacity-50 pointer-events-none' : '' }}">
                                     <svg wire:loading wire:target="processMergeBill" class="w-5 h-5 animate-spin"
                                         fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
@@ -1097,7 +1098,7 @@
                                 <label class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Jumlah
                                     Poin</label>
                                 <div class="relative mt-1">
-                                    <input type="number" wire:model.live.debounce.300ms="pointRedemptionAmount"
+                                    <input type="number" wire:model.live.debounce.500ms="pointRedemptionAmount"
                                         class="block w-full pl-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-sm font-bold"
                                         placeholder="0">
                                     <div
@@ -1172,7 +1173,7 @@
 
                                     <button wire:click="redeemReward({{ $reward->id }})"
                                         class="px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm
-                                                                        {{ $canRedeem ? 'bg-violet-600 text-white hover:bg-violet-700 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}"
+                                                                                {{ $canRedeem ? 'bg-violet-600 text-white hover:bg-violet-700 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}"
                                         {{ !$canRedeem ? 'disabled' : '' }}>
                                         Redeem
                                     </button>

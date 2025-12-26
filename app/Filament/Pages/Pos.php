@@ -13,6 +13,7 @@ use Filament\Pages\Page;
 use App\Models\CashSession;
 use App\Models\DiscountCode;
 use App\Models\StockMovement;
+use Livewire\Attributes\Locked;
 use App\Services\OrderPrintService;
 use Illuminate\Support\Facades\Log;
 use App\Services\ReceiptPrintService;
@@ -87,7 +88,11 @@ class Pos extends Page
 
     public $showCashInModal = true;
     public $cashInHand = 0;
+
+    #[Locked]
     public $cashSessionId = null;
+
+    #[Locked]
     public $saleId = null;
     public $items = [];
     public $total = 0;
@@ -101,13 +106,15 @@ class Pos extends Page
     public $discountMessage = '';
     public $discountApplied = false;
     public $showLoadModal = false;
-    public $savedSales = [];
+    // savedSales removed (unused)
     public $showPaymentModal = false;
     public $payment_method = 'cash';
     public $finalTotal = 0;
     public $amount_paid = 0;
-    public $outOfStock = 0;
+    // outOfStock removed (unused)
     public $isPrinting = false;
+
+    #[Locked]
     public $previousItems = [];
     public $showMergeModal = false;
     public $selectedSalesToMerge = [];
@@ -383,15 +390,37 @@ class Pos extends Page
 
     public function getCategoriesProperty()
     {
-        // Return collection of ID and Name
-        return Category::select('id', 'name')->orderBy('name')->get();
+        // CACHE: Use once() to cache query result for this request
+        // Optimization: Reduce DB hits on re-renders
+        return once(function () {
+            return Category::select('id', 'name')->orderBy('name')->get();
+        });
     }
 
     public function getProductsProperty()
     {
-        $query = Product::where('is_sellable', true)
-            ->where('name', '!=', 'Down Payment (DP)') // Hide system item from POS grid
-            ->with(['recipes.ingredient.unit', 'recipes.unit', 'unit']) // Eager load unit
+        // MEMORY OPTIMIZATION: Select specific columns only
+        $query = Product::select([
+            'id',
+            'name',
+            'sell_price',
+            'stock',
+            'type',
+            'category_id',
+            'image',
+            'is_sellable',
+            'unit_id'
+        ])
+            ->where('is_sellable', true)
+            ->where('name', '!=', 'Down Payment (DP)')
+            ->with([
+                // Optimize eager loading: select specific columns for relations too
+                'recipes:id,product_id,ingredient_id,quantity,unit_id',
+                'recipes.ingredient:id,name,stock,unit_id',
+                'recipes.ingredient.unit:id,symbol,name',
+                'recipes.unit:id,symbol,name',
+                'unit:id,symbol,name'
+            ])
             ->where(function ($q) {
                 $q->where('stock', '>', 0)
                     ->orWhereIn('type', ['produced', 'bar'])
@@ -409,7 +438,7 @@ class Pos extends Page
         if ($this->selectedCategory !== 'SEMUA') {
             $query->where('category_id', $this->selectedCategory);
         }
-        // Use DB Pagination (Optimized)
+
         // Use DB Pagination (Optimized)
         return $query->orderBy('name', 'asc')->paginate($this->perPage);
     }
@@ -599,11 +628,15 @@ class Pos extends Page
             return;
         }
 
-        $this->foundMembers = \App\Models\Member::where('name', 'like', "%{$value}%")
-            ->orWhere('phone', 'like', "%{$value}%")
-            ->orWhere('email', 'like', "%{$value}%")
-            ->with('tier')
-            ->limit(5)
+        // OPTIMIZATION: Select specific columns and use prefix search (index-friendly)
+        $this->foundMembers = \App\Models\Member::select('id', 'name', 'phone', 'email', 'points_balance', 'tier_id')
+            ->where(function ($q) use ($value) {
+                $q->where('name', 'like', "{$value}%")
+                    ->orWhere('phone', 'like', "{$value}%")
+                    ->orWhere('email', 'like', "{$value}%");
+            })
+            ->with('tier:id,name')
+            ->limit(10)
             ->get()
             ->toArray();
     }
@@ -912,12 +945,7 @@ class Pos extends Page
 
     public function openLoadModal()
     {
-        // $this->savedSales = Sale::where('status', 'draft')
-        //     ->latest()
-        //     ->take(20)
-        //     ->get();
-
-        // $this->showLoadModal = true;
+        // Dispatches event to open load modal (handled by other component or simple view toggle)
         $this->dispatch('openLoadModal');
     }
 

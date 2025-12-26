@@ -51,7 +51,7 @@ class WeatherWidget extends Widget
 
     public function getData(): array
     {
-        $settings = app(\App\Settings\GeneralSettings::class);
+        $settings = app(GeneralSettings::class);
         $code = $settings->bmkg_location_code;
 
         if (!$code) {
