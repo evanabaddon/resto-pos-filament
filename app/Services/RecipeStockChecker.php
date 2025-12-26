@@ -87,17 +87,18 @@ class RecipeStockChecker
 
         $maxPortions = $minPortions === PHP_INT_MAX ? 0 : (int) $minPortions;
 
-        // Subtract quantities from RECENT draft sales only (last 2 hours)
+        // Subtract quantities from RECENT draft sales only (last 4 hours)
         // This prevents old abandoned drafts from blocking stock availability
-        // Assumption: Draft older than 2 hours is likely cancelled/abandoned
+        // EXCLUDE 'split' and 'merge' - these are not actually pending orders
         $draftQty = \App\Models\SaleItem::whereHas('sale', function ($query) {
             $query->where(function ($q) {
-                // Draft or pending status (regardless of payment method)
+                // Draft or pending status only (exclude split/merge)
                 $q->where('status', 'draft')
                     ->orWhere('status', 'pending');
             })
-                // Only consider drafts from last 4 hours (not whole day)
-                ->where('created_at', '>=', now()->subHours(4));
+                ->whereNotIn('status', ['split', 'merge'])
+                // Only consider drafts created today
+                ->whereDate('created_at', today());
         })
             ->where('product_id', $product->id)
             ->sum('quantity');
@@ -227,10 +228,12 @@ class RecipeStockChecker
         }
 
         // QUERY 2: Load draft quantities for ALL products in ONE query
-        // Only count RECENT drafts (last 2 hours) to prevent old abandoned orders from blocking stock
+        // Only count RECENT drafts (last 4 hours) to prevent old abandoned orders from blocking stock
+        // EXCLUDE 'split' and 'merge' - these are not actually pending orders
         $draftQty = \App\Models\SaleItem::whereHas('sale', function ($query) {
             $query->whereIn('status', ['draft', 'pending'])
-                ->where('created_at', '>=', now()->subHours(2));
+                ->whereNotIn('status', ['split', 'merge'])
+                ->whereDate('created_at', today());
         })
             ->whereIn('product_id', $productIds)
             ->groupBy('product_id')
