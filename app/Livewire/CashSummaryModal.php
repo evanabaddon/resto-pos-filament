@@ -102,11 +102,16 @@ class CashSummaryModal extends Component
         $totalCashPurchases = $purchases->sum('total');
 
         // Calculate unpaid sales (draft/pending or NULL payment method)
+        // EXCLUDE 'split' and 'merge' status - these have NULL payment but are not unpaid
         $unpaidSales = $this->session->sales()
             ->where(function ($query) {
                 $query->where('status', 'draft')
                     ->orWhere('status', 'pending')
-                    ->orWhereNull('payment_method_id');
+                    ->orWhere(function ($q) {
+                        // NULL payment only if NOT split/merge
+                        $q->whereNull('payment_method_id')
+                            ->whereNotIn('status', ['split', 'merge']);
+                    });
             })
             ->sum('final_total');
 
@@ -114,7 +119,11 @@ class CashSummaryModal extends Component
             ->where(function ($query) {
                 $query->where('status', 'draft')
                     ->orWhere('status', 'pending')
-                    ->orWhereNull('payment_method_id');
+                    ->orWhere(function ($q) {
+                        // NULL payment only if NOT split/merge
+                        $q->whereNull('payment_method_id')
+                            ->whereNotIn('status', ['split', 'merge']);
+                    });
             })
             ->count();
 

@@ -87,17 +87,17 @@ class RecipeStockChecker
 
         $maxPortions = $minPortions === PHP_INT_MAX ? 0 : (int) $minPortions;
 
-        // Subtract quantities from draft sales (only today's drafts)
-        // This prevents old draft sales from blocking stock availability
-        // Fixed: Only count truly draft/pending sales, not completed sales with NULL payment
+        // Subtract quantities from RECENT draft sales only (last 2 hours)
+        // This prevents old abandoned drafts from blocking stock availability
+        // Assumption: Draft older than 2 hours is likely cancelled/abandoned
         $draftQty = \App\Models\SaleItem::whereHas('sale', function ($query) {
             $query->where(function ($q) {
                 // Draft or pending status (regardless of payment method)
                 $q->where('status', 'draft')
                     ->orWhere('status', 'pending');
             })
-                // Only consider drafts created today
-                ->whereDate('created_at', today());
+                // Only consider drafts from last 4 hours (not whole day)
+                ->where('created_at', '>=', now()->subHours(4));
         })
             ->where('product_id', $product->id)
             ->sum('quantity');
@@ -227,9 +227,10 @@ class RecipeStockChecker
         }
 
         // QUERY 2: Load draft quantities for ALL products in ONE query
+        // Only count RECENT drafts (last 2 hours) to prevent old abandoned orders from blocking stock
         $draftQty = \App\Models\SaleItem::whereHas('sale', function ($query) {
             $query->whereIn('status', ['draft', 'pending'])
-                ->whereDate('created_at', today());
+                ->where('created_at', '>=', now()->subHours(2));
         })
             ->whereIn('product_id', $productIds)
             ->groupBy('product_id')
