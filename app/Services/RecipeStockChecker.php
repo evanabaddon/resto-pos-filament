@@ -200,6 +200,146 @@ class RecipeStockChecker
     }
 
     /**
+     * Batch check availability for multiple products (OPTIMIZED - NO CACHING)
+     * Reduces N+1 queries to just 2-3 queries total
+     * 
+     * @param array $productIds
+     * @param array $cartItems
+     * @return array
+     */
+    public function batchCheckAvailability(array $productIds, array $cartItems): array
+    {
+        if (empty($productIds)) {
+            return [];
+        }
+
+        // QUERY 1: Load ALL products with recipes in ONE query
+        $products = Product::whereIn('id', $productIds)
+            ->with(['recipes.ingredient.unit', 'recipes.unit'])
+            ->get()
+            ->keyBy('id');
+
+        // Calculate cart quantities ONCE (in-memory)
+        $cartQty = [];
+        foreach ($cartItems as $item) {
+            $pid = $item['product_id'];
+            $cartQty[$pid] = ($cartQty[$pid] ?? 0) + $item['quantity'];
+        }
+
+        // QUERY 2: Load draft quantities for ALL products in ONE query
+        $draftQty = \App\Models\SaleItem::whereHas('sale', function ($query) {
+            $query->whereIn('status', ['draft', 'pending'])
+                ->whereDate('created_at', today());
+        })
+            ->whereIn('product_id', $productIds)
+            ->groupBy('product_id')
+            ->selectRaw('product_id, SUM(quantity) as total')
+            ->pluck('total', 'product_id')
+            ->toArray();
+
+        // Batch calculate availability (all in-memory, no more queries)
+        $result = [];
+        $conversionService = app(\App\Services\UnitConversionService::class);
+
+        foreach ($products as $id => $product) {
+            // Calculate max portions in memory (recipes already loaded)
+            $maxPortions = $this->calculateMaxPortionsInMemory($product, $conversionService);
+
+            // Calculate reserved quantity
+            $reserved = ($draftQty[$id] ?? 0) + ($cartQty[$id] ?? 0);
+            $remaining = $maxPortions - $reserved;
+
+            $result[$id] = [
+                'available' => $remaining > 0,
+                'max_portions' => $maxPortions,
+                'remaining' => max(0, $remaining),
+                'limiting_ingredient' => $maxPortions === 0 ? $this->getLimitingIngredientInMemory($product, $conversionService) : null,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Calculate max portions in memory (assumes recipes are already loaded)
+     * 
+     * @param Product $product
+     * @param UnitConversionService $conversionService
+     * @return int
+     */
+    private function calculateMaxPortionsInMemory(Product $product, $conversionService): int
+    {
+        // If no recipes, return product's own stock
+        if (!$product->relationLoaded('recipes') || $product->recipes->isEmpty()) {
+            return (int) floor($product->stock ?? 0);
+        }
+
+        $minPortions = PHP_INT_MAX;
+
+        foreach ($product->recipes as $recipe) {
+            if (!$recipe->ingredient) {
+                return 0; // Missing ingredient = can't make any
+            }
+
+            // Convert recipe quantity to ingredient unit
+            $requiredPerPortion = $conversionService->convert(
+                $recipe->quantity,
+                $recipe->unit_id,
+                $recipe->ingredient->unit_id
+            );
+
+            // Calculate max portions from this ingredient
+            $portionsFromThisIngredient = $requiredPerPortion > 0
+                ? floor($recipe->ingredient->stock / $requiredPerPortion)
+                : 0;
+
+            $minPortions = min($minPortions, $portionsFromThisIngredient);
+        }
+
+        return $minPortions === PHP_INT_MAX ? 0 : (int) $minPortions;
+    }
+
+    /**
+     * Get limiting ingredient in memory (assumes recipes are already loaded)
+     * 
+     * @param Product $product
+     * @param UnitConversionService $conversionService
+     * @return string|null
+     */
+    private function getLimitingIngredientInMemory(Product $product, $conversionService): ?string
+    {
+        if (!$product->relationLoaded('recipes') || $product->recipes->isEmpty()) {
+            return null;
+        }
+
+        $minPortions = PHP_INT_MAX;
+        $limitingIngredientName = null;
+
+        foreach ($product->recipes as $recipe) {
+            if (!$recipe->ingredient) {
+                continue;
+            }
+
+            $requiredPerPortion = $conversionService->convert(
+                $recipe->quantity,
+                $recipe->unit_id,
+                $recipe->ingredient->unit_id
+            );
+
+            $portionsFromThisIngredient = $requiredPerPortion > 0
+                ? floor($recipe->ingredient->stock / $requiredPerPortion)
+                : 0;
+
+            if ($portionsFromThisIngredient < $minPortions) {
+                $minPortions = $portionsFromThisIngredient;
+                $limitingIngredientName = $recipe->ingredient->name;
+            }
+        }
+
+        return $limitingIngredientName;
+    }
+
+    /**
      * Invalidate cache for a product
      * 
      * @param int $productId

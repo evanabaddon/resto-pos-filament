@@ -447,6 +447,57 @@ class Pos extends Page
     }
 
     /**
+     * Get products with pre-calculated availability (OPTIMIZED)
+     * This reduces N+1 queries to just 2-3 queries total
+     */
+    public function getProductsWithAvailabilityProperty()
+    {
+        $products = $this->products;
+
+        if ($products->isEmpty()) {
+            return collect([]);
+        }
+
+        $stockChecker = app(\App\Services\RecipeStockChecker::class);
+
+        // Batch calculate untuk semua produk sekaligus (2-3 queries total)
+        $availability = $stockChecker->batchCheckAvailability(
+            $products->pluck('id')->toArray(),
+            $this->items
+        );
+
+        // Map ke products (in-memory operation, no queries)
+        return $products->map(function ($product) use ($availability) {
+            $avail = $availability[$product->id] ?? [
+                'available' => false,
+                'max_portions' => 0,
+                'remaining' => 0,
+                'limiting_ingredient' => null
+            ];
+
+            $product->is_available = $avail['available'];
+            $product->max_portions_display = $avail['max_portions'];
+            $product->remaining_portions = $avail['remaining'];
+            $product->limiting_ingredient = $avail['limiting_ingredient'];
+
+            return $product;
+        });
+    }
+
+    /**
+     * Get cart quantities pre-calculated (in-memory)
+     */
+    public function getCartQuantitiesProperty()
+    {
+        $quantities = [];
+        foreach ($this->items as $item) {
+            $productId = $item['product_id'];
+            $quantities[$productId] = ($quantities[$productId] ?? 0) + $item['quantity'];
+        }
+        return $quantities;
+    }
+
+    /**
      * Cache key yang include search query (Removed/Deperecated for now)
      */
     protected function getProductsCacheKey(): string
@@ -1148,6 +1199,8 @@ class Pos extends Page
             'orderNumber' => $this->orderNumber,
             'categories' => $this->categories,
             'products' => $this->products,
+            'productsWithAvailability' => $this->productsWithAvailability,
+            'cartQuantities' => $this->cartQuantities,
         ];
     }
 }
