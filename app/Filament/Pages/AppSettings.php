@@ -839,11 +839,11 @@ class AppSettings extends SettingsPage
                                                                 $image = $manager->read($path);
 
                                                                 // Resize to 800 width (auto height) only if wider than 800
-                                                                if ($image->width() > 400) {
-                                                                    $image->scale(width: 400);
+                                                                if ($image->width() > 100) {
+                                                                    $image->scale(width: 100);
                                                                     $image->save($path, quality: 40);
                                                                     $count++;
-                                                                } elseif ($image->width() <= 400) {
+                                                                } elseif ($image->width() <= 100) {
                                                                     // Optional: Just compress if not resized?
                                                                     // Let's just re-save to ensure quality is optimized
                                                                     $image->save($path, quality: 40);
