@@ -6,6 +6,7 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
@@ -796,6 +797,80 @@ class AppSettings extends SettingsPage
                                                 ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
                                                 : 'Aktifkan modul Self Order QR.'
                                             ),
+                                    ]),
+                            ]),
+
+                        // TAB: MAINTENANCE
+                        Tab::make('Maintenance')
+                            ->icon('heroicon-o-wrench-screwdriver')
+                            ->schema([
+                                Section::make('Image Optimization')
+                                    ->description('Resize & optimize all product images to reduce size for POS performance.')
+                                    ->schema([
+                                        Actions::make([
+                                            Action::make('optimize_images')
+                                                ->label('Optimize All Images Now')
+                                                ->color('warning')
+                                                ->icon('heroicon-o-bolt')
+                                                ->requiresConfirmation()
+                                                ->modalHeading('Optimize All Product Images?')
+                                                ->modalDescription('This will resize all product images to max 800px width and compress them to 80% quality. original files will be overwritten.')
+                                                ->action(function () {
+                                                    $products = \App\Models\Product::whereNotNull('image')->get();
+                                                    $count = 0;
+
+                                                    try {
+                                                        // Initialize Image Manager (Driver: GD)
+                                                        // Check if class exists to avoid crash if library not installed
+                                                        if (!class_exists(\Intervention\Image\ImageManager::class)) {
+                                                            throw new \Exception('Intervention Image library is not installed.');
+                                                        }
+
+                                                        $manager = new \Intervention\Image\ImageManager(
+                                                            new \Intervention\Image\Drivers\Gd\Driver()
+                                                        );
+
+                                                        foreach ($products as $product) {
+                                                            try {
+                                                                $path = storage_path('app/public/' . $product->image);
+                                                                if (!file_exists($path))
+                                                                    continue;
+
+                                                                $image = $manager->read($path);
+
+                                                                // Resize to 800 width (auto height) only if wider than 800
+                                                                if ($image->width() > 800) {
+                                                                    $image->scale(width: 800);
+                                                                    $image->save($path, quality: 80);
+                                                                    $count++;
+                                                                } elseif ($image->width() <= 800) {
+                                                                    // Optional: Just compress if not resized?
+                                                                    // Let's just re-save to ensure quality is optimized
+                                                                    $image->save($path, quality: 80);
+                                                                    $count++;
+                                                                }
+
+                                                            } catch (\Exception $e) {
+                                                                // Ignore individual errors
+                                                                \Illuminate\Support\Facades\Log::error("Failed to optimize image {$product->id}: " . $e->getMessage());
+                                                            }
+                                                        }
+
+                                                        \Filament\Notifications\Notification::make()
+                                                            ->title('Optimization Complete')
+                                                            ->body("Successfully processed {$count} images.")
+                                                            ->success()
+                                                            ->send();
+
+                                                    } catch (\Exception $e) {
+                                                        \Filament\Notifications\Notification::make()
+                                                            ->title('Error')
+                                                            ->body($e->getMessage())
+                                                            ->danger()
+                                                            ->send();
+                                                    }
+                                                }),
+                                        ])->fullWidth(),
                                     ]),
                             ]),
                     ])
