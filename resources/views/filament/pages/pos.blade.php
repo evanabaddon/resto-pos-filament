@@ -115,7 +115,7 @@
                     </button>
                     @foreach ($categories as $category)
                                     <button wire:click="setCategory('{{ $category->id }}')" class="whitespace-nowrap px-3 py-2 rounded-lg text-[10px] font-bold transition-all border shrink-0 touch-target
-                                                                                                                                                {{ $selectedCategory == $category->id
+                                                                                                                                                                {{ $selectedCategory == $category->id
                         ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
                         : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
                                         {{ $category->name }}
@@ -154,7 +154,7 @@
                                 @click="animateFlyToCart($event); $wire.quickAddProduct({{ $product->id }})"
                             wire:loading.class="opacity-50 cursor-wait" wire:target="quickAddProduct({{ $product->id }})" @endif
                                 class="group relative bg-white rounded-xl p-2 flex flex-col items-stretch transition-all duration-200 select-none touch-manipulation
-                                                                                                            {{ $product->is_available
+                                                                                                                        {{ $product->is_available
                     ? 'cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-slate-100 hover:border-violet-200'
                     : 'cursor-not-allowed opacity-60 grayscale bg-slate-50 border border-slate-100' }}">
 
@@ -164,7 +164,7 @@
                                             <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
                                                 <span
                                                     class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
-                                                                                                                                                                                                            {{ $product->stock > 10 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
+                                                                                                                                                                                                                                    {{ $product->stock > 10 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
                                     ($product->stock > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
                                                     {{ intval($product->stock) }}
                                                 </span>
@@ -179,7 +179,7 @@
                                             <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
                                                 <span
                                                     class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
-                                                                                                                                                                                                {{ $remainingPortions > 5 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
+                                                                                                                                                                                                                        {{ $remainingPortions > 5 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
                                         ($remainingPortions > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
                                                     {{ $remainingPortions }} porsi
                                                 </span>
@@ -391,9 +391,9 @@
                                             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
                                 </div>
-                                <input type="text" wire:model.live.debounce.500ms="memberSearchQuery"
+                                <input type="text" wire:model.live.debounce.300ms="memberSearchQuery"
                                     class="block w-full pl-9 pr-3 py-1.5 border border-slate-200 bg-slate-50/50 rounded-lg text-xs placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm font-medium"
-                                    placeholder="Cari Member...">
+                                    placeholder="Cari Member..." autocomplete="off">
                             </div>
 
                             <button type="button" wire:click="$dispatch('openCreateMemberModal')"
@@ -849,7 +849,7 @@
                                             @endphp
                                             <div wire:click="toggleSelectSale({{ $saleId }})"
                                                 class="group cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 
-                                                                                                                                                                                     {{ $isTarget ? 'border-green-500 bg-green-50/50 ring-1 ring-green-500 shadow-md' :
+                                                                                                                                                                                                         {{ $isTarget ? 'border-green-500 bg-green-50/50 ring-1 ring-green-500 shadow-md' :
                                     ($isSelected ? 'border-purple-500 bg-purple-50/50 shadow-sm' : 'border-gray-200 bg-white hover:border-purple-300 hover:shadow-md') }}">
 
                                                 <!-- Checkbox Indicator -->
@@ -1025,7 +1025,7 @@
 
                                 <button wire:click="processMergeBill" wire:loading.attr="disabled"
                                     class="w-full py-3.5 px-4 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-bold rounded-xl shadow-lg shadow-purple-200 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center gap-2 cursor-pointer
-                                                        {{ count($selectedSalesToMerge) < 2 || !$mergeTargetSale ? 'opacity-50 pointer-events-none' : '' }}">
+                                                            {{ count($selectedSalesToMerge) < 2 || !$mergeTargetSale ? 'opacity-50 pointer-events-none' : '' }}">
                                     <svg wire:loading wire:target="processMergeBill" class="w-5 h-5 animate-spin"
                                         fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
@@ -1173,7 +1173,7 @@
 
                                     <button wire:click="redeemReward({{ $reward->id }})"
                                         class="px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm
-                                                                                {{ $canRedeem ? 'bg-violet-600 text-white hover:bg-violet-700 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}"
+                                                                                        {{ $canRedeem ? 'bg-violet-600 text-white hover:bg-violet-700 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}"
                                         {{ !$canRedeem ? 'disabled' : '' }}>
                                         Redeem
                                     </button>
