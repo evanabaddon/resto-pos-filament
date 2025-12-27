@@ -49,7 +49,12 @@ class RecipeStockChecker
             return (int) floor($product->stock);
         }
 
-        $recipes = $product->recipes()->with(['ingredient.unit', 'unit'])->get();
+        // Use already loaded recipes if available, otherwise load them
+        if ($product->relationLoaded('recipes')) {
+            $recipes = $product->recipes;
+        } else {
+            $recipes = $product->recipes()->with(['ingredient.unit', 'unit'])->get();
+        }
 
         if ($recipes->isEmpty()) {
             return 0;
@@ -118,7 +123,12 @@ class RecipeStockChecker
             return null;
         }
 
-        $recipes = $product->recipes()->with(['ingredient.unit', 'unit'])->get();
+        // Use already loaded recipes if available, otherwise load them
+        if ($product->relationLoaded('recipes')) {
+            $recipes = $product->recipes;
+        } else {
+            $recipes = $product->recipes()->with(['ingredient.unit', 'unit'])->get();
+        }
 
         if ($recipes->isEmpty()) {
             return null;
