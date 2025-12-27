@@ -211,9 +211,10 @@ class RecipeStockChecker
      * 
      * @param array $productIds
      * @param array $cartItems
+     * @param int|null $excludeSaleId - Exclude this sale_id from draft calculation (prevents double counting when loading draft)
      * @return array
      */
-    public function batchCheckAvailability(array $productIds, array $cartItems): array
+    public function batchCheckAvailability(array $productIds, array $cartItems, ?int $excludeSaleId = null): array
     {
         if (empty($productIds)) {
             return [];
@@ -235,10 +236,16 @@ class RecipeStockChecker
         // QUERY 2: Load draft quantities for ALL products in ONE query
         // Only count RECENT drafts (last 4 hours) to prevent old abandoned orders from blocking stock
         // EXCLUDE 'split' and 'merge' - these are not actually pending orders
-        $draftQty = \App\Models\SaleItem::whereHas('sale', function ($query) {
+        // EXCLUDE current sale_id to prevent double counting when loading draft order
+        $draftQty = \App\Models\SaleItem::whereHas('sale', function ($query) use ($excludeSaleId) {
             $query->whereIn('status', ['draft', 'pending'])
                 ->whereNotIn('status', ['split', 'merge'])
                 ->whereDate('created_at', today());
+
+            // Exclude current sale to prevent double counting
+            if ($excludeSaleId) {
+                $query->where('id', '!=', $excludeSaleId);
+            }
         })
             ->whereIn('product_id', $productIds)
             ->groupBy('product_id')

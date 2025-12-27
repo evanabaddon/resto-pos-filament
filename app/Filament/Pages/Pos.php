@@ -490,9 +490,11 @@ class Pos extends Page
         $stockChecker = app(\App\Services\RecipeStockChecker::class);
 
         // Batch calculate untuk semua produk sekaligus (2-3 queries total)
+        // Pass saleId to exclude current sale from draft calculation (prevents double counting)
         $availability = $stockChecker->batchCheckAvailability(
             $products->pluck('id')->toArray(),
-            $this->items
+            $this->items,
+            $this->saleId // Exclude current sale from draft count
         );
 
         // Map ke products (in-memory operation, no queries)
