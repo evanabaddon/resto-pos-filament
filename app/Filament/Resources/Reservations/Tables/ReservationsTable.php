@@ -221,6 +221,115 @@ class ReservationsTable
                             ->send();
                     }),
 
+                Action::make('printPreorder')
+                    ->label('Cetak Preorder')
+                    ->icon('heroicon-o-printer')
+                    ->color('warning')
+                    ->visible(fn($record) => in_array($record->status, ['pending', 'confirmed']) && $record->items()->count() > 0)
+                    ->requiresConfirmation()
+                    ->modalHeading('Cetak Preorder ke Dapur/Bar')
+                    ->modalDescription('Order akan dicetak ke divisi sesuai tipe produk (Dapur, Bar, General) menggunakan sistem print yang sudah ada.')
+                    ->action(function (Reservation $record) {
+                        try {
+                            // Load items with product relationships
+                            $items = $record->items()->with(['product'])->get();
+
+                            if ($items->isEmpty()) {
+                                Notification::make()
+                                    ->title('Tidak Ada Item')
+                                    ->body('Reservasi ini tidak memiliki preorder menu.')
+                                    ->warning()
+                                    ->send();
+                                return;
+                            }
+
+                            // Group items by product type (same logic as OrderPrintService)
+                            $kitchenItems = [];
+                            $barItems = [];
+                            $generalItems = [];
+
+                            foreach ($items as $item) {
+                                if (!$item->product)
+                                    continue;
+
+                                // Skip DP items
+                                if ($item->product->name === 'Down Payment (DP)') {
+                                    continue;
+                                }
+
+                                $productType = $item->product->type ?? 'general';
+
+                                switch ($productType) {
+                                    case 'produced':
+                                        $kitchenItems[] = $item;
+                                        break;
+                                    case 'bar':
+                                        $barItems[] = $item;
+                                        break;
+                                    default:
+                                        $generalItems[] = $item;
+                                        break;
+                                }
+                            }
+
+                            // Use OrderPrintService to print
+                            $orderPrintService = app(\App\Services\OrderPrintService::class);
+
+                            // Create temporary sale object for printing
+                            $tempSale = new Sale([
+                                'invoice_number' => 'RSVP-' . $record->id,
+                                'customer_name' => $record->customer_name,
+                                'order_type' => 'Reservation',
+                                'table_number' => 'Reservasi',
+                                'note' => 'PREORDER - ' . $record->reservation_date->format('d/m/Y H:i'),
+                            ]);
+                            $tempSale->id = 0; // Temporary ID
+            
+                            // Print using existing service
+                            $itemsByDivision = [
+                                'kitchen' => $kitchenItems,
+                                'bar' => $barItems,
+                                'general' => $generalItems
+                            ];
+
+                            $totalPrinted = 0;
+
+                            foreach ($itemsByDivision as $division => $divisionItems) {
+                                if (!empty($divisionItems)) {
+                                    $totalPrinted++;
+                                }
+                            }
+
+                            // Call the print method (it will handle webhook/direct based on environment)
+                            // Use reflection to access protected methods
+                            $reflection = new \ReflectionClass($orderPrintService);
+
+                            if ($orderPrintService->isHostingEnvironment()) {
+                                $method = $reflection->getMethod('printViaWebhook');
+                                $method->setAccessible(true);
+                                $method->invoke($orderPrintService, $tempSale, $itemsByDivision);
+                            } else {
+                                $method = $reflection->getMethod('printDirect');
+                                $method->setAccessible(true);
+                                $method->invoke($orderPrintService, $tempSale, $itemsByDivision);
+                            }
+                            Notification::make()
+                                ->title('Preorder Dicetak')
+                                ->body("Order untuk {$record->customer_name} telah dikirim ke {$totalPrinted} divisi.")
+                                ->success()
+                                ->send();
+
+                        } catch (\Exception $e) {
+                            \Log::error('Failed to print preorder: ' . $e->getMessage());
+
+                            Notification::make()
+                                ->title('Gagal Cetak Preorder')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
                 Action::make('convertToSale')
                     ->label('Proses ke Kasir')
                     ->icon('heroicon-o-shopping-cart')

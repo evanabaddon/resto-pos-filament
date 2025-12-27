@@ -123,12 +123,7 @@ class RecipeStockChecker
             return null;
         }
 
-        // Use already loaded recipes if available, otherwise load them
-        if ($product->relationLoaded('recipes')) {
-            $recipes = $product->recipes;
-        } else {
-            $recipes = $product->recipes()->with(['ingredient.unit', 'unit'])->get();
-        }
+        $recipes = $product->recipes()->with(['ingredient.unit', 'unit'])->get();
 
         if ($recipes->isEmpty()) {
             return null;

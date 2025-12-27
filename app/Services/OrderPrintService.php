@@ -33,6 +33,14 @@ class OrderPrintService
     }
 
     /**
+     * Check if running in hosting environment
+     */
+    public function isHostingEnvironment(): bool
+    {
+        return $this->isHostingEnvironment;
+    }
+
+    /**
      * Deteksi apakah running di hosting environment
      */
     protected function detectHostingEnvironment(): bool
