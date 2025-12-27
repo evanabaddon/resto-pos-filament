@@ -31,6 +31,10 @@ class ProductsTable
                     ->width(50)
                     ->disk('public'),
 
+                ToggleColumn::make('is_sellable')
+                    ->label('Jual')
+                    ->sortable(),
+
                 ToggleColumn::make('is_favorite')
                     ->label('Fav')
                     ->sortable(),
