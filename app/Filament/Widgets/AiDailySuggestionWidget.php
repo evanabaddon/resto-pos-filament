@@ -30,7 +30,24 @@ class AiDailySuggestionWidget extends Widget
 
     protected function getSuggestion()
     {
-        return Cache::remember('ai_daily_suggestion', now()->endOfDay(), function () {
+        $cacheKey = 'ai_daily_suggestion';
+
+        // Check if cache exists
+        if (Cache::has($cacheKey)) {
+            \Log::info('AI Daily Suggestion: Using cached data', [
+                'cached_at' => Cache::get($cacheKey . '_timestamp'),
+                'expires_at' => now()->addHour()->toDateTimeString()
+            ]);
+        }
+
+        return Cache::remember($cacheKey, now()->addHour(), function () use ($cacheKey) {
+            \Log::info('AI Daily Suggestion: Generating new suggestion', [
+                'timestamp' => now()->toDateTimeString()
+            ]);
+
+            // Store timestamp for debugging
+            Cache::put($cacheKey . '_timestamp', now()->toDateTimeString(), now()->addHour());
+
             try {
                 $context = $this->getQuickContext();
                 $service = new DeepSeekService();
@@ -41,8 +58,17 @@ class AiDailySuggestionWidget extends Widget
 
                 $response = $service->analyzeBusiness($history, "Berikan kombinasi saran strategi bisnis dan info stok singkat.");
 
-                return $response['choices'][0]['message']['content'] ?? "Semangat jualan hari ini, Bos! Pastikan pelayanan maksimal.";
+                $suggestion = $response['choices'][0]['message']['content'] ?? "Semangat jualan hari ini, Bos! Pastikan pelayanan maksimal.";
+
+                \Log::info('AI Daily Suggestion: Generated successfully', [
+                    'suggestion' => $suggestion
+                ]);
+
+                return $suggestion;
             } catch (\Exception $e) {
+                \Log::error('AI Daily Suggestion: Generation failed', [
+                    'error' => $e->getMessage()
+                ]);
                 return "Fokus pada pelayanan terbaik hari ini. Pelanggan puas, rejeki lancar!";
             }
         });
@@ -60,7 +86,7 @@ class AiDailySuggestionWidget extends Widget
             ->limit(3)
             ->get();
 
-        $lowStockItemsWithIngredients = Product::where('stok', '<', 10)
+        $lowStockItemsWithIngredients = Product::where('stock', '<', 10)
             ->where('is_sellable', true)
             ->where('name', '!=', 'Down Payment (DP)')
             ->whereHas('recipes') // Only track stock for items without recipes (Retail/Raw)
