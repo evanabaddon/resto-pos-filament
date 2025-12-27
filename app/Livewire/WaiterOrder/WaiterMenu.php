@@ -87,8 +87,17 @@ class WaiterMenu extends Component
 
     public function render()
     {
-        // 1. Get Featured Products (Upselling) - with eager loading
-        $featuredProducts = Product::with(['category', 'unit'])
+        // 1. Get Featured Products (Upselling) - OPTIMIZED like POS
+        $featuredProducts = Product::select([
+            'id',
+            'name',
+            'sell_price',
+            'stock',
+            'type',
+            'category_id',
+            'image',
+            'is_sellable'
+        ])
             ->where('is_favorite', true)
             ->where('is_sellable', true)
             ->where('name', '!=', 'Down Payment (DP)')
@@ -97,11 +106,24 @@ class WaiterMenu extends Component
                     ->orWhereIn('type', ['produced', 'bar'])
                     ->orWhereNull('stock');
             })
+            ->with([
+                'category:id,name',
+                'unit:id,symbol,name'
+            ])
             ->limit(10)
             ->get();
 
-        // 2. Get Standard Products - with eager loading
-        $products = Product::with(['category', 'unit'])
+        // 2. Get Standard Products - OPTIMIZED like POS
+        $products = Product::select([
+            'id',
+            'name',
+            'sell_price',
+            'stock',
+            'type',
+            'category_id',
+            'image',
+            'is_sellable'
+        ])
             ->where('is_sellable', true)
             ->where('name', '!=', 'Down Payment (DP)')
             ->where(function ($q) {
@@ -115,6 +137,10 @@ class WaiterMenu extends Component
             ->when($this->search, function ($query) {
                 $query->where('name', 'like', '%' . $this->search . '%');
             })
+            ->with([
+                'category:id,name',
+                'unit:id,symbol,name'
+            ])
             ->orderBy('name')
             ->get();
 
