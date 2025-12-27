@@ -38,6 +38,10 @@
                         class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                         📱 Waiter & Self-Order
                     </a>
+                    <a href="#reservation"
+                        class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        📅 Reservation & Pre-Order
+                    </a>
                     <a href="#whatsapp"
                         class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                         💬 WhatsApp Center
@@ -524,6 +528,102 @@
                         <h4 class="font-semibold text-lg mt-4">⚙️ Konfigurasi QR Meja</h4>
                         <p>Generate dan cetak kartu QR meja melalui menu <strong>Table Management</strong> di Admin
                             Panel.</p>
+                    </div>
+                </section>
+
+                <hr class="border-gray-200 dark:border-gray-700">
+
+                {{-- Reservation & Pre-Order Section --}}
+                <section id="reservation">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">📅</span>
+                        Reservation & Pre-Order Printing
+                    </h3>
+                    <div class="prose dark:prose-invert max-w-none">
+                        <h4 class="font-semibold text-lg">📝 Membuat Reservasi</h4>
+                        <p>Sistem reservasi yang terintegrasi dengan pre-order menu dan pembayaran DP.</p>
+                        <ol class="list-decimal pl-6 space-y-2">
+                            <li>Buka menu <strong>Reservations</strong> dari sidebar</li>
+                            <li>Klik <strong>Create</strong> dan isi data pelanggan (Nama, Telepon, Jumlah Tamu, Tanggal & Waktu)</li>
+                            <li><strong>Pre-Order Menu (Opsional):</strong> Tambahkan item menu yang dipesan sebelumnya dengan harga fleksibel</li>
+                            <li>Sistem otomatis menghitung total estimasi pesanan</li>
+                        </ol>
+
+                        <h4 class="font-semibold text-lg mt-4">💰 Pembayaran Down Payment (DP)</h4>
+                        <p>Kelola pembayaran uang muka langsung dari tabel reservasi:</p>
+                        <ol class="list-decimal pl-6 space-y-2">
+                            <li>Klik tombol <strong>"Bayar DP"</strong> (icon credit card biru)</li>
+                            <li>Pilih metode pembayaran dan masukkan jumlah DP</li>
+                            <li>Sistem otomatis membuat transaksi POS dengan prefix <code>DP-</code></li>
+                            <li>DP tercatat di cash session aktif untuk tracking keuangan</li>
+                        </ol>
+
+                        <h4 class="font-semibold text-lg mt-4">🖨️ Cetak Pre-Order ke Dapur/Bar 🆕</h4>
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 mb-4">
+                            <p class="font-semibold text-yellow-900 dark:text-yellow-100">✨ Fitur Baru!</p>
+                            <p class="text-sm text-yellow-800 dark:text-yellow-200">Cetak order menu pre-order ke divisi Dapur/Bar <strong>sebelum</strong> pelanggan datang untuk persiapan yang lebih matang.</p>
+                        </div>
+
+                        <p><strong>Cara Menggunakan:</strong></p>
+                        <ol class="list-decimal pl-6 space-y-2">
+                            <li>Klik tombol <strong>"Cetak Preorder"</strong> (icon printer kuning) di tabel reservasi</li>
+                            <li>Tombol hanya muncul jika:
+                                <ul class="list-disc pl-6 mt-2">
+                                    <li>Status reservasi: <code>Pending</code> atau <code>Confirmed</code></li>
+                                    <li>Ada item pre-order yang sudah ditambahkan</li>
+                                </ul>
+                            </li>
+                            <li>Sistem otomatis mengelompokkan item berdasarkan tipe produk:
+                                <ul class="list-disc pl-6 mt-2">
+                                    <li><strong>Produced</strong> → Dicetak ke <span class="text-orange-600 font-semibold">Dapur</span> (Kitchen)</li>
+                                    <li><strong>Bar</strong> → Dicetak ke <span class="text-blue-600 font-semibold">Bar</span></li>
+                                    <li><strong>General</strong> → Dicetak ke <span class="text-gray-600 font-semibold">Kasir</span></li>
+                                </ul>
+                            </li>
+                            <li>Struk order mencantumkan:
+                                <ul class="list-disc pl-6 mt-2">
+                                    <li>Invoice: <code>RSVP-{id}</code></li>
+                                    <li>Nama pelanggan</li>
+                                    <li>Tanggal & waktu reservasi</li>
+                                    <li>Label: <strong>"PREORDER"</strong></li>
+                                    <li>Daftar item dengan quantity dan notes</li>
+                                </ul>
+                            </li>
+                        </ol>
+
+                        <h4 class="font-semibold text-lg mt-4">🔄 Konversi ke Transaksi Penjualan</h4>
+                        <p>Saat pelanggan tiba, konversi reservasi menjadi transaksi POS:</p>
+                        <ol class="list-decimal pl-6 space-y-2">
+                            <li>Klik tombol <strong>"Proses ke Kasir"</strong> (icon shopping cart hijau)</li>
+                            <li>Sistem otomatis:
+                                <ul class="list-disc pl-6 mt-2">
+                                    <li>Memindahkan semua item pre-order ke transaksi POS (status <code>Draft</code>)</li>
+                                    <li>Mengurangkan DP sebagai item minus</li>
+                                    <li>Mengubah status reservasi menjadi <code>Seated</code></li>
+                                </ul>
+                            </li>
+                            <li>Kasir bisa menambah item tambahan atau langsung checkout</li>
+                            <li>Tombol konversi hilang setelah digunakan (mencegah duplikasi)</li>
+                        </ol>
+
+                        <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 mt-4">
+                            <p class="font-semibold text-green-900 dark:text-green-100">✅ Keuntungan Fitur</p>
+                            <ul class="text-sm text-green-800 dark:text-green-200 list-disc pl-5 mt-2 space-y-1">
+                                <li><strong>Persiapan Lebih Matang:</strong> Dapur/Bar bisa mempersiapkan menu sebelum pelanggan datang</li>
+                                <li><strong>Efisiensi Waktu:</strong> Mengurangi waktu tunggu pelanggan saat tiba di restoran</li>
+                                <li><strong>Sinkronisasi Tim:</strong> Semua divisi mendapat informasi yang sama tentang pesanan yang akan datang</li>
+                                <li><strong>Fleksibilitas:</strong> Bisa cetak ulang jika ada perubahan atau penambahan item</li>
+                            </ul>
+                        </div>
+
+                        <h4 class="font-semibold text-lg mt-4">⚙️ Detail Teknis</h4>
+                        <ul class="list-disc pl-6 space-y-2">
+                            <li><strong>Print Infrastructure:</strong> Menggunakan sistem print yang sama dengan POS/Waiter/Self-Order</li>
+                            <li><strong>Hosting:</strong> Webhook untuk kirim ke printer lokal</li>
+                            <li><strong>Lokal:</strong> Direct print ke printer USB/LAN</li>
+                            <li><strong>Environment Detection:</strong> Otomatis mendeteksi apakah sistem berjalan di hosting atau lokal</li>
+                            <li><strong>Item Filtering:</strong> Item "Down Payment (DP)" otomatis difilter dan tidak dicetak</li>
+                        </ul>
                     </div>
                 </section>
 

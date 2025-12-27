@@ -107,6 +107,11 @@ Sistem reservasi yang terintegrasi langsung dengan komunikasi pelanggan dan mana
   - **Pay DP Anywhere**: Kelola pembayaran uang muka melalui Tabel Reservasi maupun Kalender.
   - **Automated DP Ledger**: Setiap pembayaran DP otomatis membuat transaksi di POS dengan prefix `DP-` untuk pelacakan finansial yang akurat.
   - **Self-Cleaning Catalog**: Produk "Down Payment (DP)" dikelola sebagai *System Item*—otomatis tersembunyi dari master data dan katalog POS agar tidak mengganggu operasional harian.
+- **🖨️ Pre-Order Printing System**:
+  - **Print Before Arrival**: Cetak order menu pre-order ke divisi Dapur/Bar **sebelum** pelanggan datang untuk persiapan yang lebih matang.
+  - **Smart Division Routing**: Order otomatis dikelompokkan dan dikirim ke printer yang sesuai berdasarkan tipe produk (Produced → Dapur, Bar → Bar, General → Kasir).
+  - **Unified Print Infrastructure**: Menggunakan sistem print yang sama dengan POS (mendukung webhook untuk hosting dan direct print untuk lokal).
+  - **Reservation Context**: Struk order mencantumkan informasi khusus reservasi (Nama pelanggan, tanggal & waktu reservasi) untuk identifikasi yang jelas.
 - **🔄 Smart Pre-Order to Sales (Flexible)**:
   - **Flexible Item Management**: Tambahkan menu pre-order dengan harga fleksibel (bisa diedit manual) dan hitungan otomatis.
   - **Instant Conversion upon Arrival**: Saat pelanggan datang, konversi seluruh data reservasi beserta item pre-order menjadi transaksi penjualan (Sales) di POS dalam satu klik.
