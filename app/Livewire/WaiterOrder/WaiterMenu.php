@@ -33,7 +33,7 @@ class WaiterMenu extends Component
         \Illuminate\Support\Facades\Log::info('Adding to cart (Waiter): ' . $productId);
         \Illuminate\Support\Facades\Log::info('Current Cart Before: ' . json_encode($this->cart));
 
-        $product = Product::find($productId);
+        $product = Product::with(['recipes.ingredient'])->find($productId);
         if (!$product) {
             $this->dispatch('notify', message: 'Produk tidak ditemukan', type: 'error');
             return;
@@ -87,8 +87,9 @@ class WaiterMenu extends Component
 
     public function render()
     {
-        // 1. Get Featured Products (Upselling)
-        $featuredProducts = Product::where('is_favorite', true)
+        // 1. Get Featured Products (Upselling) - with eager loading
+        $featuredProducts = Product::with(['category', 'unit'])
+            ->where('is_favorite', true)
             ->where('is_sellable', true)
             ->where('name', '!=', 'Down Payment (DP)')
             ->where(function ($q) {
@@ -99,8 +100,9 @@ class WaiterMenu extends Component
             ->limit(10)
             ->get();
 
-        // 2. Get Standard Products
-        $products = Product::where('is_sellable', true)
+        // 2. Get Standard Products - with eager loading
+        $products = Product::with(['category', 'unit'])
+            ->where('is_sellable', true)
             ->where('name', '!=', 'Down Payment (DP)')
             ->where(function ($q) {
                 $q->where('stock', '>', 0)
