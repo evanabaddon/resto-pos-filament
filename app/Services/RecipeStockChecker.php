@@ -16,6 +16,8 @@ class RecipeStockChecker
      */
     public function checkAvailability(Product $product, int $requestedQty): array
     {
+        if (app()->runningInConsole())
+            echo ">> DEBUG: Inside checkAvailability " . $product->name . "\n";
         // For produced/bar items with prepared stock management enabled
         if (in_array($product->type, ['produced', 'bar']) && $product->enable_stock_alert) {
             $preparedStock = $product->prepared_stock ?? 0;
@@ -74,10 +76,8 @@ class RecipeStockChecker
         $minPortions = PHP_INT_MAX;
         $conversionService = app(\App\Services\UnitConversionService::class);
 
-        // Get RESERVED ingredients from ALL drafts
-        // This is critical: if we have 4 oranges, and Draft A uses 2, Draft B uses 2
-        // Then remaining is 0. Both products should see 0 availability.
-        $reservedIngredients = $this->getAllReservedIngredients();
+        // Get RESERVED ingredients from ALL drafts with TIMESTAMP
+        $reservedDrafts = $this->getAllReservedDrafts();
 
         foreach ($recipes as $recipe) {
             if (!$recipe->ingredient) {
@@ -99,8 +99,29 @@ class RecipeStockChecker
                 $totalStock = $ingredient->stock ?? 0;
             }
 
-            // Subtract reserved quantity for this ingredient (from ALL drafts)
-            $reservedQty = $reservedIngredients[$ingredient->id] ?? 0;
+            // FILTER RESERVATIONS: Only count drafts created AFTER the ingredient's last stock update
+            $reservedQty = 0;
+            if (isset($reservedDrafts[$ingredient->id])) {
+                foreach ($reservedDrafts[$ingredient->id] as $draft) {
+                    $draftTime = $draft['created_at'];
+                    $stockTime = $ingredient->updated_at;
+
+                    // DEBUG TRACE
+                    // \Illuminate\Support\Facades\Log::info("Ingredient {$ingredient->name} ({$ingredient->id}) vs Draft: Use {$draftTime} > StockUpdated {$stockTime} ?");
+
+                    if ($draftTime && $stockTime && $draftTime->gt($stockTime)) {
+                        // \Illuminate\Support\Facades\Log::info("  -> YES (Newer). Reserved += " . $draft['quantity']);
+                        $reservedQty += $draft['quantity'];
+                    } else {
+                        // \Illuminate\Support\Facades\Log::info("  -> NO (Older/Equal). Ignored.");
+                    }
+                    // For debugging locally via echo (safe in tinker)
+                    if (app()->runningInConsole()) {
+                        echo "Deb: Ing {$ingredient->id} Updated {$stockTime} vs Draft {$draftTime} -> " . ($draftTime->gt($stockTime) ? 'INCLUDE' : 'IGNORE') . "\n";
+                    }
+                }
+            }
+
             $availableStock = max(0, $totalStock - $reservedQty);
 
             if ($requiredPerPortion > 0) {
@@ -116,7 +137,7 @@ class RecipeStockChecker
     }
 
     /**
-     * Get LIMITING ingredient accounting for shared usage
+     * Get LIMITING ingredient accounting for shared usage and timestamps
      */
     public function getLimitingIngredient(Product $product): ?string
     {
@@ -131,7 +152,7 @@ class RecipeStockChecker
         $minPortions = PHP_INT_MAX;
         $limitingIngredientName = null;
         $conversionService = app(\App\Services\UnitConversionService::class);
-        $reservedIngredients = $this->getAllReservedIngredients();
+        $reservedDrafts = $this->getAllReservedDrafts();
 
         foreach ($recipes as $recipe) {
             if (!$recipe->ingredient)
@@ -151,8 +172,16 @@ class RecipeStockChecker
                 $totalStock = $ingredient->stock ?? 0;
             }
 
-            // Subtract reserved quantity
-            $reservedQty = $reservedIngredients[$ingredient->id] ?? 0;
+            // FILTER RESERVATIONS - Stock Opname Aware
+            $reservedQty = 0;
+            if (isset($reservedDrafts[$ingredient->id])) {
+                foreach ($reservedDrafts[$ingredient->id] as $draft) {
+                    if ($draft['created_at']->gt($ingredient->updated_at)) {
+                        $reservedQty += $draft['quantity'];
+                    }
+                }
+            }
+
             $availableStock = max(0, $totalStock - $reservedQty);
 
             if ($requiredPerPortion > 0) {
@@ -179,7 +208,7 @@ class RecipeStockChecker
         $recipes = $product->recipes()->with(['ingredient.unit', 'unit'])->get();
         $requirements = [];
         $conversionService = app(\App\Services\UnitConversionService::class);
-        $reservedIngredients = $this->getAllReservedIngredients();
+        $reservedDrafts = $this->getAllReservedDrafts();
 
         foreach ($recipes as $recipe) {
             if (!$recipe->ingredient)
@@ -201,8 +230,16 @@ class RecipeStockChecker
                 $totalStock = $ingredient->stock ?? 0;
             }
 
-            // Subtract reserved quantity
-            $reservedQty = $reservedIngredients[$ingredient->id] ?? 0;
+            // FILTER RESERVATIONS - Stock Opname Aware
+            $reservedQty = 0;
+            if (isset($reservedDrafts[$ingredient->id])) {
+                foreach ($reservedDrafts[$ingredient->id] as $draft) {
+                    if ($draft['created_at']->gt($ingredient->updated_at)) {
+                        $reservedQty += $draft['quantity'];
+                    }
+                }
+            }
+
             $availableStock = max(0, $totalStock - $reservedQty);
 
             $requirements[] = [
@@ -218,30 +255,37 @@ class RecipeStockChecker
     }
 
     /**
-     * Get detailed map of RESERVED QUANTITY per INGREDIENT from all active drafts
-     * Returns [ingredient_id => total_reserved_qty]
+     * Get detailed list of draft usages per ingredient with timestamps
+     * Returns [ingredient_id => [['quantity' => float, 'created_at' => Carbon], ...]]
      */
-    private function getAllReservedIngredients(?int $excludeSaleId = null): array
+    private function getAllReservedDrafts(?int $excludeSaleId = null): array
     {
-        // 1. Get all draft items created TODAY
+        // 1. Get all draft items created TODAY and YESTERDAY (to be safe if midnight crossover)
+        // Actually, just get pending/drafts. If they are very old, they might be irrelevant provided updated_at is newer.
+        // But for performance, limit to last 24h.
+
         $query = \App\Models\SaleItem::whereHas('sale', function ($q) use ($excludeSaleId) {
             $q->whereIn('status', ['draft', 'pending'])
-                ->whereNotIn('status', ['split', 'merge'])
-                ->whereDate('created_at', today());
+                ->whereNotIn('status', ['split', 'merge']);
+            // ->whereDate('created_at', '>=', today()->subDay()); // Optional perf optimization
 
             if ($excludeSaleId) {
                 $q->where('id', '!=', $excludeSaleId);
             }
         })
-            ->with(['product.recipes']);
+            ->with(['product.recipes', 'sale:id,created_at']); // Eager load sale created_at
 
         $items = $query->get();
-        $reserved = [];
+        $reserved = []; // [ingredient_id => [ {qty, created_at}, ... ]]
         $conversionService = app(\App\Services\UnitConversionService::class);
 
         foreach ($items as $item) {
             if (!$item->product || $item->product->recipes->isEmpty())
                 continue;
+
+            // Use item created_at or sale created_at? Sale created_at is safer for the "order time".
+            // SaleItem created_at should be same as sale usually, or when item added.
+            $draftTime = $item->created_at;
 
             foreach ($item->product->recipes as $recipe) {
                 if (!$recipe->ingredient)
@@ -257,9 +301,13 @@ class RecipeStockChecker
                 $totalUsage = $perUnitUsage * $item->quantity;
 
                 if (!isset($reserved[$recipe->ingredient_id])) {
-                    $reserved[$recipe->ingredient_id] = 0;
+                    $reserved[$recipe->ingredient_id] = [];
                 }
-                $reserved[$recipe->ingredient_id] += $totalUsage;
+
+                $reserved[$recipe->ingredient_id][] = [
+                    'quantity' => $totalUsage,
+                    'created_at' => $draftTime
+                ];
             }
         }
 
@@ -282,7 +330,7 @@ class RecipeStockChecker
         // For simplicity: The passed $cartItems are "pending" items not yet in DB drafts?
         // Or checks for current cart?
 
-        $reservedIngredients = $this->getAllReservedIngredients($excludeSaleId);
+        $reservedDrafts = $this->getAllReservedDrafts($excludeSaleId);
 
         // Add current cart items to reserved pool if they consume ingredients
         // (Assuming cartItems are just structure ['product_id', 'quantity'])
@@ -297,8 +345,8 @@ class RecipeStockChecker
         $result = [];
 
         foreach ($products as $id => $product) {
-            // Check availability using SHARED reserved ingredients
-            $maxPortions = $this->calculateMaxPortionsWithSharedReserve($product, $reservedIngredients, $conversionService);
+            // Check availability using SHARED reserved ingredients with TIMESTAMP check
+            $maxPortions = $this->calculateMaxPortionsWithSharedReserve($product, $reservedDrafts, $conversionService);
 
             // We do NOT subtract specific product draft logic anymore because
             // we already subtracted the INGREDIENTS used by those drafts.
@@ -320,7 +368,7 @@ class RecipeStockChecker
         return $result;
     }
 
-    private function calculateMaxPortionsWithSharedReserve(Product $product, array $reservedIngredients, $conversionService): int
+    private function calculateMaxPortionsWithSharedReserve(Product $product, array $reservedDrafts, $conversionService): int
     {
         if (!$product->relationLoaded('recipes') || $product->recipes->isEmpty()) {
             return (int) floor($product->stock ?? 0);
@@ -346,14 +394,21 @@ class RecipeStockChecker
                 $totalStock = $ingredient->stock ?? 0;
             }
 
-            // Subtract global reserved usage
-            $reservedQty = $reservedIngredients[$ingredient->id] ?? 0;
+            // FILTER RESERVATIONS - Stock Opname Aware
+            $reservedQty = 0;
+            if (isset($reservedDrafts[$ingredient->id])) {
+                foreach ($reservedDrafts[$ingredient->id] as $draft) {
+                    if ($draft['created_at']->gt($ingredient->updated_at)) {
+                        $reservedQty += $draft['quantity'];
+                    }
+                }
+            }
+
             $availableStock = max(0, $totalStock - $reservedQty);
 
             $portionsFromThisIngredient = $requiredPerPortion > 0
                 ? floor($availableStock / $requiredPerPortion)
                 : 0;
-
             $minPortions = min($minPortions, $portionsFromThisIngredient);
         }
 
