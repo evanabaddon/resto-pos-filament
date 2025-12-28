@@ -40,21 +40,30 @@ class WaiterMenu extends Component
         }
 
         // Check stock availability for produced items with recipes
-        $requestedQty = isset($this->cart[$productId]) ? $this->cart[$productId]['qty'] + 1 : 1;
+        // Only check if adding new or increasing (but here we just check total requested vs available)
+        $currentCartQty = isset($this->cart[$productId]) ? $this->cart[$productId]['qty'] : 0;
+        $requestedQty = $currentCartQty + 1;
 
         if (in_array($product->type, ['produced', 'bar'])) {
             $stockChecker = app(\App\Services\RecipeStockChecker::class);
-            $availability = $stockChecker->checkAvailability($product, $requestedQty);
+            // Pass the CURRENT CART (excluding self) so it knows we already used ingredients for OTHER items
+            $cartForCheck = $this->cart;
+            if (isset($cartForCheck[$productId])) {
+                unset($cartForCheck[$productId]);
+            }
+
+            $availability = $stockChecker->checkAvailability($product, $requestedQty, $cartForCheck);
 
             if (!$availability['available']) {
                 $maxPortions = $availability['max_portions'];
                 $limitingIngredient = $availability['limiting_ingredient'];
 
-                if ($maxPortions === 0) {
-                    $this->dispatch('notify', message: "❌ {$product->name} tidak tersedia. Bahan baku '{$limitingIngredient}' habis.", type: 'error');
-                    return;
-                } else {
-                    $this->dispatch('notify', message: "⚠️ Stok terbatas. Hanya tersedia {$maxPortions} porsi {$product->name}.", type: 'warning');
+                // If we already have some in cart, show remaining addable
+                // Actually max_portions returned is TOTAL possible, so we compare with requested.
+                // If max_portions < requestedQty, it fails.
+
+                if ($maxPortions < $requestedQty) {
+                    $this->dispatch('notify', message: "❌ Stok tidak cukup. Maksimal: {$maxPortions}", type: 'error');
                     return;
                 }
             }

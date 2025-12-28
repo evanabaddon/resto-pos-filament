@@ -12,13 +12,22 @@ class RecipeStockChecker
      * 
      * @param Product $product
      * @param int $requestedQty
+     * @param array $cartItems Optional cart items to include in reservation calculation
      * @return array ['available' => bool, 'max_portions' => int, 'limiting_ingredient' => string|null]
      */
-    public function checkAvailability(Product $product, int $requestedQty): array
+    public function checkAvailability(Product $product, int $requestedQty, array $cartItems = []): array
     {
         // For produced/bar items with prepared stock management enabled
         if (in_array($product->type, ['produced', 'bar']) && $product->enable_stock_alert) {
             $preparedStock = $product->prepared_stock ?? 0;
+
+            // Subtract cart usage if this product is in cart directly
+            // Note: For prepared items without recipes (or purely prepared), we check direct quantity
+            if (!empty($cartItems) && isset($cartItems[$product->id])) {
+                // Handle different cart structures (simple array or assoc)
+                $cartQty = is_array($cartItems[$product->id]) ? ($cartItems[$product->id]['qty'] ?? 0) : $cartItems[$product->id];
+                $preparedStock = max(0, $preparedStock - $cartQty);
+            }
 
             return [
                 'available' => $preparedStock >= $requestedQty,
@@ -29,29 +38,37 @@ class RecipeStockChecker
 
         // If product has no recipes, it's a direct product - always available based on its own stock
         if (!$product->recipes()->exists()) {
+            $stock = $product->stock;
+            // Subtract cart usage
+            if (!empty($cartItems) && isset($cartItems[$product->id])) {
+                $cartQty = is_array($cartItems[$product->id]) ? ($cartItems[$product->id]['qty'] ?? 0) : $cartItems[$product->id];
+                $stock = max(0, $stock - $cartQty);
+            }
+
             return [
-                'available' => $product->stock >= $requestedQty,
-                'max_portions' => (int) floor($product->stock),
+                'available' => $stock >= $requestedQty,
+                'max_portions' => (int) floor($stock),
                 'limiting_ingredient' => null,
             ];
         }
 
-        $maxPortions = $this->getMaxPortions($product);
+        $maxPortions = $this->getMaxPortions($product, $cartItems);
 
         return [
             'available' => $maxPortions >= $requestedQty,
             'max_portions' => $maxPortions,
-            'limiting_ingredient' => $this->getLimitingIngredient($product),
-        ];
+            'limiting_ingredient' => $this->getLimitingIngredient($product, $cartItems),
+        ]; // Cart usage is already subtracted inside getMaxPortions (via ingredients)
     }
 
     /**
      * Get maximum portions that can be made based on ingredient availability
      * 
      * @param Product $product
+     * @param array $cartItems
      * @return int
      */
-    public function getMaxPortions(Product $product): int
+    public function getMaxPortions(Product $product, array $cartItems = []): int
     {
         // NO CACHE - Always calculate real-time for accurate badge updates
 
@@ -76,6 +93,9 @@ class RecipeStockChecker
 
         // Get RESERVED ingredients from ALL drafts with TIMESTAMP
         $reservedDrafts = $this->getAllReservedDrafts();
+
+        // Calculate RESERVED ingredients from CURRENT CART
+        $cartReserved = $this->calculateCartReservedIngredients($cartItems);
 
         foreach ($recipes as $recipe) {
             if (!$recipe->ingredient) {
@@ -110,6 +130,10 @@ class RecipeStockChecker
                 }
             }
 
+            // ADD CART RESERVATION
+            $cartQty = $cartReserved[$ingredient->id] ?? 0;
+            $reservedQty += $cartQty;
+
             $availableStock = max(0, $totalStock - $reservedQty);
 
             if ($requiredPerPortion > 0) {
@@ -127,7 +151,7 @@ class RecipeStockChecker
     /**
      * Get LIMITING ingredient accounting for shared usage and timestamps
      */
-    public function getLimitingIngredient(Product $product): ?string
+    public function getLimitingIngredient(Product $product, array $cartItems = []): ?string
     {
         if (!$product->recipes()->exists()) {
             return null;
@@ -141,6 +165,7 @@ class RecipeStockChecker
         $limitingIngredientName = null;
         $conversionService = app(\App\Services\UnitConversionService::class);
         $reservedDrafts = $this->getAllReservedDrafts();
+        $cartReserved = $this->calculateCartReservedIngredients($cartItems);
 
         foreach ($recipes as $recipe) {
             if (!$recipe->ingredient)
@@ -170,6 +195,10 @@ class RecipeStockChecker
                 }
             }
 
+            // ADD CART RESERVATION
+            $cartQty = $cartReserved[$ingredient->id] ?? 0;
+            $reservedQty += $cartQty;
+
             $availableStock = max(0, $totalStock - $reservedQty);
 
             if ($requiredPerPortion > 0) {
@@ -185,6 +214,56 @@ class RecipeStockChecker
         }
 
         return $limitingIngredientName;
+    }
+
+    /**
+     * Calculate Reserved Ingredients from Cart Items
+     * @param array $cartItems
+     * @return array [ingredient_id => total_qty]
+     */
+    private function calculateCartReservedIngredients(array $cartItems): array
+    {
+        if (empty($cartItems))
+            return [];
+
+        $reserved = [];
+        $conversionService = app(\App\Services\UnitConversionService::class);
+
+        // Optimize: Load all products in cart once with recipes
+        // Handle $cartItems structure: it could be [productId => ['qty' => 1]] (WaiterMenu) or other structures.
+        // Assuming WaiterMenu structure: [id => [qty, ...]]
+
+        $productIds = array_keys($cartItems);
+        $products = Product::whereIn('id', $productIds)->with(['recipes.ingredient.unit', 'recipes.unit'])->get()->keyBy('id');
+
+        foreach ($cartItems as $productId => $itemData) {
+            $qty = is_array($itemData) ? ($itemData['qty'] ?? 0) : $itemData;
+            if ($qty <= 0)
+                continue;
+
+            $product = $products->find($productId);
+            if (!$product || $product->recipes->isEmpty())
+                continue;
+
+            foreach ($product->recipes as $recipe) {
+                if (!$recipe->ingredient)
+                    continue;
+
+                $perUnitUsage = $conversionService->convert(
+                    $recipe->quantity,
+                    $recipe->unit_id,
+                    $recipe->ingredient->unit_id
+                );
+
+                $totalUsage = $perUnitUsage * $qty;
+
+                if (!isset($reserved[$recipe->ingredient_id])) {
+                    $reserved[$recipe->ingredient_id] = 0;
+                }
+                $reserved[$recipe->ingredient_id] += $totalUsage;
+            }
+        }
+        return $reserved;
     }
 
     public function getIngredientRequirements(Product $product, int $qty): array

@@ -17,7 +17,20 @@ trait HasCart
         // Check stock availability for produced items with recipes
         if (in_array($product->type, ['produced', 'bar'])) {
             $stockChecker = app(\App\Services\RecipeStockChecker::class);
-            $availability = $stockChecker->checkAvailability($product, 1);
+
+            // Prepare cart quantities for check
+            // EXCLUDE current product from cart because $requestedQty (1) is the NEW Total for this check?
+            // Case 1: New Item. requested=1. Cart doesn't have it.
+            // Case 2: Update. requested=Total. Cart has old qty.
+
+            // Here we are adding 1. So requested = 1.
+            // Cart should represent "Other items".
+            $cartQuantities = $this->getCartQuantitiesProperty();
+            if (isset($cartQuantities[$product->id])) {
+                unset($cartQuantities[$product->id]);
+            }
+
+            $availability = $stockChecker->checkAvailability($product, 1, $cartQuantities);
 
             if (!$availability['available']) {
                 $maxPortions = $availability['max_portions'];
@@ -36,6 +49,9 @@ trait HasCart
                         message: "⚠️ Hanya tersedia {$maxPortions} porsi {$product->name}.",
                         type: 'warning'
                     );
+                    // allow adding if max > 0? No, availability=false means requested(1) > max.
+                    // So if max=0, completely block.
+                    // If max > 0 but < 1 (impossible for 1), block.
                 }
             }
         }
@@ -54,7 +70,14 @@ trait HasCart
 
             if (in_array($product->type, ['produced', 'bar'])) {
                 $stockChecker = app(\App\Services\RecipeStockChecker::class);
-                $availability = $stockChecker->checkAvailability($product, $newQuantity);
+
+                // Exclude self from cart for total check
+                $cartQuantities = $this->getCartQuantitiesProperty();
+                if (isset($cartQuantities[$product->id])) {
+                    unset($cartQuantities[$product->id]);
+                }
+
+                $availability = $stockChecker->checkAvailability($product, $newQuantity, $cartQuantities);
 
                 if (!$availability['available']) {
                     $this->dispatch(
