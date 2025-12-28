@@ -302,7 +302,8 @@
                                 </li>
                                 <li>• Smart Filter: Produk masakan hanya muncul jika <em>Stock Alert</em> aktif</li>
                                 <li>• Auto-Switch Column: Otomatis edit kolom <code>stock</code> atau
-                                    <code>prepared_stock</code></li>
+                                    <code>prepared_stock</code>
+                                </li>
                             </ul>
                         </div>
                         <p><strong>Cara Menggunakan:</strong></p>
@@ -340,18 +341,37 @@
                         <p class="font-semibold text-sm uppercase text-gray-500 mb-2">1. Cara Mencatat Produksi (Masak)
                         </p>
                         <ul class="list-disc pl-6 space-y-2 mb-4">
-                            <li>Buka Dashboard > Widget <strong>Stok Critical & Produksi Dapur</strong></li>
+                            <li>Buka menu <strong>Produksi</strong> dari sidebar (grup Produk)</li>
+                            <li>Klik <strong>Create</strong> untuk membuat produksi baru</li>
                             <li>Pilih Menu yang dimasak (misal: Nasi Putih) dari dropdown</li>
-                            <li>Input jumlah (misal: 50 Porsi)</li>
-                            <li>Klik tombol <strong>"Catat Masak"</strong></li>
+                            <li>Sistem otomatis menampilkan:
+                                <ul class="list-disc pl-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                    <li>Stok jadi saat ini (Prepared Stock)</li>
+                                    <li>Estimasi maksimal produksi berdasarkan ketersediaan bahan baku</li>
+                                </ul>
+                            </li>
+                            <li>Input jumlah produksi (misal: 50 Porsi)</li>
+                            <li>Tambahkan catatan jika perlu (opsional)</li>
+                            <li>Klik tombol <strong>"Simpan"</strong></li>
                             <li>
                                 <strong>Hasil:</strong>
                                 <ul class="list-disc pl-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
                                     <li>Stok 'Prepared' Nasi Putih bertambah +50</li>
                                     <li>Stok 'Raw' Beras berkurang otomatis (misal -5kg) sesuai resep</li>
+                                    <li>Tercatat di riwayat produksi dengan timestamp dan user</li>
                                 </ul>
                             </li>
                         </ul>
+
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 mb-4">
+                            <p class="font-semibold text-blue-900 dark:text-blue-100">✨ Fitur Cerdas</p>
+                            <ul class="text-sm mt-2 space-y-1 text-blue-800 dark:text-blue-200">
+                                <li>• <strong>Smart Stock Info:</strong> Form produksi menampilkan estimasi maksimal produksi berdasarkan ketersediaan bahan baku</li>
+                                <li>• <strong>Stock Validation:</strong> Sistem otomatis mencegah produksi jika bahan baku tidak mencukupi dengan notifikasi yang jelas</li>
+                                <li>• <strong>Production History:</strong> Semua aktivitas produksi tercatat lengkap dengan user, tanggal, dan catatan</li>
+                                <li>• <strong>Polymorphic Tracking:</strong> Setiap produksi tercatat di Stock Movements dengan referensi lengkap untuk audit trail</li>
+                            </ul>
+                        </div>
 
                         <p class="font-semibold text-sm uppercase text-gray-500 mb-2">2. Reset Stock Harian (Closing
                             Kitchen)</p>
@@ -884,7 +904,7 @@
     {{-- Smooth Scroll Script --}}
     <script>
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
+            anchor.addEventListener('click', function(e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {

@@ -41,90 +41,89 @@ class CriticalStockWidget extends Widget
     public function recordProduction($productId, $quantity)
     {
         try {
-            $product = Product::with(['recipes.ingredient.unit', 'recipes.unit'])->findOrFail($productId);
-            $conversionService = app(\App\Services\UnitConversionService::class);
+            // Using DB Transaction similar to CreateProduction
+            \Illuminate\Support\Facades\DB::transaction(function () use ($productId, $quantity) {
+                // 1. Create Production Record
+                $production = new \App\Models\Production();
+                $production->fill([
+                    'product_id' => $productId,
+                    'user_id' => auth()->id(),
+                    'quantity' => $quantity,
+                    'notes' => 'Quick cook via Dashboard',
+                ]);
+                $production->save();
 
-            // 1. Calculate and Check Ingredients
-            $deductions = []; // [ingredient_model => qty_to_deduct]
+                $product = $production->product;
+                if (!$product) throw new \Exception("Product not found");
 
-            foreach ($product->recipes as $recipe) {
-                $ingredient = $recipe->ingredient;
-                if (!$ingredient)
-                    continue;
+                // 2. Increase Prepared Stock (Output)
+                // Polymorphic link
+                $production->stockMovements()->create([
+                    'product_id' => $product->id,
+                    'quantity' => $quantity,
+                    'type' => 'increase',
+                    'reason' => 'production_output',
+                    'notes' => 'Hasil produksi (Quick Cook)',
+                ]);
 
-                $requiredPerPortion = $conversionService->convert(
-                    $recipe->quantity,
-                    $recipe->unit_id,
-                    $recipe->ingredient->unit_id
-                );
+                // 3. Deduct Ingredients (Input)
+                $conversionService = app(\App\Services\UnitConversionService::class);
+                $product->load(['recipes.ingredient.unit', 'recipes.unit']);
 
-                $totalRequired = $requiredPerPortion * $quantity;
+                foreach ($product->recipes as $recipe) {
+                    $ingredient = $recipe->ingredient;
+                    if (!$ingredient) continue;
 
-                // Determine source stock based on ingredient type
-                $currentStock = in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert
-                    ? ($ingredient->prepared_stock ?? 0)
-                    : $ingredient->stock;
+                    $requiredPerPortion = $conversionService->convert(
+                        $recipe->quantity,
+                        $recipe->unit_id,
+                        $recipe->ingredient->unit_id
+                    );
 
-                if ($currentStock < $totalRequired) {
-                    throw new \Exception("Stok bahan '{$ingredient->name}' tidak cukup! Butuh: {$totalRequired} {$ingredient->unit->symbol}, Ada: {$currentStock}");
-                }
+                    $totalRequired = $requiredPerPortion * $quantity;
 
-                $deductions[] = [
-                    'ingredient' => $ingredient,
-                    'amount' => $totalRequired
-                ];
-            }
+                    if ($totalRequired > 0) {
 
-            // 2. Deduct Ingredients
-            \DB::transaction(function () use ($product, $quantity, $deductions) {
-                foreach ($deductions as $deduction) {
-                    $ingredient = $deduction['ingredient'];
-                    $amount = $deduction['amount'];
+                        // Validation: Check stock first (Optional based on preference)
+                        // If checking prepared stock
+                        $currentStock = 0;
+                        if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
+                            $currentStock = $ingredient->prepared_stock ?? 0;
+                        } else {
+                            $currentStock = $ingredient->stock ?? 0;
+                        }
 
-                    if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
-                        // For Prepared Stock: StockMovement model doesn't support 'prepared_stock' column updates automatically.
-                        // So we manually decrement and just Log/Trace it.
-                        $ingredient->decrement('prepared_stock', $amount);
-                        // We could create a StockMovement with a special reason, but it would decrement 'stock'.
-                        // For now, simple decrement is sufficient for Prepared items used as ingredients.
-                    } else {
-                        // For Raw Stock: Create StockMovement which AUTOMATICALLY decrements 'stock' via Observer.
-                        // DO NOT manually decrement here.
-                        \App\Models\StockMovement::create([
+                        if ($currentStock < $totalRequired) {
+                            throw new \Exception("Stok bahan '{$ingredient->name}' tidak cukup! Butuh: {$totalRequired} {$ingredient->unit->symbol}, Ada: {$currentStock}");
+                        }
+
+                        // Create Stock Movement for Ingredient
+                        // Polymorphic link to this Production record
+                        $production->stockMovements()->create([
                             'product_id' => $ingredient->id,
-                            'quantity' => $amount, // Positive amount, type tells direction
+                            'quantity' => $totalRequired,
                             'type' => 'decrease',
-                            'reason' => 'production',
-                            'notes' => "Used for production of {$quantity} {$product->name}",
+                            'reason' => 'production_ingredient',
+                            'notes' => "Bahan baku untuk produksi {$quantity} {$product->name} (Quick Cook)",
                         ]);
                     }
-
-                    // Touch updated_at for timestamp-based logic (RecipeStockChecker) in main update
-                    $ingredient->touch();
                 }
-
-                // 3. Add Prepared Stock
-                // Manual update, no StockMovement for 'prepared_stock'
-                $product->update([
-                    'prepared_stock' => ($product->prepared_stock ?? 0) + $quantity,
-                ]);
             });
 
             Notification::make()
                 ->success()
                 ->title('Production Recorded')
-                ->body("Berhasil masak {$quantity} porsi {$product->name}. Bahan baku telah dipotong.")
+                ->body("Berhasil masak {$quantity} porsi. History produksi tercatat.")
                 ->send();
 
             $this->dispatch('close-modal', id: "record-production-{$productId}");
             $this->dispatch('stock-updated');
-
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Record Production Error: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
             Notification::make()
                 ->danger()
                 ->title('Gagal Masak')
-                ->body($e->getMessage())
+                ->body("Error: " . $e->getMessage())
                 ->send();
         }
     }
@@ -163,7 +162,6 @@ class CriticalStockWidget extends Widget
 
             $this->dispatch('close-modal', id: "record-production-{$productId}");
             $this->dispatch('stock-updated');
-
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Reset Stock Error: ' . $e->getMessage());
             Notification::make()->danger()->title('Error')->body($e->getMessage())->send();

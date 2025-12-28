@@ -209,9 +209,14 @@ Sistem pelacakan stok untuk makanan siap saji atau *semi-finished goods* (misal:
         > - **Otomatis Kurangi (Raw)**: Beras 5 Kg, Air Galon 2 Liter.
         > - **Otomatis Tambah (Prepared)**: Nasi Putih +50 Porsi.
     - **Inventory Accuracy**: Menjaga akurasi stok gudang secara real-time tanpa menunggu penjualan terjadi.
+    - **Smart Stock Info**: Form produksi menampilkan estimasi maksimal produksi berdasarkan ketersediaan bahan baku.
+    - **Stock Validation**: Sistem otomatis mencegah produksi jika bahan baku tidak mencukupi dengan notifikasi yang jelas.
+    - **Production History**: Semua aktivitas produksi tercatat lengkap dengan user, tanggal, dan catatan.
 - **🔄 Daily Stock Reset**:
     - **Fitur Khusus**: Tombol "Reset Stock Harian" untuk produk tipe *fresh daily* (misal: Nasi, Masakan Padang).
     - **Logic**: Menghapus sisa *prepared stock* di akhir hari (dicatat sebagai waste) tanpa mengembalikan bahan baku. Memastikan stok hari besok dimulai dari 0 agar produksi baru tercatat rapi.
+- **📊 Stock Movement Tracking**: Setiap produksi tercatat di `Stock Movements` dengan referensi polimorfik untuk audit trail yang lengkap.
+
 
 ### 💬 Integrated WhatsApp Center (Native Chat) 🚀
 Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
