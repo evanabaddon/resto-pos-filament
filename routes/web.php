@@ -229,12 +229,9 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
                 ->header('Cache-Control', 'public, max-age=3600');
         }
     } catch (\Exception $e) {
-        // Fallback to transparent image
+        // Gateway offline or fetch failed
     }
 
-    // Return 1x1 transparent PNG as fallback (allows frontend to show initials)
-    $transparentPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
-    return response($transparentPng)
-        ->header('Content-Type', 'image/png')
-        ->header('Cache-Control', 'public, max-age=60');
+    // Return 404 to trigger onerror in frontend
+    return response()->noContent(404);
 })->name('whatsapp.avatar')->where('jid', '.*');
