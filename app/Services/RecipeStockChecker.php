@@ -89,7 +89,13 @@ class RecipeStockChecker
             );
 
             // Calculate max portions based on this ingredient
-            $availableStock = $recipe->ingredient->stock;
+            // FIX: Handle prepared ingredients (e.g. Nasi Putih as ingredient)
+            $ingredient = $recipe->ingredient;
+            if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
+                $availableStock = $ingredient->prepared_stock ?? 0;
+            } else {
+                $availableStock = $ingredient->stock ?? 0;
+            }
 
             if ($requiredPerPortion > 0) {
                 $portionsFromThisIngredient = floor($availableStock / $requiredPerPortion);
@@ -156,7 +162,13 @@ class RecipeStockChecker
                 $recipe->ingredient->unit_id
             );
 
-            $availableStock = $recipe->ingredient->stock;
+            // FIX: Handle prepared ingredients
+            $ingredient = $recipe->ingredient;
+            if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
+                $availableStock = $ingredient->prepared_stock ?? 0;
+            } else {
+                $availableStock = $ingredient->stock ?? 0;
+            }
 
             if ($requiredPerPortion > 0) {
                 $portionsFromThisIngredient = floor($availableStock / $requiredPerPortion);
@@ -204,11 +216,19 @@ class RecipeStockChecker
 
             $totalRequired = $requiredPerPortion * $qty;
 
+            // FIX: Handle prepared ingredients
+            $ingredient = $recipe->ingredient;
+            if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
+                $availableStock = $ingredient->prepared_stock ?? 0;
+            } else {
+                $availableStock = $ingredient->stock ?? 0;
+            }
+
             $requirements[] = [
                 'ingredient' => $recipe->ingredient->name,
                 'required' => $totalRequired,
-                'available' => $recipe->ingredient->stock,
-                'sufficient' => $recipe->ingredient->stock >= $totalRequired,
+                'available' => $availableStock,
+                'sufficient' => $availableStock >= $totalRequired,
                 'unit' => $recipe->ingredient->unit->symbol ?? '',
             ];
         }
@@ -315,9 +335,17 @@ class RecipeStockChecker
                 $recipe->ingredient->unit_id
             );
 
+            // FIX: Handle prepared ingredients from memory loaded product
+            $ingredient = $recipe->ingredient;
+            if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
+                $availableStock = $ingredient->prepared_stock ?? 0;
+            } else {
+                $availableStock = $ingredient->stock ?? 0;
+            }
+
             // Calculate max portions from this ingredient
             $portionsFromThisIngredient = $requiredPerPortion > 0
-                ? floor($recipe->ingredient->stock / $requiredPerPortion)
+                ? floor($availableStock / $requiredPerPortion)
                 : 0;
 
             $minPortions = min($minPortions, $portionsFromThisIngredient);
@@ -353,8 +381,16 @@ class RecipeStockChecker
                 $recipe->ingredient->unit_id
             );
 
+            // FIX: Handle prepared ingredients
+            $ingredient = $recipe->ingredient;
+            if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
+                $availableStock = $ingredient->prepared_stock ?? 0;
+            } else {
+                $availableStock = $ingredient->stock ?? 0;
+            }
+
             $portionsFromThisIngredient = $requiredPerPortion > 0
-                ? floor($recipe->ingredient->stock / $requiredPerPortion)
+                ? floor($availableStock / $requiredPerPortion)
                 : 0;
 
             if ($portionsFromThisIngredient < $minPortions) {
