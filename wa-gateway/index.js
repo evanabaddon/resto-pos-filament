@@ -115,8 +115,12 @@ async function connectToWhatsApp() {
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
         console.log(`Received messages.upsert type: ${type}`);
 
-        // Only process real-time notifications, ignore history syncs (append)
-        if (type !== 'notify') return;
+        // Process 'notify' (incoming) and 'append' (own messages from other devices)
+        // Skip only history sync
+        if (type === 'append' && messages.length > 5) {
+            console.log('Skipping bulk history sync');
+            return;
+        }
 
         try {
             for (const msg of messages) {
@@ -165,6 +169,7 @@ async function connectToWhatsApp() {
                     }
 
                     const isFromMe = msg.key.fromMe;
+                    if (isFromMe) console.log('Outgoing Message Detected');
 
                     if (!msg.message) {
                         console.log('Skipping message with no content (e.g. Protocol/Stub)');
