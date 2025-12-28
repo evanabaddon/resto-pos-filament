@@ -168,42 +168,71 @@
     </div>
 
     @if($aiResults)
-    <div class="ai-box">
-        <h3>AI Analysis & Strategic Insights</h3>
-        <p>"{{ $aiResults['analysis'] ?? 'Tidak ada analisis tersedia.' }}"</p>
+        <div class="ai-box">
+            <h3>AI Analysis & Strategic Insights</h3>
+            <p>"{{ $aiResults['analysis'] ?? 'Tidak ada analisis tersedia.' }}"</p>
 
-        <table style="margin-top: 15px; border: none;">
-            <thead>
-                <tr>
-                    <th style="width: 30%;">Produk / Bahan</th>
-                    <th style="width: 15%; text-align: center;">Urgency</th>
-                    <th style="width: 20%; text-align: right;">Saran Restock</th>
-                    <th style="width: 35%;">Alasan & Prediksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($aiResults['recommendations'] as $rec)
-                @if(($rec['suggested_restock'] ?? 0) > 0)
-                <tr>
-                    <td class="font-bold">{{ $rec['product_name'] }}</td>
-                    <td class="text-center">
-                        <span class="badge urgency-{{ $rec['urgency'] ?? 'low' }}">
-                            {{ strtoupper($rec['urgency'] ?? 'MEDIUM') }}
-                        </span>
-                    </td>
-                    <td class="text-right">
-                        <span class="font-bold" style="color: #4338ca;">+{{ $rec['suggested_restock'] }}</span>
-                    </td>
-                    <td>
-                        <span style="font-size: 8px; color: #6b7280; display: block;">Prediksi Kebutuhan: {{ $rec['predicted_need'] }}</span>
-                        <span style="font-size: 9px; font-style: italic; color: #4b5563;">"{{ $rec['reason'] }}"</span>
-                    </td>
-                </tr>
-                @endif
-                @endforeach
-            </tbody>
-        </table>
-    </div>
+            @if(isset($aiResults['tomorrow_forecast']) && !empty($aiResults['tomorrow_forecast']['items']))
+                <div
+                    style="background: #fff7ed; border: 1px solid #fed7aa; padding: 10px; border-radius: 6px; margin-top: 15px; margin-bottom: 15px;">
+                    <h4 style="margin: 0 0 5px 0; color: #c2410c; font-size: 12px; font-weight: bold;">
+                        🔥 Fokus Besok: {{ $aiResults['tomorrow_forecast']['day'] ?? 'Unknown' }}
+                    </h4>
+                    <p style="margin: 0 0 10px 0; color: #9a3412; font-size: 10px;">
+                        {{ $aiResults['tomorrow_forecast']['summary'] ?? '' }}
+                    </p>
+                    <table style="width: 100%; border: none; margin-top: 5px;">
+                        @foreach($aiResults['tomorrow_forecast']['items'] as $item)
+                            <tr>
+                                <td style="padding: 4px; border-bottom: 1px dashed #fdba74;">
+                                    <span style="font-weight: bold; color: #1f2937;">{{ $item['product_name'] }}</span>
+                                    <br>
+                                    <span style="font-size: 8px; color: #6b7280;">{{ $item['reason'] }}</span>
+                                </td>
+                                <td style="padding: 4px; text-align: right; border-bottom: 1px dashed #fdba74;">
+                                    <span
+                                        style="font-weight: bold; color: #ea580c; font-size: 11px;">{{ $item['predicted'] }}</span>
+                                    <span style="font-size: 8px; color: #9a3412;">Porsi</span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </table>
+                </div>
+            @endif
+
+            <table style="margin-top: 15px; border: none;">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Produk / Bahan</th>
+                        <th style="width: 15%; text-align: center;">Urgency</th>
+                        <th style="width: 20%; text-align: right;">Saran Restock</th>
+                        <th style="width: 35%;">Alasan & Prediksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($aiResults['recommendations'] as $rec)
+                        @if(($rec['suggested_restock'] ?? 0) > 0)
+                            <tr>
+                                <td class="font-bold">{{ $rec['product_name'] }}</td>
+                                <td class="text-center">
+                                    <span class="badge urgency-{{ $rec['urgency'] ?? 'low' }}">
+                                        {{ strtoupper($rec['urgency'] ?? 'MEDIUM') }}
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    <span class="font-bold" style="color: #4338ca;">+{{ $rec['suggested_restock'] }}</span>
+                                </td>
+                                <td>
+                                    <span style="font-size: 8px; color: #6b7280; display: block;">Prediksi Kebutuhan:
+                                        {{ $rec['predicted_need'] }}</span>
+                                    <span style="font-size: 9px; font-style: italic; color: #4b5563;">"{{ $rec['reason'] }}"</span>
+                                </td>
+                            </tr>
+                        @endif
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     @endif
 
     <div class="section-title">Riwayat Konsumsi Bahan & Retail (7 Hari Terakhir)</div>
@@ -219,19 +248,20 @@
         </thead>
         <tbody>
             @foreach($historyData as $data)
-            <tr>
-                <td class="font-bold">{{ $data['name'] }}</td>
-                <td class="text-center">{{ $data['current_stock'] }}</td>
-                <td class="text-right font-bold">{{ number_format($data['total_consumed'], 2) }}</td>
-                <td class="text-right">{{ $data['average_daily'] }}</td>
-                <td>{{ $data['unit'] }}</td>
-            </tr>
+                <tr>
+                    <td class="font-bold">{{ $data['name'] }}</td>
+                    <td class="text-center">{{ $data['current_stock'] }}</td>
+                    <td class="text-right font-bold">{{ number_format($data['total_consumed'], 2) }}</td>
+                    <td class="text-right">{{ $data['average_daily'] }}</td>
+                    <td>{{ $data['unit'] }}</td>
+                </tr>
             @endforeach
         </tbody>
     </table>
 
     <div class="footer">
-        Dicetak otomatis oleh Sistem AI Intelligence {{ app(\App\Settings\GeneralSettings::class)->ai_assistant_name }} - {{ app(\App\Settings\GeneralSettings::class)->app_name }}
+        Dicetak otomatis oleh Sistem AI Intelligence {{ app(\App\Settings\GeneralSettings::class)->ai_assistant_name }}
+        - {{ app(\App\Settings\GeneralSettings::class)->app_name }}
         | Halaman <span class="page-number"></span>
     </div>
 </body>
