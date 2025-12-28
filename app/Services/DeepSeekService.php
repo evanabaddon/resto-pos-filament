@@ -351,6 +351,7 @@ class DeepSeekService
                     {
                         \"product_name\": \"Nama Produk\",
                         \"predicted\": 10,
+                        \"unit\": \"kg\",
                         \"reason\": \"Rata-rata penggunaan hari {$nextDay}\"
                     }
                 ]
@@ -376,7 +377,8 @@ class DeepSeekService
         5. Urgency: 'high' jika stok saat ini < kebutuhan besok.
         4. Urgency: 'high' jika stok saat ini < kebutuhan besok.
         5. Gunakan Bahasa Indonesia untuk semua teks output (summary, reason, dll).
-        6. Berikan data JSON SAJA.";
+        6. Berikan data JSON SAJA.
+        7. PENTING: Sertakan field 'unit' sesuai data input (kg/gr/pcs) untuk setiap item.";
 
         $userPrompt = "Berikut adalah data konsumsi untuk dianalisa:\n" . json_encode($consumptionData, JSON_PRETTY_PRINT);
 

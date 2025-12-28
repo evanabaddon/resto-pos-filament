@@ -47,7 +47,7 @@ class InventoryForecasting extends Page
         $this->historyData = $inventoryService->getForecastingData(30);
 
         // Load cached results
-        $cached = Cache::get('inventory_forecast_consolidated_v4');
+        $cached = Cache::get('inventory_forecast_consolidated_v5');
         if ($cached) {
             $this->aiResults = $cached['results'];
             $this->lastGeneratedAt = $cached['timestamp'];
@@ -70,7 +70,7 @@ class InventoryForecasting extends Page
                 $this->lastGeneratedAt = now()->format('d M Y, H:i');
 
                 // Cache the consolidated results
-                Cache::put('inventory_forecast_consolidated_v4', [
+                Cache::put('inventory_forecast_consolidated_v5', [
                     'results' => $this->aiResults,
                     'timestamp' => $this->lastGeneratedAt,
                 ], now()->addHours(24));

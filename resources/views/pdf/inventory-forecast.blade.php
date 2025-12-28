@@ -192,7 +192,7 @@
                                 <td style="padding: 4px; text-align: right; border-bottom: 1px dashed #fdba74;">
                                     <span
                                         style="font-weight: bold; color: #ea580c; font-size: 11px;">{{ $item['predicted'] }}</span>
-                                    <span style="font-size: 8px; color: #9a3412;">Porsi</span>
+                                    <span style="font-size: 8px; color: #9a3412;">{{ $item['unit'] ?? 'Porsi' }}</span>
                                 </td>
                             </tr>
                         @endforeach

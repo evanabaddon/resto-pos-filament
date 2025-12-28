@@ -89,7 +89,7 @@
                                     </div>
                                     <div class="text-right">
                                         <div class="text-lg font-bold text-orange-600">{{ $item['predicted'] }}</div>
-                                        <div class="text-[10px] text-gray-400">Est. Porsi</div>
+                                        <div class="text-[10px] text-gray-400">{{ $item['unit'] ?? 'Porsi' }}</div>
                                     </div>
                                 </div>
                              @endforeach
