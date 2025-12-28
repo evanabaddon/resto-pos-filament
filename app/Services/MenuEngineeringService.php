@@ -30,12 +30,15 @@ class MenuEngineeringService
                     // Exclude common add-on/side items
                     ->where('name', 'not like', '%Tambahan%')
                     ->where('name', 'not like', '%Extra%')
-                    ->where('name', 'not like', '%Nasi Putih%')
-                    ->where('name', 'not like', '%Sega Putih%')
                     ->where('name', 'not like', '%Nasi Saja%')
                     ->where('name', 'not like', '%Ayam Saja%')
-                    // Exclude items with very low price (< Rp 5,000) - usually add-ons
-                    ->where('sell_price', '>=', 5000);
+
+                    // Filter logic: Exclude cheap items (< 5000) UNLESS they are Nasi/Sega Putih (Core Menu)
+                    ->where(function ($q) {
+                        $q->where('sell_price', '>=', 5000)
+                            ->orWhere('name', 'LIKE', '%Nasi Putih%')
+                            ->orWhere('name', 'LIKE', '%Sega Putih%');
+                    });
             })
             ->with(['recipes.ingredient', 'recipes.unit', 'unit'])
             ->get();
