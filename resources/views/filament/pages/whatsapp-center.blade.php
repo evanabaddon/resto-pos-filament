@@ -22,8 +22,9 @@
                                     x-on:error="showFallback = true">
 
                                 <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-medium"
-                                    style="background-color: {{ '#' . substr(md5($userName ?? 'user'), 0, 6) }}; display: none;"
-                                    x-show="showFallback">
+                                    style="background-color: {{ '#' . substr(md5($userName ?? 'user'), 0, 6) }}"
+                                    x-show="showFallback"
+                                    x-cloak>
                                     {{ strtoupper(substr($userName ?? 'U', 0, 1)) }}
                                 </div>
                                 @else
@@ -100,7 +101,7 @@
                             <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium shadow-sm select-none"
                                 style="background-color: {{ '#' . substr(md5($chat->remote_jid), 0, 6) }}"
                                 x-show="showFallback"
-                                style="display: none;">
+                                x-cloak>
                                 {{ strtoupper(substr($chat->effective_name ?? $chat->push_name ?? $chat->remote_jid, 0, 1)) }}
                             </div>
                         </div>
