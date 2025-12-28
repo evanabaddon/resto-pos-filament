@@ -183,11 +183,25 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
     - **Visual Weather Widget**: Widget prakiraan cuaca 12-jam (per 3 jam) di dashboard yang mengambil data real-time dari kode wilayah kelurahan setempat.
     - **🗺️ BMKG Location Sync**: Konfigurasi lokasi cuaca presisi hingga tingkat Kelurahan menggunakan Kode Wilayah BMKG untuk akurasi data.
 - 📉 **Forecasting Stok (AI) [PRO] [READY]**:
-    - **Predictive Restocking**: AI memprediksi kebutuhan bahan baku untuk 7 hari ke depan berdasarkan tren historis dan sisa stok saat ini.
+    - **Hybrid Intelligence (Daily Focus + Weekly Plan) [NEW]**: Sistem prediksi ganda yang cerdas:
+        - **Fokus Besok (Daily High-Precision)**: Menggunakan algoritma **"Apple-to-Apple Comparison"** (misal: membandingkan rata-rata hari Senin vs Senin-Senin sebelumnya) untuk mendeteksi lonjakan kebutuhan spesifik harian dengan akurasi tinggi.
+        - **Rencana Mingguan**: Proyeksi belanja standar 7 hari ke depan untuk stok jangka panjang.
+    - **Predictive Restocking**: AI memprediksi kebutuhan bahan baku secara holistik berdasarkan tren historis.
     - **Recipe-Aware Analytics**: Otomatis menghitung kebutuhan *raw material* (misal: biji kopi) berdasarkan penjualan menu (misal: Latte) menggunakan data resep dengan **Unit Conversion Logic** (Gram/Kg/Pcs).
     - **Persistence & Speed**: Hasil analisis disimpan dalam cache selama 24 jam untuk akses instan tanpa perlu generate ulang setiap kali halaman dibuka.
     - **Urgency Insights**: Memberikan label urgensi (High/Medium/Low) dan alasan logis di balik setiap saran restock.
     - **📄 Professional PDF Export**: Generate laporan restock resmi dalam format PDF yang rapi, lengkap dengan tabel rekomendasi, tingkat urgensi, dan alasan logis AI.
+
+### 🍳 Kitchen Production (Prepared Stock Management) [NEW]
+Sistem pelacakan stok untuk makanan siap saji atau *semi-finished goods* (misal: Ayam ungkep, Kuah Soto).
+
+- **📝 Catat Masak (Production Record)**:
+    - **Concept**: Konversi bahan baku mentah menjadi stok jadi.
+    - **Action**: Saat staff dapur mencatat "Masak 10 Porsi Ayam Goreng", sistem otomatis **mengurangi stok bahan baku mentah** (Ayam, Bumbu) sesuai resep dan **menambah stok 'Prepared'** (Ayam Ungkep).
+    - **Inventory Accuracy**: Menjaga akurasi stok gudang secara real-time tanpa menunggu penjualan terjadi.
+- **🔄 Daily Stock Reset**:
+    - **Fitur Khusus**: Tombol "Reset Stock Harian" untuk produk tipe *fresh daily* (misal: Nasi, Masakan Padang).
+    - **Logic**: Menghapus sisa *prepared stock* di akhir hari (dicatat sebagai waste) tanpa mengembalikan bahan baku. Memastikan stok hari besok dimulai dari 0 agar produksi baru tercatat rapi.
 - 🍳 **Menu Engineering (AI) (Profit & Popularity Matrix) [READY]**:
     - **Strategic Classification**: AI mengklasifikasikan menu ke dalam 4 kategori strategis: **Unit Unggulan** (Stars), **Unit Andalan** (Plowhorses), **Unit Potensial** (Puzzles), dan **Unit Kurang Berkembang** (Dogs).
     - **Ultra-Accurate COGS**: Perhitungan HPP super akurat yang mendukung **Unit Conversion Rate** (misal: Harga beli sak/karung dikonversi otomatis ke gram pada resep).

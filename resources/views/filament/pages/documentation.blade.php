@@ -315,6 +315,42 @@
                             <li>Sistem otomatis hitung HPP berdasarkan harga bahan</li>
                         </ol>
 
+                        <h4 class="font-semibold text-lg mt-6">🍳 Kitchen Production (Prepared Stock) 🆕</h4>
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg my-3">
+                            <p class="mb-2"><strong>Konsep:</strong> Fitur untuk mencatat proses masak dari Bahan Baku
+                                Mentah menjadi Stok Jadi (Prepared).</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">
+                                Contoh: Masak "Ayam Ungkep" (Prepared Item) menggunakan "Ayam Mentah" + "Bumbu Kuning"
+                                (Raw Ingredients).
+                            </p>
+                        </div>
+
+                        <p class="font-semibold text-sm uppercase text-gray-500 mb-2">1. Cara Mencatat Produksi (Masak)
+                        </p>
+                        <ul class="list-disc pl-6 space-y-2 mb-4">
+                            <li>Buka Dashboard > Widget <strong>Stok Critical & Produksi Dapur</strong></li>
+                            <li>Pilih Menu yang dimasak (misal: Nasi Putih) dari dropdown</li>
+                            <li>Input jumlah (misal: 50 Porsi)</li>
+                            <li>Klik tombol <strong>"Catat Masak"</strong></li>
+                            <li>
+                                <strong>Hasil:</strong>
+                                <ul class="list-disc pl-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                    <li>Stok 'Prepared' Nasi Putih bertambah +50</li>
+                                    <li>Stok 'Raw' Beras berkurang otomatis (misal -5kg) sesuai resep</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <p class="font-semibold text-sm uppercase text-gray-500 mb-2">2. Reset Stock Harian (Closing
+                            Kitchen)</p>
+                        <ul class="list-disc pl-6 space-y-2">
+                            <li>Digunakan untuk produk yang <strong>tidak bisa disimpan</strong> untuk besok (misal:
+                                Nasi sisa, Sayur matang).</li>
+                            <li>Klik tombol <strong>"Reset Stock"</strong> di sebelah item.</li>
+                            <li>Sistem akan menolkan stok *prepared* dan mencatatnya sebagai *waste* hari ini.</li>
+                            <li>Besok pagi, stok dimulai dari 0 agar produksi baru tercatat rapi.</li>
+                        </ul>
+
                         <h4 class="font-semibold text-lg mt-6">Recipe Stock Validation</h4>
                         <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 mb-4">
                             <p class="font-semibold text-green-900 dark:text-green-100">✅ Prevent Negative Stock</p>
@@ -544,8 +580,10 @@
                         <p>Sistem reservasi yang terintegrasi dengan pre-order menu dan pembayaran DP.</p>
                         <ol class="list-decimal pl-6 space-y-2">
                             <li>Buka menu <strong>Reservations</strong> dari sidebar</li>
-                            <li>Klik <strong>Create</strong> dan isi data pelanggan (Nama, Telepon, Jumlah Tamu, Tanggal & Waktu)</li>
-                            <li><strong>Pre-Order Menu (Opsional):</strong> Tambahkan item menu yang dipesan sebelumnya dengan harga fleksibel</li>
+                            <li>Klik <strong>Create</strong> dan isi data pelanggan (Nama, Telepon, Jumlah Tamu, Tanggal
+                                & Waktu)</li>
+                            <li><strong>Pre-Order Menu (Opsional):</strong> Tambahkan item menu yang dipesan sebelumnya
+                                dengan harga fleksibel</li>
                             <li>Sistem otomatis menghitung total estimasi pesanan</li>
                         </ol>
 
@@ -561,12 +599,15 @@
                         <h4 class="font-semibold text-lg mt-4">🖨️ Cetak Pre-Order ke Dapur/Bar 🆕</h4>
                         <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 mb-4">
                             <p class="font-semibold text-yellow-900 dark:text-yellow-100">✨ Fitur Baru!</p>
-                            <p class="text-sm text-yellow-800 dark:text-yellow-200">Cetak order menu pre-order ke divisi Dapur/Bar <strong>sebelum</strong> pelanggan datang untuk persiapan yang lebih matang.</p>
+                            <p class="text-sm text-yellow-800 dark:text-yellow-200">Cetak order menu pre-order ke divisi
+                                Dapur/Bar <strong>sebelum</strong> pelanggan datang untuk persiapan yang lebih matang.
+                            </p>
                         </div>
 
                         <p><strong>Cara Menggunakan:</strong></p>
                         <ol class="list-decimal pl-6 space-y-2">
-                            <li>Klik tombol <strong>"Cetak Preorder"</strong> (icon printer kuning) di tabel reservasi</li>
+                            <li>Klik tombol <strong>"Cetak Preorder"</strong> (icon printer kuning) di tabel reservasi
+                            </li>
                             <li>Tombol hanya muncul jika:
                                 <ul class="list-disc pl-6 mt-2">
                                     <li>Status reservasi: <code>Pending</code> atau <code>Confirmed</code></li>
@@ -575,9 +616,12 @@
                             </li>
                             <li>Sistem otomatis mengelompokkan item berdasarkan tipe produk:
                                 <ul class="list-disc pl-6 mt-2">
-                                    <li><strong>Produced</strong> → Dicetak ke <span class="text-orange-600 font-semibold">Dapur</span> (Kitchen)</li>
-                                    <li><strong>Bar</strong> → Dicetak ke <span class="text-blue-600 font-semibold">Bar</span></li>
-                                    <li><strong>General</strong> → Dicetak ke <span class="text-gray-600 font-semibold">Kasir</span></li>
+                                    <li><strong>Produced</strong> → Dicetak ke <span
+                                            class="text-orange-600 font-semibold">Dapur</span> (Kitchen)</li>
+                                    <li><strong>Bar</strong> → Dicetak ke <span
+                                            class="text-blue-600 font-semibold">Bar</span></li>
+                                    <li><strong>General</strong> → Dicetak ke <span
+                                            class="text-gray-600 font-semibold">Kasir</span></li>
                                 </ul>
                             </li>
                             <li>Struk order mencantumkan:
@@ -597,7 +641,8 @@
                             <li>Klik tombol <strong>"Proses ke Kasir"</strong> (icon shopping cart hijau)</li>
                             <li>Sistem otomatis:
                                 <ul class="list-disc pl-6 mt-2">
-                                    <li>Memindahkan semua item pre-order ke transaksi POS (status <code>Draft</code>)</li>
+                                    <li>Memindahkan semua item pre-order ke transaksi POS (status <code>Draft</code>)
+                                    </li>
                                     <li>Mengurangkan DP sebagai item minus</li>
                                     <li>Mengubah status reservasi menjadi <code>Seated</code></li>
                                 </ul>
@@ -609,20 +654,27 @@
                         <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 mt-4">
                             <p class="font-semibold text-green-900 dark:text-green-100">✅ Keuntungan Fitur</p>
                             <ul class="text-sm text-green-800 dark:text-green-200 list-disc pl-5 mt-2 space-y-1">
-                                <li><strong>Persiapan Lebih Matang:</strong> Dapur/Bar bisa mempersiapkan menu sebelum pelanggan datang</li>
-                                <li><strong>Efisiensi Waktu:</strong> Mengurangi waktu tunggu pelanggan saat tiba di restoran</li>
-                                <li><strong>Sinkronisasi Tim:</strong> Semua divisi mendapat informasi yang sama tentang pesanan yang akan datang</li>
-                                <li><strong>Fleksibilitas:</strong> Bisa cetak ulang jika ada perubahan atau penambahan item</li>
+                                <li><strong>Persiapan Lebih Matang:</strong> Dapur/Bar bisa mempersiapkan menu sebelum
+                                    pelanggan datang</li>
+                                <li><strong>Efisiensi Waktu:</strong> Mengurangi waktu tunggu pelanggan saat tiba di
+                                    restoran</li>
+                                <li><strong>Sinkronisasi Tim:</strong> Semua divisi mendapat informasi yang sama tentang
+                                    pesanan yang akan datang</li>
+                                <li><strong>Fleksibilitas:</strong> Bisa cetak ulang jika ada perubahan atau penambahan
+                                    item</li>
                             </ul>
                         </div>
 
                         <h4 class="font-semibold text-lg mt-4">⚙️ Detail Teknis</h4>
                         <ul class="list-disc pl-6 space-y-2">
-                            <li><strong>Print Infrastructure:</strong> Menggunakan sistem print yang sama dengan POS/Waiter/Self-Order</li>
+                            <li><strong>Print Infrastructure:</strong> Menggunakan sistem print yang sama dengan
+                                POS/Waiter/Self-Order</li>
                             <li><strong>Hosting:</strong> Webhook untuk kirim ke printer lokal</li>
                             <li><strong>Lokal:</strong> Direct print ke printer USB/LAN</li>
-                            <li><strong>Environment Detection:</strong> Otomatis mendeteksi apakah sistem berjalan di hosting atau lokal</li>
-                            <li><strong>Item Filtering:</strong> Item "Down Payment (DP)" otomatis difilter dan tidak dicetak</li>
+                            <li><strong>Environment Detection:</strong> Otomatis mendeteksi apakah sistem berjalan di
+                                hosting atau lokal</li>
+                            <li><strong>Item Filtering:</strong> Item "Down Payment (DP)" otomatis difilter dan tidak
+                                dicetak</li>
                         </ul>
                     </div>
                 </section>
@@ -653,6 +705,36 @@
                             <li>Otomatis sertakan promo yang aktif</li>
                             <li>Sesuaikan dengan nama assistant di Settings</li>
                         </ul>
+
+                        <h4 class="font-semibold text-lg mt-6">📉 Smart Inventory Forecasting (Hybrid) 🆕</h4>
+                        <p>Sistem prediksi stok cerdas dengan dua metode analisis sekaligus:</p>
+
+                        <div class="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 p-4 my-3">
+                            <p class="font-semibold text-orange-900 dark:text-orange-100">🔥 1. Fokus Besok (Daily
+                                High-Precision)</p>
+                            <p class="text-sm text-orange-800 dark:text-orange-200 mt-1">
+                                Menggunakan metode <strong>"Apple-to-Apple Comparison"</strong>. Sistem membandingkan
+                                rata-rata penggunaan spesifik pada hari yang sama (misal: Senin vs Senin-Senin
+                                sebelumnya) untuk mendeteksi lonjakan harian.
+                            </p>
+                        </div>
+
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 my-3">
+                            <p class="font-semibold text-blue-900 dark:text-blue-100">📅 2. Rencana Mingguan (7 Days)
+                            </p>
+                            <p class="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                                Proyeksi belanja standar untuk 7 hari ke depan berdasarkan tren 30 hari terakhir.
+                            </p>
+                        </div>
+
+                        <p class="font-semibold mt-3">Cara Menggunakan:</p>
+                        <ol class="list-decimal pl-6 space-y-1">
+                            <li>Buka menu <strong>Smart Inventory</strong></li>
+                            <li>Klik <strong>Generate Analisis Sekarang</strong></li>
+                            <li>Lihat kotak "Fokus Besok" untuk kebutuhan mendesak</li>
+                            <li>Gunakan "Rencana Mingguan" untuk belanja ke supplier</li>
+                            <li>Export ke PDF jika perlu</li>
+                        </ol>
                     </div>
                 </section>
 

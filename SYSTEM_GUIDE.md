@@ -66,3 +66,32 @@ Untuk memastikan kedua fitur ini berjalan maksimal, pastikan:
 
 > [!NOTE]
 > Kedua modul ini menggunakan **PWA (Progressive Web App)**. Untuk pengalaman terbaik, pilih "Add to Home Screen" di browser smartphone Anda.
+
+---
+
+## 📉 3. Smart Inventory Forecasting (AI Intelligence)
+Modul cerdas ini menggunakan Artificial Intelligence (DeepSeek) untuk memprediksi kebutuhan stok bahan baku Anda, mencegah over-stocking maupun under-stocking.
+
+### Fitur Utama: Hybrid Forecasting
+Sistem ini menggunakan dua layer analisis sekaligus dalam satu klik:
+
+1.  **🔥 Fokus Besok (High-Precision Daily Focus)**:
+    - **Algoritma**: Menggunakan metode *"Apple-to-Apple Comparison"*. Sistem tidak hanya melihat rata-rata total, tapi spesifik membandingkan **Hari yang Sama** (misal: memprediksi kebutuhan Senin besok dengan melihat rata-rata penggunaan di 4 hari Senin terakhir).
+    - **Tujuan**: Mendeteksi pola lonjakan harian spesifik (misal: "Sabtu Ramai") yang sering terlewat oleh rata-rata mingguan biasa.
+    - **Tampilan**: Muncul di bagian paling atas dalam kotak oranye (Highlight) jika ada item yang urgensinya tinggi untuk besok.
+
+2.  **📅 Rencana Mingguan (7 Days Projection)**:
+    - **Algoritma**: Menganalisis tren total 30 hari terakhir untuk memproyeksikan kebutuhan belanja stok aman selama satu minggu ke depan.
+    - **Output**: Daftar rekomendasi *Restock Qty* lengkap dengan alasan logis (misal: "Tren naik 20% minggu ini").
+
+### Alur Kerja (Workflow)
+1.  **Akses**: Menu sidebar **Smart Inventory**.
+2.  **Generate**: Klik tombol **"Generate Analisis Sekarang"**. AI akan memproses data penjualan, resep, dan sisa stok Anda (Proses 5-10 detik).
+3.  **Review**:
+    - Perhatikan bagian **"Fokus Besok"** untuk tindakan segera.
+    - Gunakan **"Rencana Mingguan"** untuk membuat daftar belanja ke supplier.
+4.  **Export**: Klik tombol **Export PDF** untuk mencetak laporan resmi yang bisa dibawa belanja.
+
+### Requirements
+- **Data**: Membutuhkan minimal data penjualan 3-7 hari agar AI bisa mulai melihat pola.
+- **Recipe**: Pastikan menu Anda sudah memiliki *Recipe* yang benar agar pengurangan stok bahan baku terdeteksi.

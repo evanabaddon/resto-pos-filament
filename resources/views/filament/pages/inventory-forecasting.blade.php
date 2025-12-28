@@ -8,35 +8,26 @@
                     AI)</p>
             </div>
 
-            <div class="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
-                <x-filament::input.wrapper>
-                    <x-filament::input.select wire:model.live="forecastMode" class="w-full sm:w-48">
-                        <option value="weekly">Mingguan (7 Hari)</option>
-                        <option value="daily">Harian (Besok)</option>
-                    </x-filament::input.select>
-                </x-filament::input.wrapper>
+            @if($aiResults)
+                <div class="flex items-center gap-4">
+                    <x-filament::button wire:click="exportToPdf" icon="heroicon-m-document-arrow-down" color="gray"
+                        size="sm" wire:loading.attr="disabled">
+                        Export PDF
+                    </x-filament::button>
 
-                @if($aiResults)
-                    <div class="flex items-center gap-2">
-                        <x-filament::button wire:click="exportToPdf" icon="heroicon-m-document-arrow-down" color="gray"
-                            size="sm" wire:loading.attr="disabled">
-                            Export
-                        </x-filament::button>
-
-                        <div
-                            class="flex items-center gap-2 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
-                            <x-heroicon-m-clock class="w-4 h-4" />
-                            {{ $lastGeneratedAt }}
-                            <button wire:click="generateAiForecast" wire:loading.attr="disabled"
-                                class="ml-2 hover:text-primary-500 transition-colors disabled:opacity-50 group">
-                                <x-heroicon-m-arrow-path
-                                    class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500"
-                                    wire:loading.class="animate-spin" wire:target="generateAiForecast" />
-                            </button>
-                        </div>
+                    <div
+                        class="flex items-center gap-2 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <x-heroicon-m-clock class="w-4 h-4" />
+                        Dianalisa: {{ $lastGeneratedAt }}
+                        <button wire:click="generateAiForecast" wire:loading.attr="disabled"
+                            class="ml-2 hover:text-primary-500 transition-colors disabled:opacity-50 group">
+                            <x-heroicon-m-arrow-path
+                                class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500"
+                                wire:loading.class="animate-spin" wire:target="generateAiForecast" />
+                        </button>
                     </div>
-                @endif
-            </div>
+                </div>
+            @endif
         </div>
 
         @if(!$aiResults)
@@ -56,8 +47,9 @@
             <!-- AI Analysis Section -->
             <div
                 class="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/10 dark:to-gray-900 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-500/20 shadow-sm">
+                
                 <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-3">
+                     <div class="flex items-center gap-3">
                         <div class="p-2 bg-indigo-500 rounded-lg text-white">
                             <x-heroicon-m-sparkles class="w-5 h-5" />
                         </div>
@@ -69,20 +61,55 @@
                     </div>
                 </div>
 
-                <div class="prose prose-sm dark:prose-invert max-w-none">
+                <div class="prose prose-sm dark:prose-invert max-w-none mb-6">
                     <p class="text-gray-700 dark:text-gray-300 italic">
                         "{{ $aiResults['analysis'] ?? 'Analisis tidak tersedia.' }}"
                     </p>
                 </div>
 
-                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Daily Highlight Section -->
+                @if(isset($aiResults['tomorrow_forecast']) && !empty($aiResults['tomorrow_forecast']['items']))
+                    <div class="mb-8 bg-orange-50 dark:bg-orange-900/10 rounded-xl p-5 border border-orange-200 dark:border-orange-500/30">
+                         <div class="flex items-center gap-2 mb-3">
+                            <x-heroicon-m-fire class="w-5 h-5 text-orange-500" />
+                            <h4 class="font-bold text-lg text-gray-900 dark:text-white">
+                                Fokus Besok: {{ $aiResults['tomorrow_forecast']['day'] ?? 'Unknown Day' }}
+                            </h4>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            {{ $aiResults['tomorrow_forecast']['summary'] ?? '' }}
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                             @foreach($aiResults['tomorrow_forecast']['items'] as $item)
+                                <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-orange-100 dark:border-orange-500/20 shadow-sm flex items-center justify-between">
+                                    <div>
+                                        <div class="font-bold text-gray-800 dark:text-white">{{ $item['product_name'] }}</div>
+                                        <div class="text-xs text-gray-500">{{ $item['reason'] }}</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold text-orange-600">{{ $item['predicted'] }}</div>
+                                        <div class="text-[10px] text-gray-400">Est. Porsi</div>
+                                    </div>
+                                </div>
+                             @endforeach
+                        </div>
+                    </div>
+                @endif
+                
+                <h4 class="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <x-heroicon-m-calendar class="w-5 h-5 text-gray-500" />    
+                    Rencana Mingguan (7 Hari)
+                </h4>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     @foreach($aiResults['recommendations'] as $rec)
                         @if(($rec['suggested_restock'] ?? 0) > 0)
                             <div @class([
-                                'p-4 rounded-xl border-l-4 shadow-sm',
-                                'bg-red-50 border-red-500 dark:bg-red-950/20' => ($rec['urgency'] ?? '') === 'high',
-                                'bg-orange-50 border-orange-500 dark:bg-orange-950/20' => ($rec['urgency'] ?? '') === 'medium',
-                                'bg-blue-50 border-blue-500 dark:bg-blue-950/20' => ($rec['urgency'] ?? '') === 'low',
+                                'p-4 rounded-xl border-l-4 shadow-sm bg-white dark:bg-gray-800',
+                                'border-red-500' => ($rec['urgency'] ?? '') === 'high',
+                                'border-orange-500' => ($rec['urgency'] ?? '') === 'medium',
+                                'border-blue-500' => ($rec['urgency'] ?? '') === 'low',
                             ])>
                                 <div class="flex justify-between items-start mb-2">
                                     <h4 class="font-bold text-gray-900 dark:text-white">
@@ -98,7 +125,7 @@
                                 </div>
                                 <div class="space-y-1 text-sm">
                                     <p class="text-gray-600 dark:text-gray-400">
-                                        Prediksi Kebutuhan: <span class="font-semibold">{{ $rec['predicted_need'] }}</span>
+                                        Prediksi (7 Hari): <span class="font-semibold">{{ $rec['predicted_need'] }}</span>
                                     </p>
                                     <p class="text-gray-900 dark:text-white font-bold">
                                         Saran Restock: +{{ $rec['suggested_restock'] }}

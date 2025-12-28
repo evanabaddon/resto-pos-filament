@@ -332,34 +332,47 @@ class DeepSeekService
         - Hari ini: {$currentDay}
         - Target Prediksi: {$forecastDays} hari ke depan (Mulai {$nextDay}).
         
+        
         TUGAS:
         Analisis data konsumsi historis dan berikan estimasi kebutuhan stok.
         
-        PENTING - POLA HARIAN:
-        Jika data memiliki field 'daily_usage' (Konsumsi per hari Senin-Minggu), GUNAKAN itu untuk prediksi yang lebih akurat.
-        Jangan hanya pakai rata-rata jika ada pola mingguan yang jelas (misal: Sabtu-Minggu ramai).
+        PENTING - POLA HARIAN (High Accuracy):
+        Data sekarang memiliki field 'daily_averages' (Rata-rata penggunaan per hari Senin-Minggu).
+        Gunakan ini untuk menganalisis anomali atau kebutuhan spesifik hari tertentu.
         
         FORMAT OUTPUT (JSON):
         Anda WAJIB memberikan jawaban dalam format JSON murni:
         {
-            \"analysis\": \"Analisis singkat tren & pola harian (1-2 kalimat).\",
+            \"analysis\": \"Analisis singkat tren & pola mingguan (1-2 kalimat).\",
+            \"tomorrow_forecast\": {
+                \"day\": \"{$nextDay}\",
+                \"summary\": \"Ringkasan prediksi besok (1 kalimat).\",
+                \"items\": [
+                    {
+                        \"product_name\": \"Nama Produk\",
+                        \"predicted\": 10,
+                        \"reason\": \"Avg {$nextDay} usage\"
+                    }
+                ]
+            },
             \"recommendations\": [
                 {
                     \"product_id\": 1,
                     \"product_name\": \"Nama Produk\",
-                    \"predicted_need\": 10.5,
-                    \"suggested_restock\": 5.0,
+                    \"predicted_need\": 50.5,
+                    \"suggested_restock\": 20.0,
                     \"urgency\": \"high|medium|low\",
-                    \"reason\": \"Jelaskan kenapa (misal: 'Persiapan stok u/ Weekend')\"
+                    \"reason\": \"Stok mingguan menipis\"
                 }
             ]
         }
         
         ATURAN:
-        1. Predicted_need: Estimasi pemakaian untuk {$forecastDays} hari ke depan. Jika {$forecastDays}=1, fokus pada kebutuhan BESOK ({$nextDay}) berdasarkan history {$nextDay}.
-        2. Suggested_restock: (Predicted_need + buffer 20%) - (Current_stock + Prepared_stock). Jika <= 0, berikan 0.
-        3. Urgency: 'high' jika stok saat ini < kebutuhan besok/safety stock.
-        4. Berikan data JSON SAJA.";
+        1. tomorrow_forecast: Fokus HANYA pada item yang KRITIKAL untuk besok ({$nextDay}) berdasarkan 'daily_averages'['{$nextDay}']. Ambil top 3-5 item.
+        2. recommendations: Estimasi total pemakaian untuk 7 hari ke depan.
+        3. Suggested_restock: (Predicted_need_7days + buffer) - Stock.
+        4. Urgency: 'high' jika stok saat ini < kebutuhan besok.
+        5. Berikan data JSON SAJA.";
 
         $userPrompt = "Berikut adalah data konsumsi untuk dianalisa:\n" . json_encode($consumptionData, JSON_PRETTY_PRINT);
 

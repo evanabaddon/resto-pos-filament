@@ -82,8 +82,27 @@ class InventoryService
     {
         $history = $this->getConsumptionHistory($historyDays);
 
+        // Count occurrences of each day in the past X days
+        $dayCounts = []; // e.g., ['Monday' => 4, 'Tuesday' => 4]
+        for ($i = 0; $i < $historyDays; $i++) {
+            $dayName = Carbon::now()->subDays($i)->format('l');
+            if (!isset($dayCounts[$dayName])) {
+                $dayCounts[$dayName] = 0;
+            }
+            $dayCounts[$dayName]++;
+        }
+
         foreach ($history as $id => &$data) {
             $data['average_daily'] = round($data['total_consumed'] / $historyDays, 2);
+
+            // Calculate specific average for each day name (e.g. Average Monday)
+            $data['daily_averages'] = [];
+            if (isset($data['daily_usage'])) {
+                foreach ($data['daily_usage'] as $day => $total) {
+                    $count = $dayCounts[$day] ?? 1;
+                    $data['daily_averages'][$day] = round($total / $count, 2);
+                }
+            }
         }
 
         return array_values($history);
@@ -111,6 +130,7 @@ class InventoryService
                 'total_consumed' => 0,
                 'average_daily' => 0,
                 'daily_usage' => [], // Format: ['Monday' => 10, 'Tuesday' => 5...] (Accumulated)
+                'daily_averages' => [], // Format: ['Monday' => 2.5] (Weighted Average)
                 'daily_history' => [], // Raw history: ['2023-10-01' => 5]
             ];
         }

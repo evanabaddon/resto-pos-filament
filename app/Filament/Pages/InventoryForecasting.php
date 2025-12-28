@@ -37,7 +37,6 @@ class InventoryForecasting extends Page
     public ?string $lastGeneratedAt = null;
     public bool $isLoading = false;
     public int $forecastDays = 7;
-    public string $forecastMode = 'weekly'; // weekly | daily
 
     public function mount(InventoryService $inventoryService)
     {
@@ -45,26 +44,13 @@ class InventoryForecasting extends Page
             abort(403, 'Akses Modul AI Forecasting ditolak. Silakan aktifkan di Pengaturan.');
         }
 
-        $this->historyData = $inventoryService->getForecastingData(30); // Get 30 days history for better pattern detection
-        $this->loadCachedResults();
-    }
+        $this->historyData = $inventoryService->getForecastingData(30);
 
-    public function updatedForecastMode()
-    {
-        $this->loadCachedResults();
-    }
-
-    protected function loadCachedResults()
-    {
-        $cacheKey = 'inventory_forecast_result_' . $this->forecastMode;
-        $cached = Cache::get($cacheKey);
-
+        // Load cached results
+        $cached = Cache::get('inventory_forecast_consolidated');
         if ($cached) {
             $this->aiResults = $cached['results'];
             $this->lastGeneratedAt = $cached['timestamp'];
-        } else {
-            $this->aiResults = null;
-            $this->lastGeneratedAt = null;
         }
     }
 
@@ -73,20 +59,18 @@ class InventoryForecasting extends Page
         $this->isLoading = true;
 
         try {
-            // Determine days based on mode
-            $daysToForecast = $this->forecastMode === 'daily' ? 1 : 7;
-
-            // Get data (always get 30 days to see patterns)
+            // Always get 30 days history for patterns
             $data = $inventoryService->getForecastingData(30);
 
-            $result = $deepSeekService->forecastStock($data, $daysToForecast);
+            // Forecast for 7 days, but prompt will now also ask for specialized TOMORROW forecast
+            $result = $deepSeekService->forecastStock($data, 7);
 
-            if ($result && isset($result['recommendations'])) {
+            if ($result) {
                 $this->aiResults = $result;
                 $this->lastGeneratedAt = now()->format('d M Y, H:i');
 
-                // Cache the results for 24 hours per mode
-                Cache::put('inventory_forecast_result_' . $this->forecastMode, [
+                // Cache the consolidated results
+                Cache::put('inventory_forecast_consolidated', [
                     'results' => $this->aiResults,
                     'timestamp' => $this->lastGeneratedAt,
                 ], now()->addHours(24));
