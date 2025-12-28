@@ -13,11 +13,19 @@
                 <div
                     class="h-16 px-4 flex items-center justify-between bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shrink-0">
                     <div class="flex items-center gap-3">
-                        <div class="relative">
+                        <div class="relative" x-data="{ showFallback: false }">
                             <div
                                 class="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center overflow-hidden">
                                 @if($userAvatar && $status === 'connected')
-                                <img src="{{ $userAvatar }}" class="w-full h-full object-cover">
+                                <img src="{{ $userAvatar }}" class="w-full h-full object-cover"
+                                    x-show="!showFallback"
+                                    x-on:error="showFallback = true">
+
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-medium"
+                                    style="background-color: {{ '#' . substr(md5($userName ?? 'user'), 0, 6) }}; display: none;"
+                                    x-show="showFallback">
+                                    {{ strtoupper(substr($userName ?? 'U', 0, 1)) }}
+                                </div>
                                 @else
                                 <x-heroicon-s-user class="w-6 h-6 text-gray-500 dark:text-gray-400" />
                                 @endif
