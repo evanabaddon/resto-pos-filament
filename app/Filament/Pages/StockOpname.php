@@ -62,7 +62,8 @@ class StockOpname extends Page implements HasTable
 
         foreach ($this->physicalCounts as $productId => $physicalCount) {
             $product = $products->get($productId);
-            if (!$product) continue;
+            if (!$product)
+                continue;
 
             $variance = (float) $physicalCount - (float) $product->stock;
 
@@ -79,7 +80,13 @@ class StockOpname extends Page implements HasTable
         return $table
             ->query(
                 Product::query()
-                    ->whereIn('type', ['raw', 'retail'])
+                    ->where(function ($query) {
+                        $query->whereIn('type', ['raw', 'retail'])
+                            ->orWhere(function ($q) {
+                                $q->whereIn('type', ['produced', 'bar'])
+                                    ->where('enable_stock_alert', true);
+                            });
+                    })
                     ->with(['unit', 'category'])
                     ->orderBy('category_id')
                     ->orderBy('name')
@@ -95,8 +102,11 @@ class StockOpname extends Page implements HasTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('stock')
+                TextColumn::make('stock_display')
                     ->label('Stock Sistem')
+                    ->state(function (Product $record) {
+                        return in_array($record->type, ['produced', 'bar']) ? $record->prepared_stock : $record->stock;
+                    })
                     ->numeric(decimalPlaces: 2)
                     ->suffix(fn(Product $record) => ' ' . ($record->unit?->symbol ?? ''))
                     ->sortable()
@@ -105,7 +115,8 @@ class StockOpname extends Page implements HasTable
                 TextColumn::make('physical_count')
                     ->label('Stock Fisik')
                     ->state(function (Product $record) {
-                        return $this->physicalCounts[$record->id] ?? $record->stock;
+                        $defaultStock = in_array($record->type, ['produced', 'bar']) ? ($record->prepared_stock ?? 0) : $record->stock;
+                        return $this->physicalCounts[$record->id] ?? $defaultStock;
                     })
                     ->numeric(decimalPlaces: 2)
                     ->suffix(fn(Product $record) => ' ' . ($record->unit?->symbol ?? ''))
@@ -116,8 +127,9 @@ class StockOpname extends Page implements HasTable
                 TextColumn::make('variance')
                     ->label('Selisih')
                     ->state(function (Product $record) {
-                        $physicalCount = $this->physicalCounts[$record->id] ?? $record->stock;
-                        return $physicalCount - $record->stock;
+                        $systemStock = in_array($record->type, ['produced', 'bar']) ? ($record->prepared_stock ?? 0) : $record->stock;
+                        $physicalCount = $this->physicalCounts[$record->id] ?? $systemStock;
+                        return $physicalCount - $systemStock;
                     })
                     ->numeric(decimalPlaces: 2)
                     ->color(fn($state) => $state < 0 ? 'danger' : ($state > 0 ? 'success' : 'gray'))
@@ -207,29 +219,52 @@ class StockOpname extends Page implements HasTable
         $itemsAdjusted = 0;
 
         foreach ($records as $product) {
-            $physicalCount = (float) ($this->physicalCounts[$product->id] ?? $product->stock);
-            $systemStock = (float) $product->stock;
+            $isPrepared = in_array($product->type, ['produced', 'bar']);
+            $systemStock = (float) ($isPrepared ? ($product->prepared_stock ?? 0) : $product->stock);
+
+            // Get physical count from state, default to system stock if not set
+            $physicalCount = (float) ($this->physicalCounts[$product->id] ?? $systemStock);
+
             $variance = $physicalCount - $systemStock;
 
-            // Only create stock movement if there's a variance
+            // Only process if there's a variance
             if ($variance != 0) {
-                StockMovement::create([
-                    'product_id' => $product->id,
-                    'quantity' => abs($variance),
-                    'type' => $variance > 0 ? 'increase' : 'decrease',
-                    'reason' => 'Stock Opname',
-                    'notes' => sprintf(
-                        'Stock Opname - System: %s, Physical: %s, Variance: %s',
-                        number_format($systemStock, 2),
-                        number_format($physicalCount, 2),
-                        number_format($variance, 2)
-                    ),
-                ]);
+                if ($isPrepared) {
+                    // For Prepared Stock: Update directly and Log
+                    // StockMovement is primarily for 'stock' column used by observers.
+                    // We can opt to create a StockMovement with specific type/notes if needed, 
+                    // but since Observer creates StockAdjustment, we might double count if we aren't careful?
+                    // Review: StockMovement observer updates 'stock' column. 
+                    // Prepared items use 'prepared_stock'. 
+                    // So we should NOT use StockMovement for Prepared Items unless we modify Observer to handle it.
+                    // EASIER: Directly update prepared_stock and just Log it.
+
+                    $product->update(['prepared_stock' => $physicalCount]);
+
+                    \Illuminate\Support\Facades\Log::info("Stock Opname (Prepared): {$product->name} updated from {$systemStock} to {$physicalCount}. Variance: {$variance}");
+                } else {
+                    // For Raw/Retail Stock: Use StockMovement (Standard Flow)
+                    StockMovement::create([
+                        'product_id' => $product->id,
+                        'quantity' => abs($variance),
+                        'type' => $variance > 0 ? 'increase' : 'decrease',
+                        'reason' => 'Stock Opname',
+                        'notes' => sprintf(
+                            'Stock Opname - System: %s, Physical: %s, Variance: %s',
+                            number_format($systemStock, 2),
+                            number_format($physicalCount, 2),
+                            number_format($variance, 2)
+                        ),
+                    ]);
+                }
 
                 $itemsAdjusted++;
                 $totalVariance += abs($variance);
 
                 if ($variance < 0) {
+                    // Calculate loss value
+                    // note: for prepared items, base_price might be cost of ingredients? 
+                    // simplified: use product base_price (HPP)
                     $totalLoss += abs($variance) * (float) ($product->base_price ?? 0);
                 }
             }
