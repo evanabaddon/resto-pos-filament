@@ -127,7 +127,7 @@ class ProductForm
                             ->relationship(
                                 name: 'ingredient',
                                 titleAttribute: 'name',
-                                modifyQueryUsing: fn($query, callable $get) => $query->whereIn('type', self::getAllowedIngredientTypes($get))
+                                modifyQueryUsing: fn($query) => $query->whereIn('type', ['raw', 'produced'])
                             )
                             ->searchable()
                             ->required()
@@ -370,7 +370,7 @@ class ProductForm
         $productType = $get('type');
 
         return match ($productType) {
-            'produced' => ['raw'], // Kitchen hanya bisa pakai bahan baku
+            'produced' => ['raw', 'produced'], // Kitchen bisa pakai bahan baku DAN produk produced (e.g., Nasi Putih)
             'bar' => ['raw', 'produced'], // Bar bisa pakai bahan baku dan produk kitchen
             default => ['raw']
         };
