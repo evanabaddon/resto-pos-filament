@@ -85,7 +85,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
             ->label('Daftarkan Member')
             ->icon('heroicon-o-user-plus')
             ->color('success')
-            ->form([
+            ->schema([
                 TextInput::make('name')
                     ->label('Nama Member')
                     ->required()
@@ -123,7 +123,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
             ->label('Buat Reservasi')
             ->icon('heroicon-o-calendar-days')
             ->color('primary')
-            ->form([
+            ->schema([
                 TextInput::make('customer_name')
                     ->label('Nama Customer')
                     ->required()
@@ -160,6 +160,38 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                     ->title('Reservation Created')
                     ->success()
                     ->send();
+            });
+    }
+
+    public function logoutAction(): Action
+    {
+        return Action::make('logout')
+            ->label('Logout WhatsApp')
+            ->icon('heroicon-o-power')
+            ->color('danger')
+            ->requiresConfirmation()
+            ->modalHeading('Logout WhatsApp?')
+            ->modalDescription('Semua chat dan media WhatsApp akan dihapus untuk menghemat storage. Sesi akan direset dan Anda perlu scan QR code lagi.')
+            ->modalSubmitActionLabel('Ya, Logout')
+            ->modalIcon('heroicon-o-exclamation-triangle')
+            ->action(function () {
+                $this->logout();
+            });
+    }
+
+    public function forceResetAction(): Action
+    {
+        return Action::make('forceReset')
+            ->label('Force Reset')
+            ->icon('heroicon-o-trash')
+            ->color('danger')
+            ->requiresConfirmation()
+            ->modalHeading('Reset Sesi WhatsApp?')
+            ->modalDescription('Gunakan ini jika koneksi bermasalah atau ingin mengosongkan storage. Semua data chat akan dihapus.')
+            ->modalSubmitActionLabel('Ya, Reset')
+            ->modalIcon('heroicon-o-exclamation-triangle')
+            ->action(function () {
+                $this->logout();
             });
     }
 
@@ -208,74 +240,83 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     public function checkConnection()
     {
         try {
-            /** @var \Illuminate\Http\Client\Response $response */
-            $response = Http::timeout(2)->get($this->getGatewayUrl() . '/status');
+            // Use very short timeout (1 second) to prevent slow page loads
+            $response = Http::timeout(1)->get($this->getGatewayUrl() . '/status');
+
             if ($response->successful()) {
                 $data = $response->json();
-                $this->status = $data['status'] ?? 'error';
+                $this->status = $data['status'] ?? 'offline';
                 $this->qrCode = $data['qr'] ?? null;
 
-                if ($this->status === 'connected' && isset($data['user'])) {
-                    // Use the proxy route for the user avatar as well
-                    $userJid = $data['user']['id'] ?? null;
-                    $this->userAvatar = $userJid ? route('whatsapp.avatar', $userJid) : null;
+                if (isset($data['user'])) {
                     $this->userName = $data['user']['name'] ?? null;
+                    $this->userAvatar = $data['user']['avatar'] ?? null;
                 }
             } else {
-                $this->status = 'gateway_error';
+                $this->status = 'offline';
             }
         } catch (\Exception $e) {
-            Log::error("WA Gateway Connection Error: " . $e->getMessage());
-            $this->status = 'offline'; // Node likely not running
+            // Gateway is offline or unreachable
+            $this->status = 'offline';
             $this->qrCode = null;
+            $this->userName = null;
+            $this->userAvatar = null;
         }
     }
 
     public function getChatsProperty()
     {
-        // Fetch the latest message for each remote_jid
-        // logical efficient query for chat list
-        return \App\Models\WhatsappMessage::query()
-            ->select('whatsapp_messages.*')
-            ->selectRaw('members.name as member_name')
-            ->selectRaw('(SELECT COUNT(*) FROM whatsapp_messages as wm2 WHERE wm2.remote_jid = whatsapp_messages.remote_jid AND wm2.from_me = 0 AND wm2.status = "received") as unread_count')
-            // Join with members table to get name if exists
-            ->leftJoin('members', function ($join) {
-                // Determine phone number from remote_jid (remove @s.whatsapp.net)
-                $join->on('members.phone', '=', DB::raw("SUBSTRING_INDEX(whatsapp_messages.remote_jid, '@', 1)"));
-            })
-            // Subquery to get the most relevant name (Member Name > Contact Name > Push Name)
-            ->selectRaw("
-                CASE 
-                    WHEN whatsapp_messages.remote_jid LIKE '%@g.us' THEN 
-                        COALESCE(
-                            (SELECT conversation_name FROM whatsapp_messages as wm_group WHERE wm_group.remote_jid = whatsapp_messages.remote_jid AND wm_group.conversation_name IS NOT NULL ORDER BY id DESC LIMIT 1),
-                            (SELECT push_name FROM whatsapp_messages as wm_name WHERE wm_name.remote_jid = whatsapp_messages.remote_jid AND wm_name.from_me = 0 AND wm_name.push_name IS NOT NULL ORDER BY id DESC LIMIT 1),
-                            whatsapp_messages.push_name
-                        )
-                    ELSE
-                        COALESCE(
-                            members.name,
-                            (SELECT push_name FROM whatsapp_messages as wm_name WHERE wm_name.remote_jid = whatsapp_messages.remote_jid AND wm_name.from_me = 0 AND wm_name.push_name IS NOT NULL ORDER BY id DESC LIMIT 1),
-                            conversation_name,
-                            whatsapp_messages.push_name
-                        )
-                END as effective_name
-            ")
-            ->whereIn('whatsapp_messages.id', function ($query) {
-                $query->selectRaw('MAX(id)')
-                    ->from('whatsapp_messages')
-                    ->groupBy('remote_jid');
-            })
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('push_name', 'like', "%{$this->search}%")
-                        ->orWhere('conversation_name', 'like', "%{$this->search}%")
-                        ->orWhere('remote_jid', 'like', "%{$this->search}%");
-                });
-            })
-            ->orderByDesc('created_at')
-            ->get();
+        // Cache for 10 seconds to reduce query load
+        return \Illuminate\Support\Facades\Cache::remember(
+            'wa_chats_' . auth()->id() . '_' . ($this->search ?: 'all'),
+            10,
+            function () {
+                // Fetch the latest message for each remote_jid
+                // logical efficient query for chat list
+                return \App\Models\WhatsappMessage::query()
+                    ->select('whatsapp_messages.*')
+                    ->selectRaw('members.name as member_name')
+                    ->selectRaw('(SELECT COUNT(*) FROM whatsapp_messages as wm2 WHERE wm2.remote_jid = whatsapp_messages.remote_jid AND wm2.from_me = 0 AND wm2.status = "received") as unread_count')
+                    // Join with members table to get name if exists
+                    ->leftJoin('members', function ($join) {
+                        // Determine phone number from remote_jid (remove @s.whatsapp.net)
+                        $join->on('members.phone', '=', DB::raw("SUBSTRING_INDEX(whatsapp_messages.remote_jid, '@', 1)"));
+                    })
+                    // Subquery to get the most relevant name (Member Name > Contact Name > Push Name)
+                    ->selectRaw("
+                        CASE 
+                            WHEN whatsapp_messages.remote_jid LIKE '%@g.us' THEN 
+                                COALESCE(
+                                    (SELECT conversation_name FROM whatsapp_messages as wm_group WHERE wm_group.remote_jid = whatsapp_messages.remote_jid AND wm_group.conversation_name IS NOT NULL ORDER BY id DESC LIMIT 1),
+                                    (SELECT push_name FROM whatsapp_messages as wm_name WHERE wm_name.remote_jid = whatsapp_messages.remote_jid AND wm_name.from_me = 0 AND wm_name.push_name IS NOT NULL ORDER BY id DESC LIMIT 1),
+                                    whatsapp_messages.push_name
+                                )
+                            ELSE
+                                COALESCE(
+                                    members.name,
+                                    (SELECT push_name FROM whatsapp_messages as wm_name WHERE wm_name.remote_jid = whatsapp_messages.remote_jid AND wm_name.from_me = 0 AND wm_name.push_name IS NOT NULL ORDER BY id DESC LIMIT 1),
+                                    conversation_name,
+                                    whatsapp_messages.push_name
+                                )
+                        END as effective_name
+                    ")
+                    ->whereIn('whatsapp_messages.id', function ($query) {
+                        $query->selectRaw('MAX(id)')
+                            ->from('whatsapp_messages')
+                            ->groupBy('remote_jid');
+                    })
+                    ->when($this->search, function ($query) {
+                        $query->where(function ($q) {
+                            $q->where('push_name', 'like', "%{$this->search}%")
+                                ->orWhere('conversation_name', 'like', "%{$this->search}%")
+                                ->orWhere('remote_jid', 'like', "%{$this->search}%");
+                        });
+                    })
+                    ->orderByDesc('created_at')
+                    ->limit(50) // Limit to 50 recent chats for performance
+                    ->get();
+            }
+        );
     }
 
     public function updatedSearch($value)
@@ -310,6 +351,9 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         $this->refreshMessages();
     }
 
+    // Livewire polling interval: 5 seconds (reduced from 1s for performance)
+    protected int $pollingInterval = 5000;
+
     public function mount(?string $jid = null)
     {
         // Block access if module is disabled
@@ -317,7 +361,9 @@ class WhatsappCenter extends Page implements HasActions, HasForms
             return redirect('/admin');
         }
 
-        $this->checkConnection();
+        // Don't check connection on mount - let polling handle it
+        // This makes page load much faster when gateway is offline
+        $this->status = 'connecting'; // Show connecting state initially
 
         // Check if jid is passed as query parameter
         if (!$jid) {
@@ -655,12 +701,21 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     public function logout()
     {
         try {
+            // Set a persistent flag that logout was requested
+            \Illuminate\Support\Facades\Cache::put('wa_logout_requested', true, now()->addDays(7));
+
             // Attempt to call gateway logout
             // We use a short timeout because if the node is dead, we still want to proceed with local cleanup
-            Http::timeout(3)->post($this->getGatewayUrl() . '/logout');
+            $response = Http::timeout(3)->post($this->getGatewayUrl() . '/logout');
+
+            if ($response->successful()) {
+                // Gateway responded, clear the flag
+                \Illuminate\Support\Facades\Cache::forget('wa_logout_requested');
+            }
         } catch (\Exception $e) {
             // Ignore connection errors during logout, effectively "Force Logout"
             Log::warning("Gateway logout failed (likely offline), proceeding with local cleanup: " . $e->getMessage());
+            // Flag remains set, will be checked when gateway comes back online
         }
 
         // FORCE CLEANUP: Session & Media

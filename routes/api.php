@@ -108,6 +108,32 @@ Route::post('/pos/sync-offline-sales', function (Request $request) {
 
 /*
 |--------------------------------------------------------------------------
+| WhatsApp Gateway Integration
+|--------------------------------------------------------------------------
+*/
+
+// Check if logout was requested while gateway was offline
+Route::get('/wa/check-logout', function () {
+    $logoutRequested = \Illuminate\Support\Facades\Cache::get('wa_logout_requested', false);
+
+    \Illuminate\Support\Facades\Log::info('WA Gateway checking logout flag', [
+        'logout_requested' => $logoutRequested,
+        'timestamp' => now()->toDateTimeString()
+    ]);
+
+    if ($logoutRequested) {
+        // Clear the flag IMMEDIATELY after reading
+        \Illuminate\Support\Facades\Cache::forget('wa_logout_requested');
+        \Illuminate\Support\Facades\Log::info('WA logout flag cleared');
+    }
+
+    return response()->json([
+        'logout_requested' => $logoutRequested
+    ]);
+});
+
+/*
+|--------------------------------------------------------------------------
 */
 
 Route::prefix('webhook')->group(function () {

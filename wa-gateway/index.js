@@ -24,6 +24,7 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL || 'http://127.0.0.1:8000/api/webhoo
 let sock;
 let status = 'disconnected';
 let qrCodeData = null;
+let hasCheckedPendingLogout = false; // Track if we've already checked for pending logout
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys')
@@ -69,6 +70,13 @@ async function connectToWhatsApp() {
             console.log('opened connection')
             status = 'connected';
             qrCodeData = null;
+
+            // Only check for pending logout ONCE per gateway session
+            // This prevents infinite logout loop when user scans QR after logout
+            if (!hasCheckedPendingLogout) {
+                hasCheckedPendingLogout = true;
+                checkPendingLogout();
+            }
         }
     })
 
@@ -298,6 +306,48 @@ function normalizeJid(jid) {
     return `${user}@${domain}`;
 }
 
+// Check if Laravel requested logout while gateway was offline
+async function checkPendingLogout() {
+    try {
+        // Call Laravel endpoint to check logout flag
+        const laravelUrl = WEBHOOK_URL.replace('/api/webhook/wa', '/api/wa/check-logout');
+        console.log('Checking pending logout at:', laravelUrl);
+
+        const response = await fetch(laravelUrl);
+        const data = await response.json();
+
+        if (data.logout_requested) {
+            console.log('⚠️ Pending logout detected! Forcing logout now...');
+
+            // Perform logout
+            if (sock) {
+                try {
+                    await sock.logout();
+                } catch (err) {
+                    console.warn('Socket logout failed:', err.message);
+                }
+            }
+
+            // Delete Auth Folder
+            const authPath = path.join(__dirname, 'auth_info_baileys');
+            if (fs.existsSync(authPath)) {
+                fs.rmSync(authPath, { recursive: true, force: true });
+            }
+
+            // Reset state
+            status = 'disconnected';
+            qrCodeData = null;
+            sock = null;
+            hasCheckedPendingLogout = false; // Reset flag for next session
+
+            // Re-initialize to generate new QR
+            setTimeout(() => connectToWhatsApp(), 1000);
+        }
+    } catch (err) {
+        console.error('Failed to check pending logout:', err.message);
+    }
+}
+
 app.get('/avatar/:jid', async (req, res) => {
     try {
         if (!sock) return res.status(503).send('Not connected');
@@ -464,6 +514,7 @@ app.post('/logout', async (req, res) => {
         status = 'disconnected';
         qrCodeData = null;
         sock = null;
+        hasCheckedPendingLogout = false; // Reset flag for next session
 
         res.json({ success: true });
 

@@ -1,5 +1,5 @@
 <x-filament-panels::page class="h-full">
-    <div wire:poll.2s="pollState" class="flex flex-col h-[calc(100vh-8rem)] -m-6">
+    <div wire:poll.5s="pollState" class="flex flex-col h-[calc(100vh-8rem)] -m-6">
 
         {{-- MAIN LAYOUT --}}
         <div
@@ -39,16 +39,18 @@
 
                     <div class="flex gap-2">
                         @if($status === 'connected')
-                        <button wire:click="logout" title="Disconnect & Clear Data"
-                            class="p-2 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
-                            onclick="return confirm('Apakah Anda yakin ingin logout? Folder media WhatsApp juga akan dihapus untuk menghemat storage.') || event.stopImmediatePropagation()">
+                        <button
+                            wire:click="mountAction('logout')"
+                            title="Disconnect & Clear Data"
+                            class="p-2 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
                             <x-heroicon-o-power class="w-5 h-5" />
                         </button>
                         @else
                         {{-- Force Reset Button when stuck or disconnected --}}
-                        <button wire:click="logout" title="Force Reset & Clear Storage"
-                            class="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
-                            onclick="return confirm('Reset sesi dan hapus semua media WhatsApp? Gunakan ini jika koneksi bermasalah atau ingin mengosongkan storage.') || event.stopImmediatePropagation()">
+                        <button
+                            wire:click="mountAction('forceReset')"
+                            title="Force Reset & Clear Storage"
+                            class="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
                             <x-heroicon-o-trash class="w-5 h-5" />
                         </button>
 
@@ -253,7 +255,7 @@
                 {{-- 1. DISCONNECTED / QR STATE --}}
                 @if($status !== 'connected')
                 <div
-                    class="flex-1 flex flex-col items-center justify-center p-8 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
+                    class="flex-1 flex flex-col items-center justify-center p-8 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
                     <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">WhatsApp Disconnected</h3>
 
                     @if($status === 'offline')

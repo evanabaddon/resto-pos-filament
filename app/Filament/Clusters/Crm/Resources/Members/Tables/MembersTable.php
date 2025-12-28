@@ -158,33 +158,98 @@ class MembersTable
                             ]));
                         }),
 
-                    // 0.5. Re-engage (AI Automatic Background)
+                    // 0.5. Re-engage (AI with Preview)
                     Action::make('re_engage_ai')
-                        ->label('Re-engage (AI Automated)')
+                        ->label('AI Re-engagement')
                         ->icon('heroicon-o-arrow-path')
                         ->color('info')
-                        ->requiresConfirmation()
-                        ->modalHeading('Kirim Pesan Re-engagement?')
-                        ->modalDescription('AI akan langsung membuat dan mengirim pesan "Kami Merindukan Anda" ke nomor WhatsApp pelanggan ini secara otomatis di background.')
-                        ->action(function ($record) {
-                            try {
-                                \Illuminate\Support\Facades\Artisan::call('loyalty:re-engage', [
-                                    '--member-id' => $record->id,
-                                    '--dry-run' => false,
-                                ]);
+                        ->modalHeading('AI Re-engagement Message')
+                        ->modalDescription('AI akan menganalisis data pelanggan untuk membuat pesan "Kami Merindukan Anda" yang personal.')
+                        ->form(function ($record) {
+                            $service = new DeepSeekService();
+                            $settings = app(GeneralSettings::class);
 
-                                \Filament\Notifications\Notification::make()
-                                    ->title('Re-engagement Berhasil Dikirim')
-                                    ->success()
-                                    ->body("Pesan AI telah dikirim ke WhatsApp {$record->name}")
-                                    ->send();
+                            // Gather member data
+                            $favoriteItems = SaleItem::whereIn('sale_id', $record->sales()->pluck('id'))
+                                ->select('product_name', DB::raw('SUM(quantity) as total_qty'))
+                                ->groupBy('product_name')
+                                ->orderByDesc('total_qty')
+                                ->limit(3)
+                                ->get();
+
+                            $memberData = [
+                                'nama' => $record->name,
+                                'total_kunjungan' => $record->total_visits,
+                                'total_belanja' => $record->total_spend,
+                                'poin_saat_ini' => $record->points_balance,
+                                'level_member' => $record->tier?->name ?? 'Reguler',
+                                'terakhir_datang' => $record->last_visit_at?->diffForHumans() ?? 'Belum pernah',
+                                'menu_paling_sering_dibeli' => $favoriteItems->pluck('product_name')->implode(', ') ?: 'Belum ada data',
+                            ];
+
+                            // Gather business context
+                            $activePromos = DiscountCode::where('is_active', true)
+                                ->where(function ($q) {
+                                    $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
+                                })
+                                ->limit(3)
+                                ->get(['code', 'name', 'type', 'value', 'min_purchase']);
+
+                            $topItems = SaleItem::query()
+                                ->select('product_id', DB::raw('SUM(quantity) as total_qty'))
+                                ->join('products', 'sale_items.product_id', '=', 'products.id')
+                                ->where('products.is_sellable', true)
+                                ->where('products.name', '!=', 'Down Payment (DP)')
+                                ->groupBy('product_id')
+                                ->orderByDesc('total_qty')
+                                ->limit(5)
+                                ->get();
+
+                            $menuList = $topItems->map(fn($item) => $item->product?->name)->filter()->toArray();
+
+                            $companyData = [
+                                'app_name' => $settings->app_name,
+                                'instagram' => $settings->app_instagram,
+                                'tiktok' => $settings->app_tiktok,
+                                'program_name' => $settings->loyalty_program_name,
+                                'available_promos' => $activePromos->toArray(),
+                                'top_menu' => $menuList,
+                            ];
+
+                            // Generate AI message for re-engagement
+                            try {
+                                // Use specific re-engagement prompt
+                                $reEngagementPrompt = "Buat pesan WhatsApp untuk re-engagement pelanggan yang sudah lama tidak datang. Fokus pada:\n1. Sapaan hangat dan personal\n2. Menyampaikan kerinduan\n3. Highlight menu favorit mereka\n4. Tawarkan promo jika ada\n5. Ajakan untuk datang kembali\n\nTone: Hangat, personal, tidak pushy.";
+
+                                $response = $service->generatePersonalizedMessage($memberData, $companyData, $reEngagementPrompt);
+                                $message = $response['choices'][0]['message']['content'] ?? "Halo Kak {$record->name}, kami kangen nih! Sudah lama tidak mampir ke {$settings->app_name}. Yuk main lagi! 😊";
                             } catch (\Exception $e) {
-                                \Filament\Notifications\Notification::make()
-                                    ->title('Gagal mengirim re-engagement')
-                                    ->danger()
-                                    ->body($e->getMessage())
-                                    ->send();
+                                $message = "Halo Kak {$record->name}, apa kabar? Kami kangen nih! Sudah lama tidak mampir ke {$settings->app_name}. Ada menu baru lho! Yuk main lagi! 😊";
                             }
+
+                            return [
+                                \Filament\Forms\Components\Textarea::make('message')
+                                    ->label('Pesan Re-engagement dari AI')
+                                    ->helperText('AI membuat pesan khusus untuk mengajak pelanggan kembali. Anda bisa edit sebelum kirim.')
+                                    ->default($message)
+                                    ->rows(8)
+                                    ->required()
+                            ];
+                        })
+                        ->action(function ($data, $record) {
+                            $phone = preg_replace('/[^0-9]/', '', $record->phone);
+                            if (substr($phone, 0, 1) == '0') {
+                                $phone = '62' . substr($phone, 1);
+                            } elseif (substr($phone, 0, 1) == '8') {
+                                $phone = '62' . $phone;
+                            }
+                            $jid = $phone . '@s.whatsapp.net';
+                            $record->update(['last_contacted_at' => now()]);
+
+                            return redirect()->to(WhatsappCenter::getUrl([
+                                'jid' => $jid,
+                                'message' => $data['message']
+                            ]));
                         }),
 
                     // 1. Smart SOP Action
