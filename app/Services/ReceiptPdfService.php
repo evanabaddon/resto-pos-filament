@@ -25,11 +25,21 @@ class ReceiptPdfService
             'settings' => $settings
         ]);
 
+        // Calculate dynamic height based on content
+        $baseHeight = 200; // Base height untuk header, footer, dll (dalam points)
+        $itemHeight = 25; // Estimasi tinggi per item (dalam points)
+        $itemCount = $sale->items->count();
+
+        // Calculate total height
+        $calculatedHeight = $baseHeight + ($itemCount * $itemHeight);
+
+        // Minimum height 283pt (10cm), maximum 1134pt (40cm)
+        $height = max(283, min($calculatedHeight, 1134));
+
         // Set paper size untuk struk thermal
         // Width: 72mm = 204 points
-        // Height: Minimal untuk thermal receipt (sekitar 10cm = 283 points)
-        // DomPDF akan extend jika content lebih panjang
-        $pdf->setPaper([0, 0, 204, 283], 'portrait');
+        // Height: Dynamic based on content
+        $pdf->setPaper([0, 0, 204, $height], 'portrait');
 
         return $pdf;
     }
