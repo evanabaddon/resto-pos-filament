@@ -314,6 +314,21 @@ class AppSettings extends SettingsPage
                                                     ])
                                                     ->required()
                                                     ->default('58mm'),
+
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        Select::make('operational_start_hour')
+                                                            ->label('Jam Buka')
+                                                            ->options(array_combine(range(0, 23), array_map(fn($h) => sprintf('%02d:00', $h), range(0, 23))))
+                                                            ->required()
+                                                            ->default(10),
+
+                                                        Select::make('operational_end_hour')
+                                                            ->label('Jam Tutup')
+                                                            ->options(array_combine(range(0, 23), array_map(fn($h) => sprintf('%02d:00', $h), range(0, 23))))
+                                                            ->required()
+                                                            ->default(22),
+                                                    ]),
                                             ]),
 
                                         Section::make('Sosial Media')

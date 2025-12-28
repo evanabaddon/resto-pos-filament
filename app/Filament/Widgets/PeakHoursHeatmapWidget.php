@@ -9,27 +9,47 @@ use Illuminate\Support\Facades\DB;
 class PeakHoursHeatmapWidget extends ApexChartWidget
 {
     protected static ?int $sort = 6;
-    
+
     /**
      * Chart Id
      */
     protected static ?string $chartId = 'peakHoursHeatmap';
-    
+
     /**
      * Widget Title
      */
     protected static ?string $heading = 'Heatmap Jam Sibuk Restoran';
-    
+
     /**
      * Widget Description
      */
     protected static ?string $description = 'Distribusi transaksi berdasarkan hari dan jam dalam 30 hari terakhir';
-    
+
     /**
      * Make widget full width
      */
     // protected int|string|array $columnSpan = 'full';
-    
+
+    /**
+     * Chart options (heatmap)
+     */
+    /**
+     * Get operational hours range
+     */
+    protected function getOperationalHours(): array
+    {
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $start = $settings->operational_start_hour ?? 10;
+        $end = $settings->operational_end_hour ?? 22;
+
+        if ($start <= $end) {
+            return range($start, $end);
+        } else {
+            // Overnight (e.g. 18 to 02) -> 18...23, 0...2
+            return array_merge(range($start, 23), range(0, $end));
+        }
+    }
+
     /**
      * Chart options (heatmap)
      */
@@ -37,29 +57,30 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
     {
         $heatmapData = $this->getHeatmapData();
         $maxTransaction = $this->getMaxTransaction($heatmapData);
-        
+        $hours = $this->getOperationalHours();
+
         $series = [];
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         $dayLabels = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-        
+
         foreach ($days as $index => $day) {
             $dayData = [];
-            
-            // Data per jam dari jam 10-22
-            for ($hour = 10; $hour <= 22; $hour++) {
+
+            // Loop through configured operational hours
+            foreach ($hours as $hour) {
                 $count = $heatmapData[$day][$hour]['count'] ?? 0;
                 $dayData[] = [
                     'x' => sprintf('%02d:00', $hour),
                     'y' => $count
                 ];
             }
-            
+
             $series[] = [
                 'name' => $dayLabels[$index],
                 'data' => $dayData
             ];
         }
-        
+
         return [
             'chart' => [
                 'type' => 'heatmap',
@@ -102,9 +123,9 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
             ],
             'xaxis' => [
                 'type' => 'category',
-                'categories' => array_map(function($h) {
+                'categories' => array_map(function ($h) {
                     return sprintf('%02d:00', $h);
-                }, range(10, 22)),
+                }, $hours),
                 'labels' => [
                     'style' => [
                         'fontSize' => '12px',
@@ -201,18 +222,18 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
             'series' => $series
         ];
     }
-    
+
     /**
      * Get heatmap data from database
      */
     protected function getHeatmapData(): array
     {
         $data = Sale::select(
-                DB::raw('HOUR(created_at) as hour'),
-                DB::raw('DAYNAME(created_at) as day'),
-                DB::raw('COUNT(*) as transaction_count'),
-                DB::raw('AVG(final_total) as avg_value')
-            )
+            DB::raw('HOUR(created_at) as hour'),
+            DB::raw('DAYNAME(created_at) as day'),
+            DB::raw('COUNT(*) as transaction_count'),
+            DB::raw('AVG(final_total) as avg_value')
+        )
             ->where('status', 'completed')
             ->where('created_at', '>=', now()->subDays(30))
             ->groupBy('hour', 'day')
@@ -221,10 +242,10 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
             ->get();
 
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        $hours = range(10, 22);
-        
+        $hours = $this->getOperationalHours();
+
         $heatmap = [];
-        
+
         // Initialize with zeros
         foreach ($days as $day) {
             foreach ($hours as $hour) {
@@ -234,9 +255,10 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
                 ];
             }
         }
-        
+
         // Fill with actual data
         foreach ($data as $record) {
+            // Only include data if it falls within operational hours
             if (isset($heatmap[$record->day][$record->hour])) {
                 $heatmap[$record->day][$record->hour] = [
                     'count' => $record->transaction_count,
@@ -244,10 +266,10 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
                 ];
             }
         }
-        
+
         return $heatmap;
     }
-    
+
     /**
      * Get maximum transaction count
      */
@@ -263,7 +285,7 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
         }
         return $max ?: 1;
     }
-    
+
     /**
      * Get color ranges based on max transaction
      */
@@ -289,7 +311,7 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
                 'color' => '#FBBF24' // yellow-400
             ]
         ];
-        
+
         // Jika ada nilai di atas 75%
         if ($maxTransaction > ceil($maxTransaction * 0.75)) {
             $ranges[] = [
@@ -299,10 +321,10 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
                 'color' => '#EF4444' // red-500
             ];
         }
-        
+
         return $ranges;
     }
-    
+
     /**
      * Get average values for tooltip
      */
@@ -310,20 +332,21 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
     {
         $heatmapData = $this->getHeatmapData();
         $averages = [];
-        
+
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        
+        $hours = $this->getOperationalHours();
+
         foreach ($days as $day) {
             $dayAverages = [];
-            for ($hour = 10; $hour <= 22; $hour++) {
+            foreach ($hours as $hour) {
                 $dayAverages[] = $heatmapData[$day][$hour]['avg_value'] ?? 0;
             }
             $averages[] = $dayAverages;
         }
-        
+
         return $averages;
     }
-    
+
     /**
      * Widget max height
      */

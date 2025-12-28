@@ -95,6 +95,10 @@ class GeneralSettings extends Settings
     // BMKG Weather Settings
     public ?string $bmkg_location_code;
 
+    // Operational Hours
+    public int $operational_start_hour;
+    public int $operational_end_hour;
+
     public static function group(): string
     {
         return 'app';
@@ -140,6 +144,9 @@ class GeneralSettings extends Settings
             'village_code' => null,
             'village_name' => null,
             'postal_code' => null,
+            // Operational Defaults
+            'operational_start_hour' => 10,
+            'operational_end_hour' => 22,
             // Fiscal Defaults
             'template_path' => null,
             'start_row' => 2,
