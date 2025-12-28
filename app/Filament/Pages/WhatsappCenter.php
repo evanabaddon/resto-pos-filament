@@ -279,10 +279,13 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                     ->select('whatsapp_messages.*')
                     ->selectRaw('members.name as member_name')
                     ->selectRaw('(SELECT COUNT(*) FROM whatsapp_messages as wm2 WHERE wm2.remote_jid = whatsapp_messages.remote_jid AND wm2.from_me = 0 AND wm2.status = "received") as unread_count')
-                    // Join with members table to get name if exists
+                    // Join with members table to get name if exists (Handle +62, 08, dashes, spaces)
                     ->leftJoin('members', function ($join) {
-                        // Determine phone number from remote_jid (remove @s.whatsapp.net)
-                        $join->on('members.phone', '=', DB::raw("SUBSTRING_INDEX(whatsapp_messages.remote_jid, '@', 1)"));
+                        $cleanMember = "REPLACE(REPLACE(REPLACE(members.phone, '-', ''), ' ', ''), '+', '')";
+                        $waUser = "SUBSTRING_INDEX(whatsapp_messages.remote_jid, '@', 1)";
+
+                        $join->on(DB::raw($cleanMember), '=', DB::raw($waUser))
+                            ->orOn(DB::raw($cleanMember), '=', DB::raw("CONCAT('0', SUBSTRING($waUser, 3))"));
                     })
                     // Subquery to get the most relevant name (Member Name > Contact Name > Push Name)
                     ->selectRaw("
