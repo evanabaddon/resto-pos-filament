@@ -188,8 +188,8 @@ class OrderService
                     'product_id' => $recipe->ingredient->id,
                     'quantity' => $totalUsed, // Absolute quantity
                     'type' => 'decrease',
-                    'reason' => 'POS Sale #' . $sale->invoice_number,
-                    'notes' => 'Bahan untuk produk ' . $product->name . ' dijual (' . auth()->user()->name . ')',
+                    'reason' => 'sale',
+                    'notes' => 'POS Sale #' . $sale->invoice_number . ' - Bahan untuk produk ' . $product->name . ' dijual (' . auth()->user()->name . ')',
                 ]);
             }
         } else {
@@ -199,8 +199,8 @@ class OrderService
                 'product_id' => $product->id,
                 'quantity' => $qty, // Absolute quantity
                 'type' => 'decrease',
-                'reason' => 'POS Sale #' . $sale->invoice_number,
-                'notes' => 'Penjualan langsung produk oleh ' . auth()->user()->name,
+                'reason' => 'sale',
+                'notes' => 'POS Sale #' . $sale->invoice_number . ' - Penjualan langsung produk oleh ' . auth()->user()->name,
             ]);
         }
     }
@@ -429,8 +429,8 @@ class OrderService
                         'product_id' => $recipe->ingredient->id,
                         'quantity' => $totalRestored,
                         'type' => 'increase',
-                        'reason' => 'Void Sale #' . $sale->invoice_number,
-                        'notes' => 'Pembatalan transaksi via POS',
+                        'reason' => 'void_sale',
+                        'notes' => 'Void Sale #' . $sale->invoice_number . ' - Pembatalan transaksi via POS',
                     ]);
                 }
             } else {
@@ -441,8 +441,8 @@ class OrderService
                     'product_id' => $product->id,
                     'quantity' => $item->quantity,
                     'type' => 'increase',
-                    'reason' => 'Void Sale #' . $sale->invoice_number,
-                    'notes' => 'Pembatalan transaksi via POS',
+                    'reason' => 'void_sale',
+                    'notes' => 'Void Sale #' . $sale->invoice_number . ' - Pembatalan transaksi via POS',
                 ]);
             }
         }

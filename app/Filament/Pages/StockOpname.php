@@ -248,7 +248,7 @@ class StockOpname extends Page implements HasTable
                         'product_id' => $product->id,
                         'quantity' => abs($variance),
                         'type' => $variance > 0 ? 'increase' : 'decrease',
-                        'reason' => 'Stock Opname',
+                        'reason' => 'stock_opname',
                         'notes' => sprintf(
                             'Stock Opname - System: %s, Physical: %s, Variance: %s',
                             number_format($systemStock, 2),

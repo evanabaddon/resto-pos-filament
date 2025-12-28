@@ -139,20 +139,22 @@ class CriticalStockWidget extends Widget
                 return;
             }
 
-            $product->update(['prepared_stock' => 0]);
+            // Create StockMovement record for waste/reset
+            // We use 'decrease' type with 'waste' reason to log this action
+            // But we need to manually update prepared_stock since observer targets 'stock' column
+            \Illuminate\Support\Facades\DB::transaction(function () use ($product, $oldStock) {
+                // Create movement record for audit trail
+                \App\Models\StockMovement::create([
+                    'product_id' => $product->id,
+                    'quantity' => $oldStock,
+                    'type' => 'decrease',
+                    'reason' => 'waste',
+                    'notes' => 'Reset stok harian (Prepared Stock) - Sisa dibuang',
+                ]);
 
-            // Log as waste (Manual log or StockMovement if type supported)
-            // StockMovement logic is for 'stock' column. 'waste' reason is supported.
-            // But since this is prepared_stock, maybe we skip StockMovement to avoid affecting raw stock?
-            // Actually, if we just want to LOG it, we can create a record but disable the observer? 
-            // Or just rely on the fact that for type='waste' (not increase/decrease enum) it might do nothing?
-            // But 'type' enum is limited to ['increase', 'decrease'].
-            // So we can't use type='waste'.
-            // We use type='decrease', reason='waste'.
-            // BUT this will decrement 'stock'. We don't want that for prepared item.
-            // So we skip StockMovement for prepared item reset.
-            // Just Log.
-            \Illuminate\Support\Facades\Log::info("Reset/Waste Prepared Stock for {$product->name}: -{$oldStock}");
+                // Manually update prepared_stock to 0 (observer won't handle this for prepared items)
+                $product->update(['prepared_stock' => 0]);
+            });
 
             Notification::make()
                 ->success()
@@ -161,6 +163,7 @@ class CriticalStockWidget extends Widget
                 ->send();
 
             $this->dispatch('close-modal', id: "record-production-{$productId}");
+            $this->dispatch('close-modal', id: "confirm-reset-{$productId}");
             $this->dispatch('stock-updated');
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Reset Stock Error: ' . $e->getMessage());

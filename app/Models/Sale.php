@@ -79,4 +79,27 @@ class Sale extends Model
         return $this->hasMany(Sale::class, 'split_from');
     }
 
+    protected static function booted()
+    {
+        // When a sale is deleted (voided), restore the stock
+        static::deleted(function (Sale $sale) {
+            // Only process if sale was DRAFT (not paid yet)
+            // Because draft sales already deducted stock, but when voided, stock should be restored
+            if (!$sale->is_paid && $sale->status === 'draft') {
+                foreach ($sale->items as $item) {
+                    $product = $item->product;
+                    if (!$product) continue;
+
+                    // Create stock movement to restore stock (increase)
+                    StockMovement::create([
+                        'product_id' => $product->id,
+                        'quantity' => $item->quantity,
+                        'type' => 'increase',
+                        'reason' => 'void_sale',
+                        'notes' => "Void Draft Sale #{$sale->invoice_number} - Stok dikembalikan",
+                    ]);
+                }
+            }
+        });
+    }
 }
