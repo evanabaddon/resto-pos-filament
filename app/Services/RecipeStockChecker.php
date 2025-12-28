@@ -16,8 +16,8 @@ class RecipeStockChecker
      */
     public function checkAvailability(Product $product, int $requestedQty): array
     {
-        // For produced/bar items, check prepared_stock first (ready to serve stock)
-        if (in_array($product->type, ['produced', 'bar'])) {
+        // For produced/bar items with prepared stock management enabled
+        if (in_array($product->type, ['produced', 'bar']) && $product->enable_stock_alert) {
             $preparedStock = $product->prepared_stock ?? 0;
 
             return [
