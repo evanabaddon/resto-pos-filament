@@ -55,7 +55,7 @@
             border-radius: 10px;
             margin-top: 25px;
             margin-bottom: 25px;
-            page-break-inside: avoid;
+            margin-bottom: 25px;
         }
 
         .ai-box h3 {
