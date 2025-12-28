@@ -124,18 +124,35 @@
                                     />
                                 </x-filament::input.wrapper>
                                 
-                                <div class="mt-4 flex justify-end gap-2">
-                                    <x-filament::button
-                                        type="button"
-                                        color="gray"
-                                        x-on:click="$dispatch('close-modal', { id: 'record-production-{{ $item->id }}' })"
-                                    >
-                                        Batal
-                                    </x-filament::button>
+                                <div class="mt-4 flex flex-col gap-2">
+                                    <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-2 rounded text-xs text-gray-500">
+                                        <span>ℹ️ Stok bahan baku akan otomatis terpotong.</span>
+                                    </div>
                                     
-                                    <x-filament::button type="submit" color="success">
-                                        Simpan
-                                    </x-filament::button>
+                                    <div class="flex justify-end gap-2 mt-2">
+                                        <x-filament::button
+                                            type="button"
+                                            color="danger"
+                                            size="sm"
+                                            class="mr-auto"
+                                            wire:click="resetStock({{ $item->id }})"
+                                            wire:confirm="Yakin ingin membuang sisa stok (RESET ke 0)? Stok bahan baku TIDAK akan dikembalikan."
+                                        >
+                                            🗑️ Reset / Buang Sisa
+                                        </x-filament::button>
+
+                                        <x-filament::button
+                                            type="button"
+                                            color="gray"
+                                            x-on:click="$dispatch('close-modal', { id: 'record-production-{{ $item->id }}' })"
+                                        >
+                                            Batal
+                                        </x-filament::button>
+                                        
+                                        <x-filament::button type="submit" color="success">
+                                            Simpan Masakan
+                                        </x-filament::button>
+                                    </div>
                                 </div>
                             </form>
                         </div>
