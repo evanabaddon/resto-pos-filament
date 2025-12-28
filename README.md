@@ -250,12 +250,12 @@ Pusat kendali data yang menggabungkan kecerdasan buatan dan perhitungan fiskal a
     - **Auto Unit Display**: Suffix unit otomatis muncul di input jumlah saat produk dipilih (misal: `[1500] g`, `[2] Kg`).
     - **Base Unit Enforcement**: Sistem memastikan stock opname selalu menggunakan unit dasar untuk konsistensi data.
     - **Reactive UX**: Unit suffix update otomatis saat produk berubah tanpa reload halaman.
-- 📋 **Stock Opname (Bulk Input) 🆕**: Interface stock opname yang efisien untuk inventaris bulanan.
-    - **Bulk Input Table**: Input physical count untuk semua produk (Raw Material & Retail) dalam satu halaman.
-    - **Real-time Summary**: Dashboard summary yang menampilkan Items Checked, Total Variance, dan Value Loss secara real-time.
-    - **Auto Variance Calculation**: Sistem otomatis menghitung selisih antara system stock dan physical count.
-    - **Monetary Loss Tracking**: Tracking nilai kerugian finansial dari variance negatif (kehilangan/kerusakan barang).
-    - **One-Click Submission**: Submit semua variance sekaligus dengan konfirmasi modal Filament yang profesional.
+- 📋 **Smart Stock Opname (Audit) 🆕**: Interface stock opname cerdas untuk audit inventaris menyeluruh.
+    - **Multi-Type Support**: Audit **Bahan Baku** (Raw) dan **Stok Masakan** (Prepared) dalam satu halaman.
+    - **Smart Filtering**: Produk masakan (Produced/Bar) hanya muncul jika fitur **Stock Alert** diaktifkan, memfilter menu non-stok.
+    - **Auto-Column Logic**: Otomatis mendeteksi kolom yang harus diaudit (`stock` vs `prepared_stock`) berdasarkan tipe produk.
+    - **Real-time Variance**: Kalkulasi selisih fisik vs sistem dan estimasi kerugian (Loss Value) secara real-time.
+    - **One-Click Adjustment**: Tombol simpan massal yang aman dengan konfirmasi variance.
 - 🤝 **Loyalty Automation (Re-engagement) 🆕**: Sistem otomatis bertenaga AI untuk mendekati kembali pelanggan yang sudah lama tidak berkunjung.
     - **Soft-Greeting Strategy**: AI dilatih untuk menyapa secara emosional (menanyakan kabar & kesehatan), menghindari kesan *hard-selling* yang mengganggu.
     - **Auto-detect Inactive Members**: Filter otomatis member dengan kunjungan terakhir >30 hari.

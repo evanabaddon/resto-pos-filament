@@ -294,16 +294,24 @@
                             <li><strong>Produced:</strong> Menu hasil resep (Latte, Nasi Goreng)</li>
                         </ul>
 
-                        <h4 class="font-semibold text-lg mt-4">Stock Opname (Adjustment)</h4>
-                        <p><strong>⚠️ Penting:</strong> Selalu gunakan <strong>unit dasar</strong> saat input stock
-                            opname!</p>
+                        <h4 class="font-semibold text-lg mt-4">Smart Stock Opname (Audit)</h4>
+                        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg my-3">
+                            <p class="font-semibold text-blue-900 dark:text-blue-100">✨ Fitur Cerdas</p>
+                            <ul class="text-sm mt-2 space-y-1 text-blue-800 dark:text-blue-200">
+                                <li>• Bisa audit <strong>Bahan Baku</strong> & <strong>Masakan Jadi</strong> (Prepared)
+                                </li>
+                                <li>• Smart Filter: Produk masakan hanya muncul jika <em>Stock Alert</em> aktif</li>
+                                <li>• Auto-Switch Column: Otomatis edit kolom <code>stock</code> atau
+                                    <code>prepared_stock</code></li>
+                            </ul>
+                        </div>
+                        <p><strong>Cara Menggunakan:</strong></p>
                         <ol class="list-decimal pl-6 space-y-2">
-                            <li>Buka menu <strong>Stock Movements</strong></li>
-                            <li>Klik <strong>Adjustment (Opname)</strong></li>
-                            <li>Pilih produk → Unit otomatis muncul di sebelah kanan input</li>
-                            <li>Input jumlah stok fisik (misal: <code>1500 g</code>)</li>
-                            <li>Pilih alasan: Stock Opname / Barang Rusak / dll</li>
-                            <li>Simpan</li>
+                            <li>Buka menu <strong>Stock Opname</strong></li>
+                            <li>List produk akan otomatis terfilter</li>
+                            <li>Input jumlah stok fisik di kolom <strong>Stock Fisik</strong></li>
+                            <li>Sistem otomatis menghitung Variance & Loss Value</li>
+                            <li>Klik <strong>Simpan Semua Perubahan</strong></li>
                         </ol>
 
                         <h4 class="font-semibold text-lg mt-4">Resep (Recipe)</h4>
