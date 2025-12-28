@@ -21,7 +21,7 @@ class ManagePrinter extends SettingsPage
 
     protected static string $settings = PrinterSettings::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Settings';
+    protected static string|UnitEnum|null $navigationGroup = 'Pengaturan';
 
     protected static ?int $navigationSort = 2;
 

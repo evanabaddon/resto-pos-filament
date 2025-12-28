@@ -383,6 +383,84 @@
                             <li>Besok pagi, stok dimulai dari 0 agar produksi baru tercatat rapi.</li>
                         </ul>
 
+                        <h4 class="font-semibold text-lg mt-8 mb-4">🔄 Factory Reset (Tombol Sakti) 🆕</h4>
+                        <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-4">
+                            <p class="font-semibold text-red-900 dark:text-red-100">⚠️ ZONA BERBAHAYA</p>
+                            <p class="text-sm mt-2 text-red-800 dark:text-red-200">
+                                Fitur ini akan menghapus data secara permanen. Hanya SuperAdmin yang dapat mengakses.
+                                Backup otomatis akan dibuat sebelum reset.
+                            </p>
+                        </div>
+
+                        <p class="font-semibold text-sm uppercase text-gray-500 mb-2">Akses Fitur</p>
+                        <ul class="list-disc pl-6 space-y-2 mb-4">
+                            <li>Buka menu <strong>Pengaturan → Factory Reset</strong> dari sidebar</li>
+                            <li>Hanya dapat diakses oleh <strong>SuperAdmin</strong></li>
+                            <li>Memerlukan konfirmasi password SuperAdmin</li>
+                        </ul>
+
+                        <p class="font-semibold text-sm uppercase text-gray-500 mb-2">Mode 1: Reset Operasional</p>
+                        <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg mb-4">
+                            <p class="mb-2"><strong>Akan Dihapus:</strong></p>
+                            <ul class="list-disc pl-4 text-sm space-y-1">
+                                <li>Semua transaksi penjualan (POS, Waiter, Self-Order)</li>
+                                <li>Semua pembelian bahan baku</li>
+                                <li>Stock movements & produksi</li>
+                                <li>Expenses, reservasi, member</li>
+                                <li>Payroll & attendance</li>
+                            </ul>
+                            <p class="mt-3 mb-2"><strong>Akan Disimpan:</strong></p>
+                            <ul class="list-disc pl-4 text-sm space-y-1 text-green-700 dark:text-green-300">
+                                <li>✅ Produk & Resep (stok akan di-reset ke 0)</li>
+                                <li>✅ Kategori & Unit</li>
+                                <li>✅ Karyawan & User</li>
+                                <li>✅ Settings sistem</li>
+                            </ul>
+                            <p class="mt-3 text-sm italic text-orange-700 dark:text-orange-300">
+                                💡 Cocok untuk: Reset data trial atau mulai periode baru tanpa kehilangan master data produk.
+                            </p>
+                        </div>
+
+                        <p class="font-semibold text-sm uppercase text-gray-500 mb-2">Mode 2: Factory Reset Total</p>
+                        <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg mb-4">
+                            <p class="mb-2"><strong>Akan Dihapus:</strong></p>
+                            <ul class="list-disc pl-4 text-sm space-y-1">
+                                <li>Semua dari Mode 1 +</li>
+                                <li>❌ Produk & Resep</li>
+                                <li>❌ Kategori</li>
+                                <li>❌ Karyawan</li>
+                                <li>❌ Meja</li>
+                                <li>❌ Loyalty tiers & rewards</li>
+                            </ul>
+                            <p class="mt-3 mb-2"><strong>Akan Disimpan:</strong></p>
+                            <ul class="list-disc pl-4 text-sm space-y-1 text-green-700 dark:text-green-300">
+                                <li>✅ User (SuperAdmin)</li>
+                                <li>✅ Settings sistem</li>
+                                <li>✅ Payment methods default</li>
+                            </ul>
+                            <p class="mt-3 text-sm italic text-red-700 dark:text-red-300">
+                                ⚠️ PERINGATAN: Ini akan menghapus SEMUA DATA! Hanya gunakan jika ingin benar-benar mulai dari 0.
+                            </p>
+                        </div>
+
+                        <p class="font-semibold text-sm uppercase text-gray-500 mb-2">Backup Management</p>
+                        <ul class="list-disc pl-6 space-y-2 mb-4">
+                            <li><strong>Auto Backup:</strong> Sistem otomatis membuat backup database sebelum setiap reset</li>
+                            <li><strong>List Backup:</strong> Lihat semua backup dengan info tanggal & ukuran file</li>
+                            <li><strong>Restore:</strong> Kembalikan database ke kondisi backup dengan konfirmasi modal</li>
+                            <li><strong>Delete:</strong> Hapus backup yang tidak diperlukan</li>
+                        </ul>
+
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 mb-4">
+                            <p class="font-semibold text-blue-900 dark:text-blue-100">🔐 Keamanan</p>
+                            <ul class="text-sm mt-2 space-y-1 text-blue-800 dark:text-blue-200">
+                                <li>• Konfirmasi password SuperAdmin wajib</li>
+                                <li>• Checkbox "Saya mengerti risiko" harus dicentang</li>
+                                <li>• Backup otomatis dibuat sebelum reset</li>
+                                <li>• Semua aktivitas tercatat di log dengan timestamp & user</li>
+                            </ul>
+                        </div>
+
                         <h4 class="font-semibold text-lg mt-6">Recipe Stock Validation</h4>
                         <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 mb-4">
                             <p class="font-semibold text-green-900 dark:text-green-100">✅ Prevent Negative Stock</p>

@@ -217,6 +217,26 @@ Sistem pelacakan stok untuk makanan siap saji atau *semi-finished goods* (misal:
     - **Logic**: Menghapus sisa *prepared stock* di akhir hari (dicatat sebagai waste) tanpa mengembalikan bahan baku. Memastikan stok hari besok dimulai dari 0 agar produksi baru tercatat rapi.
 - **📊 Stock Movement Tracking**: Setiap produksi tercatat di `Stock Movements` dengan referensi polimorfik untuk audit trail yang lengkap.
 
+### 🔄 Factory Reset (Tombol Sakti) [NEW]
+Fitur reset data operasional dengan keamanan tinggi untuk memulai periode baru atau testing.
+- **🔐 SuperAdmin Only**: Hanya dapat diakses oleh SuperAdmin dengan konfirmasi password.
+- **📦 Auto Backup**: Sistem otomatis membuat backup database sebelum reset.
+- **2️⃣ Dual Mode Reset**:
+    - **Reset Operasional**:
+        - **Hapus**: Semua transaksi (sales, purchases, stock movements, productions, expenses, payroll, dll).
+        - **Simpan**: Produk, resep, kategori, karyawan, user, settings.
+        - **Use Case**: Reset data trial atau mulai periode baru tanpa kehilangan master data.
+    - **Factory Reset Total**:
+        - **Hapus**: Semua data termasuk produk, resep, kategori, karyawan, meja, loyalty.
+        - **Simpan**: Hanya user (SuperAdmin) dan settings sistem.
+        - **Use Case**: Benar-benar mulai dari 0, seperti fresh install.
+- **💾 Backup Management**:
+    - **List Backup**: Lihat semua backup dengan info tanggal, ukuran file.
+    - **Restore**: Kembalikan database ke kondisi backup dengan konfirmasi modal.
+    - **Delete**: Hapus backup yang tidak diperlukan.
+- **⚡ Raw SQL Execution**: Menggunakan `TRUNCATE TABLE` langsung untuk bypass observers dan mencegah konflik transaction.
+- **📝 Audit Log**: Semua aktivitas reset tercatat di log dengan info user dan timestamp.
+
 
 ### 💬 Integrated WhatsApp Center (Native Chat) 🚀
 Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.
