@@ -25,9 +25,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
-        // DISABLED: SaleItem Observer causes double stock deduction
-        // Stock is already counted in draft sales by RecipeStockChecker
-        // Actual deduction happens via purchase system
-        // \App\Models\SaleItem::observe(\App\Observers\SaleItemObserver::class);
+        // Register SaleItem Observer for prepared stock deduction
+        // Only deducts when product has enable_stock_alert = true
+        \App\Models\SaleItem::observe(\App\Observers\SaleItemObserver::class);
     }
 }
