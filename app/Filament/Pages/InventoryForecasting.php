@@ -46,19 +46,26 @@ class InventoryForecasting extends Page
         }
 
         $this->historyData = $inventoryService->getForecastingData(30); // Get 30 days history for better pattern detection
-
-        // Load cached results if available
-        $cached = Cache::get('inventory_forecast_result');
-        if ($cached) {
-            $this->aiResults = $cached['results'];
-            $this->lastGeneratedAt = $cached['timestamp'];
-        }
+        $this->loadCachedResults();
     }
 
     public function updatedForecastMode()
     {
-        // When mode changes, we might want to reset results or auto-regenerate (optional)
-        // For now just let user click generate
+        $this->loadCachedResults();
+    }
+
+    protected function loadCachedResults()
+    {
+        $cacheKey = 'inventory_forecast_result_' . $this->forecastMode;
+        $cached = Cache::get($cacheKey);
+
+        if ($cached) {
+            $this->aiResults = $cached['results'];
+            $this->lastGeneratedAt = $cached['timestamp'];
+        } else {
+            $this->aiResults = null;
+            $this->lastGeneratedAt = null;
+        }
     }
 
     public function generateAiForecast(InventoryService $inventoryService, DeepSeekService $deepSeekService)
@@ -78,8 +85,8 @@ class InventoryForecasting extends Page
                 $this->aiResults = $result;
                 $this->lastGeneratedAt = now()->format('d M Y, H:i');
 
-                // Cache the results for 24 hours
-                Cache::put('inventory_forecast_result', [
+                // Cache the results for 24 hours per mode
+                Cache::put('inventory_forecast_result_' . $this->forecastMode, [
                     'results' => $this->aiResults,
                     'timestamp' => $this->lastGeneratedAt,
                 ], now()->addHours(24));
