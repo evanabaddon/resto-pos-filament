@@ -191,17 +191,6 @@ Membawa operasional restoran ke level otonom dengan integrasi LLM tercanggih unt
     - **Persistence & Speed**: Hasil analisis disimpan dalam cache selama 24 jam untuk akses instan tanpa perlu generate ulang setiap kali halaman dibuka.
     - **Urgency Insights**: Memberikan label urgensi (High/Medium/Low) dan alasan logis di balik setiap saran restock.
     - **📄 Professional PDF Export**: Generate laporan restock resmi dalam format PDF yang rapi, lengkap dengan tabel rekomendasi, tingkat urgensi, dan alasan logis AI.
-
-### 🍳 Kitchen Production (Prepared Stock Management) [NEW]
-Sistem pelacakan stok untuk makanan siap saji atau *semi-finished goods* (misal: Ayam ungkep, Kuah Soto).
-
-- **📝 Catat Masak (Production Record)**:
-    - **Concept**: Konversi bahan baku mentah menjadi stok jadi.
-    - **Action**: Saat staff dapur mencatat "Masak 10 Porsi Ayam Goreng", sistem otomatis **mengurangi stok bahan baku mentah** (Ayam, Bumbu) sesuai resep dan **menambah stok 'Prepared'** (Ayam Ungkep).
-    - **Inventory Accuracy**: Menjaga akurasi stok gudang secara real-time tanpa menunggu penjualan terjadi.
-- **🔄 Daily Stock Reset**:
-    - **Fitur Khusus**: Tombol "Reset Stock Harian" untuk produk tipe *fresh daily* (misal: Nasi, Masakan Padang).
-    - **Logic**: Menghapus sisa *prepared stock* di akhir hari (dicatat sebagai waste) tanpa mengembalikan bahan baku. Memastikan stok hari besok dimulai dari 0 agar produksi baru tercatat rapi.
 - 🍳 **Menu Engineering (AI) (Profit & Popularity Matrix) [READY]**:
     - **Strategic Classification**: AI mengklasifikasikan menu ke dalam 4 kategori strategis: **Unit Unggulan** (Stars), **Unit Andalan** (Plowhorses), **Unit Potensial** (Puzzles), dan **Unit Kurang Berkembang** (Dogs).
     - **Ultra-Accurate COGS**: Perhitungan HPP super akurat yang mendukung **Unit Conversion Rate** (misal: Harga beli sak/karung dikonversi otomatis ke gram pada resep).
@@ -209,6 +198,20 @@ Sistem pelacakan stok untuk makanan siap saji atau *semi-finished goods* (misal:
     - **AI Strategic Advice**: Dapatkan saran taktis langsung dari AI (misal: saran kenaikan harga 10%, pengecilkan porsi, atau rekomendasi promosi khusus).
     - **Premium Matrix UI**: Dashboard visual dengan bar popularitas, badge kategori indigo, dan insight box gradient yang elegan.
     - **📄 Integrated PDF Report**: Ekspor hasil analisis ke PDF dengan layout profesional yang siap dipresentasikan di rapat manajemen.
+
+### 🍳 Kitchen Production (Prepared Stock Management) [NEW]
+Sistem pelacakan stok untuk makanan siap saji atau *semi-finished goods* (misal: Ayam ungkep, Nasi Putih).
+- **📝 Catat Masak (Production Record)**:
+    - **Concept**: Konversi bahan baku mentah menjadi stok jadi.
+    - **Action**: Staff mencatat output produksi, sistem otomatis potong bahan baku.
+    - **Contoh Real**:
+        > **"Masak Nasi Putih"** (Output: 50 Porsi)
+        > - **Otomatis Kurangi (Raw)**: Beras 5 Kg, Air Galon 2 Liter.
+        > - **Otomatis Tambah (Prepared)**: Nasi Putih +50 Porsi.
+    - **Inventory Accuracy**: Menjaga akurasi stok gudang secara real-time tanpa menunggu penjualan terjadi.
+- **🔄 Daily Stock Reset**:
+    - **Fitur Khusus**: Tombol "Reset Stock Harian" untuk produk tipe *fresh daily* (misal: Nasi, Masakan Padang).
+    - **Logic**: Menghapus sisa *prepared stock* di akhir hari (dicatat sebagai waste) tanpa mengembalikan bahan baku. Memastikan stok hari besok dimulai dari 0 agar produksi baru tercatat rapi.
 
 ### 💬 Integrated WhatsApp Center (Native Chat) 🚀
 Menghadirkan pengalaman WhatsApp Web lengkap langsung di dalam dashboard admin.

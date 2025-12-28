@@ -319,9 +319,13 @@
                         <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg my-3">
                             <p class="mb-2"><strong>Konsep:</strong> Fitur untuk mencatat proses masak dari Bahan Baku
                                 Mentah menjadi Stok Jadi (Prepared).</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">
-                                Contoh: Masak "Ayam Ungkep" (Prepared Item) menggunakan "Ayam Mentah" + "Bumbu Kuning"
-                                (Raw Ingredients).
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                                <strong>Contoh Real:</strong><br>
+                                "Masak Nasi Putih" (Output: 50 Porsi)
+                            <ul class="list-disc pl-4 mt-1">
+                                <li><strong>Otomatis Kurangi (Raw):</strong> Beras 5 Kg + Air Galon 2 Liter.</li>
+                                <li><strong>Otomatis Tambah (Prepared):</strong> Nasi Putih +50 Porsi.</li>
+                            </ul>
                             </p>
                         </div>
 
