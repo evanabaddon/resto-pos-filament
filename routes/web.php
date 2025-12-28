@@ -198,6 +198,16 @@ Route::get('/payroll/{record}/print', function (\App\Models\Payroll $record) {
     return view('payroll.print', ['record' => $record]);
 })->name('payroll.print');
 
+// Sales Receipt PDF Download Route
+Route::get('/sales/{sale}/download-pdf', function (\App\Models\Sale $sale) {
+    if (!Auth::check()) {
+        abort(403);
+    }
+
+    $pdfService = new \App\Services\ReceiptPdfService();
+    return $pdfService->download($sale);
+})->name('sales.download-pdf');
+
 // WhatsApp Avatar Proxy (To fix local logging issue in production)
 Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
     if (!Auth::check())
