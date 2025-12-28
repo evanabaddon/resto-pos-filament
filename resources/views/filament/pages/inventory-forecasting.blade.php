@@ -8,26 +8,35 @@
                     AI)</p>
             </div>
 
-            @if($aiResults)
-                <div class="flex items-center gap-4">
-                    <x-filament::button wire:click="exportToPdf" icon="heroicon-m-document-arrow-down" color="gray"
-                        size="sm" wire:loading.attr="disabled">
-                        Export PDF
-                    </x-filament::button>
+            <div class="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
+                <x-filament::input.wrapper>
+                    <x-filament::input.select wire:model.live="forecastMode" class="w-full sm:w-48">
+                        <option value="weekly">Mingguan (7 Hari)</option>
+                        <option value="daily">Harian (Besok)</option>
+                    </x-filament::input.select>
+                </x-filament::input.wrapper>
 
-                    <div
-                        class="flex items-center gap-2 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
-                        <x-heroicon-m-clock class="w-4 h-4" />
-                        Dianalisa: {{ $lastGeneratedAt }}
-                        <button wire:click="generateAiForecast" wire:loading.attr="disabled"
-                            class="ml-2 hover:text-primary-500 transition-colors disabled:opacity-50 group">
-                            <x-heroicon-m-arrow-path
-                                class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500"
-                                wire:loading.class="animate-spin" wire:target="generateAiForecast" />
-                        </button>
+                @if($aiResults)
+                    <div class="flex items-center gap-2">
+                        <x-filament::button wire:click="exportToPdf" icon="heroicon-m-document-arrow-down" color="gray"
+                            size="sm" wire:loading.attr="disabled">
+                            Export
+                        </x-filament::button>
+
+                        <div
+                            class="flex items-center gap-2 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <x-heroicon-m-clock class="w-4 h-4" />
+                            {{ $lastGeneratedAt }}
+                            <button wire:click="generateAiForecast" wire:loading.attr="disabled"
+                                class="ml-2 hover:text-primary-500 transition-colors disabled:opacity-50 group">
+                                <x-heroicon-m-arrow-path
+                                    class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500"
+                                    wire:loading.class="animate-spin" wire:target="generateAiForecast" />
+                            </button>
+                        </div>
                     </div>
-                </div>
-            @endif
+                @endif
+            </div>
         </div>
 
         @if(!$aiResults)

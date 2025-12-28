@@ -28,23 +28,32 @@ class InventoryService
 
         foreach ($saleItems as $item) {
             $product = $item->product;
-            if (!$product) continue;
+            if (!$product)
+                continue;
 
+            $date = $item->created_at->format('Y-m-d');
             $qtySold = $item->quantity;
 
             if ($product->recipes->isNotEmpty()) {
                 // It's a menu item with ingredients
                 foreach ($product->recipes as $recipe) {
                     $ingredient = $recipe->ingredient;
-                    if (!$ingredient) continue;
+                    if (!$ingredient)
+                        continue;
 
                     $totalUsed = $this->calculateRealQuantity($recipe, $qtySold);
 
-                    $this->addtoConsumption($consumption, $ingredient, $totalUsed);
+                    $this->addtoConsumption($consumption, $ingredient, $totalUsed, $date);
                 }
+
+                // ALSO track the menu item itself if it is 'produced' type (for Daily Prep)
+                if ($product->type === 'produced') {
+                    $this->addtoConsumption($consumption, $product, $qtySold, $date);
+                }
+
             } else {
-                // It's a direct product (e.g. bottled water)
-                $this->addtoConsumption($consumption, $product, $qtySold);
+                // It's a direct product (e.g. bottled water or raw material sold directly)
+                $this->addtoConsumption($consumption, $product, $qtySold, $date);
             }
         }
 
@@ -66,9 +75,26 @@ class InventoryService
     /**
      * Add or update consumption data for a product/ingredient.
      */
-    protected function addtoConsumption(array &$consumption, Product $product, float $quantity): void
+    /**
+     * Get full data for AI forecasting.
+     */
+    public function getForecastingData(int $historyDays = 30): array
     {
-        // Only forecast for 'raw' (ingredients) and 'retail' products
+        $history = $this->getConsumptionHistory($historyDays);
+
+        foreach ($history as $id => &$data) {
+            $data['average_daily'] = round($data['total_consumed'] / $historyDays, 2);
+        }
+
+        return array_values($history);
+    }
+
+    /**
+     * Add or update consumption data for a product/ingredient.
+     */
+    protected function addtoConsumption(array &$consumption, Product $product, float $quantity, string $date = ''): void
+    {
+        // Only forecast for 'raw', 'retail', and 'produced' (daily stock items)
         if (!$this->isForecastingRelevant($product)) {
             return;
         }
@@ -79,12 +105,31 @@ class InventoryService
                 'id' => $id,
                 'name' => $product->name,
                 'current_stock' => $product->stock,
+                'prepared_stock' => $product->prepared_stock ?? 0,
                 'unit' => $product->unit->name ?? 'pcs',
+                'type' => $product->type,
                 'total_consumed' => 0,
                 'average_daily' => 0,
+                'daily_usage' => [], // Format: ['Monday' => 10, 'Tuesday' => 5...] (Accumulated)
+                'daily_history' => [], // Raw history: ['2023-10-01' => 5]
             ];
         }
+
         $consumption[$id]['total_consumed'] += $quantity;
+
+        if ($date) {
+            $dayName = date('l', strtotime($date));
+            if (!isset($consumption[$id]['daily_usage'][$dayName])) {
+                $consumption[$id]['daily_usage'][$dayName] = 0;
+            }
+            $consumption[$id]['daily_usage'][$dayName] += $quantity;
+
+            // Raw History for granular AI analysis
+            if (!isset($consumption[$id]['daily_history'][$date])) {
+                $consumption[$id]['daily_history'][$date] = 0;
+            }
+            $consumption[$id]['daily_history'][$date] += $quantity;
+        }
     }
 
     /**
@@ -92,20 +137,7 @@ class InventoryService
      */
     protected function isForecastingRelevant(Product $product): bool
     {
-        return in_array($product->type, ['raw', 'retail']);
-    }
-
-    /**
-     * Get full data for AI forecasting.
-     */
-    public function getForecastingData(int $historyDays = 7): array
-    {
-        $history = $this->getConsumptionHistory($historyDays);
-
-        foreach ($history as $id => &$data) {
-            $data['average_daily'] = round($data['total_consumed'] / $historyDays, 2);
-        }
-
-        return array_values($history);
+        // Include 'produced' because users might track daily prep (Nasi, Ayam)
+        return in_array($product->type, ['raw', 'retail', 'produced']);
     }
 }
