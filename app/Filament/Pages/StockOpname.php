@@ -158,7 +158,7 @@ class StockOpname extends Page implements HasTable
                 Action::make('edit_count')
                     ->label('Edit')
                     ->icon('heroicon-o-pencil')
-                    ->form([
+                    ->schema([
                         TextInput::make('physical_count')
                             ->label('Stock Fisik')
                             ->numeric()

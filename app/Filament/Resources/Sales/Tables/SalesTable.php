@@ -89,7 +89,6 @@ class SalesTable
                         ->color('warning')
                         ->requiresConfirmation()
                         ->action(function (Sale $record) {
-                            // ... existing logic ...
                             try {
                                 $service = new \App\Services\OrderPrintService();
                                 $service->printOrderByProductType($record);
@@ -104,7 +103,7 @@ class SalesTable
                         ->label('Klaim Poin Member')
                         ->icon('heroicon-o-user-plus')
                         ->visible(fn(Sale $record) => $record->status === 'completed' && !$record->member_id)
-                        ->form([
+                        ->schema([
                             \Filament\Forms\Components\Select::make('member_id')
                                 ->label('Pilih Member')
                                 ->relationship('member', 'name')
@@ -113,7 +112,6 @@ class SalesTable
                                 ->required(),
                         ])
                         ->action(function (Sale $record, array $data) {
-                            // ... existing logic ...
                             try {
                                 // 1. Hitung Poin (Dynamic based on Settings)
                                 $settings = app(\App\Settings\GeneralSettings::class);
