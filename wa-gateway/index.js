@@ -401,8 +401,8 @@ app.get('/status', async (req, res) => {
 
         user = {
             id: userId,
-            name: sock.user.name || sock.user.notify || 'Me',
-            avatar: `http://localhost:${PORT}/avatar/${userId}`
+            name: sock.user.name || sock.user.notify || 'Me'
+            // Avatar will be fetched by Laravel via proxy route
         };
     }
 

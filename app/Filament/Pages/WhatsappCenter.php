@@ -250,7 +250,9 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
                 if (isset($data['user'])) {
                     $this->userName = $data['user']['name'] ?? null;
-                    $this->userAvatar = $data['user']['avatar'] ?? null;
+                    // Use Laravel proxy route for avatar instead of direct gateway URL
+                    $userJid = $data['user']['id'] ?? null;
+                    $this->userAvatar = $userJid ? route('whatsapp.avatar', $userJid) : null;
                 }
             } else {
                 $this->status = 'offline';
