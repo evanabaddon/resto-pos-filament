@@ -370,7 +370,13 @@
 
                 {{-- MESSAGES SCROLL AREA --}}
                 <div class="flex-1 overflow-y-auto p-4 space-y-2 z-10 custom-scrollbar relative" id="chat-container"
-                    x-data x-init="$el.scrollTop = $el.scrollHeight"
+                    wire:key="chat-container-{{ $selectedJid }}"
+                    x-data
+                    x-init="
+                        $nextTick(() => $el.scrollTop = $el.scrollHeight); 
+                        setTimeout(() => $el.scrollTop = $el.scrollHeight, 100);
+                        setTimeout(() => $el.scrollTop = $el.scrollHeight, 300);
+                    "
                     x-on:chat-updated.window="$nextTick(() => $el.scrollTop = $el.scrollHeight)">
 
                     @php $lastDate = null; @endphp
