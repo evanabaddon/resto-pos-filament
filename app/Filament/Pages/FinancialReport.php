@@ -460,8 +460,8 @@ class FinancialReport extends Page implements HasForms
                         'totalRevenue' => $this->totalRevenue,
                         'totalHpp' => $this->totalCogs,
                         'grossProfit' => $this->totalRevenue - $this->totalCogs,
-                        'totalExpenses' => $this->totalExpenses + $this->totalPayroll, // Ops + Payroll
-                        'netProfit' => ($this->totalRevenue - $this->totalCogs) - ($this->totalExpenses + $this->totalPayroll),
+                        'totalExpenses' => $this->totalExpenses, // Already includes Payroll & Wastage
+                        'netProfit' => ($this->totalRevenue - $this->totalCogs) - $this->totalExpenses,
                         'breakdownCogs' => $this->breakdownCogs,
                         'breakdownExpenses' => $this->breakdownExpenses,
                         'currentStockValue' => $this->currentStockValue,
