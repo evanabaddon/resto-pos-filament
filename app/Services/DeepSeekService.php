@@ -361,6 +361,7 @@ class DeepSeekService
                     \"product_name\": \"Nama Produk\",
                     \"predicted_need\": 50.5,
                     \"suggested_restock\": 20.0,
+                    \"action_type\": \"PRODUKSI|BELI\",
                     \"urgency\": \"high|medium|low\",
                     \"reason\": \"Stok mingguan menipis\"
                 }
@@ -371,6 +372,8 @@ class DeepSeekService
         1. tomorrow_forecast: Fokus HANYA pada item yang KRITIKAL untuk besok ({$nextDay}) berdasarkan 'daily_averages'['{$nextDay}']. Ambil top 3-5 item.
         2. recommendations: Estimasi total pemakaian untuk 7 hari ke depan.
         3. Suggested_restock: (Predicted_need_7days + buffer) - Stock.
+        4. TIPE_ACTION: Jika product type='produced' -> Label 'PRODUKSI'. Jika 'raw'/'retail' -> Label 'BELI'.
+        5. Urgency: 'high' jika stok saat ini < kebutuhan besok.
         4. Urgency: 'high' jika stok saat ini < kebutuhan besok.
         5. Gunakan Bahasa Indonesia untuk semua teks output (summary, reason, dll).
         6. Berikan data JSON SAJA.";
