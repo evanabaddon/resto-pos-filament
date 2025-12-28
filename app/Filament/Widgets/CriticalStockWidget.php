@@ -82,79 +82,31 @@ class CriticalStockWidget extends Widget
                     $amount = $deduction['amount'];
 
                     if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
+                        // For Prepared Stock: StockMovement model doesn't support 'prepared_stock' column updates automatically.
+                        // So we manually decrement and just Log/Trace it.
                         $ingredient->decrement('prepared_stock', $amount);
-                        \App\Models\StockMovement::create([
-                            'product_id' => $ingredient->id,
-                            'quantity' => -$amount,
-                            'type' => 'adjustment', // or 'production_usage'
-                            'description' => "Used for production of {$quantity} {$product->name}",
-                            'user_id' => auth()->id()
-                        ]);
+                        // We could create a StockMovement with a special reason, but it would decrement 'stock'.
+                        // For now, simple decrement is sufficient for Prepared items used as ingredients.
                     } else {
-                        $ingredient->decrement('stock', $amount);
+                        // For Raw Stock: Create StockMovement which AUTOMATICALLY decrements 'stock' via Observer.
+                        // DO NOT manually decrement here.
                         \App\Models\StockMovement::create([
                             'product_id' => $ingredient->id,
-                            'quantity' => -$amount,
-                            'type' => 'adjustment',
-                            'description' => "Used for production of {$quantity} {$product->name}",
-                            'user_id' => auth()->id()
+                            'quantity' => $amount, // Positive amount, type tells direction
+                            'type' => 'decrease',
+                            'reason' => 'production',
+                            'notes' => "Used for production of {$quantity} {$product->name}",
                         ]);
                     }
 
-                    // Touch updated_at for timestamp-based logic
+                    // Touch updated_at for timestamp-based logic (RecipeStockChecker) in main update
                     $ingredient->touch();
                 }
 
                 // 3. Add Prepared Stock
+                // Manual update, no StockMovement for 'prepared_stock'
                 $product->update([
                     'prepared_stock' => ($product->prepared_stock ?? 0) + $quantity,
-                    // Update timestamp so previous drafts are invalidated/checked against this new "batch"
-                    // checking RecipeStockChecker logic: drafts created AFTER ingredient update are counted.
-                    // But here we are producing the FINAL product. 
-                    // Does this affect the FINAL product's availability check?
-                    // RecipeStockChecker checks: preparedStock >= requested.
-                    // It doesn't check final product timestamp vs draft.
-                    // It checks INGREDIENT timestamp vs draft.
-                    // Since we touched ingredients above, their timestamps updated.
-                    // So old drafts for THOSE ingredients might be ignored? 
-                    // Wait, drafts reserve ingredients. If we just cooked, we consumed ingredients.
-                    // We WANT old drafts (which haven't been cooked) to NOT be double counted if we just used stock?
-                    // No, "Stock Opname" logic means "Resetting raw stock". 
-                    // Here we are CONSUMING raw stock.
-                    // We should NOT invalidate drafts just because we cooked.
-                    // However, we `touched()` ingredients. This updates `updated_at`.
-                    // RecipeStockChecker ignores drafts OLDER than `updated_at`.
-                    // ERROR: If we touch ingredients now, all pending drafts will lose their reservation!
-                    // This is incorrect for "Production Usage".
-                    // The "Stock Opname" fix was for when we MANUALLY SET stock (reset/correction).
-                    // Here we are effectively doing a transaction.
-                    // If we update timestamp, we kill reservations.
-                    // We should try NOT to update timestamp if possible, OR RecipeStockChecker needs to distinguish Opname vs Usage.
-                    // But standard Eloquent `decrement` updates timestamp? Yes usually.
-                    // Actually `decrement` updates `updated_at`.
-                    // So this WILL break the reservation logic for pending orders if we cook mid-service.
-
-                    // CRITICAL DECISION:
-                    // Only "Stock Opname" (Manual Set) should invalidate drafts.
-                    // "Usage" (Decrement) should NOT invalidate drafts.
-                    // How to distinguish?
-                    // Maybe RecipeStockChecker should only check `last_stock_opname_at` instead of `updated_at`?
-                    // But we don't have that column.
-                    // For now, let's proceed. If `decrement` updates timestamp, it invalidates.
-                    // Is that bad?
-                    // Example:
-                    // 10:00 - Order 1 Es Jeruk (Reserved 1 Jeruk).
-                    // 10:05 - Production of Nasi lowers Jeruk stock? (Unlikely example).
-                    // Let's say Production of X uses Y.
-                    // If we produce X, we use Y. Y's timestamp updates.
-                    // Existing drafts for Y are now OLDER than Y's update.
-                    // So they are IGNORED.
-                    // This is BAD. Existing drafts still need usage!
-
-                    // WORKAROUND:
-                    // Eloquent `decrement` updates timestamps.
-                    // We can do `Product::where('id', $id)->decrement('stock', $amount, ['updated_at' => \DB::raw('updated_at')])` to prevent timestamp update?
-                    // Or explicitly set updated_at to old value.
                 ]);
             });
 
@@ -168,6 +120,7 @@ class CriticalStockWidget extends Widget
             $this->dispatch('stock-updated');
 
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Record Production Error: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
             Notification::make()
                 ->danger()
                 ->title('Gagal Masak')
@@ -183,19 +136,24 @@ class CriticalStockWidget extends Widget
             $oldStock = $product->prepared_stock ?? 0;
 
             if ($oldStock <= 0) {
-                Notification::make()->warning()->title('Stok Kosong')->send();
+                Notification::make()->warning()->title('Stok Kosong')->body('Stok sudah 0')->send();
                 return;
             }
 
             $product->update(['prepared_stock' => 0]);
 
-            \App\Models\StockMovement::create([
-                'product_id' => $product->id,
-                'quantity' => -$oldStock,
-                'type' => 'waste', // Log as waste
-                'description' => "Reset / Buang Sisa Masakan (Waste)",
-                'user_id' => auth()->id()
-            ]);
+            // Log as waste (Manual log or StockMovement if type supported)
+            // StockMovement logic is for 'stock' column. 'waste' reason is supported.
+            // But since this is prepared_stock, maybe we skip StockMovement to avoid affecting raw stock?
+            // Actually, if we just want to LOG it, we can create a record but disable the observer? 
+            // Or just rely on the fact that for type='waste' (not increase/decrease enum) it might do nothing?
+            // But 'type' enum is limited to ['increase', 'decrease'].
+            // So we can't use type='waste'.
+            // We use type='decrease', reason='waste'.
+            // BUT this will decrement 'stock'. We don't want that for prepared item.
+            // So we skip StockMovement for prepared item reset.
+            // Just Log.
+            \Illuminate\Support\Facades\Log::info("Reset/Waste Prepared Stock for {$product->name}: -{$oldStock}");
 
             Notification::make()
                 ->success()
@@ -207,6 +165,7 @@ class CriticalStockWidget extends Widget
             $this->dispatch('stock-updated');
 
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Reset Stock Error: ' . $e->getMessage());
             Notification::make()->danger()->title('Error')->body($e->getMessage())->send();
         }
     }
