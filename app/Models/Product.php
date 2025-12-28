@@ -16,9 +16,14 @@ class Product extends Model
         'unit_id',
         'category_id',
         'stock',
+        'prepared_stock',
+        'minimum_stock',
+        'minimum_prepared_stock',
+        'enable_stock_alert',
         'base_price',
         'sell_price',
         'is_sellable',
+        'is_favorite',
         'additional_cost',
         'image'
     ];

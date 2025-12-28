@@ -71,6 +71,45 @@ class ProductForm
                     // ->disabled(fn($record) => $record !== null)
                     ->default(0),
 
+                // ⚠️ Stock Alert Settings
+                Toggle::make('enable_stock_alert')
+                    ->label('Enable Stock Alert')
+                    ->helperText('Aktifkan notifikasi otomatis saat stok menipis')
+                    ->default(false)
+                    ->reactive()
+                    ->hidden(fn(callable $get) => in_array($get('type'), ['produced', 'bar'])),
+
+                TextInput::make('minimum_stock')
+                    ->numeric()
+                    ->label('Minimum Stock Threshold')
+                    ->helperText('Alert akan muncul saat stok <= threshold ini')
+                    ->suffix(fn(callable $get) => Product::find($get('id'))?->unit?->name ?? 'unit')
+                    ->visible(fn(callable $get) => $get('enable_stock_alert') === true)
+                    ->hidden(fn(callable $get) => in_array($get('type'), ['produced', 'bar'])),
+
+                // 🍳 Prepared Stock (untuk produk produced/bar)
+                TextInput::make('prepared_stock')
+                    ->numeric()
+                    ->label('Ready Stock (Sudah Dimasak)')
+                    ->helperText('Stok yang sudah dimasak dan siap dijual')
+                    ->suffix(fn(callable $get) => Product::find($get('id'))?->unit?->name ?? 'porsi')
+                    ->default(0)
+                    ->visible(fn(callable $get) => in_array($get('type'), ['produced', 'bar'])),
+
+                Toggle::make('enable_stock_alert')
+                    ->label('Enable Ready Stock Alert')
+                    ->helperText('Aktifkan notifikasi saat ready stock menipis')
+                    ->default(false)
+                    ->reactive()
+                    ->visible(fn(callable $get) => in_array($get('type'), ['produced', 'bar'])),
+
+                TextInput::make('minimum_prepared_stock')
+                    ->numeric()
+                    ->label('Minimum Ready Stock')
+                    ->helperText('Alert akan muncul saat ready stock <= threshold ini')
+                    ->suffix(fn(callable $get) => Product::find($get('id'))?->unit?->name ?? 'porsi')
+                    ->visible(fn(callable $get) => $get('enable_stock_alert') === true && in_array($get('type'), ['produced', 'bar'])),
+
                 // 🍳 Komposisi bahan untuk produk produced DAN bar
                 Repeater::make('recipes')
                     ->label('Komposisi Bahan')

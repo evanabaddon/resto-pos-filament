@@ -16,6 +16,17 @@ class RecipeStockChecker
      */
     public function checkAvailability(Product $product, int $requestedQty): array
     {
+        // For produced/bar items, check prepared_stock first (ready to serve stock)
+        if (in_array($product->type, ['produced', 'bar'])) {
+            $preparedStock = $product->prepared_stock ?? 0;
+
+            return [
+                'available' => $preparedStock >= $requestedQty,
+                'max_portions' => (int) floor($preparedStock),
+                'limiting_ingredient' => $preparedStock < $requestedQty ? 'Ready stock habis - perlu dimasak lagi' : null,
+            ];
+        }
+
         // If product has no recipes, it's a direct product - always available based on its own stock
         if (!$product->recipes()->exists()) {
             return [

@@ -29,6 +29,7 @@ use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use App\Filament\Resources\Reservations\Widgets\ReservationCalendarWidget;
 use App\Filament\Widgets\AiDailySuggestionWidget;
+use App\Filament\Widgets\CriticalStockWidget;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -69,6 +70,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
+                CriticalStockWidget::class,
                 AiDailySuggestionWidget::class,
                 ReservationCalendarWidget::class,
                 ReservationStatsWidget::class,

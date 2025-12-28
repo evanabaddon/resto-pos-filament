@@ -74,12 +74,12 @@ class SalesTable
                         ->icon('heroicon-o-printer')
                         ->action(fn(Sale $record) => (new ReceiptPrintService($record))->printReceipt()),
 
-                    // Export PDF
-                    Action::make('exportPdf')
-                        ->label('Export PDF')
-                        ->icon('heroicon-o-arrow-down-tray')
+                    // Print Struk HTML
+                    Action::make('printHtml')
+                        ->label('Print Struk (HTML)')
+                        ->icon('heroicon-o-document-text')
                         ->color('success')
-                        ->url(fn(Sale $record) => route('sales.download-pdf', $record))
+                        ->url(fn(Sale $record) => route('sales.print', $record))
                         ->openUrlInNewTab(),
 
                     // Cetak Ulang Order

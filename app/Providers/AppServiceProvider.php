@@ -24,5 +24,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+
+        // Register SaleItem Observer for prepared stock deduction
+        \App\Models\SaleItem::observe(\App\Observers\SaleItemObserver::class);
     }
 }
