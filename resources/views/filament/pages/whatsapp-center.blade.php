@@ -249,6 +249,13 @@
                   " x-on:dragover.prevent="isDragging = true" x-on:dragleave.prevent="isDragging = false"
                 x-on:drop.prevent="handleDrop($event)" x-on:paste.window="handlePaste($event)">
 
+                {{-- LOADING OVERLAY --}}
+                <div wire:loading.flex wire:target="selectChat"
+                    class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm transition-opacity duration-300">
+                    <x-filament::loading-indicator class="w-10 h-10 text-primary-500" />
+                    <span class="mt-3 text-sm font-medium text-gray-600 dark:text-gray-300 animate-pulse">Memuat percakapan...</span>
+                </div>
+
                 {{-- DRAG OVERLAY --}}
                 <div x-show="isDragging" x-transition.opacity
                     class="absolute inset-0 z-50 bg-primary-500/10 backdrop-blur-sm border-4 border-primary-500 border-dashed m-4 rounded-xl flex flex-col items-center justify-center pointer-events-none">

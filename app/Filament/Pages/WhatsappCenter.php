@@ -413,9 +413,12 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     public function refreshMessages()
     {
         if ($this->selectedJid) {
+            // Optimasi: Ambil 50 pesan terakhir saja untuk performa awal
             $messages = \App\Models\WhatsappMessage::where('remote_jid', $this->selectedJid)
-                ->orderBy('created_at', 'asc')
-                ->get();
+                ->latest() // Order by created_at DESC
+                ->take(50)
+                ->get()
+                ->reverse(); // Kembalikan urutan jadi ASC (lama -> baru)
 
             $this->activeChatMessages = $messages;
 
