@@ -43,13 +43,22 @@ class ExpenseForm
                             ->default(Expense::FUND_SOURCE_CASHIER)
                             ->reactive(),
 
+                        Select::make('payment_method_id')
+                            ->label('Metode Pembayaran')
+                            ->relationship('paymentMethod', 'name', fn($query) => $query->active())
+                            ->searchable()
+                            ->preload()
+                            ->required(fn(callable $get) => $get('fund_source') !== Expense::FUND_SOURCE_PETTY_CASH)
+                            ->visible(fn(callable $get) => $get('fund_source') !== Expense::FUND_SOURCE_PETTY_CASH)
+                            ->helperText('Pilih akun/metode pembayaran yang digunakan (misal: Cash, Transfer Bank)'),
+
                         TextInput::make('recipient')
                             ->label('Penerima')
                             ->maxLength(255)
                             ->placeholder('Nama penerima pembayaran')
                             ->columnSpanFull(),
                     ])
-                    ->columns(1),
+                    ->columns(2),
 
                 Section::make('Detail Pengeluaran')
                     ->schema([
