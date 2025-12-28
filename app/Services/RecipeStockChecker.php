@@ -16,8 +16,6 @@ class RecipeStockChecker
      */
     public function checkAvailability(Product $product, int $requestedQty): array
     {
-        if (app()->runningInConsole())
-            echo ">> DEBUG: Inside checkAvailability " . $product->name . "\n";
         // For produced/bar items with prepared stock management enabled
         if (in_array($product->type, ['produced', 'bar']) && $product->enable_stock_alert) {
             $preparedStock = $product->prepared_stock ?? 0;
@@ -106,18 +104,8 @@ class RecipeStockChecker
                     $draftTime = $draft['created_at'];
                     $stockTime = $ingredient->updated_at;
 
-                    // DEBUG TRACE
-                    // \Illuminate\Support\Facades\Log::info("Ingredient {$ingredient->name} ({$ingredient->id}) vs Draft: Use {$draftTime} > StockUpdated {$stockTime} ?");
-
                     if ($draftTime && $stockTime && $draftTime->gt($stockTime)) {
-                        // \Illuminate\Support\Facades\Log::info("  -> YES (Newer). Reserved += " . $draft['quantity']);
                         $reservedQty += $draft['quantity'];
-                    } else {
-                        // \Illuminate\Support\Facades\Log::info("  -> NO (Older/Equal). Ignored.");
-                    }
-                    // For debugging locally via echo (safe in tinker)
-                    if (app()->runningInConsole()) {
-                        echo "Deb: Ing {$ingredient->id} Updated {$stockTime} vs Draft {$draftTime} -> " . ($draftTime->gt($stockTime) ? 'INCLUDE' : 'IGNORE') . "\n";
                     }
                 }
             }
