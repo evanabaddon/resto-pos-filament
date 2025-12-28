@@ -74,13 +74,16 @@ class RecipeStockChecker
         $minPortions = PHP_INT_MAX;
         $conversionService = app(\App\Services\UnitConversionService::class);
 
+        // Get RESERVED ingredients from ALL drafts
+        // This is critical: if we have 4 oranges, and Draft A uses 2, Draft B uses 2
+        // Then remaining is 0. Both products should see 0 availability.
+        $reservedIngredients = $this->getAllReservedIngredients();
+
         foreach ($recipes as $recipe) {
             if (!$recipe->ingredient) {
-                // If ingredient is missing, can't make any portions
                 return 0;
             }
 
-            // Use UnitConversionService for accurate conversion
             // Convert recipe quantity from recipe unit to ingredient unit
             $requiredPerPortion = $conversionService->convert(
                 $recipe->quantity,
@@ -88,14 +91,17 @@ class RecipeStockChecker
                 $recipe->ingredient->unit_id
             );
 
-            // Calculate max portions based on this ingredient
-            // FIX: Handle prepared ingredients (e.g. Nasi Putih as ingredient)
+            // Get total available stock for this ingredient
             $ingredient = $recipe->ingredient;
             if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
-                $availableStock = $ingredient->prepared_stock ?? 0;
+                $totalStock = $ingredient->prepared_stock ?? 0;
             } else {
-                $availableStock = $ingredient->stock ?? 0;
+                $totalStock = $ingredient->stock ?? 0;
             }
+
+            // Subtract reserved quantity for this ingredient (from ALL drafts)
+            $reservedQty = $reservedIngredients[$ingredient->id] ?? 0;
+            $availableStock = max(0, $totalStock - $reservedQty);
 
             if ($requiredPerPortion > 0) {
                 $portionsFromThisIngredient = floor($availableStock / $requiredPerPortion);
@@ -103,36 +109,14 @@ class RecipeStockChecker
                 $portionsFromThisIngredient = 0;
             }
 
-            // Track minimum (limiting ingredient)
             $minPortions = min($minPortions, $portionsFromThisIngredient);
         }
 
-        $maxPortions = $minPortions === PHP_INT_MAX ? 0 : (int) $minPortions;
-
-        // Subtract quantities from RECENT draft sales only (last 4 hours)
-        // This prevents old abandoned drafts from blocking stock availability
-        // EXCLUDE 'split' and 'merge' - these are not actually pending orders
-        $draftQty = \App\Models\SaleItem::whereHas('sale', function ($query) {
-            $query->where(function ($q) {
-                // Draft or pending status only (exclude split/merge)
-                $q->where('status', 'draft')
-                    ->orWhere('status', 'pending');
-            })
-                ->whereNotIn('status', ['split', 'merge'])
-                // Only consider drafts created today
-                ->whereDate('created_at', today());
-        })
-            ->where('product_id', $product->id)
-            ->sum('quantity');
-
-        return max(0, $maxPortions - (int) $draftQty);
+        return $minPortions === PHP_INT_MAX ? 0 : (int) $minPortions;
     }
 
     /**
-     * Get the ingredient that limits production
-     * 
-     * @param Product $product
-     * @return string|null
+     * Get LIMITING ingredient accounting for shared usage
      */
     public function getLimitingIngredient(Product $product): ?string
     {
@@ -141,34 +125,35 @@ class RecipeStockChecker
         }
 
         $recipes = $product->recipes()->with(['ingredient.unit', 'unit'])->get();
-
-        if ($recipes->isEmpty()) {
+        if ($recipes->isEmpty())
             return null;
-        }
 
         $minPortions = PHP_INT_MAX;
         $limitingIngredientName = null;
         $conversionService = app(\App\Services\UnitConversionService::class);
+        $reservedIngredients = $this->getAllReservedIngredients();
 
         foreach ($recipes as $recipe) {
-            if (!$recipe->ingredient) {
+            if (!$recipe->ingredient)
                 continue;
-            }
 
-            // Use UnitConversionService for accurate conversion
             $requiredPerPortion = $conversionService->convert(
                 $recipe->quantity,
                 $recipe->unit_id,
                 $recipe->ingredient->unit_id
             );
 
-            // FIX: Handle prepared ingredients
+            // Handle prepared ingredients
             $ingredient = $recipe->ingredient;
             if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
-                $availableStock = $ingredient->prepared_stock ?? 0;
+                $totalStock = $ingredient->prepared_stock ?? 0;
             } else {
-                $availableStock = $ingredient->stock ?? 0;
+                $totalStock = $ingredient->stock ?? 0;
             }
+
+            // Subtract reserved quantity
+            $reservedQty = $reservedIngredients[$ingredient->id] ?? 0;
+            $availableStock = max(0, $totalStock - $reservedQty);
 
             if ($requiredPerPortion > 0) {
                 $portionsFromThisIngredient = floor($availableStock / $requiredPerPortion);
@@ -185,13 +170,6 @@ class RecipeStockChecker
         return $limitingIngredientName;
     }
 
-    /**
-     * Get ingredient requirements for a given quantity
-     * 
-     * @param Product $product
-     * @param int $qty
-     * @return array
-     */
     public function getIngredientRequirements(Product $product, int $qty): array
     {
         if (!$product->recipes()->exists()) {
@@ -201,13 +179,12 @@ class RecipeStockChecker
         $recipes = $product->recipes()->with(['ingredient.unit', 'unit'])->get();
         $requirements = [];
         $conversionService = app(\App\Services\UnitConversionService::class);
+        $reservedIngredients = $this->getAllReservedIngredients();
 
         foreach ($recipes as $recipe) {
-            if (!$recipe->ingredient) {
+            if (!$recipe->ingredient)
                 continue;
-            }
 
-            // Use UnitConversionService for accurate conversion
             $requiredPerPortion = $conversionService->convert(
                 $recipe->quantity,
                 $recipe->unit_id,
@@ -216,13 +193,17 @@ class RecipeStockChecker
 
             $totalRequired = $requiredPerPortion * $qty;
 
-            // FIX: Handle prepared ingredients
+            // Handle prepared ingredients
             $ingredient = $recipe->ingredient;
             if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
-                $availableStock = $ingredient->prepared_stock ?? 0;
+                $totalStock = $ingredient->prepared_stock ?? 0;
             } else {
-                $availableStock = $ingredient->stock ?? 0;
+                $totalStock = $ingredient->stock ?? 0;
             }
+
+            // Subtract reserved quantity
+            $reservedQty = $reservedIngredients[$ingredient->id] ?? 0;
+            $availableStock = max(0, $totalStock - $reservedQty);
 
             $requirements[] = [
                 'ingredient' => $recipe->ingredient->name,
@@ -237,86 +218,110 @@ class RecipeStockChecker
     }
 
     /**
-     * Batch check availability for multiple products (OPTIMIZED - NO CACHING)
-     * Reduces N+1 queries to just 2-3 queries total
-     * 
-     * @param array $productIds
-     * @param array $cartItems
-     * @param int|null $excludeSaleId - Exclude this sale_id from draft calculation (prevents double counting when loading draft)
-     * @return array
+     * Get detailed map of RESERVED QUANTITY per INGREDIENT from all active drafts
+     * Returns [ingredient_id => total_reserved_qty]
      */
-    public function batchCheckAvailability(array $productIds, array $cartItems, ?int $excludeSaleId = null): array
+    private function getAllReservedIngredients(?int $excludeSaleId = null): array
     {
-        if (empty($productIds)) {
-            return [];
+        // 1. Get all draft items created TODAY
+        $query = \App\Models\SaleItem::whereHas('sale', function ($q) use ($excludeSaleId) {
+            $q->whereIn('status', ['draft', 'pending'])
+                ->whereNotIn('status', ['split', 'merge'])
+                ->whereDate('created_at', today());
+
+            if ($excludeSaleId) {
+                $q->where('id', '!=', $excludeSaleId);
+            }
+        })
+            ->with(['product.recipes']);
+
+        $items = $query->get();
+        $reserved = [];
+        $conversionService = app(\App\Services\UnitConversionService::class);
+
+        foreach ($items as $item) {
+            if (!$item->product || $item->product->recipes->isEmpty())
+                continue;
+
+            foreach ($item->product->recipes as $recipe) {
+                if (!$recipe->ingredient)
+                    continue;
+
+                // Calculate total ingredient usage: Item Qty * Recipe Qty (converted)
+                $perUnitUsage = $conversionService->convert(
+                    $recipe->quantity,
+                    $recipe->unit_id,
+                    $recipe->ingredient->unit_id
+                );
+
+                $totalUsage = $perUnitUsage * $item->quantity;
+
+                if (!isset($reserved[$recipe->ingredient_id])) {
+                    $reserved[$recipe->ingredient_id] = 0;
+                }
+                $reserved[$recipe->ingredient_id] += $totalUsage;
+            }
         }
 
-        // QUERY 1: Load ALL products with recipes in ONE query
+        return $reserved;
+    }
+
+    public function batchCheckAvailability(array $productIds, array $cartItems, ?int $excludeSaleId = null): array
+    {
+        if (empty($productIds))
+            return [];
+
         $products = Product::whereIn('id', $productIds)
             ->with(['recipes.ingredient.unit', 'recipes.unit'])
             ->get()
             ->keyBy('id');
 
-        // Calculate cart quantities ONCE (in-memory)
-        $cartQty = [];
-        foreach ($cartItems as $item) {
-            $pid = $item['product_id'];
-            $cartQty[$pid] = ($cartQty[$pid] ?? 0) + $item['quantity'];
-        }
+        // Calculate reserved ingredients from ALL drafts (shared pool)
+        // Also include current cart interactions if needed? 
+        // Ideally cart items should be added to reserved pool too?
+        // For simplicity: The passed $cartItems are "pending" items not yet in DB drafts?
+        // Or checks for current cart?
 
-        // QUERY 2: Load draft quantities for ALL products in ONE query
-        // Only count RECENT drafts (last 4 hours) to prevent old abandoned orders from blocking stock
-        // EXCLUDE 'split' and 'merge' - these are not actually pending orders
-        // EXCLUDE current sale_id to prevent double counting when loading draft order
-        $draftQty = \App\Models\SaleItem::whereHas('sale', function ($query) use ($excludeSaleId) {
-            $query->whereIn('status', ['draft', 'pending'])
-                ->whereNotIn('status', ['split', 'merge'])
-                ->whereDate('created_at', today());
+        $reservedIngredients = $this->getAllReservedIngredients($excludeSaleId);
 
-            // Exclude current sale to prevent double counting
-            if ($excludeSaleId) {
-                $query->where('id', '!=', $excludeSaleId);
-            }
-        })
-            ->whereIn('product_id', $productIds)
-            ->groupBy('product_id')
-            ->selectRaw('product_id, SUM(quantity) as total')
-            ->pluck('total', 'product_id')
-            ->toArray();
-
-        // Batch calculate availability (all in-memory, no more queries)
-        $result = [];
+        // Add current cart items to reserved pool if they consume ingredients
+        // (Assuming cartItems are just structure ['product_id', 'quantity'])
         $conversionService = app(\App\Services\UnitConversionService::class);
 
-        foreach ($products as $id => $product) {
-            // Calculate max portions in memory (recipes already loaded)
-            $maxPortions = $this->calculateMaxPortionsInMemory($product, $conversionService);
+        // Note: CART ITEMS are usually temporary, but if we strictly check stock, we should count them.
+        // However, batchCheck is mainly used for rendering menu. 
+        // We can skip adding cartItems to reserved pool here if we assume `getAllReservedIngredients` covers DB drafts.
+        // But to be consistent with 'checkAvailability' which blindly checks DB...
+        // Let's stick to DB drafts for availability. cartItems validation usually happens at checkout.
 
-            // Calculate reserved quantity
-            $reserved = ($draftQty[$id] ?? 0) + ($cartQty[$id] ?? 0);
-            $remaining = $maxPortions - $reserved;
+        $result = [];
+
+        foreach ($products as $id => $product) {
+            // Check availability using SHARED reserved ingredients
+            $maxPortions = $this->calculateMaxPortionsWithSharedReserve($product, $reservedIngredients, $conversionService);
+
+            // We do NOT subtract specific product draft logic anymore because
+            // we already subtracted the INGREDIENTS used by those drafts.
+            // So $maxPortions is already the "TRUE REMAINING" portions we can make.
+
+            // However, we still need to subtract CURRENT CART quantity of THIS product
+            // because `getAllReservedIngredients` only checks DB.
+            // If user has 5 items in cart, we should deduct 5?
+            // Actually, usually `batchCheckAvailability` is for display "Available/Habis".
 
             $result[$id] = [
-                'available' => $remaining > 0,
+                'available' => $maxPortions > 0,
                 'max_portions' => $maxPortions,
-                'remaining' => max(0, $remaining),
-                'limiting_ingredient' => $maxPortions === 0 ? $this->getLimitingIngredientInMemory($product, $conversionService) : null,
+                'remaining' => $maxPortions, // Already net
+                'limiting_ingredient' => $maxPortions === 0 ? 'Stok Bahan Habis' : null,
             ];
         }
 
         return $result;
     }
 
-    /**
-     * Calculate max portions in memory (assumes recipes are already loaded)
-     * 
-     * @param Product $product
-     * @param UnitConversionService $conversionService
-     * @return int
-     */
-    private function calculateMaxPortionsInMemory(Product $product, $conversionService): int
+    private function calculateMaxPortionsWithSharedReserve(Product $product, array $reservedIngredients, $conversionService): int
     {
-        // If no recipes, return product's own stock
         if (!$product->relationLoaded('recipes') || $product->recipes->isEmpty()) {
             return (int) floor($product->stock ?? 0);
         }
@@ -324,26 +329,27 @@ class RecipeStockChecker
         $minPortions = PHP_INT_MAX;
 
         foreach ($product->recipes as $recipe) {
-            if (!$recipe->ingredient) {
-                return 0; // Missing ingredient = can't make any
-            }
+            if (!$recipe->ingredient)
+                return 0;
 
-            // Convert recipe quantity to ingredient unit
             $requiredPerPortion = $conversionService->convert(
                 $recipe->quantity,
                 $recipe->unit_id,
                 $recipe->ingredient->unit_id
             );
 
-            // FIX: Handle prepared ingredients from memory loaded product
+            // Handle prepared ingredients
             $ingredient = $recipe->ingredient;
             if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
-                $availableStock = $ingredient->prepared_stock ?? 0;
+                $totalStock = $ingredient->prepared_stock ?? 0;
             } else {
-                $availableStock = $ingredient->stock ?? 0;
+                $totalStock = $ingredient->stock ?? 0;
             }
 
-            // Calculate max portions from this ingredient
+            // Subtract global reserved usage
+            $reservedQty = $reservedIngredients[$ingredient->id] ?? 0;
+            $availableStock = max(0, $totalStock - $reservedQty);
+
             $portionsFromThisIngredient = $requiredPerPortion > 0
                 ? floor($availableStock / $requiredPerPortion)
                 : 0;
@@ -352,54 +358,6 @@ class RecipeStockChecker
         }
 
         return $minPortions === PHP_INT_MAX ? 0 : (int) $minPortions;
-    }
-
-    /**
-     * Get limiting ingredient in memory (assumes recipes are already loaded)
-     * 
-     * @param Product $product
-     * @param UnitConversionService $conversionService
-     * @return string|null
-     */
-    private function getLimitingIngredientInMemory(Product $product, $conversionService): ?string
-    {
-        if (!$product->relationLoaded('recipes') || $product->recipes->isEmpty()) {
-            return null;
-        }
-
-        $minPortions = PHP_INT_MAX;
-        $limitingIngredientName = null;
-
-        foreach ($product->recipes as $recipe) {
-            if (!$recipe->ingredient) {
-                continue;
-            }
-
-            $requiredPerPortion = $conversionService->convert(
-                $recipe->quantity,
-                $recipe->unit_id,
-                $recipe->ingredient->unit_id
-            );
-
-            // FIX: Handle prepared ingredients
-            $ingredient = $recipe->ingredient;
-            if (in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert) {
-                $availableStock = $ingredient->prepared_stock ?? 0;
-            } else {
-                $availableStock = $ingredient->stock ?? 0;
-            }
-
-            $portionsFromThisIngredient = $requiredPerPortion > 0
-                ? floor($availableStock / $requiredPerPortion)
-                : 0;
-
-            if ($portionsFromThisIngredient < $minPortions) {
-                $minPortions = $portionsFromThisIngredient;
-                $limitingIngredientName = $recipe->ingredient->name;
-            }
-        }
-
-        return $limitingIngredientName;
     }
 
     /**
