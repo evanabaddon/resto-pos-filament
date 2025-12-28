@@ -221,6 +221,13 @@
                                 </td>
                                 <td class="text-right">
                                     <span class="font-bold" style="color: #4338ca;">+{{ $rec['suggested_restock'] }}</span>
+                                    @if(isset($rec['action_type']))
+                                        <br>
+                                        <span class="badge"
+                                            style="background: {{ $rec['action_type'] === 'PRODUKSI' ? '#dbeafe' : '#ecfdf5' }}; color: {{ $rec['action_type'] === 'PRODUKSI' ? '#1e40af' : '#047857' }}; margin-top: 2px;">
+                                            {{ $rec['action_type'] }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td>
                                     <span style="font-size: 8px; color: #6b7280; display: block;">Prediksi Kebutuhan:
