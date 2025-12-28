@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Productions\Pages;
 
 use App\Filament\Resources\Productions\ProductionResource;
-use Filament\Actions\CreateAction;
+use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 class ListProductions extends ListRecords
@@ -13,7 +13,7 @@ class ListProductions extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            Actions\CreateAction::make()->label('Tambah Produksi'),
         ];
     }
 }

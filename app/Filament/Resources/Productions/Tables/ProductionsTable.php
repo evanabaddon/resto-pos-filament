@@ -2,12 +2,8 @@
 
 namespace App\Filament\Resources\Productions\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
 
 class ProductionsTable
 {
@@ -15,33 +11,28 @@ class ProductionsTable
     {
         return $table
             ->columns([
+                TextColumn::make('created_at')
+                    ->label('Tanggal')
+                    ->dateTime('d M Y H:i')
+                    ->sortable(),
+
                 TextColumn::make('product.name')
-                    ->searchable(),
-                TextColumn::make('user.name')
-                    ->searchable(),
+                    ->label('Produk')
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('quantity')
+                    ->label('Jumlah')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('user.name')
+                    ->label('Oleh'),
+
+                TextColumn::make('notes')
+                    ->label('Catatan')
+                    ->limit(30),
             ])
-            ->filters([
-                //
-            ])
-            ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->defaultSort('created_at', 'desc');
     }
 }

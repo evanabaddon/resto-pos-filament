@@ -2,36 +2,41 @@
 
 namespace App\Filament\Resources\Productions;
 
-use App\Filament\Resources\Productions\Pages\CreateProduction;
-use App\Filament\Resources\Productions\Pages\EditProduction;
-use App\Filament\Resources\Productions\Pages\ListProductions;
-use App\Filament\Resources\Productions\Pages\ViewProduction;
-use App\Filament\Resources\Productions\Schemas\ProductionForm;
-use App\Filament\Resources\Productions\Schemas\ProductionInfolist;
-use App\Filament\Resources\Productions\Tables\ProductionsTable;
+use App\Filament\Resources\Productions\Pages;
 use App\Models\Production;
-use BackedEnum;
-use Filament\Resources\Resource;
+use App\Models\Product;
+use Filament\Forms;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
+use Filament\Resources\Resource;
+use Filament\Tables;
 use Filament\Tables\Table;
+use App\Enums\UserRole;
+use BackedEnum;
+use UnitEnum;
+use App\Filament\Resources\Productions\Schemas\ProductionForm;
+use App\Filament\Resources\Productions\Tables\ProductionsTable;
 
 class ProductionResource extends Resource
 {
     protected static ?string $model = Production::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cake';
 
-    protected static ?string $recordTitleAttribute = 'id';
+    protected static string|UnitEnum|null $navigationGroup = 'Produk';
+
+    protected static ?string $navigationLabel = 'Produksi';
+
+    protected static ?int $navigationSort = 3;
+
+    public static function canViewAny(): bool
+    {
+        // Adjust RBAC as needed
+        return in_array(auth()->user()->role, [UserRole::SuperAdmin, UserRole::Admin, UserRole::Inventory, UserRole::Kitchen]);
+    }
 
     public static function form(Schema $schema): Schema
     {
         return ProductionForm::configure($schema);
-    }
-
-    public static function infolist(Schema $schema): Schema
-    {
-        return ProductionInfolist::configure($schema);
     }
 
     public static function table(Table $table): Table
@@ -49,10 +54,8 @@ class ProductionResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListProductions::route('/'),
-            'create' => CreateProduction::route('/create'),
-            'view' => ViewProduction::route('/{record}'),
-            'edit' => EditProduction::route('/{record}/edit'),
+            'index' => Pages\ListProductions::route('/'),
+            'create' => Pages\CreateProduction::route('/create'),
         ];
     }
 }
