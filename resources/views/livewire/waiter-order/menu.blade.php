@@ -101,8 +101,37 @@
                 }
             @endphp
             <div wire:key="product-{{ $product->id }}"
+                @if(!$isOutOfStock)
+                x-data="{
+                    clickCount: 0,
+                    timeout: null,
+                    addToCart() {
+                        this.clickCount++;
+                        
+                        // Visual Pop (vibro if mobile)
+                        if(navigator.vibrate) navigator.vibrate(50);
+
+                        clearTimeout(this.timeout);
+                        this.timeout = setTimeout(() => {
+                            if (this.clickCount > 0) {
+                                $wire.addToCartBatch({{ $product->id }}, this.clickCount);
+                                this.clickCount = 0;
+                            }
+                        }, 300); // 300ms buffer
+                    }
+                }"
+                @endif
                 class="bg-white rounded-3xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 group flex flex-col h-full border border-gray-100/50 relative
                     {{ $isOutOfStock ? 'opacity-60 grayscale' : 'hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]' }}">
+                
+                {{-- Helper Badge Count (Optimistic) --}}
+                @if(!$isOutOfStock)
+                <div x-show="clickCount > 0" x-transition.scale
+                    class="absolute -top-1 -right-1 bg-yellow-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-md z-20 border-2 border-white">
+                    <span x-text="'+' + clickCount"></span>
+                </div>
+                @endif
+
                 <!-- Image -->
                 <div class="aspect-square w-full rounded-2xl overflow-hidden bg-gray-100 relative mb-3">
                     <img src="{{ $product->image_url }}" loading="lazy"
@@ -155,26 +184,20 @@
                     </h3>
 
                     <div class="mt-auto pt-3">
-                        <button wire:click="addToCart({{ $product->id }})" 
+                        <button 
+                            @if(!$isOutOfStock) @click="addToCart()" @endif
                             wire:loading.attr="disabled"
                             {{ $isOutOfStock ? 'disabled' : '' }}
-                            class="w-full py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 group/btn relative overflow-hidden
-                                {{ $isOutOfStock ? 'bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300' : 'bg-gray-50 hover:bg-primary-50 text-gray-700 hover:text-primary-700 active:scale-95 border border-gray-200 hover:border-primary-200' }}">
+                            class="w-full py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 group/btn relative overflow-hidden active:scale-95
+                                {{ $isOutOfStock ? 'bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300' : 'bg-gray-50 hover:bg-primary-50 text-gray-700 hover:text-primary-700 border border-gray-200 hover:border-primary-200' }}">
 
-                            <span wire:loading.remove wire:target="addToCart({{ $product->id }})"
+                            <span wire:loading.remove wire:target="addToCartBatch({{ $product->id }})"
                                 class="flex items-center gap-1.5 z-10">
                                 Tambah <x-heroicon-m-plus class="w-4 h-4" />
                             </span>
 
-                            <span wire:loading wire:target="addToCart({{ $product->id }})" class="z-10">
-                                <svg class="animate-spin h-4 w-4 text-primary-600" xmlns="http://www.w3.org/2000/svg"
-                                    fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                    </path>
-                                </svg>
+                            <span wire:loading wire:target="addToCartBatch({{ $product->id }})" class="z-10">
+                                <x-filament::loading-indicator class="h-4 w-4 text-primary-600" />
                             </span>
                         </button>
                     </div>
@@ -186,5 +209,16 @@
             </div>
         @endforelse
     </div>
+    
+    {{-- Pagination Load More --}}
+    @if($hasMore)
+    <div class="px-5 pb-5 pt-0">
+        <button wire:click="loadMore" wire:loading.attr="disabled"
+            class="w-full bg-white border border-gray-200 text-gray-600 font-bold py-3 rounded-xl shadow-sm hover:bg-gray-50 flex items-center justify-center gap-2">
+            <span wire:loading.remove wire:target="loadMore">Muat Lebih Banyak...</span>
+            <span wire:loading wire:target="loadMore">Memuat...</span>
+        </button>
+    </div>
+    @endif
 
 </div>

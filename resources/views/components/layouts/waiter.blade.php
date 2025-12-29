@@ -66,7 +66,7 @@
     <!-- Simple Bottom Nav for Waiter -->
     <div
         class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-200/50 z-50 flex justify-around py-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
-        <a href="{{ route('waiter.order') }}"
+        <a href="{{ route('waiter.order') }}" wire:navigate
             class="flex flex-col items-center justify-center w-full py-1 {{ request()->routeIs('waiter.order') ? 'text-primary-600' : 'text-gray-400' }} transition-colors relative group">
             <div
                 class="{{ request()->routeIs('waiter.order') ? 'bg-primary-50' : 'group-hover:bg-gray-50' }} p-1.5 rounded-xl transition-colors">
