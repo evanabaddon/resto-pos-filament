@@ -43,7 +43,7 @@ class PosNotifications extends Component
         $this->unreadCount = $newCount;
 
         return view('livewire.pos-notifications', [
-            'notifications' => $user->unreadNotifications,
+            'notifications' => $user->unreadNotifications()->latest()->take(10)->get(),
         ]);
     }
 }
