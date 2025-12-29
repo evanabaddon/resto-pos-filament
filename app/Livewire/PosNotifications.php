@@ -30,6 +30,8 @@ class PosNotifications extends Component
         $this->unreadCount = 0;
     }
 
+    public $isOpen = false;
+
     public function render()
     {
         $user = Auth::user();
@@ -42,8 +44,12 @@ class PosNotifications extends Component
 
         $this->unreadCount = $newCount;
 
+        $notifications = $this->isOpen
+            ? $user->unreadNotifications()->latest()->take(10)->get()
+            : collect();
+
         return view('livewire.pos-notifications', [
-            'notifications' => $user->unreadNotifications()->latest()->take(10)->get(),
+            'notifications' => $notifications,
         ]);
     }
 }
