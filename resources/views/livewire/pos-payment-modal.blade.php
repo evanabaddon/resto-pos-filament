@@ -2,7 +2,7 @@
     @if ($show)
         <div class="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4">
             {{-- Background Backdrop (Blur) --}}
-            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+            <div class="absolute inset-0 bg-slate-900/80 transition-opacity" 
                  wire:click="closeModal"></div>
 
             {{-- Main Modal Container --}}
@@ -198,7 +198,7 @@
                 <div class="mt-6 flex flex-col gap-3 w-full max-w-xs">
                     <div class="flex gap-3 w-full">
                          <button wire:click="closeReceiptPreview" 
-                                class="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 py-3 rounded-xl font-bold text-sm backdrop-blur-md transition">
+                                class="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 py-3 rounded-xl font-bold text-sm transition">
                             Tutup
                         </button>
                         <button wire:click="manualPrintReceipt" 

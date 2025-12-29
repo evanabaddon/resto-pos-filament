@@ -4,7 +4,7 @@
             @keydown.window.escape="$wire.close()">
 
             {{-- Backdrop --}}
-            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" wire:click="close"></div>
+            <div class="absolute inset-0 bg-slate-900/80 transition-opacity" wire:click="close"></div>
 
             {{-- Modal Content --}}
             <div
@@ -26,12 +26,12 @@
                     <div class="flex bg-slate-100 p-1 rounded-xl">
                         <button wire:click="$set('discountType', 'fixed')"
                             class="flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 
-                                    {{ $discountType === 'fixed' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
+                                        {{ $discountType === 'fixed' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
                             Nominal (Rp)
                         </button>
                         <button wire:click="$set('discountType', 'percentage')"
                             class="flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 
-                                    {{ $discountType === 'percentage' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
+                                        {{ $discountType === 'percentage' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
                             Persentase (%)
                         </button>
                     </div>

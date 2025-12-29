@@ -24,7 +24,7 @@
             </div>
 
             <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-center">
-                <div class="flex gap-1.5 items-center bg-white/50 backdrop-blur-sm p-1.5 rounded-full border border-slate-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)]">
+                <div class="flex gap-1.5 items-center bg-white p-1.5 rounded-full border border-slate-200/60 shadow-sm">
                     {{-- Previous Page Link --}}
                     @if ($paginator->onFirstPage())
                         <span aria-disabled="true" aria-label="@lang('pagination.previous')">

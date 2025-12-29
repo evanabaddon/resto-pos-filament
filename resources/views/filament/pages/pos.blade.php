@@ -72,8 +72,7 @@
     <div id="products-section"
         class="flex-1 lg:min-w-[60%] w-full h-full flex flex-col border-r border-gray-200 bg-white shadow-sm min-h-0 overflow-hidden">
         {{-- Header Produk (Merged & Compact) --}}
-        <div
-            class="p-3 bg-white/80 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-20 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] sticky top-0">
+        <div class="p-3 bg-white/95 border-b border-gray-100 flex-shrink-0 z-20 shadow-sm sticky top-0">
             {{-- Top Row: Title & Active Category Info --}}
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
@@ -130,7 +129,7 @@
                     </button>
                     @foreach ($categories as $category)
                                     <button wire:click="setCategory('{{ $category->id }}')" class="whitespace-nowrap px-3 py-2 rounded-lg text-[10px] font-bold transition-all border shrink-0 touch-target
-                                                                                                                                                                                                                                                                                                {{ $selectedCategory == $category->id
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                {{ $selectedCategory == $category->id
                         ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
                         : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
                                         {{ $category->name }}
@@ -166,21 +165,22 @@
                 @forelse ($productsWithAvailability as $index => $product)
                     {{-- OPTIMIZED: Availability pre-calculated in controller {{-- Product Card --}}
                     <div wire:key="product-{{ $product->id }}" @if($product->is_available) x-data="{
-                                                clickCount: 0,
-                                                timeout: null,
-                                                addToCart() {
-                                                    this.clickCount++;
-                                                    if(window.PosSound) window.PosSound.play('add');
+                                                                                        clickCount: 0,
+                                                                                        timeout: null,
+                                                                                        addToCart() {
+                                                                                            this.clickCount++;
+                                                                                            if(window.PosSound) window.PosSound.play('add');
 
-                                                    clearTimeout(this.timeout);
-                                                    this.timeout = setTimeout(() => {
-                                                        if (this.clickCount > 0) {
-                                                            $wire.addMoreProduct({{ $product->id }}, this.clickCount);
-                                                            this.clickCount = 0;
-                                                        }
-                                                    }, 300);
-                                                }
-                                            }" @click="animateFlyToCart($event); addToCart()"
+                                                                                            clearTimeout(this.timeout);
+                                                                                            this.timeout = setTimeout(() => {
+                                                                                                if (this.clickCount > 0) {
+                                                                                                    $wire.addMoreProduct({{ $product->id }}, this.clickCount);
+                                                                                                    this.clickCount = 0;
+                                                                                                }
+                                                                                            }, 300);
+                                                                                        }
+                                                                                    }"
+                        @click="animateFlyToCart($event); addToCart()"
                         class="cursor-pointer group relative bg-white border border-gray-100 rounded-xl p-3 hover:shadow-lg hover:border-violet-300 transition-all duration-200 active:scale-95"
                     @else
                             class="opacity-60 cursor-not-allowed group relative bg-slate-50 border border-gray-100 rounded-xl p-3 grayscale"
@@ -200,7 +200,7 @@
                                     <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
                                         <span
                                             class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
-                                                                                                                                                                                                                                                                                                                                                                                        {{ $product->stock > 10 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        {{ $product->stock > 10 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
                             ($product->stock > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
                                             {{ intval($product->stock) }}
                                         </span>
@@ -215,7 +215,7 @@
                                     <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
                                         <span
                                             class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
-                                                                                                                                                                                                                                                                                                                                                                            {{ $remainingPortions > 5 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {{ $remainingPortions > 5 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
                                 ($remainingPortions > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
                                             {{ $remainingPortions }} porsi
                                         </span>
@@ -226,7 +226,7 @@
                         {{-- OUT OF STOCK OVERLAY --}}
                         @if(!$product->is_available)
                             <div
-                                class="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-xl pointer-events-none">
+                                class="absolute inset-0 z-20 flex items-center justify-center bg-white/90 rounded-xl pointer-events-none">
                                 <span
                                     class="px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold rounded shadow-lg transform -rotate-6 tracking-wider">HABIS</span>
                             </div>
@@ -315,8 +315,7 @@
     <div id="cart-section"
         class="flex w-[380px] xl:w-[450px] h-full flex-col bg-white shadow-lg border-l border-gray-200 flex-shrink-0 min-h-0 overflow-hidden">
         {{-- Header Keranjang --}}
-        <div
-            class="p-3 bg-white/80 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-20 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
+        <div class="p-3 bg-white/95 border-b border-gray-100 flex-shrink-0 z-20 shadow-sm">
             {{-- Top Row: Title & Info --}}
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
@@ -469,7 +468,7 @@
             {{-- Loading Overlay for Cart Actions --}}
             <div wire:loading
                 wire:target="addProduct, addMoreProduct, updateQuantity, removeItem, clearCart, applyDiscountCode"
-                class="absolute inset-0 z-10 bg-slate-50/60 backdrop-blur-[1px] flex items-center justify-center transition-opacity duration-200">
+                class="absolute inset-0 z-10 bg-slate-50/60 flex items-center justify-center transition-opacity duration-200">
                 <div class="bg-white p-2 rounded-full shadow-md flex items-center gap-2 animate-bounce">
                     <svg class="animate-spin h-4 w-4 text-violet-600" xmlns="http://www.w3.org/2000/svg" fill="none"
                         viewBox="0 0 24 24">
@@ -489,12 +488,12 @@
                     <div class="flex items-start gap-2">
                         {{-- 1. Qty --}}
                         <div x-data="{ 
-                                                        qty: $wire.items[{{ $index }}].quantity,
-                                                        updateQty(val) {
-                                                            this.qty = val;
-                                                            $wire.updateQuantity({{ $index }}, val);
-                                                        }
-                                                    }"
+                                                                                        qty: $wire.items[{{ $index }}].quantity,
+                                                                                        updateQty(val) {
+                                                                                            this.qty = val;
+                                                                                            $wire.updateQuantity({{ $index }}, val);
+                                                                                        }
+                                                                                    }"
                             x-effect="qty = $wire.items[{{ $index }}] ? $wire.items[{{ $index }}].quantity : qty"
                             class="flex flex-col items-center justify-center bg-slate-50 rounded border border-slate-200 shrink-0 h-full w-7">
 
@@ -734,7 +733,7 @@
         <div class="fixed inset-0 z-[9999] overflow-y-auto" style="position: fixed; z-index: 9999;">
 
             <!-- Overlay -->
-            <div class="fixed inset-0 backdrop-blur-sm bg-black/20" @click="$wire.cancelEditNotes()"></div>
+            <div class="fixed inset-0 bg-black/80 transition-opacity" @click="$wire.cancelEditNotes()"></div>
 
             <!-- Modal content -->
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0"
@@ -842,8 +841,8 @@
     @if($showMergeModal)
         <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <!-- Backdrop -->
-            <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
-                wire:click="$set('showMergeModal', false)"></div>
+            <div class="absolute inset-0 bg-gray-900/80 transition-opacity" wire:click="$set('showMergeModal', false)">
+            </div>
 
             <!-- Modal Box -->
             <div
@@ -914,7 +913,7 @@
                                             @endphp
                                             <div wire:click="toggleSelectSale({{ $saleId }})"
                                                 class="group cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 
-                                                                                                                                                                                                                                                                                                                                                                         {{ $isTarget ? 'border-green-500 bg-green-50/50 ring-1 ring-green-500 shadow-md' :
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         {{ $isTarget ? 'border-green-500 bg-green-50/50 ring-1 ring-green-500 shadow-md' :
                                     ($isSelected ? 'border-purple-500 bg-purple-50/50 shadow-sm' : 'border-gray-200 bg-white hover:border-purple-300 hover:shadow-md') }}">
 
                                                 <!-- Checkbox Indicator -->
@@ -1090,7 +1089,7 @@
 
                                 <button wire:click="processMergeBill" wire:loading.attr="disabled"
                                     class="w-full py-3.5 px-4 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-bold rounded-xl shadow-lg shadow-purple-200 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center gap-2 cursor-pointer
-                                                                                    {{ count($selectedSalesToMerge) < 2 || !$mergeTargetSale ? 'opacity-50 pointer-events-none' : '' }}">
+                                                                                                                {{ count($selectedSalesToMerge) < 2 || !$mergeTargetSale ? 'opacity-50 pointer-events-none' : '' }}">
                                     <svg wire:loading wire:target="processMergeBill" class="w-5 h-5 animate-spin"
                                         fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
@@ -1117,8 +1116,8 @@
     @if($showRewardModal)
         <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <!-- Backdrop -->
-            <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
-                wire:click="$set('showRewardModal', false)"></div>
+            <div class="absolute inset-0 bg-gray-900/80 transition-opacity" wire:click="$set('showRewardModal', false)">
+            </div>
 
             <!-- Modal Box -->
             <div
@@ -1238,7 +1237,7 @@
 
                                     <button wire:click="redeemReward({{ $reward->id }})"
                                         class="px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm
-                                                                                                                                        {{ $canRedeem ? 'bg-violet-600 text-white hover:bg-violet-700 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}"
+                                                                                                                                                                            {{ $canRedeem ? 'bg-violet-600 text-white hover:bg-violet-700 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}"
                                         {{ !$canRedeem ? 'disabled' : '' }}>
                                         Redeem
                                     </button>

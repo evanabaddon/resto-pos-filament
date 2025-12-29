@@ -10,7 +10,7 @@
 
     <!-- Modal Konfirmasi -->
     @if($showConfirmationModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-opacity-50">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80">
             <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
                 <!-- Header -->
                 <div class="px-6 py-4 border-b border-gray-200">
@@ -40,8 +40,8 @@
 
                             <input id="cashOutInput" type="number" wire:model.defer="cashOutInput"
                                 placeholder="Masukkan total uang fisik" class="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg 
-                                            focus:border-red-500 focus:ring-red-500 focus:outline-none
-                                            transition-colors duration-200" />
+                                                focus:border-red-500 focus:ring-red-500 focus:outline-none
+                                                transition-colors duration-200" />
                         </div>
 
                         <p class="text-xs text-gray-500">
