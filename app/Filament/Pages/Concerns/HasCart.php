@@ -10,7 +10,8 @@ trait HasCart
 {
     public function addProduct($productId)
     {
-        $product = Product::find($productId);
+        // 🔹 OPTIMIZATION: Eager load recipes for stock check
+        $product = Product::with(['recipes.ingredient.unit', 'recipes.unit'])->find($productId);
         if (!$product)
             return;
 
@@ -109,7 +110,8 @@ trait HasCart
     public function addMoreProduct($productId, $quantity = 1)
     {
         // 🔹 Batched Add Logic
-        $product = Product::find($productId);
+        // 🔹 OPTIMIZATION: Eager load recipes for stock check
+        $product = Product::with(['recipes.ingredient.unit', 'recipes.unit'])->find($productId);
         if (!$product || $quantity < 1)
             return;
 

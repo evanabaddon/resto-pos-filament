@@ -188,6 +188,15 @@ trait HasPayment
                     // Async background print
                     \App\Jobs\PrintOrderJob::dispatchAfterResponse($sale, $newItems, true);
 
+                    // 🔹 CLIENT-SIDE PRINT HANDOFF (Reliability Fallback)
+                    try {
+                        $printService = new OrderPrintService();
+                        $clientPrintData = $printService->getUpdateOrderPrintData($sale, $newItems);
+                        $this->dispatch('print-order-client', jobs: $clientPrintData);
+                    } catch (\Exception $e) {
+                        \Log::warning('Client print handoff failed: ' . $e->getMessage());
+                    }
+
                     $this->dispatch('show-notification', message: '✅ Item berhasil ditambah & dalam antrian cetak!', type: 'success');
                 } else {
                     $this->dispatch('show-notification', message: '✅ Order berhasil diupdate!', type: 'success');
@@ -196,6 +205,15 @@ trait HasPayment
                 // 🔹 NEW ORDER - PRINT SEMUA
                 // Async background print
                 \App\Jobs\PrintOrderJob::dispatchAfterResponse($sale);
+
+                // 🔹 CLIENT-SIDE PRINT HANDOFF (Reliability Fallback)
+                try {
+                    $printService = new OrderPrintService();
+                    $clientPrintData = $printService->getOrderPrintData($sale);
+                    $this->dispatch('print-order-client', jobs: $clientPrintData);
+                } catch (\Exception $e) {
+                    \Log::warning('Client print handoff failed: ' . $e->getMessage());
+                }
 
                 $this->dispatch('show-notification', message: '✅ Order baru berhasil dikirim ke divisi!', type: 'success');
             }

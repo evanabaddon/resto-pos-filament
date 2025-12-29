@@ -530,75 +530,26 @@ class OrderPrintService
      */
     public function printNewItemsOnly(Sale $sale, array $newItems): array
     {
-        $sale->refresh()->load('items.product'); // 🔥 penting
+        $sale->refresh()->load('items.product');
 
         try {
-            Log::info("🔄 Printing new items only for sale #{$sale->invoice_number}", [
-                'new_items_count' => count($newItems),
-                'environment' => $this->isHostingEnvironment ? 'hosting' : 'local',
-                'use_webhook' => $this->useWebhook
-            ]);
-
-            // Kelompokkan new items
-            $kitchenNewItems = [];
-            $barNewItems = [];
-            $generalNewItems = [];
-
-            foreach ($newItems as $itemData) {
-                $product = Product::find($itemData['product_id']);
-                if (!$product)
-                    continue;
-
-                // 🔥 SKIP DP items for order prints
-                if ($product->name === 'Down Payment (DP)') {
-                    Log::info("⏭️ Skipping DP item for new order print: {$product->name}");
-                    continue;
-                }
-
-                $item = (object) [
-                    'product' => $product,
-                    'quantity' => $itemData['quantity'],
-                    'product_id' => $itemData['product_id'],
-                    'notes' => $itemData['notes'] ?? ''
-                ];
-
-                switch ($product->type) {
-                    case 'produced':
-                        $kitchenNewItems[] = $item;
-                        break;
-                    case 'bar':
-                        $barNewItems[] = $item;
-                        break;
-                    default:
-                        $generalNewItems[] = $item;
-                        break;
-                }
-            }
-
+            $printData = $this->getUpdateOrderPrintData($sale, $newItems);
             $printResults = [];
 
-            // **GUNAKAN STRATEGI YANG SAMA DENGAN printOrderByProductType**
-            if ($this->isHostingEnvironment) {
-                // DI HOSTING: SELALU PAKAI WEBHOOK
-                $printResults = $this->printNewItemsViaWebhook($sale, [
-                    'kitchen' => $kitchenNewItems,
-                    'bar' => $barNewItems,
-                    'general' => $generalNewItems
-                ]);
-            } else {
-                // DI LOCAL: PILIH WEBHOOK ATAU DIRECT
-                if ($this->useWebhook) {
-                    $printResults = $this->printNewItemsViaWebhook($sale, [
-                        'kitchen' => $kitchenNewItems,
-                        'bar' => $barNewItems,
-                        'general' => $generalNewItems
-                    ]);
+            foreach ($printData as $job) {
+                $division = strtolower($job['division']);
+                $content = $job['content'];
+                $printerName = $job['printer'];
+
+                if ($this->isHostingEnvironment || $this->useWebhook) {
+                    // Need to reconvert items object to array for payload if needed, or use job['items']
+                    // job['items'] are objects. buildPayload handles objects.
+                    $payload = $this->buildPayload($sale, $job['items']);
+                    // Add is_update flag
+                    $payload['is_update'] = true;
+                    $printResults[$division] = $this->sendWebhookPrint($content, $printerName, $job['division'] . ' Update', $sale->id, $payload);
                 } else {
-                    $printResults = $this->printNewItemsDirect($sale, [
-                        'kitchen' => $kitchenNewItems,
-                        'bar' => $barNewItems,
-                        'general' => $generalNewItems
-                    ]);
+                    $printResults[$division] = $this->sendToPrinter($content, $printerName, $job['division'] . ' Update');
                 }
             }
 
@@ -608,6 +559,72 @@ class OrderPrintService
             Log::error("❌ New items printing failed: " . $e->getMessage());
             throw $e;
         }
+    }
+
+    /**
+     * 🔹 NEW: Get Update Print Data ONLY
+     */
+    public function getUpdateOrderPrintData(Sale $sale, array $newItems): array
+    {
+        // ... (Logic to classify newItems)
+        $kitchenNewItems = [];
+        $barNewItems = [];
+        $generalNewItems = [];
+
+        foreach ($newItems as $itemData) {
+            // Logic to hydrate item objects same as original
+            $product = Product::find($itemData['product_id']);
+            if (!$product || $product->name === 'Down Payment (DP)')
+                continue;
+
+            $item = (object) [
+                'product' => $product,
+                'quantity' => $itemData['quantity'],
+                'product_id' => $itemData['product_id'],
+                'notes' => $itemData['notes'] ?? '',
+                'product_name' => $product->name // Helper for valid access
+            ];
+
+            switch ($product->type) {
+                case 'produced':
+                    $kitchenNewItems[] = $item;
+                    break;
+                case 'bar':
+                    $barNewItems[] = $item;
+                    break;
+                default:
+                    $generalNewItems[] = $item;
+                    break;
+            }
+        }
+
+        $jobs = [];
+        if (!empty($kitchenNewItems)) {
+            $jobs[] = [
+                'division' => 'Kitchen',
+                'printer' => $this->getPrinterNameForDivision('kitchen'),
+                'content' => $this->generateNewItemsContent($sale, $kitchenNewItems, 'KITCHEN'),
+                'items' => $kitchenNewItems
+            ];
+        }
+        if (!empty($barNewItems)) {
+            $jobs[] = [
+                'division' => 'Bar',
+                'printer' => $this->getPrinterNameForDivision('bar'),
+                'content' => $this->generateNewItemsContent($sale, $barNewItems, 'BAR'),
+                'items' => $barNewItems
+            ];
+        }
+        if (!empty($generalNewItems)) {
+            $jobs[] = [
+                'division' => 'General',
+                'printer' => $this->getPrinterNameForDivision('general'),
+                'content' => $this->generateNewItemsContent($sale, $generalNewItems, 'GENERAL'),
+                'items' => $generalNewItems
+            ];
+        }
+
+        return $jobs;
     }
 
     /**
@@ -721,6 +738,85 @@ class OrderPrintService
                 'error' => $e->getMessage()
             ];
         }
+    }
+
+    // 🔹 NEW: Get Print Data ONLY (No Network Call)
+    public function getOrderPrintData(Sale $sale): array
+    {
+        $sale->loadMissing('items.product');
+
+        $kitchenItems = [];
+        $barItems = [];
+        $generalItems = [];
+
+        foreach ($sale->items as $item) {
+            $productName = $item->product_name ?? $item->product->name ?? 'Unknown Item';
+            if ($productName === 'Down Payment (DP)')
+                continue;
+
+            $productType = $item->product->type ?? 'general';
+            switch ($productType) {
+                case 'produced':
+                    $kitchenItems[] = $item;
+                    break;
+                case 'bar':
+                    $barItems[] = $item;
+                    break;
+                default:
+                    $generalItems[] = $item;
+                    break;
+            }
+        }
+
+        $jobs = [];
+        // Kitchen
+        if (!empty($kitchenItems)) {
+            $jobs[] = [
+                'division' => 'Kitchen',
+                'printer' => $this->getPrinterNameForDivision('kitchen'),
+                'content' => $this->generateOrderContent($sale, $kitchenItems, 'kitchen'),
+                'items' => $kitchenItems
+            ];
+        }
+        // Bar
+        if (!empty($barItems)) {
+            $jobs[] = [
+                'division' => 'Bar',
+                'printer' => $this->getPrinterNameForDivision('bar'),
+                'content' => $this->generateOrderContent($sale, $barItems, 'bar'),
+                'items' => $barItems
+            ];
+        }
+        // General
+        if (!empty($generalItems)) {
+            $jobs[] = [
+                'division' => 'General',
+                'printer' => $this->getPrinterNameForDivision('general'),
+                'content' => $this->generateOrderContent($sale, $generalItems, 'general'),
+                'items' => $generalItems
+            ];
+        }
+
+        return $jobs;
+    }
+
+    // Helper to build payload
+    protected function buildPayload($sale, $items)
+    {
+        return [
+            'sale_id' => $sale->id,
+            'invoice' => $sale->invoice_number,
+            'customer' => $sale->customer_name ?? 'Umum',
+            'order_type' => $sale->order_type ?? 'Dine In',
+            'table' => $sale->table_number ?? '-',
+            'items' => array_map(function ($item) {
+                return [
+                    'product_name' => $item->product_name ?? $item->product->name ?? 'Unknown',
+                    'quantity' => $item->quantity + 0,
+                    'notes' => $item->notes ?? '',
+                ];
+            }, $items)
+        ];
     }
 
     // ==================== GENERATE CONTENT METHODS ====================
