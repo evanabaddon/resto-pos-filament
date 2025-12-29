@@ -330,9 +330,9 @@ class OrderPrintService
                 'environment' => $this->isHostingEnvironment ? 'hosting' : 'local'
             ]);
 
-            // 🔥 RETRY LOGIC (3x Attempts)
-            $response = Http::timeout(15)
-                ->retry(3, 1000) // Retry 3 kali, delay 1000ms
+            // 🔥 RETRY LOGIC (Reduced for performance)
+            $response = Http::timeout(5) // Reduced from 15s to 5s
+                ->retry(1, 500) // Reduced from 3x to 1x
                 ->withOptions([
                     'verify' => false,
                 ])

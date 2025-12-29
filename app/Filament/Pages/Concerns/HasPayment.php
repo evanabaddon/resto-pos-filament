@@ -185,28 +185,19 @@ trait HasPayment
 
                 // 🔹 PRINT HANYA ITEM BARU JIKA ADA
                 if (!empty($newItems)) {
-                    try {
-                        $orderPrintService = new OrderPrintService();
-                        $printResult = $orderPrintService->printNewItemsOnly($sale, $newItems);
+                    // Async background print
+                    \App\Jobs\PrintOrderJob::dispatchAfterResponse($sale, $newItems, true);
 
-                        $this->dispatch('show-notification', message: '✅ Item berhasil ditambah & tambahan order dicetak!', type: 'success');
-
-                    } catch (\Exception $e) {
-                        $this->dispatch('show-notification', message: '⚠️ Order tersimpan tapi gagal print tambahan: ' . $e->getMessage(), type: 'warning');
-                    }
+                    $this->dispatch('show-notification', message: '✅ Item berhasil ditambah & dalam antrian cetak!', type: 'success');
                 } else {
                     $this->dispatch('show-notification', message: '✅ Order berhasil diupdate!', type: 'success');
                 }
             } else {
                 // 🔹 NEW ORDER - PRINT SEMUA
-                try {
-                    $orderPrintService = new OrderPrintService();
-                    $printResult = $orderPrintService->printOrderByProductType($sale);
-                    $this->dispatch('show-notification', message: '✅ Order baru berhasil dikirim ke divisi!', type: 'success');
+                // Async background print
+                \App\Jobs\PrintOrderJob::dispatchAfterResponse($sale);
 
-                } catch (\Exception $e) {
-                    $this->dispatch('show-notification', message: '⚠️ Order tersimpan tapi gagal print: ' . $e->getMessage(), type: 'warning');
-                }
+                $this->dispatch('show-notification', message: '✅ Order baru berhasil dikirim ke divisi!', type: 'success');
             }
 
             // 🔹 RESET previousItems

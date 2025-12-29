@@ -106,17 +106,88 @@ trait HasCart
         $this->dispatch('cartUpdated', count: count($this->items));
     }
 
-    public function updateQuantity($index, $quantity)
+    public function addMoreProduct($productId, $quantity = 1)
     {
-        if ($quantity < 1) {
-            unset($this->items[$index]);
-            $this->items = array_values($this->items);
+        // 🔹 Batched Add Logic
+        $product = Product::find($productId);
+        if (!$product || $quantity < 1)
+            return;
+
+        $stockChecker = app(\App\Services\RecipeStockChecker::class);
+
+        // Find existing item key
+        $foundKey = null;
+        foreach ($this->items as $key => $item) {
+            if ($item['product_id'] == $productId) {
+                $foundKey = $key;
+                break;
+            }
+        }
+
+        $currentQty = $foundKey !== null ? $this->items[$foundKey]['quantity'] : 0;
+        $newTargetQty = $currentQty + $quantity;
+
+        // Check availability for produced/bar items
+        if (in_array($product->type, ['produced', 'bar'])) {
+            // Exclude self from cart to check TOTAL availability
+            $cartQuantities = $this->getCartQuantitiesProperty();
+            if (isset($cartQuantities[$product->id])) {
+                unset($cartQuantities[$product->id]);
+            }
+
+            $availability = $stockChecker->checkAvailability($product, $newTargetQty, $cartQuantities);
+
+            if (!$availability['available']) {
+                $this->dispatch(
+                    'show-notification',
+                    message: "⚠️ Hanya tersedia {$availability['max_portions']} porsi {$product->name}.",
+                    type: 'warning'
+                );
+                return;
+            }
         } else {
-            $this->items[$index]['quantity'] = $quantity;
-            $this->items[$index]['subtotal'] = $this->items[$index]['price'] * $quantity;
+            // For Retail/Raw, check standard stock
+            if ($product->stock !== null && $product->stock < $newTargetQty) {
+                $this->dispatch(
+                    'show-notification',
+                    message: "⚠️ Stok {$product->name} tidak cukup (Sisa: {$product->stock}).",
+                    type: 'warning'
+                );
+                return;
+            }
+        }
+
+        // Update or Add
+        if ($foundKey !== null) {
+            $this->items[$foundKey]['quantity'] = $newTargetQty;
+            $this->items[$foundKey]['subtotal'] = $this->items[$foundKey]['price'] * $newTargetQty;
+        } else {
+            $this->items[] = [
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->sell_price,
+                'quantity' => $quantity,
+                'subtotal' => $product->sell_price * $quantity,
+                'notes' => '',
+            ];
         }
 
         $this->recalculateTotals();
+        $this->dispatch('cartUpdated', count: count($this->items));
+    }
+
+    public function updateQuantity($index, $quantity)
+    {
+        if ($quantity < 1) {
+            $this->removeItem($index);
+            return;
+        }
+
+        if (isset($this->items[$index])) {
+            $this->items[$index]['quantity'] = $quantity;
+            $this->items[$index]['subtotal'] = $this->items[$index]['price'] * $quantity;
+            $this->recalculateTotals();
+        }
     }
 
     public function removeItem($index)

@@ -86,7 +86,7 @@
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <input wire:model.live.debounce.700ms="searchQuery" id="product-search-input" type="text"
+                    <input wire:model.live.debounce.1000ms="searchQuery" id="product-search-input" type="text"
                         class="pl-9 block w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 rounded-lg text-xs py-1.5 transition-all font-medium placeholder-slate-400"
                         placeholder="Cari menu... (Ctrl+K)" autocomplete="off">
 
@@ -115,7 +115,7 @@
                     </button>
                     @foreach ($categories as $category)
                                     <button wire:click="setCategory('{{ $category->id }}')" class="whitespace-nowrap px-3 py-2 rounded-lg text-[10px] font-bold transition-all border shrink-0 touch-target
-                                                                                                                                                                {{ $selectedCategory == $category->id
+                                                                                                                                                                                                                                                {{ $selectedCategory == $category->id
                         ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
                         : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
                                         {{ $category->name }}
@@ -149,97 +149,116 @@
             <div
                 class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 pb-24 lg:pb-0">
                 @forelse ($productsWithAvailability as $index => $product)
-                            {{-- OPTIMIZED: Availability pre-calculated in controller --}}
-                            <div wire:key="product-{{ $product->id }}" @if($product->is_available)
-                                @click="animateFlyToCart($event); $wire.quickAddProduct({{ $product->id }})"
-                            wire:loading.class="opacity-50 cursor-wait" wire:target="quickAddProduct({{ $product->id }})" @endif
-                                class="group relative bg-white rounded-xl p-2 flex flex-col items-stretch transition-all duration-200 select-none touch-manipulation
-                                                                                                                        {{ $product->is_available
-                    ? 'cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-slate-100 hover:border-violet-200'
-                    : 'cursor-not-allowed opacity-60 grayscale bg-slate-50 border border-slate-100' }}">
+                    {{-- OPTIMIZED: Availability pre-calculated in controller {{-- Product Card --}}
+                    <div wire:key="product-{{ $product->id }}" @if($product->is_available) x-data="{
+                                    clickCount: 0,
+                                    timeout: null,
+                                    addToCart() {
+                                        this.clickCount++;
+                                        if(window.PosSound) window.PosSound.play('add');
+
+                                        clearTimeout(this.timeout);
+                                        this.timeout = setTimeout(() => {
+                                            if (this.clickCount > 0) {
+                                                $wire.addMoreProduct({{ $product->id }}, this.clickCount);
+                                                this.clickCount = 0;
+                                            }
+                                        }, 300);
+                                    }
+                                }" @click="animateFlyToCart($event); addToCart()"
+                        class="cursor-pointer group relative bg-white border border-gray-100 rounded-xl p-3 hover:shadow-lg hover:border-violet-300 transition-all duration-200 active:scale-95"
+                    @else
+                            class="opacity-60 cursor-not-allowed group relative bg-slate-50 border border-gray-100 rounded-xl p-3 grayscale"
+                        @endif>
+
+                        {{-- Badge Count (Optimistic) --}}
+                        <div x-show="clickCount > 0" x-transition.scale
+                            class="absolute -top-2 -right-2 bg-violet-600 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full shadow-md z-20 border-2 border-white">
+                            <span x-text="'+' + clickCount"></span>
+                        </div>
 
 
-                                {{-- Stock Badge (Refined) --}}
-                                @if($product->type !== 'produced' && $product->type !== 'bar')
-                                            <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
-                                                <span
-                                                    class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
-                                                                                                                                                                                                                                    {{ $product->stock > 10 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
-                                    ($product->stock > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
-                                                    {{ intval($product->stock) }}
-                                                </span>
-                                            </div>
-                                @else
-                                    {{-- Availability Badge for Produced/Bar Items (OPTIMIZED) --}}
-                                    @php
-                                        // Use pre-calculated remaining portions from controller
-                                        $remainingPortions = $product->remaining_portions ?? 0;
-                                    @endphp
-                                    @if($product->max_portions_display < 10)
-                                            <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
-                                                <span
-                                                    class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
-                                                                                                                                                                                                                        {{ $remainingPortions > 5 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
-                                        ($remainingPortions > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
-                                                    {{ $remainingPortions }} porsi
-                                                </span>
-                                            </div>
-                                    @endif
-                                @endif
-
-                                {{-- OUT OF STOCK OVERLAY --}}
-                                @if(!$product->is_available)
-                                    <div
-                                        class="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-xl pointer-events-none">
+                        {{-- Stock Badge (Refined) --}}
+                        @if($product->type !== 'produced' && $product->type !== 'bar')
+                                    <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
                                         <span
-                                            class="px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold rounded shadow-lg transform -rotate-6 tracking-wider">HABIS</span>
+                                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
+                                                                                                                                                                                                                                                                                                                                        {{ $product->stock > 10 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
+                            ($product->stock > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
+                                            {{ intval($product->stock) }}
+                                        </span>
                                     </div>
-                                @endif
-
-                                {{-- Product Image (Compact 4:3) --}}
-                                <div class="aspect-[4/3] w-full mb-2 rounded-lg bg-slate-100 overflow-hidden relative shadow-inner">
-                                    @if($product->image)
-                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
-                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
-                                            loading="lazy"
-                                            onerror="this.onerror=null;this.src='https://placehold.co/200x200?text=No+Image';">
-                                    @else
-                                        <div class="w-full h-full flex items-center justify-center text-slate-300">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                                </path>
-                                            </svg>
-                                        </div>
-                                    @endif
-
-                                    {{-- Add Button Overlay (Mobile Visual Cue - Minimal) --}}
-                                    @if($product->is_available)
-                                        <div class="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <div class="bg-violet-600/90 p-1 rounded-full shadow-sm text-white">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                                        d="M12 4v16m8-8H4"></path>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-
-                                {{-- Product Info (Compact) --}}
-                                <div class="flex-1 flex flex-col min-h-0">
-                                    <h3
-                                        class="text-[11px] sm:text-xs font-bold text-slate-700 leading-tight line-clamp-2 mb-1 group-hover:text-violet-700 transition-colors">
-                                        {{ $product->name }}
-                                    </h3>
-                                    <div class="mt-auto pt-0.5">
-                                        <p class="text-xs sm:text-sm font-black text-violet-600 leading-none">
-                                            <span
-                                                class="text-[9px] font-normal text-violet-400 mr-0.5">Rp</span>{{ number_format($product->sell_price, 0, ',', '.') }}
-                                        </p>
+                        @else
+                            {{-- Availability Badge for Produced/Bar Items (OPTIMIZED) --}}
+                            @php
+                                // Use pre-calculated remaining portions from controller
+                                $remainingPortions = $product->remaining_portions ?? 0;
+                            @endphp
+                            @if($product->max_portions_display < 10)
+                                    <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
+                                        <span
+                                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
+                                                                                                                                                                                                                                                                                                                            {{ $remainingPortions > 5 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
+                                ($remainingPortions > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
+                                            {{ $remainingPortions }} porsi
+                                        </span>
                                     </div>
-                                </div>
+                            @endif
+                        @endif
+
+                        {{-- OUT OF STOCK OVERLAY --}}
+                        @if(!$product->is_available)
+                            <div
+                                class="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-xl pointer-events-none">
+                                <span
+                                    class="px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold rounded shadow-lg transform -rotate-6 tracking-wider">HABIS</span>
                             </div>
+                        @endif
+
+                        {{-- Product Image (Compact 4:3) --}}
+                        <div class="aspect-[4/3] w-full mb-2 rounded-lg bg-slate-100 overflow-hidden relative shadow-inner">
+                            @if($product->image)
+                                <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+                                    loading="lazy"
+                                    onerror="this.onerror=null;this.src='https://placehold.co/200x200?text=No+Image';">
+                            @else
+                                <div class="w-full h-full flex items-center justify-center text-slate-300">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                        </path>
+                                    </svg>
+                                </div>
+                            @endif
+
+                            {{-- Add Button Overlay (Mobile Visual Cue - Minimal) --}}
+                            @if($product->is_available)
+                                <div class="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="bg-violet-600/90 p-1 rounded-full shadow-sm text-white">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Product Info (Compact) --}}
+                        <div class="flex-1 flex flex-col min-h-0">
+                            <h3
+                                class="text-[11px] sm:text-xs font-bold text-slate-700 leading-tight line-clamp-2 mb-1 group-hover:text-violet-700 transition-colors">
+                                {{ $product->name }}
+                            </h3>
+                            <div class="mt-auto pt-0.5">
+                                <p class="text-xs sm:text-sm font-black text-violet-600 leading-none">
+                                    <span
+                                        class="text-[9px] font-normal text-violet-400 mr-0.5">Rp</span>{{ number_format($product->sell_price, 0, ',', '.') }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 @empty
                     <div class="col-span-full flex flex-col items-center justify-center py-12 text-center text-slate-400">
                         <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
@@ -435,21 +454,33 @@
                     class="group bg-white rounded-lg border border-slate-100 p-2 hover:border-violet-200 transition-all relative shadow-sm">
                     <div class="flex items-start gap-2">
                         {{-- 1. Qty --}}
-                        <div
+                        <div x-data="{ 
+                                            qty: $wire.items[{{ $index }}].quantity,
+                                            updateQty(val) {
+                                                this.qty = val;
+                                                $wire.updateQuantity({{ $index }}, val);
+                                            }
+                                        }"
+                            x-effect="qty = $wire.items[{{ $index }}] ? $wire.items[{{ $index }}].quantity : qty"
                             class="flex flex-col items-center justify-center bg-slate-50 rounded border border-slate-200 shrink-0 h-full w-7">
-                            <button wire:click="incrementQuantity({{ $index }})"
+
+                            {{-- Increment --}}
+                            <button @click="updateQty(qty + 1)"
                                 class="w-full text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-t transition h-5 flex items-center justify-center">
                                 <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                                         d="M5 15l7-7 7 7" />
                                 </svg>
                             </button>
-                            <input type="number" wire:model.lazy="items.{{ $index }}.quantity"
-                                wire:change="updateQuantityFromInput({{ $index }}, $event.target.value)"
-                                class="w-full text-center bg-transparent border-none text-[10px] font-bold p-0 focus:ring-0 appearance-none py-0.5 leading-none"
-                                onclick="this.select()">
-                            <button wire:click="decrementQuantity({{ $index }})"
-                                class="w-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-b transition h-5 flex items-center justify-center">
+
+                            {{-- Input (Read-only for now to prevent sync issues, or x-model verified) --}}
+                            <input type="text" x-model="qty" readonly
+                                class="w-full text-center bg-transparent border-none text-[10px] font-bold p-0 focus:ring-0 appearance-none py-0.5 leading-none select-none cursor-default">
+
+                            {{-- Decrement --}}
+                            <button @click="if(qty > 1) updateQty(qty - 1)"
+                                class="w-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-b transition h-5 flex items-center justify-center"
+                                :class="{ 'opacity-50 cursor-not-allowed': qty <= 1 }">
                                 <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                                         d="M19 9l-7 7-7-7" />
@@ -849,7 +880,7 @@
                                             @endphp
                                             <div wire:click="toggleSelectSale({{ $saleId }})"
                                                 class="group cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 
-                                                                                                                                                                                                         {{ $isTarget ? 'border-green-500 bg-green-50/50 ring-1 ring-green-500 shadow-md' :
+                                                                                                                                                                                                                                                                                                             {{ $isTarget ? 'border-green-500 bg-green-50/50 ring-1 ring-green-500 shadow-md' :
                                     ($isSelected ? 'border-purple-500 bg-purple-50/50 shadow-sm' : 'border-gray-200 bg-white hover:border-purple-300 hover:shadow-md') }}">
 
                                                 <!-- Checkbox Indicator -->
@@ -1025,7 +1056,7 @@
 
                                 <button wire:click="processMergeBill" wire:loading.attr="disabled"
                                     class="w-full py-3.5 px-4 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-bold rounded-xl shadow-lg shadow-purple-200 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center gap-2 cursor-pointer
-                                                            {{ count($selectedSalesToMerge) < 2 || !$mergeTargetSale ? 'opacity-50 pointer-events-none' : '' }}">
+                                                                        {{ count($selectedSalesToMerge) < 2 || !$mergeTargetSale ? 'opacity-50 pointer-events-none' : '' }}">
                                     <svg wire:loading wire:target="processMergeBill" class="w-5 h-5 animate-spin"
                                         fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
@@ -1173,7 +1204,7 @@
 
                                     <button wire:click="redeemReward({{ $reward->id }})"
                                         class="px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm
-                                                                                        {{ $canRedeem ? 'bg-violet-600 text-white hover:bg-violet-700 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}"
+                                                                                                                {{ $canRedeem ? 'bg-violet-600 text-white hover:bg-violet-700 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}"
                                         {{ !$canRedeem ? 'disabled' : '' }}>
                                         Redeem
                                     </button>
