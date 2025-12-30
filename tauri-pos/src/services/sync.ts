@@ -1,0 +1,158 @@
+import { api } from './api';
+import { dbService } from './db';
+import type { Product, Category } from '../types';
+
+class SyncService {
+    private isProductSyncing = false;
+    private isSalesSyncing = false;
+    private isShiftSyncing = false;
+
+    // Shift Sync: Local Shifts -> Server
+    async syncShifts() {
+        if (this.isShiftSyncing) return;
+        this.isShiftSyncing = true;
+        console.log('🔄 Checking for pending shifts...');
+
+        try {
+            const pendingShifts = await dbService.getPendingShifts();
+            if (pendingShifts.length === 0) return;
+
+            console.log(`⬆️ Syncing ${pendingShifts.length} shifts...`);
+
+            // Upload to Server
+            const res = await api.syncShifts(pendingShifts);
+
+            if (res.data && res.data.success) {
+                // Update Local Status
+                for (const result of res.data.results) {
+                    await dbService.updateShiftSyncStatus(result.local_id, result.server_id);
+                    console.log(`✅ Shift ${result.local_id} synced (Server ID: ${result.server_id})`);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Shift sync failed:', error);
+        } finally {
+            this.isShiftSyncing = false;
+        }
+    }
+
+    // Down Sync: Get data from Server -> Local DB
+    async syncProducts() {
+        if (this.isProductSyncing) {
+            console.warn('⏳ Product sync is already running, skipping.');
+            return;
+        }
+        this.isProductSyncing = true;
+
+        console.log('⬇️ Starting Product Sync...');
+        try {
+            const res = await api.getProducts();
+            const { products, categories, payment_methods } = res.data;
+
+            console.log(`📡 Received ${products?.length || 0} products from server`);
+
+            if (products && Array.isArray(products)) {
+                // Clear existing products to ensure local DB matches server filters (removing deleted/filtered items)
+                await dbService.clearProducts();
+                await dbService.upsertProducts(products);
+            }
+            if (categories && Array.isArray(categories)) {
+                await dbService.upsertCategories(categories);
+            }
+            if (payment_methods && Array.isArray(payment_methods)) {
+                await dbService.upsertPaymentMethods(payment_methods);
+                console.log(`💳 Synced ${payment_methods.length} payment methods`);
+            }
+
+            console.log(`✅ Synced ${products?.length || 0} products successfully`);
+        } catch (error) {
+            console.error('❌ Product sync failed:', error);
+        } finally {
+            this.isProductSyncing = false;
+        }
+    }
+
+    async syncSettings() {
+        try {
+            console.log('⚙️ Syncing settings...');
+            const res = await api.getSettings();
+            if (res.data) {
+                // Remove 'order' from storage to re-render receipt with new settings?
+                // For now just store config
+                localStorage.setItem('pos_settings', JSON.stringify(res.data));
+                console.log('✅ Settings synced:', res.data);
+            }
+        } catch (error) {
+            console.error('❌ Sync settings failed:', error);
+        }
+    }
+
+    // Up Sync: Pending Sales -> Server
+    async syncSales() {
+        if (this.isSalesSyncing) {
+            console.warn('⚠️ Sales sync is already running, skipping.');
+            return;
+        }
+
+        console.log('🔄 Checking for offline sales to sync...');
+        this.isSalesSyncing = true;
+
+        try {
+            const pendingSales = await dbService.getPendingSales();
+            console.log(`📊 Found ${pendingSales.length} pending sales`);
+
+            if (pendingSales.length === 0) return;
+
+            console.log(`⬆️ Syncing ${pendingSales.length} offline sales...`);
+
+            for (const sale of pendingSales) {
+                try {
+                    console.log(`🚀 Uploading sale ID: ${sale.local_id}`);
+                    const saleData = JSON.parse(sale.sale_data);
+
+                    // Endpoint expects { orders: [...] }
+                    const payload = { orders: [saleData] };
+                    console.log('📦 Upload Payload:', JSON.stringify(payload));
+
+                    const response = await api.syncOfflineSale(payload);
+                    console.log(`✅ Upload success for sale ${sale.local_id}:`, response.data);
+
+                    await dbService.markSaleSynced(sale.local_id);
+                } catch (err: any) {
+                    console.error(`❌ Failed to sync sale ${sale.local_id}:`, err);
+                }
+            }
+
+            await dbService.clearSyncedSales();
+
+        } catch (error: any) {
+            console.error('Sales sync failed:', error);
+            if (error.response) {
+                console.error('Server response:', error.response.data);
+                console.error('Status:', error.response.status);
+            }
+        } finally {
+            this.isSalesSyncing = false;
+        }
+    }
+
+    // Down Sync: Get today's sales history from server for local backup
+    async syncSalesHistory(currentShiftId?: number) {
+        console.log('📥 Syncing sales history from server...');
+        try {
+            const res = await api.getSalesHistory();
+            if (res.data && res.data.success) {
+                const sales = res.data.sales || [];
+                console.log(`📊 Received ${sales.length} sales from server`);
+
+                if (sales.length > 0) {
+                    await dbService.saveServerSalesHistory(sales, currentShiftId);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Sales history sync failed:', error);
+        }
+    }
+}
+
+export const syncService = new SyncService();
