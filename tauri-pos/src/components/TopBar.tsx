@@ -1,0 +1,84 @@
+import React from 'react';
+import { SyncStatus } from './SyncStatus';
+
+interface TopBarProps {
+    isSyncing: boolean;
+    pendingCount: number;
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    onSearchInputRef?: React.RefObject<HTMLInputElement | null>;
+    onOpenDrafts: () => void;
+    activeShift: any;
+    onToggleShift: () => void;
+    onManualSync: () => void;
+    onOpenSettings: () => void;
+}
+
+export const TopBar: React.FC<TopBarProps> = ({
+    isSyncing,
+    pendingCount,
+    searchQuery,
+    setSearchQuery,
+    onSearchInputRef,
+    onOpenDrafts,
+    activeShift,
+    onToggleShift,
+    onManualSync,
+    onOpenSettings
+}) => {
+    return (
+        <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center z-10 transition-all">
+            <div className="flex items-center gap-4">
+                <h1 className="text-2xl font-bold text-primary-600 tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>🍽️ Resto POS</h1>
+                {/* SyncStatus moved to right side or kept here if essential, but right side feels better for actions */}
+            </div>
+
+            <div className="flex items-center gap-3">
+                <div className="relative group">
+                    <input
+                        ref={onSearchInputRef}
+                        type="text"
+                        placeholder="Cari menu... (Ctrl+K)"
+                        className="pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 w-64 transition-all focus:w-80 outline-none text-sm group-hover:bg-white group-hover:border-gray-300"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <span className="absolute left-3 top-2.5 text-gray-400 group-focus-within:text-primary-500 transition-colors">🔍</span>
+                </div>
+
+                <button
+                    onClick={onOpenDrafts}
+                    className="p-2.5 text-gray-500 hover:bg-gray-100 hover:text-primary-600 rounded-xl transition-all active:scale-95 flex items-center gap-1 border border-transparent hover:border-gray-200"
+                    title="Buka Draft"
+                >
+                    <span className="text-xl">📁</span>
+                    <span className="hidden lg:inline text-sm font-semibold">Transaksi</span>
+                </button>
+
+                {/* Shift Button */}
+                <button
+                    onClick={onToggleShift}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm active:scale-95
+                        ${activeShift
+                            ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 hover:shadow-md'
+                            : 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 animate-pulse hover:shadow-md'}
+                    `}
+                    title={activeShift ? 'Tutup Shift' : 'Buka Shift'}
+                >
+                    <span>{activeShift ? '🔓' : '🔒'}</span>
+                    <span className="hidden sm:inline">{activeShift ? 'Shift Open' : 'Shift Closed'}</span>
+                </button>
+
+                <SyncStatus isSyncing={isSyncing} pendingCount={pendingCount} onSync={onManualSync} />
+
+                <button
+                    onClick={onOpenSettings}
+                    className="p-2.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800 rounded-xl transition-all active:scale-95 border border-transparent hover:border-gray-200"
+                    title="Pengaturan"
+                >
+                    <span className="text-xl">⚙️</span>
+                </button>
+            </div>
+        </header>
+    );
+};

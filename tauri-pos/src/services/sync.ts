@@ -1,6 +1,6 @@
 import { api } from './api';
 import { dbService } from './db';
-import type { Product, Category } from '../types';
+
 
 class SyncService {
     private isProductSyncing = false;

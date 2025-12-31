@@ -137,8 +137,8 @@ Route::post(
                     $tax = isset($orderData['tax']) ? (float) $orderData['tax'] : 0;
                     $finalTotal = $calculatedSubtotal + $tax;
 
-                    // Cari Cash Session yang sedang AKTIF (Open) untuk User 1
-                    $activeSession = CashSession::where('user_id', 1)
+                    // Cari Cash Session yang sedang AKTIF (Open) untuk User Default (2)
+                    $activeSession = CashSession::where('user_id', 2)
                         ->where('status', 'open')
                         ->latest()
                         ->first();
@@ -148,9 +148,9 @@ Route::post(
                         'invoice_number' => 'OFFLINE-' . time() . '-' . uniqid(),
                         'customer_name' => $orderData['customer_name'] ?? 'Offline Customer',
                         'order_type' => 'offline', // Penanda ini transaksi dari offline mode
-                        'user_id' => 1, // Default user
+                        'user_id' => 2, // Default user (Admin ID=2, ID=1 not exists)
                         'cash_session_id' => $activeSession ? $activeSession->id : null, // Link ke sesi aktif
-
+    
                         'subtotal' => $calculatedSubtotal,
                         'tax' => $tax,
                         'final_total' => $finalTotal,
@@ -213,12 +213,12 @@ Route::post('/pos/sync-shifts', function (Request $request) {
             if ($cashSession) {
                 // Update existing session
                 $cashSession->update([
-                    'cashier_name' => $shift['cashier_name'],
+                    // 'cashier_name' => $shift['cashier_name'], // Column does not exist
                     'cash_in_hand' => $shift['cash_in_hand'],
                     'cash_out' => $shift['cash_out'] ?? null,
-                    'total_cash_sales' => $shift['total_cash_sales'] ?? 0,
-                    'expected_cash' => $shift['expected_cash'] ?? null,
-                    'difference' => $shift['difference'] ?? null,
+                    // 'total_cash_sales' => $shift['total_cash_sales'] ?? 0, // Column does not exist
+                    // 'expected_cash' => $shift['expected_cash'] ?? null, // Column does not exist
+                    // 'difference' => $shift['difference'] ?? null, // Column does not exist
                     'status' => $shift['status'],
                     'opened_at' => $shift['opened_at'],
                     'closed_at' => $shift['closed_at'] ?? null,
@@ -229,16 +229,20 @@ Route::post('/pos/sync-shifts', function (Request $request) {
                     'server_id' => $cashSession->id,
                     'action' => 'updated'
                 ];
-            } else {
-                // Create new session
+                // Resolve User by Name if provided
+                $userId = 1; // SAFE DEFAULT (Admin/System)
+
+                if (isset($shift['cashier_name']) && $shift['cashier_name']) {
+                    $user = \App\Models\User::where('name', $shift['cashier_name'])->first();
+                    if ($user) {
+                        $userId = $user->id;
+                    }
+                }
+
                 $cashSession = CashSession::create([
-                    'cashier_name' => $shift['cashier_name'],
-                    'user_id' => $shift['user_id'] ?? null,
+                    'user_id' => $userId,
                     'cash_in_hand' => $shift['cash_in_hand'],
                     'cash_out' => $shift['cash_out'] ?? null,
-                    'total_cash_sales' => $shift['total_cash_sales'] ?? 0,
-                    'expected_cash' => $shift['expected_cash'] ?? null,
-                    'difference' => $shift['difference'] ?? null,
                     'status' => $shift['status'],
                     'opened_at' => $shift['opened_at'],
                     'closed_at' => $shift['closed_at'] ?? null,
@@ -405,15 +409,24 @@ Route::post('/pos/sync-shifts', function (Request $request) {
 
                 // If not found by ID, try to find by similarity (user + opened_at) to avoid dupes?
                 if (!$session) {
-                    $session = CashSession::where('user_id', 1) // Default User
+                    // Try to resolve user by name
+                    $userId = 2; // SAFE DEFAULT (Admin ID=2)
+                    if (isset($shiftData['cashier_name']) && $shiftData['cashier_name']) {
+                        $user = \App\Models\User::where('name', $shiftData['cashier_name'])->first();
+                        if ($user) {
+                            $userId = $user->id;
+                        }
+                    }
+
+                    $session = CashSession::where('user_id', $userId) // Resolved User
                         ->where('opened_at', $shiftData['opened_at'])
                         ->first();
-                }
 
-                if (!$session) {
-                    $session = new CashSession();
-                    $session->user_id = 1; // Default
-                    $session->opened_at = $shiftData['opened_at'];
+                    if (!$session) {
+                        $session = new CashSession();
+                        $session->user_id = $userId;
+                        $session->opened_at = $shiftData['opened_at'];
+                    }
                 }
 
                 $session->cash_in_hand = $shiftData['cash_in_hand'];

@@ -228,6 +228,24 @@ class DatabaseService {
             [json, status, shiftId || null]
         );
         console.log(`✅ Offline sale saved(${status}).LastInsertId: `, result.lastInsertId);
+
+        // DECREMENT LOCAL STOCK (for both drafts and completed sales)
+        if (saleData.items && Array.isArray(saleData.items)) {
+            for (const item of saleData.items) {
+                if (item.product_id && item.quantity) {
+                    try {
+                        await this.db.execute(
+                            `UPDATE products SET stock = stock - $1 WHERE id = $2 AND stock IS NOT NULL`,
+                            [item.quantity, item.product_id]
+                        );
+                        console.log(`📉 Decremented stock for product ${item.product_id} by ${item.quantity}`);
+                    } catch (err) {
+                        console.error(`Failed to decrement stock for ${item.product_id}:`, err);
+                    }
+                }
+            }
+        }
+
         return result.lastInsertId;
     }
 
@@ -257,6 +275,28 @@ class DatabaseService {
 
     async deleteSale(localId: number) {
         if (!this.db) return;
+
+        // RESTORE STOCK BEFORE DELETING
+        try {
+            const sale = await this.db.select<{ sale_data: string }[]>(`SELECT sale_data FROM offline_sales WHERE local_id = $1`, [localId]);
+            if (sale && sale.length > 0) {
+                const saleData = JSON.parse(sale[0].sale_data);
+                if (saleData.items && Array.isArray(saleData.items)) {
+                    for (const item of saleData.items) {
+                        if (item.product_id && item.quantity) {
+                            await this.db.execute(
+                                `UPDATE products SET stock = stock + $1 WHERE id = $2 AND stock IS NOT NULL`,
+                                [item.quantity, item.product_id]
+                            );
+                            console.log(`📈 Restored stock for product ${item.product_id} by ${item.quantity}`);
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Failed to restore stock during deleteSale:', e);
+        }
+
         await this.db.execute(`DELETE FROM offline_sales WHERE local_id = $1`, [localId]);
     }
 

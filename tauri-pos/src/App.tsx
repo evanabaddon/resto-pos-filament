@@ -1,12 +1,17 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api, updateApiConfig } from './services/api';
 import { dbService } from './services/db';
 import { syncService } from './services/sync';
 import { printerService, type PrinterSettings } from './services/printer';
-import { Receipt } from './components/Receipt';
+// Components
+import { TopBar } from './components/TopBar';
+import { ProductGrid } from './components/ProductGrid';
+import { CartSidebar } from './components/CartSidebar';
 import ShiftModal from './components/ShiftModal';
 import PaymentModal from './components/PaymentModal';
-import type { Product, Category, CartItem, Member } from './types';
+import Notification from './components/Notification';
+import ConfirmModal from './components/ConfirmModal';
+import type { Product, Category, CartItem } from './types';
 
 
 function App() {
@@ -22,6 +27,33 @@ function App() {
     const [tableNumber, setTableNumber] = useState('');
     const [discount, setDiscount] = useState<number>(0);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [pendingCount, setPendingCount] = useState(0);
+
+    // Notification State
+    const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
+
+    const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+        setNotification({ message, type });
+    };
+
+    // Confirm Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        isDestructive?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        isDestructive: false
+    });
+
+    const closeConfirmModal = () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+    };
 
     // Draft Tracking
     const [activeDraft, setActiveDraft] = useState<{ id: number, source: 'local' | 'server' } | null>(null);
@@ -58,7 +90,7 @@ function App() {
             await printerService.printJob(printerSettings.cashierPrinter, reportText);
         } catch (e) {
             console.error('Failed to print shift report:', e);
-            alert('Gagal mencetak laporan shift');
+            showNotification('Gagal mencetak laporan shift', 'error');
         }
     };
 
@@ -105,7 +137,7 @@ function App() {
     const handleSaveSettings = () => {
         updateApiConfig(settingsApiUrl);
         localStorage.setItem('pos_printer_settings', JSON.stringify(printerSettings));
-        alert('⚙️ Pengaturan tersimpan!');
+        showNotification('⚙️ Pengaturan tersimpan!', 'success');
         setShowSettings(false);
         // Trigger sync with new URL
         handleSync();
@@ -196,6 +228,21 @@ function App() {
         setCategories(localCategories);
         setPaymentMethods(localPaymentMethods);
 
+        // Load Pending Sales Count
+        try {
+            const pendingSales = await dbService.getPendingSales();
+            // Filter only 'pending' status for upload queue (drafts might be local only?)
+            // But if getPendingSales returns drafts too, maybe we just count 'pending'.
+            // Let's count all returned by getPendingSales as they are candidates for sync.
+            // Actually, let's filter just to be safe if we only want 'pending'.
+            // Based on db.ts: status IN('pending', 'draft'). 
+            // If we want "Pending Uploads", usually means completed sales.
+            const pendingUploads = pendingSales.filter(s => s.status === 'pending');
+            setPendingCount(pendingUploads.length);
+        } catch (e) {
+            console.error('Failed to load pending count:', e);
+        }
+
         // Load Settings
         const storedSettings = localStorage.getItem('pos_settings');
         if (storedSettings) {
@@ -207,23 +254,39 @@ function App() {
         setIsSyncing(true);
         try {
             await syncService.syncSettings(); // Sync Settings first
-            await syncService.syncProducts();
-            await syncService.syncSalesHistory(activeShift?.id); // Download today's sales for backup and assign to current shift
+
+            // Upload Strategy: Send local changes FIRST so server is up to date
             await syncService.syncShifts();
             await syncService.syncSales();
-            // Refresh local view after sync
-            await loadLocalData();
+
+            // Download Strategy: Get latest data (reflecting our uploads + others)
+            await syncService.syncProducts();
+            await syncService.syncSalesHistory(activeShift?.id); // Download today's sales for backup and assign to current shift
         } catch (error) {
             console.error('Manual sync failed:', error);
         } finally {
+            // Refresh local view regardless of sync success/failure
+            await loadLocalData();
             setIsSyncing(false);
         }
     };
 
     const addToCart = (product: Product) => {
+        // Stock Check
+        if (product.stock !== undefined && product.stock <= 0) {
+            showNotification(`Stok habis untuk ${product.name}!`, 'error');
+            return;
+        }
+
         const existingItem = cart.find(item => item.product.id === product.id);
 
         if (existingItem) {
+            // Check if adding 1 exceeds stock
+            if (product.stock !== undefined && existingItem.quantity + 1 > product.stock) {
+                showNotification(`Stok tidak cukup! Sisa: ${product.stock}`, 'error');
+                return;
+            }
+
             setCart(cart.map(item =>
                 item.product.id === product.id
                     ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * product.price }
@@ -246,6 +309,14 @@ function App() {
         if (quantity <= 0) {
             removeFromCart(productId);
             return;
+        }
+
+        const item = cart.find(i => i.product.id === productId);
+        if (item && item.product.stock !== undefined) {
+            if (quantity > item.product.stock) {
+                showNotification(`Stok maksimum tercapai! Sisa: ${item.product.stock}`, 'error');
+                return;
+            }
         }
 
         setCart(cart.map(item =>
@@ -296,9 +367,9 @@ function App() {
                 if (res.data && res.data.success) {
                     res.data.drafts.forEach((d: any) => {
                         allDrafts.push({
-                            id: d.id,
+                            id: d.server_id,
                             source: 'server',
-                            data: d.data,
+                            data: d.sale_data,
                             created_at: d.created_at
                         });
                     });
@@ -315,6 +386,11 @@ function App() {
 
     const handleSaveDraft = async () => {
         if (cart.length === 0) return;
+
+        if (!customerName.trim()) {
+            showNotification('⚠️ Harap isi Nama Pelanggan untuk menyimpan transaksi!', 'error');
+            return;
+        }
 
         const subtotal = cart.reduce((sum, item) => sum + Number(item.subtotal), 0);
         const taxRate = settings?.tax_rate || 0;
@@ -356,26 +432,41 @@ function App() {
             }
 
             await dbService.saveOfflineSale(saleData, true); // true = IS DRAFT
-            alert('✅ Draft Berhasil Disimpan ' + (activeDraft ? '(Diperbarui)' : '') + '!');
+            showNotification('✅ Draft Berhasil Disimpan ' + (activeDraft ? '(Diperbarui)' : '') + '!', 'success');
 
             setCart([]);
             setCustomerName('');
             setTableNumber('');
             setDiscount(0);
             setActiveDraft(null); // Reset active draft
+
+            // Refresh products to show updated stock
+            await loadLocalData();
         } catch (err: any) {
-            alert('❌ Gagal simpan draft: ' + err.message);
+            showNotification('❌ Gagal simpan draft: ' + err.message, 'error');
         }
     };
 
     const handleResumeDraft = async (draft: any) => {
         if (cart.length > 0) {
-            if (!confirm('Keranjang tidak kosong. Timpa dengan draft ini?')) return;
+            setConfirmModal({
+                isOpen: true,
+                title: 'Timpa Keranjang?',
+                message: 'Keranjang saat ini tidak kosong. Apakah Anda yakin ingin menggantinya dengan draft ini?',
+                isDestructive: true,
+                onConfirm: () => processResumeDraft(draft)
+            });
+            return;
         }
+        processResumeDraft(draft);
+    };
+
+    const processResumeDraft = async (draft: any) => {
+        closeConfirmModal();
 
         try {
             // Restore Cart
-            const restoredCart: CartItem[] = draft.raw_data.items.map((item: any) => ({
+            const restoredCart: CartItem[] = draft.data.items.map((item: any) => ({
                 product: {
                     id: item.product_id,
                     name: item.product_name,
@@ -388,49 +479,75 @@ function App() {
             }));
 
             setCart(restoredCart);
-            setCustomerName(draft.raw_data.customer_name || '');
-            setOrderType(draft.raw_data.order_type || 'Dine In');
-            setTableNumber(draft.raw_data.table_number || '');
-            setDiscount(Number(draft.raw_data.discount || 0));
+            setCustomerName(draft.data.customer_name || '');
+            setOrderType(draft.data.order_type || 'Dine In');
+            setTableNumber(draft.data.table_number || '');
+            setDiscount(Number(draft.data.discount || 0));
 
             // Track this draft so we can delete it only after Checkout or Update
             setActiveDraft({ id: draft.id, source: draft.source });
 
             setShowDrafts(false);
 
+            showNotification('✅ Draft Berhasil Diresume!', 'info');
+
         } catch (err) {
             console.error('Failed to resume draft:', err);
+            showNotification('❌ Gagal resume draft', 'error');
         }
     };
 
-    const handleDeleteDraft = async (draft: any, e: React.MouseEvent) => {
+    const handleDeleteDraft = (draft: any, e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent resume triggger
-        if (!confirm('Hapus draft ini permanen?')) return;
 
-        try {
-            if (draft.source === 'local') {
-                await dbService.deleteSale(draft.id);
-            } else {
-                await api.deleteDraft(draft.id);
+        setConfirmModal({
+            isOpen: true,
+            title: 'Hapus Draft?',
+            message: 'Draft ini akan dihapus secara permanen dan tidak dapat dikembalikan.',
+            isDestructive: true,
+            onConfirm: async () => {
+                closeConfirmModal();
+                console.log('🗑️ Deleting draft:', draft);
+
+                if (!draft.id) {
+                    showNotification('❌ Error: Draft ID is missing/undefined', 'error');
+                    return;
+                }
+
+                try {
+                    if (draft.source === 'local') {
+                        await dbService.deleteSale(draft.id);
+                    } else {
+                        await api.deleteDraft(draft.id);
+                    }
+                    // Refresh list
+                    loadDrafts(transactionTab);
+                    // Refresh products to restore stock display
+                    await loadLocalData();
+                    showNotification('🗑️ Draft dihapus', 'success');
+                } catch (err: any) {
+                    showNotification('❌ Gagal menghapus draft: ' + (err.message || 'Error'), 'error');
+                }
             }
-            // Refresh list
-            loadDrafts();
-        } catch (err: any) {
-            alert('Gagal menghapus draft: ' + (err.message || 'Error'));
-        }
+        });
     };
 
     // HYBRID CHECKOUT
     const handleCheckout = async () => {
         if (!activeShift) {
-            alert('⚠️ Harap Buka Shift Terlebih Dahulu!');
+            showNotification('⚠️ Harap Buka Shift Terlebih Dahulu!', 'error');
             setShiftModalMode('open');
             setIsShiftModalOpen(true);
             return;
         }
 
         if (cart.length === 0) {
-            alert('Cart is empty!');
+            showNotification('Cart is empty!', 'error');
+            return;
+        }
+
+        if (!customerName.trim()) {
+            showNotification('⚠️ Harap isi Nama Pelanggan untuk melanjutkan pembayaran!', 'error');
             return;
         }
 
@@ -529,10 +646,10 @@ function App() {
                         await printerService.printJob(targetPrinter, ticketText);
                     }
 
-                    alert(`✅ Order Berhasil Disimpan & Dicetak! (Total: Rp ${total.toLocaleString('id-ID')})`);
+                    showNotification(`✅ Order Berhasil Disimpan & Dicetak! (Total: Rp ${total.toLocaleString('id-ID')})`, 'success');
                 } catch (printErr: any) {
                     console.error('Direct print failed, falling back to dialog', printErr);
-                    alert('⚠️ Gagal Direct Print: ' + printErr);
+                    showNotification('⚠️ Gagal Direct Print: ' + printErr, 'error');
                     setPrintOrder({ ...saleData, invoice_number: `OFFLINE-${localId}` });
                 }
             } else {
@@ -552,7 +669,7 @@ function App() {
 
         } catch (err: any) {
             console.error('Checkout failed:', err);
-            alert('❌ Gagal menyimpan data transaksi: ' + err.message);
+            showNotification('❌ Gagal menyimpan data transaksi: ' + err.message, 'error');
         }
     };
 
@@ -589,64 +706,26 @@ function App() {
         <div className="flex h-screen bg-gray-100 overflow-hidden font-sans text-gray-900">
             {/* LEFT: Products Section */}
             <div className="flex-1 flex flex-col min-w-0">
-                {/* Header */}
-                <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center z-10">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-2xl font-bold text-primary-600">🍽️ Resto POS</h1>
-                        {isSyncing && (
-                            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                                <span className="animate-spin">↻</span> Syncing...
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <div className="relative">
-                            <input
-                                ref={searchInputRef}
-                                type="text"
-                                placeholder="Cari menu... (Ctrl+K)"
-                                className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 w-64 transition-all focus:w-80"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                            <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
-                        </div>
-                        <button
-                            onClick={() => { loadDrafts(); setShowDrafts(true); }}
-                            className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg flex items-center gap-1"
-                            title="Buka Draft"
-                        >
-                            📁 <span className="text-sm font-medium">Transaksi</span>
-                        </button>
-
-                        {/* Shift Button */}
-                        <button
-                            onClick={() => {
-                                if (activeShift) {
-                                    setShiftModalMode('close');
-                                    setIsShiftModalOpen(true);
-                                } else {
-                                    setShiftModalMode('open');
-                                    setIsShiftModalOpen(true);
-                                }
-                            }}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors
-                                ${activeShift ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200 animate-pulse'}
-                            `}
-                            title={activeShift ? 'Tutup Shift' : 'Buka Shift'}
-                        >
-                            {activeShift ? '🔓 Shift Open' : '🔒 Shift Closed'}
-                        </button>
-
-                        <button onClick={handleSync} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Manual Sync">
-                            🔄
-                        </button>
-                        <button onClick={() => setShowSettings(true)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Pengaturan">
-                            ⚙️
-                        </button>
-                    </div>
-                </header>
+                <TopBar
+                    isSyncing={isSyncing}
+                    pendingCount={pendingCount}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    onSearchInputRef={searchInputRef}
+                    onOpenDrafts={() => { loadDrafts(); setShowDrafts(true); }}
+                    activeShift={activeShift}
+                    onToggleShift={() => {
+                        if (activeShift) {
+                            setShiftModalMode('close');
+                            setIsShiftModalOpen(true);
+                        } else {
+                            setShiftModalMode('open');
+                            setIsShiftModalOpen(true);
+                        }
+                    }}
+                    onManualSync={handleSync}
+                    onOpenSettings={() => setShowSettings(true)}
+                />
 
                 {/* SETTINGS MODAL */}
                 {showSettings && (
@@ -953,206 +1032,45 @@ function App() {
                     </div>
                 )}
 
-                {/* Categories */}
-                <div className="bg-white border-b border-gray-200 px-6 py-3 flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    <button
-                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedCategory === 'SEMUA'
-                            ? 'bg-primary-600 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                        onClick={() => setSelectedCategory('SEMUA')}
-                    >
-                        Semua Menu
-                    </button>
-                    {categories.map(category => (
-                        <button
-                            key={category.id}
-                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedCategory === category.id
-                                ? 'bg-primary-600 text-white shadow-md'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                }`}
-                            onClick={() => setSelectedCategory(category.id)}
-                        >
-                            {category.name}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Products Grid */}
-                <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                        {filteredProducts.map(product => (
-                            <div
-                                key={product.id}
-                                onClick={() => addToCart(product)}
-                                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all group"
-                            >
-                                <div className="h-32 w-full bg-gray-200 relative overflow-hidden">
-                                    {product.image ? (
-                                        <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-4xl bg-gray-100 text-gray-300">
-                                            🍽️
-                                        </div>
-                                    )}
-                                    {product.stock !== undefined && (
-                                        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-                                            <div className="bg-black/60 text-white text-xs px-2 py-0.5 rounded backdrop-blur-sm">
-                                                Stok: {product.stock}
-                                            </div>
-                                            {(product.prepared_stock || 0) > 0 && (
-                                                <div className="bg-blue-600/80 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm">
-                                                    Siap: {product.prepared_stock}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="p-3">
-                                    <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 min-h-[2.5rem]">{product.name}</h3>
-                                    <p className="text-primary-600 font-bold mt-1">Rp {product.price.toLocaleString('id-ID')}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                <ProductGrid
+                    categories={categories}
+                    selectedCategory={selectedCategory}
+                    setSelectedCategory={setSelectedCategory}
+                    filteredProducts={filteredProducts}
+                    addToCart={addToCart}
+                />
             </div>
 
-            {/* RIGHT: Cart Sidebar */}
-            <div className="w-[400px] bg-white border-l border-gray-200 flex flex-col h-full shadow-2xl z-20">
-                {/* Cart Header */}
-                <div className="p-5 border-b border-gray-100 bg-white">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-gray-800">Keranjang</h2>
-                        <span className="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded">Order #{orderNumber}</span>
-                    </div>
-
-                    {/* Customer Info Inputs */}
-                    <div className="space-y-3">
-                        <input
-                            type="text"
-                            placeholder="Nama Pelanggan"
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                            value={customerName}
-                            onChange={(e) => setCustomerName(e.target.value)}
-                        />
-
-                        <div className="flex bg-gray-100 p-1 rounded-lg">
-                            <button
-                                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${orderType === 'Dine In' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                                onClick={() => setOrderType('Dine In')}
-                            >
-                                Dine In
-                            </button>
-                            <button
-                                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${orderType === 'Take Away' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                                onClick={() => setOrderType('Take Away')}
-                            >
-                                Take Away
-                            </button>
-                        </div>
-
-                        {orderType === 'Dine In' && (
-                            <input
-                                type="text"
-                                placeholder="Nomor Meja"
-                                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                value={tableNumber}
-                                onChange={(e) => setTableNumber(e.target.value)}
-                            />
-                        )}
-                    </div>
-                </div>
-
-                {/* Cart Items List */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {cart.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-50">
-                            <span className="text-6xl mb-2">🛒</span>
-                            <p>Keranjang kosong</p>
-                        </div>
-                    ) : (
-                        cart.map((item, index) => (
-                            <div key={index} className="flex gap-3 items-start group">
-                                {/* Qty Control */}
-                                <div className="flex flex-col items-center border border-gray-200 rounded overflow-hidden shrink-0">
-                                    <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} className="w-8 h-7 bg-gray-50 hover:bg-gray-100 text-green-600 font-bold">+</button>
-                                    <span className="w-8 h-7 flex items-center justify-center text-sm font-medium bg-white">{item.quantity}</span>
-                                    <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="w-8 h-7 bg-gray-50 hover:bg-gray-100 text-red-500 font-bold">-</button>
-                                </div>
-
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-start">
-                                        <h4 className="text-sm font-semibold text-gray-800 line-clamp-2">{item.product.name}</h4>
-                                        <span className="text-sm font-bold text-gray-700">
-                                            {item.subtotal.toLocaleString('id-ID')}
-                                        </span>
-                                    </div>
-                                    <div className="text-xs text-gray-500 mt-0.5">@ {item.product.price.toLocaleString('id-ID')}</div>
-
-                                    <input
-                                        type="text"
-                                        placeholder="Catatan..."
-                                        className="w-full mt-2 text-xs border-b border-gray-200 focus:border-primary-500 focus:outline-none py-1 bg-transparent text-gray-600 placeholder-gray-400"
-                                        value={item.notes || ''}
-                                        onChange={(e) => updateItemNotes(item.product.id, e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-
-                {/* Cart Footer */}
-                <div className="p-5 border-t border-gray-200 bg-gray-50">
-                    <div className="space-y-2 mb-4">
-                        <div className="flex justify-between text-sm text-gray-600">
-                            <span>Subtotal</span>
-                            <span>Rp {cart.reduce((sum, item) => sum + Number(item.subtotal), 0).toLocaleString('id-ID')}</span>
-                        </div>
-                        <div className="flex justify-between text-sm text-gray-600 items-center">
-                            <span>Diskon</span>
-                            <div className="flex items-center gap-1 w-24">
-                                <span className="text-xs">Rp</span>
-                                <input
-                                    type="number"
-                                    value={discount}
-                                    onChange={e => setDiscount(Number(e.target.value))}
-                                    className="w-full bg-white border border-gray-300 rounded px-1 text-right text-sm py-0.5"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex justify-between text-sm text-gray-600">
-                            <span>Pajak ({settings?.tax_rate || 0}%)</span>
-                            <span>Rp {((cart.reduce((sum, item) => sum + Number(item.subtotal), 0) * (settings?.tax_rate || 0)) / 100).toLocaleString('id-ID')}</span>
-                        </div>
-                        <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t border-gray-200">
-                            <span>Total</span>
-                            <span>Rp {calculateTotal().toLocaleString('id-ID')}</span>
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={handleCheckout}
-                        disabled={cart.length === 0}
-                        className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
-                    >
-                        <span>💳</span> Bayar Sekarang
-                    </button>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                        <button onClick={handleSaveDraft} className="py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium">
-                            Simpan
-                        </button>
-                        <button onClick={() => setCart([])} className="py-2 text-red-600 bg-white border border-gray-300 rounded-lg hover:bg-red-50 text-sm font-medium">
-                            Batal
-                        </button>
-                    </div>
-                </div>
-                {/* Receipt Print Area (Always Configured) */}
-                <div id="receipt-print-area" className="hidden">
-                    <Receipt order={printOrder} settings={settings} paperWidth={printerSettings.cashierPaperWidth} />
-                </div>
-            </div>
+            <CartSidebar
+                cart={cart}
+                orderNumber={orderNumber}
+                customerName={customerName}
+                setCustomerName={setCustomerName}
+                orderType={orderType}
+                setOrderType={setOrderType}
+                tableNumber={tableNumber}
+                setTableNumber={setTableNumber}
+                updateQuantity={updateQuantity}
+                updateItemNotes={updateItemNotes}
+                discount={discount}
+                setDiscount={setDiscount}
+                subtotal={cart.reduce((sum, item) => sum + Number(item.subtotal), 0)}
+                tax={(cart.reduce((sum, item) => sum + Number(item.subtotal), 0) * (settings?.tax_rate || 0)) / 100}
+                total={calculateTotal()}
+                taxRate={settings?.tax_rate || 0}
+                onCheckout={handleCheckout}
+                onSaveDraft={handleSaveDraft}
+                onClearCart={() => {
+                    setCart([]);
+                    setCustomerName('');
+                    setTableNumber('');
+                    setDiscount(0);
+                    setActiveDraft(null);
+                }}
+                printOrder={printOrder}
+                printerSettings={printerSettings}
+                settings={settings}
+            />
 
             <ShiftModal
                 isOpen={isShiftModalOpen}
@@ -1172,6 +1090,23 @@ function App() {
                 paymentMethods={paymentMethods}
                 onConfirm={handlePaymentConfirm}
                 onCancel={() => setIsPaymentModalOpen(false)}
+            />
+
+            {notification && (
+                <Notification
+                    message={notification.message}
+                    type={notification.type}
+                    onClose={() => setNotification(null)}
+                />
+            )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={closeConfirmModal}
+                isDestructive={confirmModal.isDestructive}
             />
         </div>
     );
