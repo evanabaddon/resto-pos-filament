@@ -525,6 +525,7 @@ function PosApp() {
                     categories={categories}
                     currentApiUrl={localStorage.getItem('pos_api_url') || 'http://localhost:8000/api'}
                     onSave={handleSaveSettings}
+                    showNotification={showNotification}
                 />
 
                 <SyncIssuesModal
@@ -616,6 +617,7 @@ function PosApp() {
                 onShiftClosed={handleShiftClosed}
                 onPrintReport={handlePrintShiftReport}
                 activeShift={activeShift}
+                showNotification={showNotification}
             />
 
             <PaymentModal
@@ -627,6 +629,7 @@ function PosApp() {
                     setIsPaymentModalOpen(false);
                     if (splitCart) setSplitCart(null); // Cancel split if modal closed
                 }}
+                showNotification={showNotification}
             />
 
             {notification && (

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
 import { printerService, type PrinterSettings } from '../services/printer';
 import { useTheme } from '../context/ThemeContext';
 import type { Category } from '../types';
@@ -12,6 +11,7 @@ interface SettingsModalProps {
     categories: Category[];
     currentApiUrl: string; // To initialize the input
     onSave: (newApiUrl: string) => void;
+    showNotification?: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -21,7 +21,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     onUpdatePrinterSettings,
     categories,
     currentApiUrl,
-    onSave
+    onSave,
+    showNotification
 }) => {
     const { theme, toggleTheme } = useTheme();
     const [activeTab, setActiveTab] = useState<'general' | 'printer'>('general');
@@ -98,7 +99,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                     <button
                                         onClick={async () => {
                                             if (!apiUrl) {
-                                                alert('⚠️ URL API belum diisi!');
+                                                showNotification?.('⚠️ URL API belum diisi!', 'error');
                                                 return;
                                             }
                                             // Strip trailing slash
@@ -119,10 +120,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                                                 const data = await response.json();
                                                 console.log('Test success:', data);
-                                                alert(`✅ Terhubung!\nServer: ${data.message}\nWaktu: ${data.time}`);
+                                                showNotification?.(`✅ Terhubung! Server: ${data.message}`, 'success');
                                             } catch (e: any) {
                                                 console.error('Test failed:', e);
-                                                alert(`❌ Gagal terhubung:\n${e.message || 'Unknown Error'}`);
+                                                showNotification?.(`❌ Gagal terhubung: ${e.message || 'Unknown Error'}`, 'error');
                                             }
                                         }}
                                         className="px-3 py-2 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
@@ -253,7 +254,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                                 // Avoid duplicates
                                                 const exists = printerSettings.categoryMappings.some(m => m.categoryId === catId);
                                                 if (exists) {
-                                                    alert('Kategori ini sudah memiliki mapping!');
+                                                    showNotification?.('⚠️ Kategori ini sudah memiliki mapping!', 'error');
                                                     return;
                                                 }
                                                 onUpdatePrinterSettings({

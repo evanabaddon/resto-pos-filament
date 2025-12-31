@@ -9,6 +9,7 @@ interface ShiftModalProps {
     onShiftClosed: () => void;
     onPrintReport?: (shift: any) => void;
     activeShift?: any;
+    showNotification?: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
 const ShiftModal: React.FC<ShiftModalProps> = ({
@@ -18,7 +19,8 @@ const ShiftModal: React.FC<ShiftModalProps> = ({
     onShiftOpened,
     onShiftClosed,
     onPrintReport,
-    activeShift
+    activeShift,
+    showNotification
 }) => {
     const [amount, setAmount] = useState<string>('');
     const [cashierName, setCashierName] = useState('Admin'); // Default for now
@@ -49,7 +51,10 @@ const ShiftModal: React.FC<ShiftModalProps> = ({
     }, [isOpen, mode, activeShift]);
 
     const handleOpenShift = async () => {
-        if (!amount || isNaN(Number(amount))) return alert('Masukkan jumlah modal awal yang valid');
+        if (!amount || isNaN(Number(amount))) {
+            showNotification?.('Masukkan jumlah modal awal yang valid', 'error');
+            return;
+        }
 
         try {
             setLoading(true);
@@ -68,17 +73,21 @@ const ShiftModal: React.FC<ShiftModalProps> = ({
             };
 
             onShiftOpened(newShift);
+            showNotification?.('✅ Shift berhasil dibuka!', 'success');
             onClose();
         } catch (e) {
             console.error('Failed to open shift:', e);
-            alert('Gagal membuka shift');
+            showNotification?.('❌ Gagal membuka shift', 'error');
         } finally {
             setLoading(false);
         }
     };
 
     const handleCloseShift = async () => {
-        if (!amount || isNaN(Number(amount))) return alert('Masukkan jumlah uang di laci');
+        if (!amount || isNaN(Number(amount))) {
+            showNotification?.('Masukkan jumlah uang di laci', 'error');
+            return;
+        }
         if (!activeShift) return;
 
         try {
@@ -105,12 +114,13 @@ const ShiftModal: React.FC<ShiftModalProps> = ({
                 });
             }
 
-            alert(`Shift Ditutup.\nSelisih: Rp ${diff.toLocaleString()}`);
+            const diffMsg = diff >= 0 ? `+Rp ${diff.toLocaleString()}` : `-Rp ${Math.abs(diff).toLocaleString()}`;
+            showNotification?.(`✅ Shift ditutup. Selisih: ${diffMsg}`, diff >= 0 ? 'success' : 'info');
             onShiftClosed();
             onClose();
         } catch (e) {
             console.error('Failed to close shift:', e);
-            alert('Gagal menutup shift');
+            showNotification?.('❌ Gagal menutup shift', 'error');
         } finally {
             setLoading(false);
         }

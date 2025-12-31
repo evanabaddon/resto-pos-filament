@@ -6,6 +6,7 @@ interface PaymentModalProps {
     paymentMethods: any[];
     onConfirm: (amount: number, methodId: number, methodCode: string) => void;
     onCancel: () => void;
+    showNotification?: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -13,7 +14,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     total,
     paymentMethods,
     onConfirm,
-    onCancel
+    onCancel,
+    showNotification
 }) => {
     const [selectedMethod, setSelectedMethod] = useState<any>(null);
     const [paymentAmount, setPaymentAmount] = useState<string>('');
@@ -48,7 +50,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         const amount = selectedMethod.code === 'cash' ? Number(paymentAmount) : total;
 
         if (selectedMethod.code === 'cash' && amount < total) {
-            alert('Jumlah uang tidak cukup!');
+            showNotification?.('❌ Jumlah uang tidak cukup!', 'error');
             return;
         }
 
