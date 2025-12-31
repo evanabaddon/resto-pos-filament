@@ -82,7 +82,8 @@ class DatabaseService {
                 local_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 shift_id INTEGER, -- Link to Shift
                 sale_data TEXT NOT NULL, -- JSON Stringified
-                status TEXT DEFAULT 'pending', -- pending, synced, error
+                status TEXT DEFAULT 'pending', -- pending, synced, error, draft
+                error_message TEXT,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 synced_at TEXT
             )
@@ -90,6 +91,8 @@ class DatabaseService {
 
         // Migration: Add shift_id if not exists
         try { await this.db.execute('ALTER TABLE offline_sales ADD COLUMN shift_id INTEGER'); } catch { }
+        // Migration: Add error_message if not exists (Conflict Resolution)
+        try { await this.db.execute('ALTER TABLE offline_sales ADD COLUMN error_message TEXT'); } catch { }
 
         // Shifts Table (Local Cash Session)
         await this.db.execute(`
@@ -238,7 +241,7 @@ class DatabaseService {
                             `UPDATE products SET stock = stock - $1 WHERE id = $2 AND stock IS NOT NULL`,
                             [item.quantity, item.product_id]
                         );
-                        console.log(`📉 Decremented stock for product ${item.product_id} by ${item.quantity}`);
+                        console.log(`📈 Decremented stock for product ${item.product_id} by ${item.quantity}`);
                     } catch (err) {
                         console.error(`Failed to decrement stock for ${item.product_id}:`, err);
                     }
@@ -251,10 +254,27 @@ class DatabaseService {
 
     async getPendingSales() {
         if (!this.db) return [];
-        // Sync both 'pending' (offline transactions) and 'draft' (saved drafts)
+        // Only return 'pending' and 'draft' (exclude 'error' and 'synced')
         return await this.db.select<{ local_id: number, sale_data: string, created_at: string, status: string }[]>(
             `SELECT * FROM offline_sales WHERE status IN('pending', 'draft') ORDER BY created_at ASC`
         );
+    }
+
+    async getSyncIssues() {
+        if (!this.db) return [];
+        return await this.db.select<{ local_id: number, sale_data: string, created_at: string, error_message: string }[]>(
+            `SELECT * FROM offline_sales WHERE status = 'error' ORDER BY created_at ASC`
+        );
+    }
+
+    async markSaleError(localId: number, message: string) {
+        if (!this.db) return;
+        await this.db.execute(`UPDATE offline_sales SET status = 'error', error_message = $1 WHERE local_id = $2`, [message, localId]);
+    }
+
+    async retrySale(localId: number) {
+        if (!this.db) return;
+        await this.db.execute(`UPDATE offline_sales SET status = 'pending', error_message = NULL WHERE local_id = $1`, [localId]);
     }
 
     async getDrafts(status: 'draft' | 'completed' | 'all' = 'draft') {
@@ -302,7 +322,7 @@ class DatabaseService {
 
     async markSaleSynced(localId: number) {
         if (!this.db) return;
-        await this.db.execute(`UPDATE offline_sales SET status = 'synced', synced_at = datetime('now') WHERE local_id = $1`, [localId]);
+        await this.db.execute(`UPDATE offline_sales SET status = 'synced', synced_at = datetime('now'), error_message = NULL WHERE local_id = $1`, [localId]);
     }
 
     async clearSyncedSales() {

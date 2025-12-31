@@ -112,7 +112,7 @@ class SyncService {
 
                     // Endpoint expects { orders: [...] }
                     const payload = { orders: [saleData] };
-                    console.log('📦 Upload Payload:', JSON.stringify(payload));
+                    // console.log('📦 Upload Payload:', JSON.stringify(payload));
 
                     const response = await api.syncOfflineSale(payload);
                     console.log(`✅ Upload success for sale ${sale.local_id}:`, response.data);
@@ -120,17 +120,38 @@ class SyncService {
                     await dbService.markSaleSynced(sale.local_id);
                 } catch (err: any) {
                     console.error(`❌ Failed to sync sale ${sale.local_id}:`, err);
+
+                    // Error Handling Strategy:
+                    // 1. If 4xx (Client Error) -> Mark as Error (Requires User Intervention)
+                    // 2. If 500 (Server Error) -> Keep Pending (Retry later) ?? Or Mark Error?
+                    //    Usually 500 on valid data means server bug, retry might not fix it. 
+                    //    But 503 (Service Unavailable) should retry.
+                    //    Let's mark 400-499 as Error.
+
+                    if (err.response) {
+                        const status = err.response.status;
+                        const msg = err.response.data?.message || err.message || 'Unknown Server Error';
+
+                        if (status >= 400 && status < 500) {
+                            console.warn(`⚠️ Sale ${sale.local_id} marked as ERROR due to ${status}`);
+                            await dbService.markSaleError(sale.local_id, `Server Error ${status}: ${msg}`);
+                        } else {
+                            console.warn(`⏳ Sale ${sale.local_id} kept as PENDING (Status ${status})`);
+                        }
+                    } else if (err.request) {
+                        // Network error (no response) - Keep Pending
+                        console.warn(`⏳ Sale ${sale.local_id} kept as PENDING (Network Error)`);
+                    } else {
+                        // Other error - Mark Error
+                        await dbService.markSaleError(sale.local_id, `Client Error: ${err.message}`);
+                    }
                 }
             }
 
             await dbService.clearSyncedSales();
 
         } catch (error: any) {
-            console.error('Sales sync failed:', error);
-            if (error.response) {
-                console.error('Server response:', error.response.data);
-                console.error('Status:', error.response.status);
-            }
+            console.error('Sales sync critical failure:', error);
         } finally {
             this.isSalesSyncing = false;
         }
@@ -152,6 +173,28 @@ class SyncService {
         } catch (error) {
             console.error('❌ Sales history sync failed:', error);
         }
+    }
+
+    // MASTER SYNC FUNCTION
+    async syncAll(activeShiftId?: number) {
+        console.log('🔄 STARTING MASTER SYNC...');
+
+        // 1. Settings (Quick)
+        await this.syncSettings();
+
+        // 2. Upload Sales (CRITICAL: Do this before downloading products to ensure stock is deducted)
+        await this.syncSales();
+
+        // 3. Upload Shifts
+        await this.syncShifts();
+
+        // 4. Download Products (Get latest stock)
+        await this.syncProducts();
+
+        // 5. Download Sales History (Backup)
+        await this.syncSalesHistory(activeShiftId);
+
+        console.log('✅ MASTER SYNC COMPLETED');
     }
 }
 

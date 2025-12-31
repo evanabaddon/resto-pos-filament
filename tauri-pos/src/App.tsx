@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { updateApiConfig } from './services/api';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { ThemeProvider } from './context/ThemeContext';
 import { dbService } from './services/db';
 import { syncService } from './services/sync';
 import { printerService, type PrinterSettings } from './services/printer';
@@ -14,14 +14,14 @@ import ConfirmModal from './components/ConfirmModal';
 import SplitBillModal from './components/SplitBillModal';
 import JoinBillModal from './components/JoinBillModal';
 import DraftsModal from './components/DraftsModal';
+import { SyncIssuesModal } from './components/SyncIssuesModal';
 import SettingsModal from './components/SettingsModal';
 import { useCart } from './hooks/useCart';
 import { useDrafts } from './hooks/useDrafts';
 import { useTransaction } from './hooks/useTransaction';
 import type { Product, Category, CartItem } from './types';
 
-
-function App() {
+function PosApp() {
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<number | 'SEMUA'>('SEMUA');
@@ -37,9 +37,9 @@ function App() {
     // Notification State
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
 
-    const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+    const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info') => {
         setNotification({ message, type });
-    };
+    }, []);
 
     // Business Settings (Moved up for useCart)
     const [settings, setSettings] = useState<any>(() => {
@@ -160,37 +160,33 @@ function App() {
 
 
     const [showSettings, setShowSettings] = useState(false);
+    const [showSyncIssues, setShowSyncIssues] = useState(false);
+    const [syncErrorCount, setSyncErrorCount] = useState(0);
     // Removed local states that were moved to SettingsModal (settingsTab, settingsApiUrl, availablePrinters, newMapping)
 
     // Printer Settings moved to top
 
-    const handleSaveSettings = (newApiUrl: string) => {
-        updateApiConfig(newApiUrl);
+    const handleSaveSettings = useCallback((newApiUrl: string) => {
+        // 1. Update Settings with new API URL
+        const updatedSettings = { ...settings, apiUrl: newApiUrl };
+        setSettings(updatedSettings);
+        localStorage.setItem('pos_settings', JSON.stringify(updatedSettings));
+
+        // 2. Persist Printer Settings (already updated in state via setPrinterSettings)
         localStorage.setItem('pos_printer_settings', JSON.stringify(printerSettings));
-        showNotification('⚙️ Pengaturan tersimpan!', 'success');
+
         setShowSettings(false);
-        // Trigger sync with new URL
-        handleSync();
-    };
+        showNotification('✅ Pengaturan disimpan!', 'success');
 
-
+        if (newApiUrl !== settings.apiUrl) {
+            window.location.reload();
+        }
+    }, [settings, printerSettings, showNotification]);
 
     // Product Search State
     const [searchQuery, setSearchQuery] = useState('');
     const searchInputRef = useRef<HTMLInputElement>(null);
 
-    // Keyboard Shortcuts
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey && e.key === 'k') || e.key === '/') {
-                e.preventDefault();
-                searchInputRef.current?.focus();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
 
     // INITIALIZATION & SYNC
     useEffect(() => {
@@ -242,6 +238,9 @@ function App() {
             const pendingSales = await dbService.getPendingSales();
             const pendingUploads = pendingSales.filter(s => s.status === 'pending');
             setPendingCount(pendingUploads.length);
+
+            const issues = await dbService.getSyncIssues();
+            setSyncErrorCount(issues.length);
         } catch (e) {
             console.error('Failed to load pending count:', e);
         }
@@ -284,15 +283,7 @@ function App() {
     const handleSync = async () => {
         setIsSyncing(true);
         try {
-            await syncService.syncSettings(); // Sync Settings first
-
-            // Upload Strategy: Send local changes FIRST so server is up to date
-            await syncService.syncShifts();
-            await syncService.syncSales();
-
-            // Download Strategy: Get latest data (reflecting our uploads + others)
-            await syncService.syncProducts();
-            await syncService.syncSalesHistory(activeShift?.id); // Download today's sales for backup and assign to current shift
+            await syncService.syncAll(activeShift?.id);
         } catch (error) {
             console.error('Manual sync failed:', error);
         } finally {
@@ -303,7 +294,7 @@ function App() {
     };
 
 
-    const handleSaveDraft = async () => {
+    const handleSaveDraft = useCallback(async () => {
         const success = await saveDraft(cart, customerName, tableNumber, orderType, discount, calculateTotal);
         if (success) {
             clearCart();
@@ -311,26 +302,16 @@ function App() {
             setTableNumber('');
             loadLocalData(); // Refresh stock in grid
         }
-    };
+    }, [saveDraft, cart, customerName, tableNumber, orderType, discount, calculateTotal, clearCart, loadLocalData]);
 
-    const handleResumeDraft = async (draft: any) => {
-        if (cart.length > 0) {
-            setConfirmModal({
-                isOpen: true,
-                title: 'Timpa Keranjang?',
-                message: 'Keranjang saat ini tidak kosong. Apakah Anda yakin ingin menggantinya dengan draft ini?',
-                isDestructive: true,
-                onConfirm: () => {
-                    closeConfirmModal();
-                    processResumeDraft(draft);
-                }
-            });
-            return;
-        }
-        processResumeDraft(draft);
-    };
+    const handleClearCart = useCallback(() => {
+        clearCart();
+        setCustomerName('');
+        setTableNumber('');
+        setActiveDraft(null);
+    }, [clearCart, setActiveDraft]);
 
-    const processResumeDraft = async (draft: any) => {
+    const processResumeDraft = useCallback(async (draft: any) => {
         closeConfirmModal();
 
         try {
@@ -376,9 +357,26 @@ function App() {
             console.error('Failed to resume draft:', err);
             showNotification('❌ Gagal resume draft', 'error');
         }
-    };
+    }, [products, setCart, setActiveDraft, setShowDrafts, showNotification]);
 
-    const handleDeleteDraftWrapper = (draft: any, e: React.MouseEvent) => {
+    const handleResumeDraft = useCallback(async (draft: any) => {
+        if (cart.length > 0) {
+            setConfirmModal({
+                isOpen: true,
+                title: 'Timpa Keranjang?',
+                message: 'Keranjang saat ini tidak kosong. Apakah Anda yakin ingin menggantinya dengan draft ini?',
+                isDestructive: true,
+                onConfirm: () => {
+                    closeConfirmModal();
+                    processResumeDraft(draft);
+                }
+            });
+            return;
+        }
+        processResumeDraft(draft);
+    }, [cart.length, processResumeDraft, setConfirmModal]);
+
+    const handleDeleteDraftWrapper = useCallback((draft: any, e: React.MouseEvent) => {
         e.stopPropagation();
 
         setConfirmModal({
@@ -392,9 +390,9 @@ function App() {
                 loadDrafts(transactionTab);
             }
         });
-    };
+    }, [deleteDraft, loadDrafts, transactionTab, setConfirmModal]);
 
-    const handleReprint = async (draft: any, e: React.MouseEvent) => {
+    const handleReprint = useCallback(async (draft: any, e: React.MouseEvent) => {
         e.stopPropagation();
         if (!printerSettings.cashierPrinter) {
             showNotification('⚠️ Printer utama belum diatur!', 'error');
@@ -455,36 +453,35 @@ function App() {
             }
 
             showNotification('✅ Cetak ulang berhasil!', 'success');
-        } catch (err: any) {
-            console.error('Reprint failed:', err);
-            showNotification('❌ Gagal mencetak ulang: ' + err.message, 'error');
+        } catch (error: any) {
+            console.error('Reprint failed:', error);
+            showNotification('❌ Gagal mencetak ulang: ' + error.message, 'error');
         }
-    };
+    }, [printerSettings, settings, products, showNotification]);
 
-
-
-    const filteredProducts = products.filter(p => {
-        const matchesCategory = selectedCategory === 'SEMUA' || p.category_id === selectedCategory;
-        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
-    });
-
+    const filteredProducts = useMemo(() => {
+        return products.filter(p => {
+            const matchesCategory = selectedCategory === 'SEMUA' || p.category_id === selectedCategory;
+            const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesCategory && matchesSearch;
+        });
+    }, [products, selectedCategory, searchQuery]);
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-100 flex-col">
+            <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 flex-col transition-colors duration-200">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
-                <p className="text-gray-600">Memuat Sistem POS...</p>
+                <p className="text-gray-600 dark:text-gray-300">Memuat Sistem POS...</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-red-50 p-8">
-                <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full text-center">
-                    <h2 className="text-xl font-bold text-red-600 mb-2">System Error</h2>
-                    <p className="text-gray-600 mb-4">{error}</p>
-                    <button onClick={() => window.location.reload()} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+            <div className="flex items-center justify-center min-h-screen bg-red-50 dark:bg-gray-900 p-8 transition-colors duration-200">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full text-center border border-red-100 dark:border-red-900/30">
+                    <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">System Error</h2>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">{error}</p>
+                    <button onClick={() => window.location.reload()} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
                         Reload App
                     </button>
                 </div>
@@ -493,12 +490,13 @@ function App() {
     }
 
     return (
-        <div className="flex h-screen bg-gray-100 overflow-hidden font-sans text-gray-900">
+        <div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden font-sans text-gray-900 dark:text-gray-100">
             {/* LEFT: Products Section */}
             <div className="flex-1 flex flex-col min-w-0">
                 <TopBar
                     isSyncing={isSyncing}
                     pendingCount={pendingCount}
+                    errorCount={syncErrorCount}
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
                     onSearchInputRef={searchInputRef}
@@ -515,6 +513,7 @@ function App() {
                     }}
                     onManualSync={handleSync}
                     onOpenSettings={() => setShowSettings(true)}
+                    onOpenSyncIssues={() => setShowSyncIssues(true)}
                 />
 
                 {/* SETTINGS MODAL */}
@@ -526,6 +525,12 @@ function App() {
                     categories={categories}
                     currentApiUrl={localStorage.getItem('pos_api_url') || 'http://localhost:8000/api'}
                     onSave={handleSaveSettings}
+                />
+
+                <SyncIssuesModal
+                    isOpen={showSyncIssues}
+                    onClose={() => setShowSyncIssues(false)}
+                    onIssuesResolved={loadLocalData}
                 />
 
                 {/* DRAFTS MODAL */}
@@ -573,12 +578,7 @@ function App() {
                 taxRate={settings?.tax_rate || 0}
                 onCheckout={handleCheckout}
                 onSaveDraft={handleSaveDraft}
-                onClearCart={() => {
-                    clearCart();
-                    setCustomerName('');
-                    setTableNumber('');
-                    setActiveDraft(null);
-                }}
+                onClearCart={handleClearCart}
                 printOrder={printOrder}
                 printerSettings={printerSettings}
                 settings={settings}
@@ -646,6 +646,15 @@ function App() {
                 isDestructive={confirmModal.isDestructive}
             />
         </div>
+    );
+
+}
+
+function App() {
+    return (
+        <ThemeProvider>
+            <PosApp />
+        </ThemeProvider>
     );
 }
 

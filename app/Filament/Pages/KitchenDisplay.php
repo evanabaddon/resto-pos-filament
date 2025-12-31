@@ -38,7 +38,7 @@ class KitchenDisplay extends Page
         // 1. Fetch all items matching the department and status
         $query = \App\Models\SaleItem::query()
             ->with(['product', 'sale'])
-            ->whereDate('created_at', now()) // Filter only today's orders
+            ->where('created_at', '>=', now()->subHours(24)) // Look back 24 hours to cover late syncs
             ->whereHas('sale', function ($q) {
                 // Ensure the sale itself is still relevant (e.g. not paid if that's the logic)
                 // But for KDS, we usually care if items are not yet served.

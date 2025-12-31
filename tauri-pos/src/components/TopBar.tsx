@@ -12,11 +12,14 @@ interface TopBarProps {
     onToggleShift: () => void;
     onManualSync: () => void;
     onOpenSettings: () => void;
+    errorCount?: number;
+    onOpenSyncIssues?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
     isSyncing,
     pendingCount,
+    errorCount,
     searchQuery,
     setSearchQuery,
     onSearchInputRef,
@@ -24,12 +27,13 @@ export const TopBar: React.FC<TopBarProps> = ({
     activeShift,
     onToggleShift,
     onManualSync,
-    onOpenSettings
+    onOpenSettings,
+    onOpenSyncIssues
 }) => {
     return (
-        <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center z-10 transition-all">
+        <header className="bg-white dark:bg-gray-800 dark:border-b dark:border-gray-700 shadow-sm px-6 py-4 flex justify-between items-center z-10 transition-all duration-200">
             <div className="flex items-center gap-4">
-                <h1 className="text-2xl font-bold text-primary-600 tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>🍽️ Resto POS</h1>
+                <h1 className="text-2xl font-bold text-primary-600 dark:text-primary-400 tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>🍽️ Resto POS</h1>
                 {/* SyncStatus moved to right side or kept here if essential, but right side feels better for actions */}
             </div>
 
@@ -39,7 +43,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         ref={onSearchInputRef}
                         type="text"
                         placeholder="Cari menu... (Ctrl+K)"
-                        className="pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 w-64 transition-all focus:w-80 outline-none text-sm group-hover:bg-white group-hover:border-gray-300"
+                        className="pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 w-64 transition-all focus:w-80 outline-none text-sm group-hover:bg-white dark:group-hover:bg-gray-600 group-hover:border-gray-300 dark:group-hover:border-gray-500"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -48,7 +52,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
                 <button
                     onClick={onOpenDrafts}
-                    className="p-2.5 text-gray-500 hover:bg-gray-100 hover:text-primary-600 rounded-xl transition-all active:scale-95 flex items-center gap-1 border border-transparent hover:border-gray-200"
+                    className="p-2.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400 rounded-xl transition-all active:scale-95 flex items-center gap-1 border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
                     title="Buka Draft"
                 >
                     <span className="text-xl">📁</span>
@@ -60,8 +64,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                     onClick={onToggleShift}
                     className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm active:scale-95
                         ${activeShift
-                            ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 hover:shadow-md'
-                            : 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 animate-pulse hover:shadow-md'}
+                            ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 hover:shadow-md dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-900/30'
+                            : 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 animate-pulse hover:shadow-md dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/30'}
                     `}
                     title={activeShift ? 'Tutup Shift' : 'Buka Shift'}
                 >
@@ -69,11 +73,17 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <span className="hidden sm:inline">{activeShift ? 'Shift Open' : 'Shift Closed'}</span>
                 </button>
 
-                <SyncStatus isSyncing={isSyncing} pendingCount={pendingCount} onSync={onManualSync} />
+                <SyncStatus
+                    isSyncing={isSyncing}
+                    pendingCount={pendingCount}
+                    errorCount={errorCount}
+                    onSync={onManualSync}
+                    onOpenIssues={onOpenSyncIssues}
+                />
 
                 <button
                     onClick={onOpenSettings}
-                    className="p-2.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800 rounded-xl transition-all active:scale-95 border border-transparent hover:border-gray-200"
+                    className="p-2.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-200 rounded-xl transition-all active:scale-95 border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
                     title="Pengaturan"
                 >
                     <span className="text-xl">⚙️</span>

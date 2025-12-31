@@ -66,33 +66,33 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center backdrop-blur-sm justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-white w-[500px] rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
-                <div className="bg-primary-600 px-6 py-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white dark:bg-gray-800 w-[500px] rounded-2xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-700 animate-scale-up">
+                <div className="bg-primary-600 dark:bg-primary-700 px-6 py-4">
                     <h2 className="text-white text-xl font-bold">💳 Pembayaran</h2>
                     <p className="text-primary-100 text-sm mt-0.5">Pilih metode pembayaran dan konfirmasi</p>
                 </div>
 
                 <div className="p-6 space-y-6">
                     {/* Total Bill */}
-                    <div className="bg-gradient-to-r from-primary-50 to-primary-100 p-4 rounded-xl">
-                        <div className="text-sm text-primary-600 font-medium">Total Tagihan</div>
-                        <div className="text-3xl font-bold text-primary-900 mt-1">
+                    <div className="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/40 dark:to-primary-900/20 p-4 rounded-xl border border-primary-100 dark:border-primary-800">
+                        <div className="text-sm text-primary-600 dark:text-primary-400 font-medium">Total Tagihan</div>
+                        <div className="text-3xl font-bold text-primary-900 dark:text-primary-100 mt-1">
                             Rp {total.toLocaleString('id-ID')}
                         </div>
                     </div>
 
                     {/* Payment Method Selection */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Metode Pembayaran</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Metode Pembayaran</label>
                         <div className="grid grid-cols-3 gap-3">
                             {paymentMethods.map(method => (
                                 <button
                                     key={method.id}
                                     onClick={() => setSelectedMethod(method)}
                                     className={`p-4 rounded-lg border-2 transition-all ${selectedMethod?.id === method.id
-                                        ? 'border-primary-600 bg-primary-50 text-primary-900'
-                                        : 'border-gray-200 hover:border-primary-300 text-gray-700'
+                                        ? 'border-primary-600 bg-primary-50 text-primary-900 dark:bg-primary-900/50 dark:border-primary-500 dark:text-primary-100'
+                                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-500 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800'
                                         }`}
                                 >
                                     <div className="text-2xl mb-1">
@@ -108,16 +108,16 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     {selectedMethod?.code === 'cash' && (
                         <div className="space-y-3">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Uang Diterima</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Uang Diterima</label>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-3.5 text-gray-500 font-bold">Rp</span>
+                                    <span className="absolute left-4 top-3.5 text-gray-500 dark:text-gray-400 font-bold">Rp</span>
                                     <input
                                         type="number"
                                         autoFocus
                                         value={paymentAmount}
                                         onChange={e => setPaymentAmount(e.target.value)}
                                         onKeyDown={e => e.key === 'Enter' && canConfirm() && handleConfirm()}
-                                        className="w-full border-2 border-gray-300 rounded-lg pl-12 pr-4 py-3 text-xl font-bold text-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                                        className="w-full border-2 border-gray-300 dark:border-gray-600 rounded-lg pl-12 pr-4 py-3 text-xl font-bold text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                                         placeholder="0"
                                     />
                                 </div>
@@ -127,25 +127,25 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                             <div className="grid grid-cols-4 gap-2">
                                 <button
                                     onClick={() => handleQuickCash(total)}
-                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700"
+                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
                                 >
                                     Pas
                                 </button>
                                 <button
                                     onClick={() => handleQuickCash(50000)}
-                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700"
+                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
                                 >
                                     50k
                                 </button>
                                 <button
                                     onClick={() => handleQuickCash(100000)}
-                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700"
+                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
                                 >
                                     100k
                                 </button>
                                 <button
                                     onClick={() => handleQuickCash(200000)}
-                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700"
+                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
                                 >
                                     200k
                                 </button>
@@ -153,9 +153,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
                             {/* Change Display */}
                             {paymentAmount && Number(paymentAmount) >= total && (
-                                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                                    <div className="text-sm text-green-600 font-medium">Kembalian</div>
-                                    <div className="text-2xl font-bold text-green-900 mt-1">
+                                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                                    <div className="text-sm text-green-600 dark:text-green-400 font-medium">Kembalian</div>
+                                    <div className="text-2xl font-bold text-green-900 dark:text-green-100 mt-1">
                                         Rp {change.toLocaleString('id-ID')}
                                     </div>
                                 </div>
@@ -165,8 +165,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
                     {/* Non-Cash Info */}
                     {selectedMethod?.code !== 'cash' && (
-                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <div className="text-sm text-blue-600">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <div className="text-sm text-blue-600 dark:text-blue-300">
                                 ℹ️ Pastikan pembayaran {selectedMethod?.name} telah diterima sebelum melanjutkan.
                             </div>
                         </div>
@@ -176,7 +176,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     <div className="flex gap-3 pt-2">
                         <button
                             onClick={onCancel}
-                            className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-all"
+                            className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-all"
                         >
                             Batal
                         </button>
@@ -185,7 +185,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                             disabled={!canConfirm()}
                             className={`flex-1 px-4 py-3 rounded-lg text-white font-bold shadow-lg transition-all ${canConfirm()
                                 ? 'bg-primary-600 hover:bg-primary-700'
-                                : 'bg-gray-300 cursor-not-allowed'
+                                : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
                                 }`}
                         >
                             Bayar & Cetak

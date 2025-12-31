@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { dbService } from '../services/db';
 import { api } from '../services/api';
 import type { OrderDraft, CartItem } from '../types';
@@ -14,7 +14,7 @@ export const useDrafts = (
     const [transactionTab, setTransactionTab] = useState<'draft' | 'completed'>('draft');
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
 
-    const loadDrafts = async (status: 'draft' | 'completed' = transactionTab) => {
+    const loadDrafts = useCallback(async (status: 'draft' | 'completed' = transactionTab) => {
         setIsLoadingDrafts(true);
         setDrafts([]);
 
@@ -60,9 +60,9 @@ export const useDrafts = (
         } finally {
             setIsLoadingDrafts(false);
         }
-    };
+    }, [transactionTab, showNotification]);
 
-    const saveDraft = async (
+    const saveDraft = useCallback(async (
         cart: CartItem[],
         customerName: string,
         tableNumber: string,
@@ -132,9 +132,9 @@ export const useDrafts = (
             showNotification('Gagal menyimpan draft: ' + error.message, 'error');
             return false;
         }
-    };
+    }, [settings, activeDraft, showNotification]);
 
-    const deleteDraft = async (draft: OrderDraft) => {
+    const deleteDraft = useCallback(async (draft: OrderDraft) => {
         try {
             if (draft.source === 'local') {
                 await dbService.deleteSale(draft.id);
@@ -148,9 +148,9 @@ export const useDrafts = (
             showNotification('Gagal menghapus draft', 'error');
             return false;
         }
-    };
+    }, [showNotification]);
 
-    const handleMergeDrafts = async (selectedDraftIds: number[]) => {
+    const handleMergeDrafts = useCallback(async (selectedDraftIds: number[]) => {
         if (selectedDraftIds.length < 2) {
             showNotification('⚠️ Pilih minimal 2 draft untuk digabungkan', 'error');
             return false;
@@ -221,7 +221,7 @@ export const useDrafts = (
             showNotification('❌ Gagal menggabungkan transaksi: ' + err.message, 'error');
             return false;
         }
-    };
+    }, [drafts, settings, showNotification]);
 
     // Reload when tab changes
     // But we probably want to trigger this manually or via useEffect in the hook?

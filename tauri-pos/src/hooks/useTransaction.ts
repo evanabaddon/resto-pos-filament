@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { dbService } from '../services/db';
 import { printerService } from '../services/printer';
 import { syncService } from '../services/sync';
@@ -49,7 +49,7 @@ export const useTransaction = ({
     const [printOrder, setPrintOrder] = useState<any>(null); // For Auto Print
 
     // Handlers
-    const handleCheckout = () => {
+    const handleCheckout = useCallback(() => {
         if (!activeShift) {
             showNotification('⚠️ Harap Buka Shift Terlebih Dahulu!', 'error');
             setShiftModalMode('open');
@@ -68,15 +68,15 @@ export const useTransaction = ({
         }
 
         setIsPaymentModalOpen(true);
-    };
+    }, [activeShift, cart.length, customerName, showNotification, setIsShiftModalOpen, setShiftModalMode]);
 
-    const handleSplitRequest = (itemsToSplit: CartItem[]) => {
+    const handleSplitRequest = useCallback((itemsToSplit: CartItem[]) => {
         setSplitCart(itemsToSplit);
         setIsSplitModalOpen(false);
         setIsPaymentModalOpen(true); // Proceed to pay immediately for the split part
-    };
+    }, []);
 
-    const handlePaymentConfirm = async (amount: number, methodId: number, methodCode: string) => {
+    const handlePaymentConfirm = useCallback(async (amount: number, methodId: number, methodCode: string) => {
         setIsPaymentModalOpen(false);
 
         // Determine which cart to pay (Main or Split)
@@ -223,7 +223,7 @@ export const useTransaction = ({
             console.error('Checkout failed:', error);
             showNotification('❌ Gagal memproses transaksi: ' + error.message, 'error');
         }
-    };
+    }, [splitCart, cart, settings, discount, customerName, orderType, tableNumber, activeShift, printerSettings, showNotification, activeDraft, setActiveDraft, setCart, clearCart, loadLocalData]);
 
     // Auto Print Effect
     useEffect(() => {
