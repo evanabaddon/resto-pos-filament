@@ -35,6 +35,7 @@ interface CartSidebarProps {
     printOrder: any;
     printerSettings: any;
     settings: any;
+    onSplitBill: () => void;
 }
 
 export const CartSidebar: React.FC<CartSidebarProps> = ({
@@ -59,7 +60,8 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
     onClearCart,
     printOrder,
     printerSettings,
-    settings
+    settings,
+    onSplitBill
 }) => {
     return (
         <div className="w-[400px] bg-white border-l border-gray-200 flex flex-col h-full shadow-2xl z-20">
@@ -174,19 +176,32 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                         <span>Rp {total.toLocaleString('id-ID')}</span>
                     </div>
                 </div>
-
-                <button
-                    onClick={onCheckout}
-                    disabled={cart.length === 0}
-                    className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
-                >
-                    <span>💳</span> Bayar Sekarang
-                </button>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                    <button onClick={onSaveDraft} className="py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors">
-                        Simpan
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                    <button
+                        onClick={onSaveDraft}
+                        disabled={cart.length === 0}
+                        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        <span>💾</span> Simpan
                     </button>
-                    <button onClick={onClearCart} className="py-2 text-red-600 bg-white border border-gray-300 rounded-lg hover:bg-red-50 text-sm font-medium transition-colors">
+                    <button
+                        onClick={onSplitBill}
+                        disabled={cart.length === 0}
+                        className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        <span>✂️</span> Split
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                    <button
+                        onClick={onCheckout}
+                        disabled={cart.length === 0}
+                        className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        <span>💳</span> Bayar
+                    </button>
+                    <button onClick={onClearCart} className="py-3.5 text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl font-bold transition-colors active:scale-95 text-sm">
                         Batal
                     </button>
                 </div>

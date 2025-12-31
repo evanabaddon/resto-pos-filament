@@ -11,6 +11,8 @@ import ShiftModal from './components/ShiftModal';
 import PaymentModal from './components/PaymentModal';
 import Notification from './components/Notification';
 import ConfirmModal from './components/ConfirmModal';
+import SplitBillModal from './components/SplitBillModal';
+import JoinBillModal from './components/JoinBillModal';
 import type { Product, Category, CartItem } from './types';
 
 
@@ -66,6 +68,99 @@ function App() {
     // Payment Modal
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+
+    // Split Bill State
+    const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
+    const [splitCart, setSplitCart] = useState<CartItem[] | null>(null);
+
+    const handleSplitRequest = (itemsToSplit: CartItem[]) => {
+        setSplitCart(itemsToSplit);
+        setIsSplitModalOpen(false);
+        setIsPaymentModalOpen(true); // Proceed to pay immediately for the split part
+    };
+
+    // Join Bill State
+    const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+
+    const handleMergeDrafts = async (selectedDraftIds: number[]) => {
+        setIsJoinModalOpen(false);
+
+        if (selectedDraftIds.length < 2) {
+            showNotification('⚠️ Pilih minimal 2 draft untuk digabungkan', 'error');
+            return;
+        }
+
+        try {
+            const selectedDrafts = drafts.filter(d => selectedDraftIds.includes(d.id));
+            if (selectedDrafts.length !== selectedDraftIds.length) {
+                showNotification('⚠️ Beberapa draft tidak ditemukan', 'error');
+                return;
+            }
+
+            // Verify logic: Can we merge server drafts offline? 
+            // For now, let's allow merging only LOCAL drafts or handle mixed carefully.
+            // Simplified: We will create a NEW LOCAL draft from the merged data.
+            // Old drafts: convert to delete requests.
+
+            let combinedItems: any[] = [];
+            let combinedSubtotal = 0;
+            const customerName = selectedDrafts[0].data.customer_name || 'Gabungan';
+            const tableNumber = selectedDrafts[0].data.table_number || '';
+            const orderType = selectedDrafts[0].data.order_type || 'Dine In';
+
+            selectedDrafts.forEach(draft => {
+                if (draft.data.items) {
+                    draft.data.items.forEach((item: any) => {
+                        // Check if existing in combined
+                        const existing = combinedItems.find(i => i.product_id === item.product_id && i.notes === item.notes);
+                        if (existing) {
+                            existing.quantity += Number(item.quantity);
+                            existing.subtotal += Number(item.subtotal);
+                        } else {
+                            combinedItems.push({ ...item, quantity: Number(item.quantity), subtotal: Number(item.subtotal) });
+                        }
+                    });
+                }
+            });
+
+            // Recalculate Totals
+            combinedSubtotal = combinedItems.reduce((acc, item) => acc + item.subtotal, 0);
+            const tax = (combinedSubtotal * (settings?.tax_rate || 0)) / 100;
+            const total = combinedSubtotal + tax; // No discount initially on merged
+
+            const mergedSaleData = {
+                items: combinedItems,
+                subtotal: combinedSubtotal,
+                tax: tax,
+                discount: 0,
+                total: total,
+                payment_method: null,
+                customer_name: customerName + (selectedDrafts.length > 1 ? ' (Merged)' : ''),
+                order_type: orderType,
+                table_number: tableNumber,
+                created_at: new Date().toISOString()
+            };
+
+            // 1. Save NEW Draft
+            await dbService.saveOfflineSale(mergedSaleData, true);
+
+            // 2. Delete OLD Drafts
+            for (const draft of selectedDrafts) {
+                if (draft.source === 'local') {
+                    await dbService.deleteSale(draft.id);
+                } else {
+                    await api.deleteDraft(draft.id);
+                }
+            }
+
+            showNotification('✅ Draft Berhasil Digabungkan!', 'success');
+            loadDrafts(transactionTab);
+
+        } catch (err: any) {
+            console.error('Merge failed:', err);
+            showNotification('❌ Gagal menggabungkan transaksi: ' + err.message, 'error');
+        }
+    };
 
     const handleShiftOpened = (shift: any) => {
         setActiveShift(shift);
@@ -334,19 +429,28 @@ function App() {
         ));
     };
 
-    const calculateTotal = (): number => {
-        const subtotal = cart.reduce((sum, item) => sum + Number(item.subtotal), 0);
+    const calculateTotal = (targetCart: CartItem[] | null = null): number => {
+        const cartToUse = targetCart || cart;
+        const subtotal = cartToUse.reduce((sum, item) => sum + Number(item.subtotal), 0);
         const taxRate = settings?.tax_rate || 0;
         const tax = (subtotal * taxRate) / 100;
-        return subtotal + tax - (Number(discount) || 0);
+        // Discount logic: If splitting, assume no discount on split part or apply fully? 
+        // For consistency with handlePaymentConfirm, we disable discount on split parts for now.
+        const effectiveDiscount = targetCart ? 0 : (Number(discount) || 0);
+
+        return subtotal + tax - effectiveDiscount;
     };
 
     // DRAFTS SYSTEM
     const [showDrafts, setShowDrafts] = useState(false);
     const [transactionTab, setTransactionTab] = useState<'draft' | 'completed'>('draft');
-    const [drafts, setDrafts] = useState<{ local_id: number, sale_data: any, created_at: string }[]>([]);
+    const [drafts, setDrafts] = useState<{ id: number, source: 'local' | 'server', data: any, created_at: string }[]>([]);
+    const [isLoadingDrafts, setIsLoadingDrafts] = useState(false);
 
     const loadDrafts = async (status: 'draft' | 'completed' = 'draft') => {
+        setIsLoadingDrafts(true);
+        setDrafts([]); // Clear previous data immediately to avoid stale UI
+
         const allDrafts: any[] = [];
 
         // 1. Local Drafts/Completed
@@ -382,6 +486,7 @@ function App() {
         // Sort by newest
         allDrafts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         setDrafts(allDrafts);
+        setIsLoadingDrafts(false);
     };
 
     const handleSaveDraft = async () => {
@@ -402,8 +507,8 @@ function App() {
                 quantity: item.quantity,
                 price: item.product.price,
                 subtotal: item.subtotal,
-                notes: item.notes || null,
-                product_name: item.product.name
+                product_name: item.product.name,
+                category_id: item.product.category_id
             })),
             subtotal: subtotal,
             tax: tax,
@@ -532,6 +637,75 @@ function App() {
         });
     };
 
+    const handleReprint = async (draft: any, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!printerSettings.cashierPrinter) {
+            showNotification('⚠️ Printer utama belum diatur!', 'error');
+            return;
+        }
+
+        try {
+            const saleData = draft.data;
+            const invoiceNum = saleData.invoice_number || (draft.source === 'local' ? `OFFLINE-${draft.id}` : `SERVER-${draft.id}`);
+
+            showNotification('🖨️ Mencetak ulang...', 'info');
+
+            // 1. Print to Cashier
+            const receiptText = printerService.generateReceiptText(
+                { ...saleData, invoice_number: invoiceNum },
+                settings,
+                printerSettings.cashierPaperWidth || '58mm'
+            );
+            await printerService.printJob(printerSettings.cashierPrinter, receiptText);
+
+            // 2. Process Mappings (Kitchen/Bar/etc)
+            const printerGroups: Record<string, { items: any[], paperWidth: '58mm' | '80mm' }> = {};
+
+            if (saleData.items && Array.isArray(saleData.items)) {
+                saleData.items.forEach((item: any) => {
+                    // Note: Old drafts might not have category_id saved. 
+                    // In that case, we can't route them specifically, or we'd need to look up product by ID from 'products' state.
+                    let catId = item.category_id;
+
+                    // Fallback lookup if catId missing (for backward compatibility)
+                    if (!catId) {
+                        const localProduct = products.find(p => p.id === item.product_id);
+                        if (localProduct) catId = localProduct.category_id;
+                    }
+
+                    const mapping = printerSettings.categoryMappings && printerSettings.categoryMappings.find(m => m.categoryId === catId);
+
+                    if (mapping && mapping.printerName) {
+                        if (!printerGroups[mapping.printerName]) {
+                            printerGroups[mapping.printerName] = {
+                                items: [],
+                                paperWidth: mapping.paperWidth || '58mm'
+                            };
+                        }
+                        printerGroups[mapping.printerName].items.push(item);
+                    }
+                });
+            }
+
+            // Print each group
+            for (const [targetPrinter, group] of Object.entries(printerGroups)) {
+                const ticketOrder = {
+                    ...saleData,
+                    invoice_number: invoiceNum,
+                    items: group.items,
+                    subtotal: 0, tax: 0, discount: 0, total: 0
+                };
+                const ticketText = printerService.generateReceiptText(ticketOrder, settings, group.paperWidth);
+                await printerService.printJob(targetPrinter, ticketText);
+            }
+
+            showNotification('✅ Cetak ulang berhasil!', 'success');
+        } catch (err: any) {
+            console.error('Reprint failed:', err);
+            showNotification('❌ Gagal mencetak ulang: ' + err.message, 'error');
+        }
+    };
+
     // HYBRID CHECKOUT
     const handleCheckout = async () => {
         if (!activeShift) {
@@ -558,23 +732,30 @@ function App() {
     const handlePaymentConfirm = async (amount: number, methodId: number, methodCode: string) => {
         setIsPaymentModalOpen(false);
 
-        const subtotal = cart.reduce((sum, item) => sum + Number(item.subtotal), 0);
+        // Determine which cart to pay (Main or Split)
+        const cartToProcess = splitCart || cart;
+        const subtotal = cartToProcess.reduce((sum, item) => sum + Number(item.subtotal), 0);
         const taxRate = settings?.tax_rate || 0;
         const tax = (subtotal * taxRate) / 100;
-        const total = subtotal + tax - discount;
+        // Discount only applies to main cart full checkout usually, or we split discount?
+        // Simplified: Split Bill pays FULL price of items, no discount on split part for now unless logic added.
+        const activeDiscount = splitCart ? 0 : discount;
+        const total = subtotal + tax - activeDiscount;
 
         const saleData = {
-            items: cart.map(item => ({
+            items: cartToProcess.map(item => ({
                 product_id: item.product.id,
                 quantity: item.quantity,
                 price: item.product.price,
                 subtotal: item.subtotal,
                 notes: item.notes || null,
-                product_name: item.product.name // Save name for offline receipt
+
+                product_name: item.product.name, // Save name for offline receipt
+                category_id: item.product.category_id
             })),
             subtotal: subtotal,
             tax: tax,
-            discount: discount,
+            discount: activeDiscount,
             total: total,
             payment_method_id: methodId,
             payment_amount: amount,
@@ -592,7 +773,8 @@ function App() {
             const localId = await dbService.saveOfflineSale(saleData, false, activeShift?.id);
 
             // If this was a resumed draft, delete the original draft now
-            if (activeDraft) {
+            // BUT ONLY if this is a FULL checkout. If Split, we handle it later.
+            if (activeDraft && !splitCart) {
                 try {
                     if (activeDraft.source === 'local') {
                         await dbService.deleteSale(activeDraft.id);
@@ -657,12 +839,98 @@ function App() {
                 setPrintOrder({ ...saleData, invoice_number: `OFFLINE-${localId}` });
             }
 
-            // 2. Clear Cart
-            setCart([]);
-            setCustomerName('');
-            setTableNumber('');
-            setDiscount(0);
-            setActiveDraft(null);
+
+
+            // 2. Clear Cart or Update Split
+            if (splitCart) {
+                // Remove paid items from main cart
+                const newMainCart = [...cart];
+                splitCart.forEach(splitItem => {
+                    const mainItemIndex = newMainCart.findIndex(i => i.product.id === splitItem.product.id);
+                    if (mainItemIndex !== -1) {
+                        const mainItem = newMainCart[mainItemIndex];
+                        if (mainItem.quantity <= splitItem.quantity) {
+                            // Fully paid, remove
+                            newMainCart.splice(mainItemIndex, 1);
+                        } else {
+                            // Partially paid, reduce qty
+                            newMainCart[mainItemIndex] = {
+                                ...mainItem,
+                                quantity: mainItem.quantity - splitItem.quantity,
+                                subtotal: (mainItem.quantity - splitItem.quantity) * mainItem.product.price
+                            };
+                        }
+                    }
+                });
+                setCart(newMainCart);
+                setSplitCart(null); // Reset split state
+
+                // IMPORTANT: If we have an active draft, we must UPDATE it with the new Main Cart content
+                // So the remaining items don't disappear from the draft list.
+                if (activeDraft) {
+                    try {
+                        // Simplify: Just delete old draft and create new one for remainder
+                        if (activeDraft.source === 'local') {
+                            await dbService.deleteSale(activeDraft.id);
+                        } else {
+                            // If server draft, we might not be able to delete it easily if offline, 
+                            // but let's assume online or skip. 
+                            await api.deleteDraft(activeDraft.id);
+                        }
+
+                        // Save NEW draft with remaining items
+                        // We use the same metadata (customer name, etc)
+                        const remainingSaleData = {
+                            items: newMainCart.map(item => ({
+                                product_id: item.product.id,
+                                quantity: item.quantity,
+                                price: item.product.price,
+                                subtotal: item.subtotal,
+                                notes: item.notes || null,
+                                product_name: item.product.name,
+                                category_id: item.product.category_id
+                            })),
+                            subtotal: newMainCart.reduce((acc, i) => acc + Number(i.subtotal), 0),
+                            tax: 0, // Recalculate if needed, but simple for now
+                            discount: discount, // Keep discount on remainder?
+                            total: 0, // Recalc below
+                            payment_method: null,
+                            customer_name: customerName,
+                            order_type: orderType,
+                            table_number: tableNumber,
+                            member_id: null,
+                            created_at: new Date().toISOString()
+                        };
+
+                        // Recalculate totals
+                        const sub = remainingSaleData.subtotal;
+                        const tx = (sub * (settings?.tax_rate || 0)) / 100;
+                        remainingSaleData.tax = tx;
+                        remainingSaleData.total = sub + tx - (Number(discount) || 0);
+
+                        const newDraftId = await dbService.saveOfflineSale(remainingSaleData, true);
+                        if (newDraftId) {
+                            setActiveDraft({ id: newDraftId, source: 'local' }); // Update active draft to new local one
+                        }
+
+                        // Refresh drafts list if open
+                        loadDrafts(transactionTab);
+
+                        console.log('✅ Updated draft for remaining split items');
+                    } catch (e) {
+                        console.error('Failed to update draft after split:', e);
+                    }
+                }
+
+                showNotification('✅ Transaksi Split Berhasil Dibayar!', 'success');
+            } else {
+                // Standard full checkout
+                setCart([]);
+                setCustomerName('');
+                setTableNumber('');
+                setDiscount(0);
+                setActiveDraft(null);
+            }
 
             // 3. Try Background Sync
             handleSync();
@@ -952,7 +1220,17 @@ function App() {
                     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                         <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
                             <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-                                <h2 className="text-lg font-bold">📂 Transaksi</h2>
+                                <div className="flex items-center gap-3">
+                                    <h2 className="text-lg font-bold">📂 Transaksi</h2>
+                                    {transactionTab === 'draft' && drafts.length > 1 && (
+                                        <button
+                                            onClick={() => setIsJoinModalOpen(true)}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm flex items-center gap-1 text-xs"
+                                        >
+                                            <span>🔗</span> Gabung
+                                        </button>
+                                    )}
+                                </div>
                                 <button onClick={() => setShowDrafts(false)} className="text-gray-500 hover:text-gray-700">✕</button>
                             </div>
 
@@ -985,7 +1263,12 @@ function App() {
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                                {drafts.length === 0 ? (
+                                {isLoadingDrafts ? (
+                                    <div className="flex flex-col items-center justify-center py-10 space-y-2 text-gray-400">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+                                        <p className="text-sm">Memuat data...</p>
+                                    </div>
+                                ) : drafts.length === 0 ? (
                                     <div className="text-center text-gray-400 py-10">
                                         {transactionTab === 'draft' ? 'Belum ada draft tersimpan' : 'Belum ada transaksi completed'}
                                     </div>
@@ -1017,6 +1300,13 @@ function App() {
                                                             title="Hapus Draft"
                                                         >
                                                             🗑️
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => handleReprint(draft, e)}
+                                                            className="bg-gray-100 text-gray-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-gray-200"
+                                                            title="Cetak Ulang"
+                                                        >
+                                                            🖨️
                                                         </button>
                                                         <button className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary-700">
                                                             Resume ➡️
@@ -1070,6 +1360,21 @@ function App() {
                 printOrder={printOrder}
                 printerSettings={printerSettings}
                 settings={settings}
+                onSplitBill={() => setIsSplitModalOpen(true)}
+            />
+
+            <SplitBillModal
+                isOpen={isSplitModalOpen}
+                cart={cart}
+                onClose={() => setIsSplitModalOpen(false)}
+                onSplit={handleSplitRequest}
+            />
+
+            <JoinBillModal
+                isOpen={isJoinModalOpen}
+                drafts={drafts}
+                onClose={() => setIsJoinModalOpen(false)}
+                onMerge={handleMergeDrafts}
             />
 
             <ShiftModal
@@ -1086,10 +1391,13 @@ function App() {
 
             <PaymentModal
                 isOpen={isPaymentModalOpen}
-                total={calculateTotal()}
+                total={splitCart ? calculateTotal(splitCart) : calculateTotal()}
                 paymentMethods={paymentMethods}
                 onConfirm={handlePaymentConfirm}
-                onCancel={() => setIsPaymentModalOpen(false)}
+                onCancel={() => {
+                    setIsPaymentModalOpen(false);
+                    if (splitCart) setSplitCart(null); // Cancel split if modal closed
+                }}
             />
 
             {notification && (
