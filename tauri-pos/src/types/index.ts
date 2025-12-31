@@ -35,3 +35,10 @@ export interface Sale {
     status: 'pending' | 'synced';
     created_at: string;
 }
+
+export interface OrderDraft {
+    id: number;
+    source: 'local' | 'server';
+    data: any;
+    created_at: string;
+}

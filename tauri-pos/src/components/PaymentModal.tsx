@@ -66,7 +66,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center backdrop-blur-sm justify-center bg-black/50 backdrop-blur-sm">
             <div className="bg-white w-[500px] rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
                 <div className="bg-primary-600 px-6 py-4">
                     <h2 className="text-white text-xl font-bold">💳 Pembayaran</h2>
@@ -91,8 +91,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                                     key={method.id}
                                     onClick={() => setSelectedMethod(method)}
                                     className={`p-4 rounded-lg border-2 transition-all ${selectedMethod?.id === method.id
-                                            ? 'border-primary-600 bg-primary-50 text-primary-900'
-                                            : 'border-gray-200 hover:border-primary-300 text-gray-700'
+                                        ? 'border-primary-600 bg-primary-50 text-primary-900'
+                                        : 'border-gray-200 hover:border-primary-300 text-gray-700'
                                         }`}
                                 >
                                     <div className="text-2xl mb-1">
@@ -184,8 +184,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                             onClick={handleConfirm}
                             disabled={!canConfirm()}
                             className={`flex-1 px-4 py-3 rounded-lg text-white font-bold shadow-lg transition-all ${canConfirm()
-                                    ? 'bg-primary-600 hover:bg-primary-700'
-                                    : 'bg-gray-300 cursor-not-allowed'
+                                ? 'bg-primary-600 hover:bg-primary-700'
+                                : 'bg-gray-300 cursor-not-allowed'
                                 }`}
                         >
                             Bayar & Cetak

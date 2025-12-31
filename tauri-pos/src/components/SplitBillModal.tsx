@@ -66,7 +66,7 @@ const SplitBillModal: React.FC<SplitBillModalProps> = ({ isOpen, cart, onClose, 
     }, 0);
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[70] flex items-center backdrop-blur-sm justify-center bg-black/50 backdrop-blur-sm">
             <div className="bg-white w-[500px] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
                 <div className="bg-primary-600 px-6 py-4 flex justify-between items-center">
                     <div>

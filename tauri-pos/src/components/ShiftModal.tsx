@@ -119,7 +119,7 @@ const ShiftModal: React.FC<ShiftModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center backdrop-blur-sm justify-center bg-black/50 backdrop-blur-sm">
             <div className="bg-white w-[400px] rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
                 <div className="bg-primary-600 px-6 py-4">
                     <h2 className="text-white text-lg font-bold">
