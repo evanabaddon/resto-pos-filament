@@ -150,7 +150,7 @@ Route::post(
                     $sale = Sale::create([
                         'invoice_number' => 'OFFLINE-' . time() . '-' . uniqid(),
                         'customer_name' => $orderData['customer_name'] ?? 'Offline Customer',
-                        'order_type' => 'offline', // Penanda ini transaksi dari offline mode
+                        'order_type' => $orderData['order_type'] ?? 'offline', // Penanda ini transaksi dari offline mode
                         'user_id' => 2, // Default user (Admin ID=2, ID=1 not exists)
                         'cash_session_id' => $activeSession ? $activeSession->id : null, // Link ke sesi aktif
 
