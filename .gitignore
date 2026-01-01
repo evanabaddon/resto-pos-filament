@@ -48,4 +48,4 @@ widowsclient/windows-print-client.php
 /wa-gateway/node_modules
 wa-gateway/package-lock.json
 /tauri-pos/node_modules
-/tauri-pos/target
+/tauri-pos/src-tauri/target
