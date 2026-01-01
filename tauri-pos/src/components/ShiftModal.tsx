@@ -64,11 +64,15 @@ const ShiftModal: React.FC<ShiftModalProps> = ({
                 cash_in_hand: cashInHand
             });
 
+            // Use local datetime to match what was saved in database
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 19).replace('T', ' ');
+
             const newShift = {
                 id: shiftId,
                 cashier_name: cashierName,
                 cash_in_hand: cashInHand,
-                opened_at: new Date().toISOString(),
+                opened_at: localDateTime,
                 status: 'open'
             };
 

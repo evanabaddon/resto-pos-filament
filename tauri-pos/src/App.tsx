@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { dbService } from './services/db';
 import { syncService } from './services/sync';
+import { updateApiConfig } from './services/api';
 import { printerService, type PrinterSettings } from './services/printer';
 // Components
 import { TopBar } from './components/TopBar';
@@ -166,20 +167,36 @@ function PosApp() {
 
     // Printer Settings moved to top
 
-    const handleSaveSettings = useCallback((newApiUrl: string) => {
-        // 1. Update Settings with new API URL
+    const handleSaveSettings = useCallback(async (newApiUrl: string) => {
+        // Check if API URL is changing
+        const isUrlChanging = newApiUrl !== settings.apiUrl;
+
+        // 1. Update API Config (this will update axios baseURL and localStorage)
+        updateApiConfig(newApiUrl);
+
+        // 2. Update Settings with new API URL
         const updatedSettings = { ...settings, apiUrl: newApiUrl };
         setSettings(updatedSettings);
         localStorage.setItem('pos_settings', JSON.stringify(updatedSettings));
 
-        // 2. Persist Printer Settings (already updated in state via setPrinterSettings)
+        // 3. Persist Printer Settings (already updated in state via setPrinterSettings)
         localStorage.setItem('pos_printer_settings', JSON.stringify(printerSettings));
 
         setShowSettings(false);
-        showNotification('✅ Pengaturan disimpan!', 'success');
 
-        if (newApiUrl !== settings.apiUrl) {
-            window.location.reload();
+        // 4. Clear database if URL changed (switching servers)
+        if (isUrlChanging) {
+            try {
+                await dbService.clearAllData();
+                showNotification('✅ Pengaturan disimpan! Database lokal dikosongkan.', 'success');
+                // Reload to re-sync from new server
+                setTimeout(() => window.location.reload(), 1000);
+            } catch (e) {
+                console.error('Failed to clear database:', e);
+                showNotification('⚠️ Pengaturan disimpan, tapi gagal mengosongkan database.', 'error');
+            }
+        } else {
+            showNotification('✅ Pengaturan disimpan!', 'success');
         }
     }, [settings, printerSettings, showNotification]);
 
@@ -199,7 +216,18 @@ function PosApp() {
                 // 2. Load Local Data First (Instant Load)
                 await loadLocalData();
 
-                // 3. Check for Open Shift
+                // 3. Try to sync current shift from server FIRST
+                try {
+                    const serverShift = await syncService.syncCurrentShift();
+                    if (serverShift) {
+                        console.log('✅ Found and synced active shift from server:', serverShift);
+                        setActiveShift(serverShift);
+                    }
+                } catch (syncError) {
+                    console.warn('⚠️ Could not sync shift from server (offline?):', syncError);
+                }
+
+                // 4. Check for Open Shift (local or just synced)
                 const openShift = await dbService.getOpenShift();
                 if (openShift) {
                     console.log('✅ Found active shift:', openShift);
@@ -211,7 +239,7 @@ function PosApp() {
                     setIsShiftModalOpen(true);
                 }
 
-                // 4. Trigger Background Sync
+                // 5. Trigger Background Sync
                 handleSync();
 
             } catch (err: any) {

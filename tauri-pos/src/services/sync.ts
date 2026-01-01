@@ -36,6 +36,32 @@ class SyncService {
         }
     }
 
+    // Download Current Open Shift from Server
+    async syncCurrentShift() {
+        console.log('⬇️ Checking for current open shift on server...');
+        try {
+            const res = await api.getCurrentShift();
+            if (res.data && res.data.shift) {
+                const serverShift = res.data.shift;
+                console.log(`📥 Found open shift on server: ID ${serverShift.id}`);
+
+                // Save to local DB
+                const localId = await dbService.saveServerShift(serverShift);
+
+                if (localId) {
+                    // Return the local shift object
+                    return await dbService.getOpenShift();
+                }
+            } else {
+                console.log('ℹ️ No open shift found on server');
+            }
+            return null;
+        } catch (error) {
+            console.error('❌ Failed to sync current shift:', error);
+            return null;
+        }
+    }
+
     // Down Sync: Get data from Server -> Local DB
     async syncProducts() {
         if (this.isProductSyncing) {
@@ -188,10 +214,15 @@ class SyncService {
         // 3. Upload Shifts
         await this.syncShifts();
 
-        // 4. Download Products (Get latest stock)
+        // 4. Download Current Shift (if no active shift locally)
+        if (!activeShiftId) {
+            await this.syncCurrentShift();
+        }
+
+        // 5. Download Products (Get latest stock)
         await this.syncProducts();
 
-        // 5. Download Sales History (Backup)
+        // 6. Download Sales History (Backup)
         await this.syncSalesHistory(activeShiftId);
 
         console.log('✅ MASTER SYNC COMPLETED');

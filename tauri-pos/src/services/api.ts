@@ -60,5 +60,6 @@ export const api = {
 
     // Shifts
     syncShifts: (shifts: any[]) => client.post('/pos/sync-shifts', { shifts }),
+    getCurrentShift: () => client.get('/pos/current-shift'),
     getSalesHistory: () => client.get('/pos/sales-history'),
 };

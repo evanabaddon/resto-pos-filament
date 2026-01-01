@@ -380,10 +380,15 @@ class DatabaseService {
     // --- SHIFTS ---
     async createShift(shiftData: { cashier_name: string, cash_in_hand: number, user_id?: number }) {
         if (!this.db) return;
+
+        // Use local datetime instead of UTC to match server timezone
+        const now = new Date();
+        const localDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 19).replace('T', ' ');
+
         const result = await this.db.execute(
             `INSERT INTO shifts (cashier_name, cash_in_hand, user_id, opened_at, status) 
-             VALUES ($1, $2, $3, datetime('now'), 'open')`,
-            [shiftData.cashier_name, shiftData.cash_in_hand, shiftData.user_id || null]
+             VALUES ($1, $2, $3, $4, 'open')`,
+            [shiftData.cashier_name, shiftData.cash_in_hand, shiftData.user_id || null, localDateTime]
         );
         return result.lastInsertId;
     }
@@ -488,8 +493,40 @@ class DatabaseService {
         await this.db.execute('UPDATE shifts SET synced = 1, server_id = $1 WHERE id = $2', [serverId, localId]);
     }
 
+    async getShiftByServerId(serverId: number) {
+        if (!this.db) return null;
+        const shifts = await this.db.select<any[]>('SELECT * FROM shifts WHERE server_id = $1 LIMIT 1', [serverId]);
+        return shifts.length > 0 ? shifts[0] : null;
+    }
+
+    async saveServerShift(shiftData: any) {
+        if (!this.db) return;
+
+        // Check if already exists
+        const existing = await this.getShiftByServerId(shiftData.id);
+        if (existing) {
+            console.log(`⏭️ Shift ${shiftData.id} already exists locally, skipping`);
+            return existing.id;
+        }
+
+        // Insert new shift from server
+        const result = await this.db.execute(
+            `INSERT INTO shifts (server_id, cashier_name, cash_in_hand, opened_at, status, synced) 
+             VALUES ($1, $2, $3, $4, 'open', 1)`,
+            [shiftData.id, shiftData.user_name, shiftData.cash_in_hand, shiftData.opened_at]
+        );
+
+        console.log(`✅ Server shift ${shiftData.id} saved locally with ID ${result.lastInsertId}`);
+        return result.lastInsertId;
+    }
+
     async closeShift(id: number, closeData: { cash_out: number, total_cash_sales: number, expected_cash: number, difference: number }) {
         if (!this.db) return;
+
+        // Use local datetime instead of UTC
+        const now = new Date();
+        const localDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 19).replace('T', ' ');
+
         await this.db.execute(
             `UPDATE shifts SET 
                 cash_out = $1, 
@@ -497,11 +534,33 @@ class DatabaseService {
                 expected_cash = $3, 
                 difference = $4,
                 status = 'closed',
-                closed_at = datetime('now'),
+                closed_at = $5,
                 synced = 0
-             WHERE id = $5`,
-            [closeData.cash_out, closeData.total_cash_sales, closeData.expected_cash, closeData.difference, id]
+             WHERE id = $6`,
+            [closeData.cash_out, closeData.total_cash_sales, closeData.expected_cash, closeData.difference, localDateTime, id]
         );
+    }
+
+    // Clear all data (when switching servers)
+    async clearAllData() {
+        if (!this.db) return;
+
+        console.log('🧹 Clearing all local data...');
+
+        try {
+            // Clear all tables
+            await this.db.execute('DELETE FROM products');
+            await this.db.execute('DELETE FROM categories');
+            await this.db.execute('DELETE FROM payment_methods');
+            await this.db.execute('DELETE FROM offline_sales');
+            await this.db.execute('DELETE FROM shifts');
+            await this.db.execute('DELETE FROM members');
+
+            console.log('✅ All local data cleared');
+        } catch (e) {
+            console.error('❌ Failed to clear data:', e);
+            throw e;
+        }
     }
 }
 
