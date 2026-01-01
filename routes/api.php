@@ -5,6 +5,7 @@ use App\Models\PrintJob;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Settings\GeneralSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -31,17 +32,16 @@ Route::get('/pos/status', function () {
 
 // POS Business Settings
 Route::get('/pos/settings', function () {
-    // Get settings from database
-    $settings = \App\Models\GeneralSetting::first();
+    // Get settings from Spatie Settings
+    $settings = app(GeneralSettings::class);
 
     return response()->json([
-        'store_name' => $settings->business_name ?? 'Resto POS Filament',
-        'store_address' => $settings->business_address ?? 'Jl. Nusantara No. 10, Jakarta',
-        'store_phone' => $settings->business_phone ?? '0812-3456-7890',
-        'receipt_header' => $settings->receipt_header ?? 'Selamat Datang!',
-        'receipt_footer' => $settings->receipt_footer ?? 'Terima Kasih, Datang Kembali',
+        'store_name' => $settings->app_name ?? 'Resto POS Filament',
+        'store_address' => $settings->company_address ?? 'Jl. Nusantara No. 10, Jakarta',
+        'store_phone' => $settings->company_phone ?? '0812-3456-7890',
+        'receipt_header' => 'Selamat Datang!', // Could add to GeneralSettings if needed
+        'receipt_footer' => 'Terima Kasih, Datang Kembali', // Could add to GeneralSettings if needed
         'tax_rate' => $settings->tax_percentage ?? 11, // From database
-        'service_charge' => $settings->service_charge_percentage ?? 0,
         'pos_pin' => '123456', // Simple PIN for now (could be from settings too)
     ]);
 });
