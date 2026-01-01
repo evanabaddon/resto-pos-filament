@@ -31,15 +31,18 @@ Route::get('/pos/status', function () {
 
 // POS Business Settings
 Route::get('/pos/settings', function () {
+    // Get settings from database
+    $settings = \App\Models\GeneralSetting::first();
+
     return response()->json([
-        'store_name' => 'Resto POS Filament',
-        'store_address' => 'Jl. Nusantara No. 10, Jakarta',
-        'store_phone' => '0812-3456-7890',
-        'receipt_header' => 'Selamat Datang!',
-        'receipt_footer' => 'Terima Kasih, Datang Kembali',
-        'tax_rate' => 11, // PPN 11%
-        'service_charge' => 0,
-        'pos_pin' => '123456', // Simple PIN for now
+        'store_name' => $settings->business_name ?? 'Resto POS Filament',
+        'store_address' => $settings->business_address ?? 'Jl. Nusantara No. 10, Jakarta',
+        'store_phone' => $settings->business_phone ?? '0812-3456-7890',
+        'receipt_header' => $settings->receipt_header ?? 'Selamat Datang!',
+        'receipt_footer' => $settings->receipt_footer ?? 'Terima Kasih, Datang Kembali',
+        'tax_rate' => $settings->tax_percentage ?? 11, // From database
+        'service_charge' => $settings->service_charge_percentage ?? 0,
+        'pos_pin' => '123456', // Simple PIN for now (could be from settings too)
     ]);
 });
 
