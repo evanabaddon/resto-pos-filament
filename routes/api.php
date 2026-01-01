@@ -1,7 +1,12 @@
 <?php
 
+use App\Models\CashSession;
 use App\Models\PrintJob;
+use App\Models\Product;
+use App\Models\Sale;
+use App\Models\SaleItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
@@ -15,90 +20,442 @@ Route::get('/user', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 
+// POS Connection Test
+Route::get('/pos/status', function () {
+    return response()->json([
+        'status' => 'connected',
+        'message' => 'Resto POS Server is Online',
+        'time' => now()->toIso8601String(),
+    ]);
+});
+
+// POS Business Settings
+Route::get('/pos/settings', function () {
+    return response()->json([
+        'store_name' => 'Resto POS Filament',
+        'store_address' => 'Jl. Nusantara No. 10, Jakarta',
+        'store_phone' => '0812-3456-7890',
+        'receipt_header' => 'Selamat Datang!',
+        'receipt_footer' => 'Terima Kasih, Datang Kembali',
+        'tax_rate' => 11, // PPN 11%
+        'service_charge' => 0,
+        'pos_pin' => '123456', // Simple PIN for now
+    ]);
+});
+
 // POS Offline Sync Endpoint
 Route::get('/pos/products-sync', function () {
-    $products = \App\Models\Product::where('is_sellable', true)
-        ->select('id', 'name', 'sell_price as price', 'stock', 'category_id', 'image', 'type')
+    // 1. Ambil kandidat produk (Sellable & Bukan Down Payment)
+    $query = Product::where('is_sellable', true)
+        ->where('name', 'not like', '%Down Payment%');
+
+    // Eager load untuk optimasi perhitungan resep
+    $products = $query->with(['recipes.ingredient', 'recipes.unit', 'unit'])
+        ->get()
+        ->map(function ($product) {
+            $realStock = 0;
+
+            if ($product->type === 'service') {
+                $realStock = 9999; // Unlimited for service
+            } elseif (in_array($product->type, ['produced', 'bar'])) {
+                // Untuk Food/Bar: Stock adalah Prepared Stock (yang sudah jadi) + Bahan Baku yang tersedia
+                $prepared = $product->prepared_stock ?? 0;
+
+                // Hitung potensi dari bahan baku (jika ada resep)
+                $potential = 0;
+                if ($product->recipes->isNotEmpty()) {
+                    $potential = app(\App\Services\RecipeStockChecker::class)->getMaxPortions($product);
+                }
+
+                $realStock = $prepared + $potential;
+            } else {
+                // Untuk Retail/Raw/Lainnya: Gunakan stock fisik langsung
+                $realStock = $product->stock ?? 0;
+            }
+
+            // Override stock di object produk untuk dikirim ke POS
+            $product->stock = $realStock;
+
+            return $product;
+        })
+        // 2. Filter: Hanya yang stocknya positif
+        ->filter(function ($product) {
+            return $product->stock > 0;
+        })
+        ->values(); // Reset array keys
+
+    // Transformasi data untuk response
+    $formattedProducts = $products->map(function ($product) {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'price' => (float) $product->sell_price,
+            'stock' => (float) $product->stock,
+            'prepared_stock' => (float) $product->prepared_stock, // Added
+            'enable_stock_alert' => (bool) $product->enable_stock_alert, // Added
+            'category_id' => $product->category_id,
+            'image' => $product->image,
+            'type' => $product->type,
+        ];
+    });
+
+    // Categories
+    $categories = \App\Models\Category::select('id', 'name')->get();
+
+    // Payment Methods
+    $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
+        ->select('id', 'name', 'code', 'is_active')
         ->get();
 
     return response()->json([
-        'products' => $products,
+        'products' => $formattedProducts,
+        'categories' => $categories,
+        'payment_methods' => $paymentMethods, // Added
         'timestamp' => now()->toIso8601String()
     ]);
 });
 
 // POS Offline Sales Sync Endpoint
-Route::post('/pos/sync-offline-sales', function (Request $request) {
-    try {
-        $orders = $request->input('orders', []);
-        $syncedCount = 0;
+Route::post(
+    '/pos/sync-offline-sales',
+    function (Request $request) {
+        try {
+            $orders = $request->input('orders', []);
+            $syncedCount = 0;
 
-        foreach ($orders as $orderData) {
-            // Gunakan Transaction per order agar aman
-            \Illuminate\Support\Facades\DB::transaction(function () use ($orderData) {
-                // Recalculate Totals from Items to avoid corrupted frontend data
-                $calculatedSubtotal = 0;
-                foreach ($orderData['items'] as $item) {
-                    $price = isset($item['price']) ? (float) $item['price'] : 0;
-                    $qty = isset($item['quantity']) ? (float) $item['quantity'] : 1;
-                    $calculatedSubtotal += ($price * $qty);
-                }
+            foreach ($orders as $orderData) {
+                // Gunakan Transaction per order agar aman
+                DB::transaction(function () use ($orderData) {
+                    // Recalculate Totals from Items to avoid corrupted frontend data
+                    $calculatedSubtotal = 0;
+                    foreach ($orderData['items'] as $item) {
+                        $price = isset($item['price']) ? (float) $item['price'] : 0;
+                        $qty = isset($item['quantity']) ? (float) $item['quantity'] : 1;
+                        $calculatedSubtotal += ($price * $qty);
+                    }
 
-                $tax = isset($orderData['tax']) ? (float) $orderData['tax'] : 0;
-                $finalTotal = $calculatedSubtotal + $tax;
+                    $tax = isset($orderData['tax']) ? (float) $orderData['tax'] : 0;
+                    $finalTotal = $calculatedSubtotal + $tax;
 
-                // Cari Cash Session yang sedang AKTIF (Open) untuk User 1
-                $activeSession = \App\Models\CashSession::where('user_id', 1)
-                    ->where('status', 'open')
-                    ->latest()
-                    ->first();
+                    // Cari Cash Session yang sedang AKTIF (Open) untuk User Default (2)
+                    $activeSession = CashSession::where('user_id', 2)
+                        ->where('status', 'open')
+                        ->latest()
+                        ->first();
 
-                // 1. Create Sale as DRAFT (agar bisa dibayar nanti)
-                $sale = \App\Models\Sale::create([
-                    'invoice_number' => 'OFFLINE-' . time() . '-' . uniqid(),
-                    'customer_name' => $orderData['customer_name'] ?? 'Offline Customer',
-                    'order_type' => 'offline', // Penanda ini transaksi dari offline mode
-                    'user_id' => 1, // Default user
-                    'cash_session_id' => $activeSession ? $activeSession->id : null, // Link ke sesi aktif
+                    // 1. Create Sale as DRAFT (agar bisa dibayar nanti)
+                    $sale = Sale::create([
+                        'invoice_number' => 'OFFLINE-' . time() . '-' . uniqid(),
+                        'customer_name' => $orderData['customer_name'] ?? 'Offline Customer',
+                        'order_type' => 'offline', // Penanda ini transaksi dari offline mode
+                        'user_id' => 2, // Default user (Admin ID=2, ID=1 not exists)
+                        'cash_session_id' => $activeSession ? $activeSession->id : null, // Link ke sesi aktif
+    
+                        'subtotal' => $calculatedSubtotal,
+                        'tax' => $tax,
+                        'final_total' => $finalTotal,
+                        'total' => $finalTotal,
 
-                    'subtotal' => $calculatedSubtotal,
-                    'tax' => $tax,
-                    'final_total' => $finalTotal,
-                    'total' => $finalTotal,
-
-                    'payment_method' => null, // Karena draft, belum dibayar
-                    'payment_method_id' => null,
-                    'status' => 'draft', // User minta draft
-                    'created_at' => $orderData['created_at'] ?? now(),
-                ]);
-
-                // 2. Create Items & Deduct Stock
-                foreach ($orderData['items'] as $item) {
-                    \App\Models\SaleItem::create([
-                        'sale_id' => $sale->id,
-                        'product_id' => $item['product_id'] ?? $item['id'], // Handle both cases
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $item['price'], // Schema uses unit_price
-                        'subtotal' => $item['subtotal'],
+                        'payment_method' => $orderData['payment_method'] ?? null,
+                        'payment_method_id' => $orderData['payment_method_id'] ?? null,
+                        'status' => $orderData['status'] ?? 'draft', // Use status from client
+                        'created_at' => $orderData['created_at'] ?? now(),
                     ]);
 
-                    // Deduct Stock
-                    $product = \App\Models\Product::find($item['product_id'] ?? $item['id']);
-                    if ($product && $product->stock !== null) {
-                        $product->decrement('stock', $item['quantity']);
+                    // 2. Create Items & Deduct Stock
+                    foreach ($orderData['items'] as $item) {
+                        SaleItem::create([
+                            'sale_id' => $sale->id,
+                            'product_id' => $item['product_id'] ?? $item['id'], // Handle both cases
+                            'quantity' => $item['quantity'],
+                            'unit_price' => $item['price'], // Schema uses unit_price
+                            'subtotal' => $item['subtotal'],
+                        ]);
+
+                        // Deduct Stock
+                        $product = \App\Models\Product::find($item['product_id'] ?? $item['id']);
+                        if ($product && $product->stock !== null) {
+                            $product->decrement('stock', $item['quantity']);
+                        }
+                    }
+                });
+                $syncedCount++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'synced_count' => $syncedCount,
+                'message' => "Successfully synced {$syncedCount} offline orders"
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Sync Failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+);
+
+// Sync Shifts (Cash Sessions)
+Route::post('/pos/sync-shifts', function (Request $request) {
+    try {
+        $shifts = $request->input('shifts', []);
+        $results = [];
+
+        foreach ($shifts as $shift) {
+            // Check if shift already exists on server (by server_id if available)
+            $cashSession = null;
+            if (isset($shift['server_id']) && $shift['server_id']) {
+                $cashSession = CashSession::find($shift['server_id']);
+            }
+
+            if ($cashSession) {
+                // Update existing session
+                $cashSession->update([
+                    // 'cashier_name' => $shift['cashier_name'], // Column does not exist
+                    'cash_in_hand' => $shift['cash_in_hand'],
+                    'cash_out' => $shift['cash_out'] ?? null,
+                    // 'total_cash_sales' => $shift['total_cash_sales'] ?? 0, // Column does not exist
+                    // 'expected_cash' => $shift['expected_cash'] ?? null, // Column does not exist
+                    // 'difference' => $shift['difference'] ?? null, // Column does not exist
+                    'status' => $shift['status'],
+                    'opened_at' => $shift['opened_at'],
+                    'closed_at' => $shift['closed_at'] ?? null,
+                ]);
+
+                $results[] = [
+                    'local_id' => $shift['id'],
+                    'server_id' => $cashSession->id,
+                    'action' => 'updated'
+                ];
+                // Resolve User by Name if provided
+                $userId = 1; // SAFE DEFAULT (Admin/System)
+
+                if (isset($shift['cashier_name']) && $shift['cashier_name']) {
+                    $user = \App\Models\User::where('name', $shift['cashier_name'])->first();
+                    if ($user) {
+                        $userId = $user->id;
                     }
                 }
-            });
-            $syncedCount++;
+
+                $cashSession = CashSession::create([
+                    'user_id' => $userId,
+                    'cash_in_hand' => $shift['cash_in_hand'],
+                    'cash_out' => $shift['cash_out'] ?? null,
+                    'status' => $shift['status'],
+                    'opened_at' => $shift['opened_at'],
+                    'closed_at' => $shift['closed_at'] ?? null,
+                ]);
+
+                $results[] = [
+                    'local_id' => $shift['id'],
+                    'server_id' => $cashSession->id,
+                    'action' => 'created'
+                ];
+            }
         }
 
         return response()->json([
             'success' => true,
-            'synced_count' => $syncedCount,
-            'message' => "Successfully synced {$syncedCount} offline orders"
+            'results' => $results
         ]);
     } catch (\Exception $e) {
-        Log::error('❌ Sync Failed: ' . $e->getMessage());
+        Log::error('Shift sync failed: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
+
+// Get Server Drafts (Today)
+Route::get('/pos/drafts', function () {
+    try {
+        $drafts = Sale::with('items.product')
+            ->where('status', 'draft')
+            // ->whereDate('created_at', now()->today()) // REMOVED to avoid timezone issues
+            ->latest()
+            ->limit(20) // Limit to 20 latest drafts
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'server_id' => $sale->id,
+                    'customer_name' => $sale->customer_name,
+                    'total' => $sale->final_total,
+                    'created_at' => $sale->created_at->toIso8601String(),
+                    'sale_data' => [
+                        'customer_name' => $sale->customer_name,
+                        'total' => $sale->final_total,
+                        'order_type' => $sale->order_type,
+                        'discount' => 0,
+                        'items' => $sale->items->map(function ($item) {
+                            return [
+                                'product_id' => $item->product_id,
+                                'product_name' => $item->product->name ?? 'Unknown',
+                                'quantity' => $item->quantity,
+                                'price' => $item->unit_price,
+                                'subtotal' => $item->subtotal,
+                                'notes' => null
+                            ];
+                        })
+                    ]
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'drafts' => $drafts
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
+
+// Get Sales History (Today - for local backup)
+Route::get('/pos/sales-history', function () {
+    try {
+        $sales = Sale::with(['items.product', 'paymentMethod'])
+            ->whereDate('created_at', now()->toDateString())
+            ->latest()
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'id' => $sale->id,
+                    'invoice_number' => $sale->invoice_number,
+                    'customer_name' => $sale->customer_name,
+                    'order_type' => $sale->order_type,
+                    'table_number' => $sale->table_number,
+                    'status' => $sale->status,
+                    'payment_method_id' => $sale->payment_method_id,
+                    'payment_method' => $sale->paymentMethod?->code,
+                    'subtotal' => $sale->subtotal,
+                    'tax' => $sale->tax,
+                    'discount' => $sale->discount,
+                    'total' => $sale->total,
+                    'created_at' => $sale->created_at->toIso8601String(),
+                    'items' => $sale->items->map(function ($item) {
+                        return [
+                            'product_id' => $item->product_id,
+                            'product_name' => $item->product->name ?? 'Unknown',
+                            'quantity' => $item->quantity,
+                            'price' => $item->unit_price,
+                            'subtotal' => $item->subtotal,
+                            'notes' => null
+                        ];
+                    })
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'sales' => $sales
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
+
+// Delete Draft
+Route::delete('/pos/drafts/{id}', function ($id) {
+    try {
+        $sale = \App\Models\Sale::where('id', $id)
+            ->where('status', 'draft')
+            ->first();
+
+        if (!$sale) {
+            return response()->json(['success' => false, 'error' => 'Draft not found'], 404);
+        }
+
+        // Restore Stock
+        foreach ($sale->items as $item) {
+            if ($item->product_id) {
+                \App\Models\Product::where('id', $item->product_id)->increment('stock', $item->quantity);
+            }
+        }
+
+        $sale->items()->delete();
+        $sale->delete();
+
+        return response()->json(['success' => true]);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+    }
+});
+
+// Sync Shifts (Open/Close)
+Route::post('/pos/sync-shifts', function (Request $request) {
+    try {
+        $shifts = $request->input('shifts', []);
+        $results = [];
+
+        foreach ($shifts as $shiftData) {
+            DB::transaction(function () use ($shiftData, &$results) {
+                // Determine if we update or create
+                // Ideally we use a UUID from client. For now, let's assume we create if new.
+                // But wait, if we sync "open" then later "close", we need to know the ID.
+                // Client should send server_id if it has it.
+
+                $session = null;
+                if (isset($shiftData['server_id']) && $shiftData['server_id']) {
+                    $session = CashSession::find($shiftData['server_id']);
+                }
+
+                // If not found by ID, try to find by similarity (user + opened_at) to avoid dupes?
+                if (!$session) {
+                    // Try to resolve user by name
+                    $userId = 2; // SAFE DEFAULT (Admin ID=2)
+                    if (isset($shiftData['cashier_name']) && $shiftData['cashier_name']) {
+                        $user = \App\Models\User::where('name', $shiftData['cashier_name'])->first();
+                        if ($user) {
+                            $userId = $user->id;
+                        }
+                    }
+
+                    $session = CashSession::where('user_id', $userId) // Resolved User
+                        ->where('opened_at', $shiftData['opened_at'])
+                        ->first();
+
+                    if (!$session) {
+                        $session = new CashSession();
+                        $session->user_id = $userId;
+                        $session->opened_at = $shiftData['opened_at'];
+                    }
+                }
+
+                $session->cash_in_hand = $shiftData['cash_in_hand'];
+                // $session->description = ... // Column does not exist
+
+                if (isset($shiftData['status']) && $shiftData['status'] === 'closed') {
+                    $session->status = 'closed';
+                    $session->closed_at = $shiftData['closed_at'] ?? now();
+                    $session->cash_out = $shiftData['cash_out'] ?? 0;
+                    // $session->total_cash = ... // Calculated on server
+                } else {
+                    $session->status = 'open';
+                }
+
+                $session->save();
+
+                $results[] = [
+                    'local_id' => $shiftData['id'], // Client local ID
+                    'server_id' => $session->id,
+                    'status' => 'synced'
+                ];
+            });
+        }
+
+        return response()->json([
+            'success' => true,
+            'results' => $results
+        ]);
+    } catch (\Exception $e) {
         return response()->json([
             'success' => false,
             'error' => $e->getMessage()
