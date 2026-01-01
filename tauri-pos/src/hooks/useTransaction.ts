@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { dbService } from '../services/db';
+import { api } from '../services/api';
 import { printerService } from '../services/printer';
 import { syncService } from '../services/sync';
 import type { CartItem } from '../types';
@@ -186,7 +187,12 @@ export const useTransaction = ({
                 if (activeDraft.source === 'local') {
                     await dbService.deleteSale(activeDraft.id);
                 } else {
-                    // api.deleteDraft(activeDraft.id).catch(...)
+                    try {
+                        await api.deleteDraft(activeDraft.id);
+                        console.log('✅ Deleted server draft after payment:', activeDraft.id);
+                    } catch (e) {
+                        console.error('⚠️ Failed to delete server draft after checkout (might be offline/already deleted):', e);
+                    }
                 }
                 setActiveDraft(null);
             }

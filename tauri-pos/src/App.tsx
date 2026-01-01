@@ -17,6 +17,7 @@ import JoinBillModal from './components/JoinBillModal';
 import DraftsModal from './components/DraftsModal';
 import { SyncIssuesModal } from './components/SyncIssuesModal';
 import SettingsModal from './components/SettingsModal';
+import { SetupWizard } from './components/SetupWizard';
 import { useCart } from './hooks/useCart';
 import { useDrafts } from './hooks/useDrafts';
 import { useTransaction } from './hooks/useTransaction';
@@ -34,6 +35,8 @@ function PosApp() {
     const [tableNumber, setTableNumber] = useState('');
     const [isSyncing, setIsSyncing] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [showSetupWizard, setShowSetupWizard] = useState(false);
 
     // Notification State
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
@@ -117,8 +120,6 @@ function PosApp() {
         setConfirmModal(prev => ({ ...prev, isOpen: false }));
     };
 
-
-
     // Shift Management
     const [activeShift, setActiveShift] = useState<any>(null); // { id, cashier_name, cash_in_hand, etc }
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
@@ -126,10 +127,6 @@ function PosApp() {
 
     // Payment Modal
     const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
-
-
-
-
 
     const handleShiftOpened = (shift: any) => {
         setActiveShift(shift);
@@ -200,6 +197,39 @@ function PosApp() {
         }
     }, [settings, printerSettings, showNotification]);
 
+    const handleResetDatabase = useCallback(() => {
+        setConfirmModal({
+            isOpen: true,
+            title: '⚠️ Reset Database',
+            message: 'Apakah Anda yakin ingin mereset database? Semua data lokal (produk, transaksi, shift, cache gambar) akan dihapus dan aplikasi akan kembali ke setup wizard.',
+            isDestructive: true,
+            onConfirm: async () => {
+                try {
+                    // Clear all local data
+                    await dbService.clearAllData();
+
+                    // Remove setup completed flag
+                    localStorage.removeItem('setup_completed');
+
+                    // Show success notification
+                    showNotification('✅ Database berhasil direset', 'success');
+
+                    // Close settings modal
+                    setShowSettings(false);
+
+                    // Reload app to show setup wizard
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } catch (error: any) {
+                    console.error('Reset database failed:', error);
+                    showNotification(`❌ Gagal reset database: ${error.message}`, 'error');
+                }
+                closeConfirmModal();
+            }
+        });
+    }, [showNotification]);
+
     // Product Search State
     const [searchQuery, setSearchQuery] = useState('');
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -210,6 +240,15 @@ function PosApp() {
         const initApp = async () => {
             try {
                 setLoading(true);
+
+                // Check if setup is completed
+                const setupCompleted = localStorage.getItem('setup_completed');
+                if (!setupCompleted) {
+                    setShowSetupWizard(true);
+                    setLoading(false);
+                    return;
+                }
+
                 // 1. Init DB
                 await dbService.init();
 
@@ -251,6 +290,28 @@ function PosApp() {
         };
 
         initApp();
+
+        // Online/Offline Event Listeners
+        const handleOnline = () => {
+            console.log('🌐 Connection restored');
+            setIsOnline(true);
+            showNotification('✅ Koneksi tersambung', 'success');
+            setTimeout(() => handleSync(), 1000);
+        };
+
+        const handleOffline = () => {
+            console.log('📴 Connection lost');
+            setIsOnline(false);
+            showNotification('⚠️ Mode offline', 'info');
+        };
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
     }, []);
 
     const loadLocalData = async () => {
@@ -261,16 +322,17 @@ function PosApp() {
         setCategories(localCategories);
         setPaymentMethods(localPaymentMethods);
 
-        // Load Pending Sales Count
+        // Load Pending Sales Count (only truly pending, not paid)
         try {
             const pendingSales = await dbService.getPendingSales();
+            // Only count 'pending' status (not 'paid' or 'draft')
             const pendingUploads = pendingSales.filter(s => s.status === 'pending');
             setPendingCount(pendingUploads.length);
 
             const issues = await dbService.getSyncIssues();
             setSyncErrorCount(issues.length);
         } catch (e) {
-            console.error('Failed to load pending count:', e);
+            console.error('Failed to load pending sales:', e);
         }
 
         // Load Settings
@@ -407,10 +469,13 @@ function PosApp() {
     const handleDeleteDraftWrapper = useCallback((draft: any, e: React.MouseEvent) => {
         e.stopPropagation();
 
+        const isCompleted = transactionTab === 'completed';
         setConfirmModal({
             isOpen: true,
-            title: 'Hapus Draft?',
-            message: 'Draft ini akan dihapus secara permanen dan tidak dapat dikembalikan.',
+            title: isCompleted ? 'Hapus Transaksi?' : 'Hapus Draft?',
+            message: isCompleted
+                ? 'Transaksi ini akan dihapus dari riwayat lokal secara permanen.'
+                : 'Draft ini akan dihapus secara permanen dan tidak dapat dikembalikan.',
             isDestructive: true,
             onConfirm: async () => {
                 closeConfirmModal();
@@ -518,6 +583,7 @@ function PosApp() {
     }
 
     return (
+
         <div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden font-sans text-gray-900 dark:text-gray-100">
             {/* LEFT: Products Section */}
             <div className="flex-1 flex flex-col min-w-0">
@@ -542,6 +608,7 @@ function PosApp() {
                     onManualSync={handleSync}
                     onOpenSettings={() => setShowSettings(true)}
                     onOpenSyncIssues={() => setShowSyncIssues(true)}
+                    isOnline={isOnline}
                 />
 
                 {/* SETTINGS MODAL */}
@@ -554,6 +621,7 @@ function PosApp() {
                     currentApiUrl={localStorage.getItem('pos_api_url') || 'http://localhost:8000/api'}
                     onSave={handleSaveSettings}
                     showNotification={showNotification}
+                    onResetDatabase={handleResetDatabase}
                 />
 
                 <SyncIssuesModal
@@ -676,6 +744,16 @@ function PosApp() {
                 onCancel={closeConfirmModal}
                 isDestructive={confirmModal.isDestructive}
             />
+
+            {/* Setup Wizard Modal */}
+            {showSetupWizard && (
+                <SetupWizard
+                    onComplete={async () => {
+                        setShowSetupWizard(false);
+                        window.location.reload();
+                    }}
+                />
+            )}
         </div>
     );
 

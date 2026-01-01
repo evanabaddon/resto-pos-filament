@@ -1,6 +1,8 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Product, Category } from '../types';
+import { imageCacheService } from '../services/imageCache';
+import { convertFileSrc } from '@tauri-apps/api/core';
 
 interface ProductGridProps {
     categories: Category[];
@@ -17,24 +19,63 @@ export const ProductGrid: React.FC<ProductGridProps> = React.memo(({
     filteredProducts,
     addToCart
 }) => {
-    // Get API base URL for images
-    const getImageUrl = (imagePath: string | undefined) => {
-        if (!imagePath) return null;
+    const [imageUrls, setImageUrls] = useState<Record<number, string>>({});
 
-        // If already a full URL, return as is
-        if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-            return imagePath;
-        }
+    // Load cached images for products
+    useEffect(() => {
+        const loadImages = async () => {
+            const urls: Record<number, string> = {};
 
-        // Get base URL from localStorage or use default
-        const apiUrl = localStorage.getItem('pos_api_url') || 'http://localhost:8000/api';
-        const baseUrl = apiUrl.replace('/api', ''); // Remove /api to get server base
+            for (const product of filteredProducts) {
+                if (product.image) {
+                    // Extract filename from path
+                    const filename = product.image.split('/').pop();
+                    if (filename) {
+                        try {
+                            // Try to get local cached image first
+                            const localPath = await imageCacheService.getLocalImagePath(filename);
+                            if (localPath) {
+                                // Convert to Tauri asset URL
+                                const assetUrl = convertFileSrc(localPath);
+                                urls[product.id] = assetUrl;
+                                console.log(`✅ Using cached image for ${product.name}: ${assetUrl}`);
+                            } else {
+                                // Fallback to server URL
+                                const apiUrl = localStorage.getItem('pos_api_url') || 'http://localhost:8000/api';
+                                const baseUrl = apiUrl.replace('/api', '');
 
-        // Ensure path starts with /
-        const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+                                // Add /storage/ prefix if not present
+                                let imagePath = product.image;
+                                if (!imagePath.startsWith('storage/')) {
+                                    imagePath = `storage/${imagePath}`;
+                                }
 
-        return `${baseUrl}${path}`;
-    };
+                                urls[product.id] = `${baseUrl}/${imagePath}`;
+                                console.log(`⚠️ Image not cached for ${product.name}, using server: ${urls[product.id]}`);
+                            }
+                        } catch (e) {
+                            // Fallback to server URL on error
+                            const apiUrl = localStorage.getItem('pos_api_url') || 'http://localhost:8000/api';
+                            const baseUrl = apiUrl.replace('/api', '');
+
+                            // Add /storage/ prefix if not present
+                            let imagePath = product.image;
+                            if (!imagePath.startsWith('storage/')) {
+                                imagePath = `storage/${imagePath}`;
+                            }
+
+                            urls[product.id] = `${baseUrl}/${imagePath}`;
+                            console.error(`❌ Error loading image for ${product.name}:`, e);
+                        }
+                    }
+                }
+            }
+
+            setImageUrls(urls);
+        };
+
+        loadImages();
+    }, [filteredProducts]);
 
     return (
         <div className="flex flex-col h-full min-w-0 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
@@ -67,7 +108,7 @@ export const ProductGrid: React.FC<ProductGridProps> = React.memo(({
             <div className="flex-1 overflow-y-auto p-6">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-20">
                     {filteredProducts.map(product => {
-                        const imageUrl = getImageUrl(product.image);
+                        const imageUrl = imageUrls[product.id];
 
                         return (
                             <div
@@ -83,8 +124,16 @@ export const ProductGrid: React.FC<ProductGridProps> = React.memo(({
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                             onError={(e) => {
                                                 // Fallback to placeholder if image fails to load
+                                                console.error(`🖼️ Image load error for ${product.name}:`, {
+                                                    url: imageUrl,
+                                                    error: e
+                                                });
                                                 e.currentTarget.style.display = 'none';
-                                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                                const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                                                if (placeholder) placeholder.classList.remove('hidden');
+                                            }}
+                                            onLoad={() => {
+                                                console.log(`🖼️ Image loaded successfully for ${product.name}`);
                                             }}
                                         />
                                     ) : null}

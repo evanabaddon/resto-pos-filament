@@ -42,6 +42,10 @@ client.interceptors.response.use(
 );
 
 export const api = {
+    // Helper methods for testConnection
+    getApiUrl: () => client.defaults.baseURL,
+    getHeaders: () => client.defaults.headers,
+
     // Sync
     getProducts: () => client.get('/pos/products-sync'),
     syncOfflineSale: (data: any) => client.post('/pos/sync-offline-sales', data),

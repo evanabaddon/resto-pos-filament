@@ -1,5 +1,6 @@
 import { api } from './api';
 import { dbService } from './db';
+import { imageCacheService } from './imageCache';
 
 
 class SyncService {
@@ -77,10 +78,13 @@ class SyncService {
 
             console.log(`📡 Received ${products?.length || 0} products from server`);
 
-            if (products && Array.isArray(products)) {
+            if (products && Array.isArray(products) && products.length > 0) {
                 // Clear existing products to ensure local DB matches server filters (removing deleted/filtered items)
                 await dbService.clearProducts();
                 await dbService.upsertProducts(products);
+
+                // Download product images
+                await this.downloadProductImages(products);
             }
             if (categories && Array.isArray(categories)) {
                 await dbService.upsertCategories(categories);
@@ -95,6 +99,39 @@ class SyncService {
             console.error('❌ Product sync failed:', error);
         } finally {
             this.isProductSyncing = false;
+        }
+    }
+
+    // Download product images
+    private async downloadProductImages(products: any[]) {
+        try {
+            const apiUrl = localStorage.getItem('pos_api_url') || 'http://localhost:8000/api';
+            const baseUrl = apiUrl.replace('/api', '');
+
+            const imagesToDownload = products
+                .filter(p => p.image && !p.image.startsWith('http'))
+                .map(p => {
+                    // Laravel stores images in storage folder, so we need to add /storage/ prefix
+                    // if the path doesn't already include it
+                    let imagePath = p.image;
+                    if (!imagePath.startsWith('storage/')) {
+                        imagePath = `storage/${imagePath}`;
+                    }
+
+                    return {
+                        url: `${baseUrl}/${imagePath}`,
+                        filename: p.image.split('/').pop() || `product_${p.id}.png`
+                    };
+                });
+
+            if (imagesToDownload.length > 0) {
+                console.log(`📥 Downloading ${imagesToDownload.length} product images...`);
+                await imageCacheService.downloadImages(imagesToDownload, 5);
+                console.log(`✅ Product images downloaded`);
+            }
+        } catch (error) {
+            console.error('❌ Failed to download product images:', error);
+            // Don't fail the entire sync if images fail
         }
     }
 
@@ -133,8 +170,17 @@ class SyncService {
 
             for (const sale of pendingSales) {
                 try {
-                    console.log(`🚀 Uploading sale ID: ${sale.local_id}`);
+                    console.log(`🚀 Uploading sale ID: ${sale.local_id}, status: ${sale.status}`);
                     const saleData = JSON.parse(sale.sale_data);
+
+                    // Map local status to server status
+                    // Local: 'paid' | 'pending' | 'draft'
+                    // Server: 'completed' | 'draft'
+                    if (sale.status === 'paid' || sale.status === 'pending') {
+                        saleData.status = 'completed'; // Paid transactions
+                    } else {
+                        saleData.status = 'draft'; // Draft transactions
+                    }
 
                     // Endpoint expects { orders: [...] }
                     const payload = { orders: [saleData] };
@@ -143,7 +189,14 @@ class SyncService {
                     const response = await api.syncOfflineSale(payload);
                     console.log(`✅ Upload success for sale ${sale.local_id}:`, response.data);
 
-                    await dbService.markSaleSynced(sale.local_id);
+                    if (sale.status === 'draft') {
+                        // If it was a draft, KEEP IT local but mark as synced_draft
+                        // This allows offline access to this draft later (e.g. to pay it)
+                        await dbService.markSaleAsSyncedDraft(sale.local_id);
+                    } else {
+                        // If paid, keep record but mark as synced
+                        await dbService.markSaleSynced(sale.local_id);
+                    }
                 } catch (err: any) {
                     console.error(`❌ Failed to sync sale ${sale.local_id}:`, err);
 

@@ -84,8 +84,18 @@ const DraftsModal: React.FC<DraftsModalProps> = ({
                                 onClick={() => activeTab === 'draft' && onResume(draft)}>
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <span className={`text-xs px-2 py-0.5 rounded font-bold ${draft.source === 'local' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                                            {draft.source === 'local' ? '🏠 LOCAL' : '☁️ SERVER'}
+                                        <span className={`text-xs px-2 py-0.5 rounded font-bold ${draft.source === 'server'
+                                                ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                                : draft.sync_status === 'synced_draft'
+                                                    ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                                                    : 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
+                                            }`}>
+                                            {draft.source === 'server'
+                                                ? '☁️ SERVER'
+                                                : draft.sync_status === 'synced_draft'
+                                                    ? '☁️ SYNCED (Offline)'
+                                                    : '🏠 LOCAL (Unsynced)'
+                                            }
                                         </span>
                                         <span className="font-bold text-gray-800 dark:text-gray-200">{draft.data?.customer_name || 'Tanpa Nama'}</span>
                                         {draft.data?.invoice_number && (
@@ -98,27 +108,27 @@ const DraftsModal: React.FC<DraftsModalProps> = ({
                                     <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">{new Date(draft.created_at).toLocaleString()}</div>
                                 </div>
                                 <div className="flex gap-2">
-                                    {activeTab === 'draft' && (
-                                        <>
-                                            <button
-                                                onClick={(e) => onDelete(draft, e)}
-                                                className="bg-red-100 text-red-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
-                                                title="Hapus Draft"
-                                            >
-                                                🗑️
-                                            </button>
-                                            <button
-                                                onClick={(e) => onReprint(draft, e)}
-                                                className="bg-gray-100 text-gray-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                                                title="Cetak Ulang"
-                                            >
-                                                🖨️
-                                            </button>
-                                            <button className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary-700 shadow-sm">
-                                                Resume ➡️
-                                            </button>
-                                        </>
+                                    {(activeTab === 'draft' || (activeTab === 'completed' && draft.source === 'local')) && (
+                                        <button
+                                            onClick={(e) => onDelete(draft, e)}
+                                            className="bg-red-100 text-red-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                                            title="Hapus"
+                                        >
+                                            🗑️
+                                        </button>
                                     )}
+                                    {activeTab === 'draft' && (
+                                        <button className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary-700 shadow-sm" onClick={() => activeTab === 'draft' && onResume(draft)}>
+                                            Resume ➡️
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={(e) => onReprint(draft, e)}
+                                        className="bg-gray-100 text-gray-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                        title="Cetak Ulang"
+                                    >
+                                        🖨️
+                                    </button>
                                 </div>
                             </div>
                         ))

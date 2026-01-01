@@ -12,6 +12,7 @@ interface SettingsModalProps {
     currentApiUrl: string; // To initialize the input
     onSave: (newApiUrl: string) => void;
     showNotification?: (message: string, type: 'success' | 'error' | 'info') => void;
+    onResetDatabase?: () => void;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -22,7 +23,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     categories,
     currentApiUrl,
     onSave,
-    showNotification
+    showNotification,
+    onResetDatabase
 }) => {
     const { theme, toggleTheme } = useTheme();
     const [activeTab, setActiveTab] = useState<'general' | 'printer'>('general');
@@ -132,6 +134,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                     </button>
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Pastikan URL diakhiri dengan <code>/api</code></p>
+                            </div>
+
+                            {/* Danger Zone - Reset Database */}
+                            <div className="pt-6 mt-6 border-t border-red-200 dark:border-red-900">
+                                <h3 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-3">⚠️ Danger Zone</h3>
+                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                                    <p className="text-sm text-red-700 dark:text-red-300 mb-3">
+                                        Reset akan menghapus semua data lokal (produk, transaksi, shift) dan kembali ke setup wizard.
+                                    </p>
+                                    <button
+                                        onClick={() => onResetDatabase?.()}
+                                        className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <span>🔄</span>
+                                        <span>Reset Database & Setup</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ) : (

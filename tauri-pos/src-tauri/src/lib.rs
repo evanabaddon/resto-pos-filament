@@ -1,4 +1,7 @@
 use std::process::Command;
+use std::fs;
+use std::io::Write;
+use tauri::Manager;
 #[tauri::command]
 fn get_printers() -> Result<Vec<String>, String> {
     #[cfg(target_os = "windows")]
@@ -96,12 +99,120 @@ fn print_job(printer_name: String, content: String) -> Result<String, String> {
     }
 }
 
+// IMAGE CACHING COMMANDS
+
+#[tauri::command]
+async fn download_image(app: tauri::AppHandle, url: String, filename: String) -> Result<String, String> {
+    // Get app data directory
+    let app_data_dir = app.path().app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    
+    let images_dir = app_data_dir.join("images");
+    
+    // Create images directory if it doesn't exist
+    fs::create_dir_all(&images_dir)
+        .map_err(|e| format!("Failed to create images dir: {}", e))?;
+    
+    let file_path = images_dir.join(&filename);
+    
+    // Skip if file already exists
+    if file_path.exists() {
+        return Ok(format!("Image already cached: {}", filename));
+    }
+    
+    // Download image
+    let response = reqwest::get(&url).await
+        .map_err(|e| format!("Failed to download image: {}", e))?;
+    
+    if !response.status().is_success() {
+        return Err(format!("HTTP error: {}", response.status()));
+    }
+    
+    let bytes = response.bytes().await
+        .map_err(|e| format!("Failed to read image bytes: {}", e))?;
+    
+    // Save to file
+    let mut file = fs::File::create(&file_path)
+        .map_err(|e| format!("Failed to create file: {}", e))?;
+    
+    file.write_all(&bytes)
+        .map_err(|e| format!("Failed to write file: {}", e))?;
+    
+    Ok(format!("Downloaded: {}", filename))
+}
+
+#[tauri::command]
+fn get_image_path(app: tauri::AppHandle, filename: String) -> Result<String, String> {
+    let app_data_dir = app.path().app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    
+    let file_path = app_data_dir.join("images").join(&filename);
+    
+    if file_path.exists() {
+        Ok(file_path.to_string_lossy().to_string())
+    } else {
+        Err(format!("Image not found: {}", filename))
+    }
+}
+
+#[tauri::command]
+fn clear_image_cache(app: tauri::AppHandle) -> Result<String, String> {
+    let app_data_dir = app.path().app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    
+    let images_dir = app_data_dir.join("images");
+    
+    if images_dir.exists() {
+        fs::remove_dir_all(&images_dir)
+            .map_err(|e| format!("Failed to remove images dir: {}", e))?;
+        
+        // Recreate empty directory
+        fs::create_dir_all(&images_dir)
+            .map_err(|e| format!("Failed to recreate images dir: {}", e))?;
+    }
+    
+    Ok("Image cache cleared".to_string())
+}
+
+#[tauri::command]
+fn get_cache_size(app: tauri::AppHandle) -> Result<u64, String> {
+    let app_data_dir = app.path().app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    
+    let images_dir = app_data_dir.join("images");
+    
+    if !images_dir.exists() {
+        return Ok(0);
+    }
+    
+    let mut total_size: u64 = 0;
+    
+    if let Ok(entries) = fs::read_dir(&images_dir) {
+        for entry in entries.flatten() {
+            if let Ok(metadata) = entry.metadata() {
+                if metadata.is_file() {
+                    total_size += metadata.len();
+                }
+            }
+        }
+    }
+    
+    Ok(total_size)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![get_printers, print_job])
+        .invoke_handler(tauri::generate_handler![
+            get_printers, 
+            print_job,
+            download_image,
+            get_image_path,
+            clear_image_cache,
+            get_cache_size
+        ])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

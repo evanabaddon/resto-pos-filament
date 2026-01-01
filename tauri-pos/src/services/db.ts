@@ -1,5 +1,6 @@
 import Database from '@tauri-apps/plugin-sql';
 import type { Product, Category } from '../types';
+import { imageCacheService } from './imageCache';
 
 const DB_NAME = 'resto_pos.db';
 
@@ -180,7 +181,7 @@ class DatabaseService {
                     INSERT INTO payment_methods (id, name, code, is_active) 
                     VALUES ($1, $2, $3, $4)
                     ON CONFLICT(id) DO UPDATE SET name = $2, code = $3, is_active = $4
-                `, [m.id, m.name, m.code, m.is_active ? 1 : 0]);
+                `, [m.id, m.name, m.code, (m.is_active !== undefined && m.is_active !== null) ? (m.is_active ? 1 : 0) : 1]);
             }
         } catch (e) {
             console.error('Failed to upsert payment methods:', e);
@@ -224,13 +225,14 @@ class DatabaseService {
     async saveOfflineSale(saleData: any, isDraft = false, shiftId?: number) {
         if (!this.db) return;
         const json = JSON.stringify(saleData);
-        const status = isDraft ? 'draft' : 'pending';
+        // Use 'paid' for completed sales, 'draft' for drafts, 'pending' for sync queue
+        const status = isDraft ? 'draft' : 'paid';
 
         const result = await this.db.execute(
             `INSERT INTO offline_sales(sale_data, status, shift_id, created_at) VALUES($1, $2, $3, datetime('now'))`,
             [json, status, shiftId || null]
         );
-        console.log(`✅ Offline sale saved(${status}).LastInsertId: `, result.lastInsertId);
+        console.log(`✅ Offline sale saved (${status}). LastInsertId: `, result.lastInsertId);
 
         // DECREMENT LOCAL STOCK (for both drafts and completed sales)
         if (saleData.items && Array.isArray(saleData.items)) {
@@ -254,9 +256,10 @@ class DatabaseService {
 
     async getPendingSales() {
         if (!this.db) return [];
-        // Only return 'pending' and 'draft' (exclude 'error' and 'synced')
+        // Return 'paid' (completed offline), 'pending' (old status), and 'draft' for sync
+        // Exclude 'error' and 'synced'
         return await this.db.select<{ local_id: number, sale_data: string, created_at: string, status: string }[]>(
-            `SELECT * FROM offline_sales WHERE status IN('pending', 'draft') ORDER BY created_at ASC`
+            `SELECT * FROM offline_sales WHERE status IN('paid', 'pending', 'draft') ORDER BY created_at ASC`
         );
     }
 
@@ -282,15 +285,27 @@ class DatabaseService {
 
         let query = 'SELECT * FROM offline_sales WHERE ';
         if (status === 'draft') {
-            query += "status = 'draft'";
+            // Include 'draft', 'synced_draft', and legacy 'synced' drafts
+            query += "(status IN ('draft', 'synced_draft') OR (status = 'synced' AND json_extract(sale_data, '$.status') = 'draft'))";
         } else if (status === 'completed') {
-            query += "json_extract(sale_data, '$.status') = 'completed'";
+            // Include 'paid' (offline completed) and 'synced' (uploaded)
+            // BUT EXCLUDE those that are actually 'draft' inside JSON (legacy synced drafts)
+            query += "status IN ('paid', 'synced') AND json_extract(sale_data, '$.status') != 'draft'";
         } else {
-            query += "status IN ('draft', 'synced')";
+            query += "status IN ('draft', 'paid', 'synced', 'synced_draft')";
         }
         query += ' ORDER BY created_at DESC';
 
-        return await this.db.select<{ local_id: number, sale_data: string, created_at: string }[]>(query);
+        return await this.db.select<{ local_id: number, sale_data: string, created_at: string, status: string }[]>(query);
+    }
+
+    async markSaleAsSyncedDraft(localId: number) {
+        if (!this.db) return;
+        try {
+            await this.db.execute("UPDATE offline_sales SET status = 'synced_draft' WHERE local_id = $1", [localId]);
+        } catch (e) {
+            console.error('Failed to mark sale as synced_draft:', e);
+        }
     }
 
     async deleteSale(localId: number) {
@@ -555,6 +570,9 @@ class DatabaseService {
             await this.db.execute('DELETE FROM offline_sales');
             await this.db.execute('DELETE FROM shifts');
             await this.db.execute('DELETE FROM members');
+
+            // Clear image cache
+            await imageCacheService.clearCache();
 
             console.log('✅ All local data cleared');
         } catch (e) {

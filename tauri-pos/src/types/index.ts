@@ -41,4 +41,6 @@ export interface OrderDraft {
     source: 'local' | 'server';
     data: any;
     created_at: string;
+    // status local DB, useful for UI indicators (e.g. 'draft' vs 'synced_draft')
+    sync_status?: string;
 }

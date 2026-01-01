@@ -14,49 +14,139 @@ export const useDrafts = (
     const [transactionTab, setTransactionTab] = useState<'draft' | 'completed'>('draft');
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
 
-    const loadDrafts = useCallback(async (status: 'draft' | 'completed' = transactionTab) => {
+    const loadDrafts = useCallback(async (status: 'draft' | 'completed' | 'all' = transactionTab) => {
         setIsLoadingDrafts(true);
-        setDrafts([]);
-
-        const allDrafts: OrderDraft[] = [];
+        setDrafts([]); // Clear drafts before loading
 
         try {
-            // 1. Local Drafts/Completed
-            const localDrafts = await dbService.getDrafts(status);
-            localDrafts.forEach(d => {
-                allDrafts.push({
-                    id: d.local_id!,
-                    source: 'local',
-                    data: JSON.parse(d.sale_data),
-                    created_at: d.created_at
-                });
-            });
+            // Try to load from server first
+            const serverDrafts: OrderDraft[] = [];
+            let isServerReachable = false;
 
-            // 2. Server Drafts (only if tab is 'draft')
             if (status === 'draft') {
                 try {
                     const res = await api.getDrafts();
-                    if (res.data && res.data.success) {
-                        res.data.drafts.forEach((d: any) => {
-                            allDrafts.push({
-                                id: d.server_id,
+                    // If we get a response (status 200), server is reachable regardless of data content
+                    isServerReachable = true;
+                    console.log('🌍 Server reachable for drafts. Response Status:', res.status);
+
+                    const draftsData = res.data?.drafts || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+
+                    if (Array.isArray(draftsData)) {
+                        draftsData.forEach((d: any) => {
+                            serverDrafts.push({
+                                id: d.server_id || d.id,
                                 source: 'server',
-                                data: d.sale_data,
+                                data: d.sale_data || d,
                                 created_at: d.created_at
                             });
                         });
                     }
                 } catch (e) {
-                    console.log('Offline or server unreachable for drafts');
+                    console.log('Offline or server unreachable for drafts', e);
+                }
+            } else if (status === 'completed') {
+                try {
+                    const res = await api.getSalesHistory();
+                    isServerReachable = true; // Reachable
+
+                    if (res.data && Array.isArray(res.data.data)) {
+                        res.data.data.forEach((d: any) => {
+                            serverDrafts.push({
+                                id: d.id,
+                                source: 'server',
+                                data: { ...d, items: d.items || [], customer_name: d.customer_name || 'Guest' },
+                                created_at: d.created_at
+                            });
+                        });
+                    }
+                } catch (e) {
+                    console.log('Offline or server unreachable for sales history', e);
                 }
             }
 
-            // Sort by Date Descending
+            // Load local drafts/completed
+            const localDbDrafts = await dbService.getDrafts(status);
+
+            // Merge: Server drafts + Local drafts
+            const allDrafts: OrderDraft[] = [];
+
+            // Map known server IDs
+            const serverIds = new Set(serverDrafts.map(d => d.id));
+
+            // Add server drafts
+            allDrafts.push(...serverDrafts);
+
+            // ---------------------------------------------------------
+            // SMART DEDUPLICATION LOGIC FOR LOCAL DRAFTS
+            // ---------------------------------------------------------
+            const uniqueLocalDraftsMap = new Map<string, any>();
+
+            // Sort by Date DESC first, so we process NEWEST (usually Unsynced) first.
+            localDbDrafts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+            localDbDrafts.forEach(d => {
+                // 1. Online Filter: If reachable, hide synced local drafts
+                if (isServerReachable && (d.status === 'synced_draft' || d.status === 'synced')) {
+                    return;
+                }
+
+                let data: any = {};
+                try { data = JSON.parse(d.sale_data); } catch (e) { }
+
+                // 2. ID Filter: Hide if server ID matches loaded server draft
+                if (data.server_id && serverIds.has(data.server_id)) {
+                    return;
+                }
+
+                // 3. Content Dedup (Offline cleanup):
+                // Key = CustomerName + Total Amount.
+                // We normalize total to Number to avoid string/float mismatch (e.g. "26400.00" vs 26400)
+                const nameKey = (data.customer_name || 'Guest').trim().toLowerCase();
+                const totalKey = Number(data.total || 0).toFixed(2); // Use 2 decimal fixed for reliable currency comparison
+                const contentKey = `${nameKey}-${totalKey}`;
+
+                if (uniqueLocalDraftsMap.has(contentKey)) {
+                    const existing = uniqueLocalDraftsMap.get(contentKey);
+
+                    // If existing in map is 'draft' (Newer/Unsynced), keep it. Skip current 'synced_draft'.
+                    if (existing.status === 'draft' && (d.status === 'synced_draft' || d.status === 'synced')) {
+                        return;
+                    }
+
+                    // If existing in map is 'synced_draft' (Older) and current is 'draft' (Newer), REPLACE it.
+                    if ((existing.status === 'synced_draft' || existing.status === 'synced') && d.status === 'draft') {
+                        uniqueLocalDraftsMap.set(contentKey, d);
+                        return;
+                    }
+                } else {
+                    uniqueLocalDraftsMap.set(contentKey, d);
+                }
+            });
+
+            // Push filtered local drafts
+            uniqueLocalDraftsMap.forEach(d => {
+                let data: any = {};
+                try { data = JSON.parse(d.sale_data); } catch (e) { }
+                allDrafts.push({
+                    id: d.local_id!,
+                    source: 'local',
+                    data: data,
+                    created_at: d.created_at,
+                    sync_status: d.status
+                });
+            });
+
+            // Final Sort by Date Descending
             allDrafts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
             setDrafts(allDrafts);
+            console.log(`✅ Loaded ${allDrafts.length} ${status} transactions.`);
+
         } catch (e) {
             console.error('Error loading drafts:', e);
             showNotification('Gagal memuat draft', 'error');
+            setDrafts([]);
         } finally {
             setIsLoadingDrafts(false);
         }
@@ -113,11 +203,7 @@ export const useDrafts = (
                 if (activeDraft.source === 'local') {
                     await dbService.deleteSale(activeDraft.id);
                 } else {
-                    // If server draft, we might not be able to delete it easily if offline or inconsistent
-                    // But ideally we should. For now, let's just create a NEW draft and user calls "Save"
-                    // Actually, if we are "Saving", we usually overwrite. 
-                    // Let's assume we Create New and user must manually delete old if they want? 
-                    // Or we try to delete old one.
+                    // if server active, try delete or assume create new
                     try {
                         await api.deleteDraft(activeDraft.id);
                     } catch (e) { console.error("Failed delete old draft", e) }
@@ -222,16 +308,6 @@ export const useDrafts = (
             return false;
         }
     }, [drafts, settings, showNotification]);
-
-    // Reload when tab changes
-    // But we probably want to trigger this manually or via useEffect in the hook?
-    // Let's expose loadDrafts and let the consumer call it, or auto-load when tab changes?
-    // Auto-load is better for UX.
-    // useEffect(() => { loadDrafts(transactionTab); }, [transactionTab]);
-    // But we need to be careful about infinite loops if dependencies change.
-    // Let's kept it manual for now or let App trigger it? 
-    // App currently triggers it on mount and on tab change. 
-    // Let's adding the useEffect here to simplify App.
 
     return {
         drafts,

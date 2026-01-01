@@ -14,6 +14,7 @@ interface TopBarProps {
     onOpenSettings: () => void;
     errorCount?: number;
     onOpenSyncIssues?: () => void;
+    isOnline?: boolean;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -28,13 +29,23 @@ export const TopBar: React.FC<TopBarProps> = ({
     onToggleShift,
     onManualSync,
     onOpenSettings,
-    onOpenSyncIssues
+    onOpenSyncIssues,
+    isOnline = true
 }) => {
     return (
         <header className="bg-white dark:bg-gray-800 dark:border-b dark:border-gray-700 shadow-sm px-6 py-4 flex justify-between items-center z-10 transition-all duration-200">
             <div className="flex items-center gap-4">
                 <h1 className="text-2xl font-bold text-primary-600 dark:text-primary-400 tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>🍽️ Resto POS</h1>
-                {/* SyncStatus moved to right side or kept here if essential, but right side feels better for actions */}
+
+                {/* Connection Status Badge */}
+                <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${isOnline
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                    }`}>
+                    <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                        }`} />
+                    {isOnline ? 'Online' : 'Offline'}
+                </div>
             </div>
 
             <div className="flex items-center gap-3">
