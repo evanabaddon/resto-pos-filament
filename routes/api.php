@@ -150,7 +150,7 @@ Route::post(
                         'order_type' => 'offline', // Penanda ini transaksi dari offline mode
                         'user_id' => 2, // Default user (Admin ID=2, ID=1 not exists)
                         'cash_session_id' => $activeSession ? $activeSession->id : null, // Link ke sesi aktif
-    
+
                         'subtotal' => $calculatedSubtotal,
                         'tax' => $tax,
                         'final_total' => $finalTotal,
@@ -196,6 +196,36 @@ Route::post(
         }
     }
 );
+
+// Get Current Open Shift
+Route::get('/pos/current-shift', function () {
+    try {
+        $openSession = CashSession::where('status', 'open')
+            ->orderBy('opened_at', 'desc')
+            ->first();
+
+        if (!$openSession) {
+            return response()->json(['shift' => null]);
+        }
+
+        return response()->json([
+            'shift' => [
+                'id' => $openSession->id,
+                'server_id' => $openSession->id,
+                'user_name' => $openSession->user->name ?? 'Unknown',
+                'cash_in_hand' => $openSession->cash_in_hand,
+                'status' => $openSession->status,
+                'opened_at' => $openSession->opened_at,
+            ]
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Failed to get current shift: ' . $e->getMessage());
+        return response()->json([
+            'shift' => null,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
 
 // Sync Shifts (Cash Sessions)
 Route::post('/pos/sync-shifts', function (Request $request) {
