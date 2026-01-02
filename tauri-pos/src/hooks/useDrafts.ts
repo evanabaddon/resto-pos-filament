@@ -14,6 +14,21 @@ export const useDrafts = (
     const [transactionTab, setTransactionTab] = useState<'draft' | 'completed'>('draft');
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
 
+    // Helper to get consistent local DB string 'YYYY-MM-DD HH:mm:ss'
+    const getLocalDBString = useCallback(() => {
+        // Use Intl to force correct timezone parts exactly as shown in UI
+        const d = new Date();
+        const parts = new Intl.DateTimeFormat('en-GB', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+            hour12: false
+        }).formatToParts(d);
+
+        const p: any = {};
+        parts.forEach(({ type, value }) => p[type] = value);
+        return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
+    }, []);
+
     const loadDrafts = useCallback(async (status: 'draft' | 'completed' | 'all' = transactionTab) => {
         setIsLoadingDrafts(true);
         setDrafts([]); // Clear drafts before loading
@@ -86,8 +101,10 @@ export const useDrafts = (
             localDbDrafts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
             localDbDrafts.forEach(d => {
-                // 1. Online Filter: If reachable, hide synced local drafts
-                if (isServerReachable && (d.status === 'synced_draft' || d.status === 'synced')) {
+                // 1. Online Filter: If reachable, hide ONLY 'synced_draft'.
+                // We do NOT hide 'synced' (History) because server might be paginated/empty.
+                // We rely on ID Deduplication for history.
+                if (isServerReachable && d.status === 'synced_draft') {
                     return;
                 }
 
@@ -194,7 +211,7 @@ export const useDrafts = (
             order_type: orderType,
             table_number: tableNumber,
             member_id: null,
-            created_at: new Date().toISOString()
+            created_at: getLocalDBString()
         };
 
         try {
@@ -285,7 +302,7 @@ export const useDrafts = (
                 customer_name: customerName + (selectedDrafts.length > 1 ? ' (Merged)' : ''),
                 order_type: orderType,
                 table_number: tableNumber,
-                created_at: new Date().toISOString()
+                created_at: getLocalDBString()
             };
 
             // 1. Save NEW Draft

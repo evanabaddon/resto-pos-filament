@@ -228,9 +228,18 @@ class DatabaseService {
         // Use 'paid' for completed sales, 'draft' for drafts, 'pending' for sync queue
         const status = isDraft ? 'draft' : 'paid';
 
+        // Fix Timezone: Use provided created_at (Local Time) or generate one locally if missing
+        // Do NOT use datetime('now') as it is UTC.
+        let createdAt = saleData.created_at;
+        if (!createdAt) {
+            const d = new Date();
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            createdAt = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+
         const result = await this.db.execute(
-            `INSERT INTO offline_sales(sale_data, status, shift_id, created_at) VALUES($1, $2, $3, datetime('now'))`,
-            [json, status, shiftId || null]
+            `INSERT INTO offline_sales(sale_data, status, shift_id, created_at) VALUES($1, $2, $3, $4)`,
+            [json, status, shiftId || null, createdAt]
         );
         console.log(`✅ Offline sale saved (${status}). LastInsertId: `, result.lastInsertId);
 
@@ -288,9 +297,9 @@ class DatabaseService {
             // Include 'draft', 'synced_draft', and legacy 'synced' drafts
             query += "(status IN ('draft', 'synced_draft') OR (status = 'synced' AND json_extract(sale_data, '$.status') = 'draft'))";
         } else if (status === 'completed') {
-            // Include 'paid' (offline completed) and 'synced' (uploaded)
-            // BUT EXCLUDE those that are actually 'draft' inside JSON (legacy synced drafts)
-            query += "status IN ('paid', 'synced') AND json_extract(sale_data, '$.status') != 'draft'";
+            // Include 'paid' (offline completed) and 'synced' (uploaded sales history)
+            // Exclude drafts that might be marked synced but are drafts
+            query += "status IN ('paid', 'synced') AND (json_extract(sale_data, '$.status') IS NULL OR json_extract(sale_data, '$.status') != 'draft')";
         } else {
             query += "status IN ('draft', 'paid', 'synced', 'synced_draft')";
         }
@@ -338,6 +347,31 @@ class DatabaseService {
     async markSaleSynced(localId: number) {
         if (!this.db) return;
         await this.db.execute(`UPDATE offline_sales SET status = 'synced', synced_at = datetime('now'), error_message = NULL WHERE local_id = $1`, [localId]);
+    }
+
+    // Cleanup local drafts that match specific content (Zombie Killer)
+    async cleanupMatchingDrafts(customerName: string, total: number) {
+        if (!this.db) return;
+        try {
+            const drafts = await this.getDrafts('draft'); // Get 'draft' and 'synced_draft'
+            const normName = (customerName || '').trim().toLowerCase();
+            const normTotal = Number(total).toFixed(2);
+
+            for (const d of drafts) {
+                let data: any = {};
+                try { data = JSON.parse(d.sale_data); } catch (e) { }
+
+                const dName = (data.customer_name || '').trim().toLowerCase();
+                const dTotal = Number(data.total || 0).toFixed(2);
+
+                if (dName === normName && dTotal === normTotal) {
+                    console.log(`🧹 Cleaning up zombie draft: ${d.local_id} (${dName} - ${dTotal})`);
+                    await this.deleteSale(d.local_id);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to cleanup matching drafts:', e);
+        }
     }
 
     async clearSyncedSales() {

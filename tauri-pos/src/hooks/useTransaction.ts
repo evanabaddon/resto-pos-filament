@@ -77,6 +77,20 @@ export const useTransaction = ({
         setIsPaymentModalOpen(true); // Proceed to pay immediately for the split part
     }, []);
 
+    const getLocalDBString = useCallback(() => {
+        // Use Intl to force correct timezone parts exactly as shown in UI
+        const d = new Date();
+        const parts = new Intl.DateTimeFormat('en-GB', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+            hour12: false
+        }).formatToParts(d);
+
+        const p: any = {};
+        parts.forEach(({ type, value }) => p[type] = value);
+        return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
+    }, []);
+
     const handlePaymentConfirm = useCallback(async (amount: number, methodId: number, methodCode: string) => {
         setIsPaymentModalOpen(false);
 
@@ -117,7 +131,7 @@ export const useTransaction = ({
             order_type: orderType,
             table_number: orderType === 'Dine In' ? tableNumber : null,
             shift_id: activeShift.id,
-            created_at: new Date().toISOString()
+            created_at: getLocalDBString()
         };
 
         try {
@@ -177,12 +191,10 @@ export const useTransaction = ({
                 }
             }
 
-            // 5. Delete Draft if exists (Only if paying FULL cart or if split replaces draft?)
-            // If split, we probably keep the original draft? Or update it?
-            // "Pecah Tagihan" usually means we pay part of it.
-            // Complex logic: If split, we should ideally REDUCE the original draft.
-            // But current implementation just pays selected items.
-            // Simplification: Only delete draft if we are NOT splitting (paying full).
+            // 5. Delete Draft & Clean Zombies
+            // Clean local duplicates based on content even if source was server
+            await dbService.cleanupMatchingDrafts(customerName, total);
+
             if (!splitCart && activeDraft) {
                 if (activeDraft.source === 'local') {
                     await dbService.deleteSale(activeDraft.id);

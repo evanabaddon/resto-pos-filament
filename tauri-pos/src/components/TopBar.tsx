@@ -46,6 +46,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                         }`} />
                     {isOnline ? 'Online' : 'Offline'}
                 </div>
+
+                {/* Realtime Clock */}
+                <ClockWidget />
             </div>
 
             <div className="flex items-center gap-3">
@@ -101,5 +104,25 @@ export const TopBar: React.FC<TopBarProps> = ({
                 </button>
             </div>
         </header>
+    );
+};
+
+const ClockWidget: React.FC = () => {
+    const [time, setTime] = React.useState(new Date());
+
+    React.useEffect(() => {
+        const timer = setInterval(() => setTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    return (
+        <div className="hidden md:flex flex-col items-start justify-center ml-2 px-2 border-l border-gray-200 dark:border-gray-700">
+            <div className="text-sm font-bold text-gray-700 dark:text-gray-200 leading-none">
+                {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+            </div>
+            <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 leading-none mt-1">
+                {time.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })}
+            </div>
+        </div>
     );
 };
