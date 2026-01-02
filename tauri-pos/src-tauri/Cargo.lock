@@ -3339,6 +3339,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "resto-pos"
+version = "0.0.0"
+dependencies = [
+ "log",
+ "reqwest 0.11.27",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-log",
+ "tauri-plugin-shell",
+ "tauri-plugin-sql",
+]
+
+[[package]]
 name = "rkyv"
 version = "0.7.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4548,21 +4563,6 @@ dependencies = [
  "thiserror 2.0.17",
  "time",
  "tokio",
-]
-
-[[package]]
-name = "tauri-pos"
-version = "0.0.0"
-dependencies = [
- "log",
- "reqwest 0.11.27",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-log",
- "tauri-plugin-shell",
- "tauri-plugin-sql",
 ]
 
 [[package]]

@@ -1,7 +1,7 @@
 [package]
-name = "tauri-pos"
+name = "resto-pos"
 version = "0.0.0"
-description = "A Tauri App"
+description = "Next-Gen Restaurant OS — Powered by Adaptive AI & Native WhatsApp Gateway"
 authors = ["you"]
 edition = "2021"
 

@@ -1,5 +1,6 @@
 {
-    "name": "tauri-pos",
+    "name": "resto-pos",
+    "description": "Next-Gen Restaurant OS — Powered by Adaptive AI & Native WhatsApp Gateway",
     "private": true,
     "version": "0.0.0",
     "type": "module",

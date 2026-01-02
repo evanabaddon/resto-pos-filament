@@ -90,7 +90,6 @@ function PosApp() {
     const [showDrafts, setShowDrafts] = useState(false);
     const {
         drafts,
-        setDrafts,
         isLoadingDrafts,
         loadDrafts,
         activeDraft,

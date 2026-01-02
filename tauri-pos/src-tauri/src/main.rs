@@ -4,5 +4,5 @@
 )]
 
 fn main() {
-    tauri_pos::run()
+    resto_pos::run()
 }
