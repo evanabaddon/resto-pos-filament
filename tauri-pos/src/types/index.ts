@@ -3,6 +3,7 @@ export interface Product {
     name: string;
     price: number;
     category_id: number;
+    type: 'raw' | 'produced' | 'retail' | 'bar';
     image?: string;
     stock?: number;
     prepared_stock?: number;

@@ -4,8 +4,8 @@ export interface PrinterSettings {
     cashierPrinter: string;
     cashierPaperWidth: '58mm' | '80mm';
     autoPrint: boolean;
-    categoryMappings: {
-        categoryId: number;
+    typeMappings: {
+        productType: 'raw' | 'produced' | 'retail' | 'bar';
         printerName: string;
         paperWidth: '58mm' | '80mm';
     }[];

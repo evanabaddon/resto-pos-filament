@@ -180,12 +180,18 @@ export const useTransaction = ({
                 setPrintOrder(savedSale);
             }
 
-            // Print Kitchen/Bar Tickets (Category Mapping)
-            if (printerSettings.categoryMappings && printerSettings.categoryMappings.length > 0) {
+            // Print Kitchen/Bar Tickets (Type Mapping)
+            if (printerSettings.typeMappings && printerSettings.typeMappings.length > 0) {
                 const printerGroups: Record<string, { items: any[], paperWidth: '58mm' | '80mm' }> = {};
 
                 saleData.items.forEach(item => {
-                    const mapping = printerSettings.categoryMappings.find((m: any) => m.categoryId === item.category_id);
+                    // Look up product to get type, as saleData item might not have full product object
+                    // We use cartToProcess which is available in scope
+                    const cartItem = cartToProcess.find(c => c.product.id === item.product_id);
+                    const pType = cartItem?.product.type || 'retail';
+
+                    const mapping = printerSettings.typeMappings.find(m => m.productType === pType);
+
                     if (mapping && mapping.printerName) {
                         if (!printerGroups[mapping.printerName]) {
                             printerGroups[mapping.printerName] = { items: [], paperWidth: mapping.paperWidth || '58mm' };

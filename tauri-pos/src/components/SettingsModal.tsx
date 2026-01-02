@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { printerService, type PrinterSettings } from '../services/printer';
 import { useTheme } from '../context/ThemeContext';
-import type { Category } from '../types';
 
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
     printerSettings: PrinterSettings;
     onUpdatePrinterSettings: (settings: PrinterSettings) => void;
-    categories: Category[];
     currentApiUrl: string; // To initialize the input
     onSave: (newApiUrl: string) => void;
     showNotification?: (message: string, type: 'success' | 'error' | 'info') => void;
@@ -20,7 +18,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     onClose,
     printerSettings,
     onUpdatePrinterSettings,
-    categories,
     currentApiUrl,
     onSave,
     showNotification,
@@ -30,7 +27,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     const [activeTab, setActiveTab] = useState<'general' | 'printer'>('general');
     const [apiUrl, setApiUrl] = useState(currentApiUrl || '');
     const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
-    const [newMapping, setNewMapping] = useState<{ categoryId: string, printerName: string, paperWidth: '58mm' | '80mm' }>({ categoryId: '', printerName: '', paperWidth: '58mm' });
+    const [newMapping, setNewMapping] = useState<{ productType: 'raw' | 'produced' | 'retail' | 'bar'; printerName: string; paperWidth: '58mm' | '80mm' }>({ productType: 'produced', printerName: '', paperWidth: '58mm' });
 
     // Sync local API URL with prop when opened
     useEffect(() => {
@@ -40,11 +37,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         }
     }, [isOpen, currentApiUrl]);
 
+    const handleAddMapping = () => {
+        if (newMapping.printerName && newMapping.productType) {
+            // Check for duplicate productType mapping
+            const exists = printerSettings.typeMappings?.some(m => m.productType === newMapping.productType);
+            if (exists) {
+                showNotification?.('⚠️ Mapping untuk jenis produk ini sudah ada!', 'error');
+                return;
+            }
+
+            const updatedMappings = [...(printerSettings.typeMappings || []), newMapping];
+            onUpdatePrinterSettings({ ...printerSettings, typeMappings: updatedMappings });
+            setNewMapping({ productType: 'produced', printerName: '', paperWidth: '58mm' });
+        }
+    };
+
+    const handleRemoveMapping = (index: number) => {
+        const updatedMappings = [...(printerSettings.typeMappings || [])];
+        updatedMappings.splice(index, 1);
+        onUpdatePrinterSettings({ ...printerSettings, typeMappings: updatedMappings });
+    };
+
     if (!isOpen) return null;
+
+    const PRODUCT_TYPES = [
+        { value: 'produced', label: '🍳 Kitchen (Produced)' },
+        { value: 'bar', label: '🍹 Bar (Minuman)' },
+        { value: 'retail', label: '📦 Retail (Barang Jadi)' },
+        { value: 'raw', label: '🥦 Bahan Baku' },
+        // { value: 'service', label: 'Service' }
+    ];
 
     return (
         <div className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 z-[60] flex backdrop-blur-sm items-center justify-center p-4 animate-fade-in" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh] animate-scale-up border border-gray-100 dark:border-gray-700" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh] animate-scale-up border border-gray-100 dark:border-gray-700" onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
                     <h2 className="text-lg font-bold text-gray-800 dark:text-white">⚙️ Pengaturan</h2>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">✕</button>
@@ -154,8 +180,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="space-y-4">
-                            {/* Main Cashier Printer */}
+                        <div className="space-y-6">
+                            {/* Cashier Printer */}
                             <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Printer Kasir (Utama)</label>
                                 <div className="flex gap-2 mb-2">
@@ -192,108 +218,90 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                             <hr className="my-2 border-gray-200 dark:border-gray-700" />
 
-                            {/* Category Mappings */}
+                            {/* Type Mappings */}
                             <div>
-                                <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-2">🔀 Mapping Printer Kategori (Dapur/Bar/dll)</h3>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Item dalam kategori ini akan dicetak terpisah ke printer yang dipilih (Tiket Pesanan).</p>
+                                <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-2">🔀 Printer Per Divisi (Dapur/Bar/dll)</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Item dengan jenis produk ini akan dicetak terpisah ke printer yang dipilih (Tiket Pesanan).</p>
 
                                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                                    <table className="w-full text-sm text-left">
-                                        <thead className="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium">
-                                            <tr>
-                                                <th className="px-3 py-2">Kategori</th>
-                                                <th className="px-3 py-2">Target Printer</th>
-                                                <th className="px-3 py-2">Size</th>
-                                                <th className="px-3 py-2 w-10"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                                            {printerSettings.categoryMappings && printerSettings.categoryMappings.map((mapping, idx) => {
-                                                const catName = categories.find(c => c.id === mapping.categoryId)?.name || `ID: ${mapping.categoryId}`;
-                                                return (
-                                                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                        <td className="px-3 py-2 dark:text-gray-200">{catName}</td>
-                                                        <td className="px-3 py-2 font-mono text-xs dark:text-gray-300">{mapping.printerName}</td>
-                                                        <td className="px-3 py-2 font-mono text-xs dark:text-gray-300">{mapping.paperWidth || '58mm'}</td>
-                                                        <td className="px-3 py-2 text-center">
-                                                            <button
-                                                                onClick={() => {
-                                                                    const newMappings = [...printerSettings.categoryMappings];
-                                                                    newMappings.splice(idx, 1);
-                                                                    onUpdatePrinterSettings({ ...printerSettings, categoryMappings: newMappings });
-                                                                }}
-                                                                className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold"
-                                                                title="Hapus Mapping"
-                                                            >
-                                                                ✕
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                            {(!printerSettings.categoryMappings || printerSettings.categoryMappings.length === 0) && (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm text-left min-w-[300px]">
+                                            <thead className="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium">
                                                 <tr>
-                                                    <td colSpan={4} className="px-3 py-4 text-center text-gray-400 dark:text-gray-500 italic">Belum ada mapping printer.</td>
+                                                    <th className="px-3 py-2">Jenis Barang</th>
+                                                    <th className="px-3 py-2">Target Printer</th>
+                                                    <th className="px-3 py-2">Size</th>
+                                                    <th className="px-3 py-2 w-10"></th>
                                                 </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                                                {printerSettings.typeMappings && printerSettings.typeMappings.map((mapping, idx) => {
+                                                    const typeLabel = PRODUCT_TYPES.find(t => t.value === mapping.productType)?.label || mapping.productType;
+                                                    return (
+                                                        <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                            <td className="px-3 py-2 dark:text-gray-200">{typeLabel}</td>
+                                                            <td className="px-3 py-2 font-mono text-xs dark:text-gray-300">{mapping.printerName}</td>
+                                                            <td className="px-3 py-2 font-mono text-xs dark:text-gray-300">{mapping.paperWidth || '58mm'}</td>
+                                                            <td className="px-3 py-2 text-center">
+                                                                <button
+                                                                    onClick={() => handleRemoveMapping(idx)}
+                                                                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold"
+                                                                    title="Hapus Mapping"
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                                {(!printerSettings.typeMappings || printerSettings.typeMappings.length === 0) && (
+                                                    <tr>
+                                                        <td colSpan={4} className="px-3 py-4 text-center text-gray-400 dark:text-gray-500 italic">Belum ada mapping printer devisi.</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
 
                                     {/* Add New Mapping Form */}
-                                    <div className="bg-gray-50 dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-700 flex gap-2 items-center">
+                                    <div className="bg-gray-50 dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                                         <select
-                                            className="flex-1 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
-                                            value={newMapping.categoryId}
-                                            onChange={(e) => setNewMapping({ ...newMapping, categoryId: e.target.value })}
+                                            className="flex-1 px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
+                                            value={newMapping.productType}
+                                            onChange={(e) => setNewMapping({ ...newMapping, productType: e.target.value as any })}
                                         >
-                                            <option value="">Pilih Kategori...</option>
-                                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                            {PRODUCT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                         </select>
-                                        <span className="text-gray-400 dark:text-gray-600">➜</span>
+
+                                        <span className="text-gray-400 dark:text-gray-600 text-center hidden sm:block">➜</span>
+                                        <span className="text-gray-400 dark:text-gray-600 text-center block sm:hidden">⬇</span>
+
                                         <select
-                                            className="flex-1 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
+                                            className="flex-1 px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
                                             value={newMapping.printerName}
                                             onChange={(e) => setNewMapping({ ...newMapping, printerName: e.target.value })}
                                         >
                                             <option value="">Pilih Printer...</option>
                                             {availablePrinters.map(p => <option key={p} value={p}>{p}</option>)}
                                         </select>
-                                        <select
-                                            className="w-20 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
-                                            value={newMapping.paperWidth}
-                                            onChange={(e) => setNewMapping({ ...newMapping, paperWidth: e.target.value as '58mm' | '80mm' })}
-                                        >
-                                            <option value="58mm">58mm</option>
-                                            <option value="80mm">80mm</option>
-                                        </select>
-                                        <button
-                                            onClick={() => {
-                                                if (!newMapping.categoryId || !newMapping.printerName) return;
-                                                const catId = Number(newMapping.categoryId);
-                                                // Avoid duplicates
-                                                const exists = printerSettings.categoryMappings.some(m => m.categoryId === catId);
-                                                if (exists) {
-                                                    showNotification?.('⚠️ Kategori ini sudah memiliki mapping!', 'error');
-                                                    return;
-                                                }
-                                                onUpdatePrinterSettings({
-                                                    ...printerSettings,
-                                                    categoryMappings: [
-                                                        ...printerSettings.categoryMappings,
-                                                        {
-                                                            categoryId: catId,
-                                                            printerName: newMapping.printerName,
-                                                            paperWidth: newMapping.paperWidth
-                                                        }
-                                                    ]
-                                                });
-                                                setNewMapping({ categoryId: '', printerName: '', paperWidth: '58mm' });
-                                            }}
-                                            disabled={!newMapping.categoryId || !newMapping.printerName}
-                                            className="bg-green-600 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-green-700 disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed"
-                                        >
-                                            + Tambah
-                                        </button>
+
+                                        <div className="flex gap-2">
+                                            <select
+                                                className="w-full sm:w-20 px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
+                                                value={newMapping.paperWidth}
+                                                onChange={(e) => setNewMapping({ ...newMapping, paperWidth: e.target.value as '58mm' | '80mm' })}
+                                            >
+                                                <option value="58mm">58mm</option>
+                                                <option value="80mm">80mm</option>
+                                            </select>
+                                            <button
+                                                onClick={handleAddMapping}
+                                                disabled={!newMapping.printerName || !newMapping.productType}
+                                                className="flex-1 sm:flex-none bg-green-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-green-700 disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed whitespace-nowrap"
+                                            >
+                                                + Tambah
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

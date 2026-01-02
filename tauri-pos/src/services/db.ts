@@ -32,6 +32,7 @@ class DatabaseService {
                 name TEXT NOT NULL,
                 price REAL NOT NULL,
                 category_id INTEGER,
+                type TEXT DEFAULT 'retail',
                 stock INTEGER DEFAULT 0,
                 prepared_stock INTEGER DEFAULT 0,
                 enable_stock_alert BOOLEAN DEFAULT 0,
@@ -44,6 +45,7 @@ class DatabaseService {
         // Migration: Add columns if not exist (quick fix for dev)
         try { await this.db.execute('ALTER TABLE products ADD COLUMN prepared_stock INTEGER DEFAULT 0'); } catch { }
         try { await this.db.execute('ALTER TABLE products ADD COLUMN enable_stock_alert BOOLEAN DEFAULT 0'); } catch { }
+        try { await this.db.execute("ALTER TABLE products ADD COLUMN type TEXT DEFAULT 'retail'"); } catch { }
 
         // Categories Table
         await this.db.execute(`
@@ -134,17 +136,18 @@ class DatabaseService {
                 const placeholders: string[] = [];
 
                 batch.forEach(p => {
-                    values.push(p.id, p.name, p.price, p.category_id, p.stock, p.prepared_stock || 0, p.enable_stock_alert ? 1 : 0, p.image, p.description);
-                    placeholders.push('(?, ?, ?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))');
+                    values.push(p.id, p.name, p.price, p.category_id, p.type, p.stock, p.prepared_stock || 0, p.enable_stock_alert ? 1 : 0, p.image, p.description);
+                    placeholders.push('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))');
                 });
 
                 const query = `
-                    INSERT INTO products (id, name, price, category_id, stock, prepared_stock, enable_stock_alert, image, description, updated_at) 
+                    INSERT INTO products (id, name, price, category_id, type, stock, prepared_stock, enable_stock_alert, image, description, updated_at) 
                     VALUES ${placeholders.join(', ')}
                     ON CONFLICT(id) DO UPDATE SET 
                         name = excluded.name,
                         price = excluded.price,
                         category_id = excluded.category_id,
+                        type = excluded.type,
                         stock = excluded.stock,
                         prepared_stock = excluded.prepared_stock,
                         enable_stock_alert = excluded.enable_stock_alert,

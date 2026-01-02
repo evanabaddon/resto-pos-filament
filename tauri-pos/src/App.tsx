@@ -60,14 +60,14 @@ function PosApp() {
                 cashierPrinter: parsed.cashierPrinter || '',
                 cashierPaperWidth: parsed.cashierPaperWidth || '58mm',
                 autoPrint: parsed.autoPrint || false,
-                categoryMappings: parsed.categoryMappings || []
+                typeMappings: parsed.typeMappings || []
             };
         }
         return {
             cashierPrinter: '',
             cashierPaperWidth: '58mm',
             autoPrint: false,
-            categoryMappings: []
+            typeMappings: []
         };
     });
 
@@ -532,20 +532,17 @@ function PosApp() {
             );
             await printerService.printJob(printerSettings.cashierPrinter, receiptText);
 
-            // 2. Process Mappings (Kitchen/Bar/etc)
-            const printerGroups: Record<string, { items: any[], paperWidth: '58mm' | '80mm' }> = {};
+            // Group items by printer using typeMappings
+            const printerGroups: Record<string, { items: CartItem[], paperWidth: '58mm' | '80mm' }> = {};
 
-            if (saleData.items && Array.isArray(saleData.items)) {
-                saleData.items.forEach((item: any) => {
-                    let catId = item.category_id;
+            if (saleData.items && saleData.items.length > 0) {
+                saleData.items.forEach((item: CartItem & { product_id?: number; category_id?: number }) => {
+                    // Find local product to get type if needed
+                    const localProduct = products.find(p => p.id === item.product_id);
+                    // Default to 'retail' if type not found
+                    const productType = localProduct?.type || 'retail';
 
-                    // Fallback lookup if catId missing (for backward compatibility)
-                    if (!catId) {
-                        const localProduct = products.find(p => p.id === item.product_id);
-                        if (localProduct) catId = localProduct.category_id;
-                    }
-
-                    const mapping = printerSettings.categoryMappings && printerSettings.categoryMappings.find(m => m.categoryId === catId);
+                    const mapping = printerSettings.typeMappings && printerSettings.typeMappings.find(m => m.productType === productType);
 
                     if (mapping && mapping.printerName) {
                         if (!printerGroups[mapping.printerName]) {
@@ -643,7 +640,6 @@ function PosApp() {
                     onClose={() => setShowSettings(false)}
                     printerSettings={printerSettings}
                     onUpdatePrinterSettings={setPrinterSettings}
-                    categories={categories}
                     currentApiUrl={localStorage.getItem('pos_api_url') || 'http://localhost:8000/api'}
                     onSave={handleSaveSettings}
                     showNotification={showNotification}
