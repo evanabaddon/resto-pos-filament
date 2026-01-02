@@ -261,11 +261,11 @@ class SyncService {
         // 1. Settings (Quick)
         await this.syncSettings();
 
-        // 2. Upload Sales (CRITICAL: Do this before downloading products to ensure stock is deducted)
-        await this.syncSales();
-
-        // 3. Upload Shifts
+        // 2. Upload Shifts (CRITICAL: Do this BEFORE uploading sales to ensure server has Active CashSession)
         await this.syncShifts();
+
+        // 3. Upload Sales (CRITICAL: Do this before downloading products to ensure stock is deducted)
+        await this.syncSales();
 
         // 4. Download Current Shift (if no active shift locally)
         if (!activeShiftId) {
