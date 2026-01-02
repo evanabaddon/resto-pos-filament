@@ -29,8 +29,8 @@ const DraftsModal: React.FC<DraftsModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 z-50 flex backdrop-blur-sm items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-scale-up border border-gray-100 dark:border-gray-700">
+        <div className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 z-50 flex backdrop-blur-sm items-center justify-center p-4 animate-fade-in" onClick={onClose}>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-scale-up border border-gray-100 dark:border-gray-700" onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800">
                     <div className="flex items-center gap-3">
                         <h2 className="text-lg font-bold text-gray-800 dark:text-white">📂 Transaksi</h2>
@@ -85,10 +85,10 @@ const DraftsModal: React.FC<DraftsModalProps> = ({
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <span className={`text-xs px-2 py-0.5 rounded font-bold ${draft.source === 'server'
-                                                ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                                                : draft.sync_status === 'synced_draft'
-                                                    ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-                                                    : 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
+                                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                            : draft.sync_status === 'synced_draft'
+                                                ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                                                : 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
                                             }`}>
                                             {draft.source === 'server'
                                                 ? '☁️ SERVER'

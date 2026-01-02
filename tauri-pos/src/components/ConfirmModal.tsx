@@ -24,8 +24,8 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm w-full p-6 transform transition-all scale-100 animate-scale-up">
+        <div className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-fade-in" onClick={onCancel}>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm w-full p-6 transform transition-all scale-100 animate-scale-up" onClick={e => e.stopPropagation()}>
                 <h3 className={`text-lg font-bold mb-2 ${isDestructive ? 'text-red-600 dark:text-red-500' : 'text-gray-900 dark:text-white'}`}>
                     {title}
                 </h3>

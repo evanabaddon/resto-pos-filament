@@ -30,7 +30,7 @@ const Notification: React.FC<NotificationProps> = ({ message, type, onClose, dur
     };
 
     return (
-        <div className={`fixed top-6 right-6 z-[100] ${bgColors[type]} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-in min-w-[300px]`}>
+        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] ${bgColors[type]} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-down min-w-[300px]`}>
             <span className="text-2xl">{icons[type]}</span>
             <div className="flex-1">
                 <p className="font-bold text-lg">{type === 'error' ? 'Error' : type === 'success' ? 'Sukses' : 'Info'}</p>

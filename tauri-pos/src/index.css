@@ -85,3 +85,19 @@ body {
 .animate-scale-up {
     animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+@keyframes slideDown {
+    from {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-down {
+    animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

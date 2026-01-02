@@ -66,8 +66,8 @@ const SplitBillModal: React.FC<SplitBillModalProps> = ({ isOpen, cart, onClose, 
     }, 0);
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white dark:bg-gray-800 w-[500px] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-scale-up border border-gray-100 dark:border-gray-700">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+            <div className="bg-white dark:bg-gray-800 w-[500px] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-scale-up border border-gray-100 dark:border-gray-700" onClick={e => e.stopPropagation()}>
                 <div className="bg-primary-600 dark:bg-primary-700 px-6 py-4 flex justify-between items-center">
                     <div>
                         <h2 className="text-white text-lg font-bold">✂️ Pecah Tagihan (Split Bill)</h2>

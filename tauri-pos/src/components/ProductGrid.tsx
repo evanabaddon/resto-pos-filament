@@ -106,7 +106,7 @@ export const ProductGrid: React.FC<ProductGridProps> = React.memo(({
 
             {/* Products Grid */}
             <div className="flex-1 overflow-y-auto p-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-20">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-12 gap-4 pb-20">
                     {filteredProducts.map(product => {
                         const imageUrl = imageUrls[product.id];
 

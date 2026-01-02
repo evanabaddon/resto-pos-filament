@@ -314,6 +314,32 @@ function PosApp() {
         };
     }, []);
 
+    // Global Auto-Focus Search
+    useEffect(() => {
+        const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            // Ignore if already in an input/textarea
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+                // Allow ESC to blur search if focused
+                if (e.key === 'Escape' && e.target === searchInputRef.current) {
+                    searchInputRef.current?.blur();
+                    setSearchQuery('');
+                }
+                return;
+            }
+
+            // check for modifiers to avoid hijacking shortcuts
+            if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+            // Only focus on printable characters or backspace
+            if (e.key.length === 1 || e.key === 'Backspace') {
+                searchInputRef.current?.focus();
+            }
+        };
+
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, []);
+
     const loadLocalData = async () => {
         const localProducts = await dbService.getProducts();
         const localCategories = await dbService.getCategories();
@@ -679,7 +705,15 @@ function PosApp() {
                 printOrder={printOrder}
                 printerSettings={printerSettings}
                 settings={settings}
-                onSplitBill={() => setIsSplitModalOpen(true)}
+                onSplitBill={() => {
+                    if (!activeShift) {
+                        showNotification('⚠️ Harap Buka Shift Terlebih Dahulu!', 'error');
+                        setShiftModalMode('open');
+                        setIsShiftModalOpen(true);
+                        return;
+                    }
+                    setIsSplitModalOpen(true);
+                }}
             />
 
             <SplitBillModal

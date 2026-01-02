@@ -72,10 +72,16 @@ export const useTransaction = ({
     }, [activeShift, cart.length, customerName, showNotification, setIsShiftModalOpen, setShiftModalMode]);
 
     const handleSplitRequest = useCallback((itemsToSplit: CartItem[]) => {
+        if (!activeShift) {
+            showNotification('⚠️ Harap Buka Shift Terlebih Dahulu!', 'error');
+            setShiftModalMode('open');
+            setIsShiftModalOpen(true);
+            return;
+        }
         setSplitCart(itemsToSplit);
         setIsSplitModalOpen(false);
         setIsPaymentModalOpen(true); // Proceed to pay immediately for the split part
-    }, []);
+    }, [activeShift, showNotification, setShiftModalMode, setIsShiftModalOpen]);
 
     const getLocalDBString = useCallback(() => {
         // Use Intl to force correct timezone parts exactly as shown in UI
@@ -92,6 +98,12 @@ export const useTransaction = ({
     }, []);
 
     const handlePaymentConfirm = useCallback(async (amount: number, methodId: number, methodCode: string) => {
+        if (!activeShift) {
+            showNotification('⚠️ Gagal: Tidak ada shift aktif!', 'error');
+            setIsPaymentModalOpen(false);
+            return;
+        }
+
         setIsPaymentModalOpen(false);
 
         // Determine which cart to pay (Main or Split)
