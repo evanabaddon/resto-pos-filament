@@ -249,9 +249,6 @@ Route::post('/pos/sync-shifts', function (Request $request) {
                     // 'cashier_name' => $shift['cashier_name'], // Column does not exist
                     'cash_in_hand' => $shift['cash_in_hand'],
                     'cash_out' => $shift['cash_out'] ?? null,
-                    // 'total_cash_sales' => $shift['total_cash_sales'] ?? 0, // Column does not exist
-                    // 'expected_cash' => $shift['expected_cash'] ?? null, // Column does not exist
-                    // 'difference' => $shift['difference'] ?? null, // Column does not exist
                     'status' => $shift['status'],
                     'opened_at' => $shift['opened_at'],
                     'closed_at' => $shift['closed_at'] ?? null,
@@ -262,6 +259,7 @@ Route::post('/pos/sync-shifts', function (Request $request) {
                     'server_id' => $cashSession->id,
                     'action' => 'updated'
                 ];
+            } else {
                 // Resolve User by Name if provided
                 $userId = 1; // SAFE DEFAULT (Admin/System)
 
