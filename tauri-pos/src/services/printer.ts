@@ -251,6 +251,85 @@ export const printerService = {
         return printerService.renderTemplate(template, data, width);
     },
 
+    printKitchenTickets: async (cart: any[], settings: any, printerSettings: PrinterSettings, products: any[] = [], invoiceNumber: string = 'DRAFT'): Promise<any[]> => {
+        if (!printerSettings.typeMappings) return cart;
+
+        // Group items by printer
+        const printerGroups: Record<string, { items: any[], paperWidth: '58mm' | '80mm' }> = {};
+        const itemsToUpdate: Map<number, number> = new Map(); // Index -> New Printed Qty
+
+        cart.forEach((item, index) => {
+            const qty = item.quantity;
+            const printed = item.printed_qty || 0;
+            const toPrint = qty - printed;
+
+            if (toPrint > 0) {
+                // Find product type
+                // item.product might be partial, try to find in products list if needed or rely on item.product.type
+                const pType = item.product?.type || (products.find(p => p.id === item.product?.id)?.type) || 'retail';
+
+                const mapping = printerSettings.typeMappings.find(m => m.productType === pType);
+                if (mapping && mapping.printerName) {
+                    if (!printerGroups[mapping.printerName]) {
+                        printerGroups[mapping.printerName] = {
+                            items: [],
+                            paperWidth: mapping.paperWidth || '58mm'
+                        };
+                    }
+
+                    // Add item with ONLY the new quantity
+                    printerGroups[mapping.printerName].items.push({
+                        ...item,
+                        quantity: toPrint, // Print only difference
+                        product_name: item.product_name || item.product?.name // Ensure name exists
+                    });
+
+                    // Mark this item index to be updated after successful print? 
+                    // Or just assumes success. 
+                    // Better to update 'printed_qty' to 'quantity' (total)
+                    itemsToUpdate.set(index, qty);
+                }
+            }
+        });
+
+        // Print Groups
+        for (const [printerName, group] of Object.entries(printerGroups)) {
+            try {
+                const ticketData = {
+                    items: group.items,
+                    invoice_number: invoiceNumber,
+                    table_number: settings.table_number || '', // Passed in settings? usually settings is just business info.
+                    // We might need to pass full order context in settings or separate arg.
+                    // For now, assume settings has header info or we pass a context object.
+                    // The 'order' arg in generateReceiptText usually has 'table_number'.
+                    // I will mix settings into it.
+                    ...settings,
+                    is_ticket: true
+                };
+
+                // Ensure templates are passed
+                const fullSettings = { ...settings, templates: printerSettings.templates };
+
+                const text = printerService.generateReceiptText(ticketData, fullSettings, group.paperWidth, true);
+                if (printerName) {
+                    await printerService.printJob(printerName, text);
+                }
+            } catch (e) {
+                console.error(`Failed to print kitchen ticket to ${printerName}`, e);
+                // If failed, we might NOT want to update printed_qty? 
+                // For now, assume optimistic update to avoid infinite loops of errors.
+            }
+        }
+
+        // Return updated cart with new printed_qty
+        return cart.map((item, index) => {
+            if (itemsToUpdate.has(index)) {
+                return { ...item, printed_qty: itemsToUpdate.get(index) };
+            }
+            return item;
+        });
+    },
+
     generateShiftReportText: (shiftData: any, settings: any, width: '58mm' | '80mm' = '58mm'): string => {
         const template = settings?.templates?.shift_report || DEFAULT_TEMPLATES.shift_report;
 

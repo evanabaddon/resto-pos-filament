@@ -180,37 +180,22 @@ export const useTransaction = ({
                 setPrintOrder(savedSale);
             }
 
-            // Print Kitchen/Bar Tickets (Type Mapping)
-            if (printerSettings.typeMappings && printerSettings.typeMappings.length > 0) {
-                const printerGroups: Record<string, { items: any[], paperWidth: '58mm' | '80mm' }> = {};
-
-                saleData.items.forEach(item => {
-                    // Look up product to get type, as saleData item might not have full product object
-                    // We use cartToProcess which is available in scope
-                    const cartItem = cartToProcess.find(c => c.product.id === item.product_id);
-                    const pType = cartItem?.product.type || 'retail';
-
-                    const mapping = printerSettings.typeMappings.find(m => m.productType === pType);
-
-                    if (mapping && mapping.printerName) {
-                        if (!printerGroups[mapping.printerName]) {
-                            printerGroups[mapping.printerName] = { items: [], paperWidth: mapping.paperWidth || '58mm' };
-                        }
-                        printerGroups[mapping.printerName].items.push(item);
-                    }
-                });
-
-                for (const [targetPrinter, group] of Object.entries(printerGroups)) {
-                    try {
-                        const ticketOrder = { ...savedSale, items: group.items };
-                        const ticketText = printerService.generateReceiptText(ticketOrder, { ...settings, templates: printerSettings.templates }, group.paperWidth, true);
-                        await printerService.printJob(targetPrinter, ticketText);
-                    } catch (e) { console.error('Kitchen print failed', e); }
-                }
+            // 5. Kitchen Printing (Incremental logic handles printed status)
+            // Even though we prioritize printing at "Save Draft", user might pay directly.
+            // This ensures any unprinted items (added at payment) are printed.
+            try {
+                await printerService.printKitchenTickets(
+                    cartToProcess,
+                    { ...settings, table_number: tableNumber, customer_name: customerName, order_type: orderType },
+                    printerSettings,
+                    [],
+                    savedSale.invoice_number
+                );
+            } catch (e) {
+                console.error('Kitchen print failed:', e);
             }
 
-            // 5. Delete Draft & Clean Zombies
-            // Clean local duplicates based on content even if source was server
+            // 6. Delete Draft & Clean Zombies
             await dbService.cleanupMatchingDrafts(customerName, total);
 
             if (!splitCart && activeDraft) {
@@ -221,38 +206,28 @@ export const useTransaction = ({
                         await api.deleteDraft(activeDraft.id);
                         console.log('✅ Deleted server draft after payment:', activeDraft.id);
                     } catch (e) {
-                        console.error('⚠️ Failed to delete server draft after checkout (might be offline/already deleted):', e);
+                        console.error('⚠️ Failed to delete server draft after checkout:', e);
                     }
                 }
                 setActiveDraft(null);
             }
 
-            // 6. Clear Cart
+            // 7. Clear Cart
             if (splitCart) {
                 // Remove paid items from main cart
-                // Filter out items that match the split items
                 const remainingCart = cart.filter(item => {
                     const inSplit = splitCart.find(s => s.product.id === item.product.id && s.notes === item.notes);
-                    // If in split, reduce quantity or remove?
-                    // Split Bill Modal usually selects items to PAY.
-                    // If we pay 1 of 2, we should reduce quantity.
-                    // But current SplitBillModal simply selects items.
-                    // Assuming SplitCart contains exact items to be removed.
-                    // If quantity matches, remove. If less, reduce.
-                    // For simplicity, let's assume we remove the exact instances.
-                    if (inSplit) {
-                        return false; // Remove fully for now as split bill usually handles full items or we need better logic
-                    }
+                    if (inSplit) return false;
                     return true;
                 });
 
                 setCart(remainingCart);
                 showNotification('✅ Pembayaran sebagian berhasil. Item tersisa masih di keranjang.', 'info');
+                setSplitCart(null);
             } else {
                 clearCart();
             }
 
-            setSplitCart(null);
             loadLocalData(); // Refresh stock display
 
         } catch (error: any) {

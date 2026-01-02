@@ -90,6 +90,7 @@ function PosApp() {
     const [showDrafts, setShowDrafts] = useState(false);
     const {
         drafts,
+        setDrafts,
         isLoadingDrafts,
         loadDrafts,
         activeDraft,
@@ -101,7 +102,7 @@ function PosApp() {
         setTransactionTab,
         isJoinModalOpen,
         setIsJoinModalOpen
-    } = useDrafts(settings, showNotification);
+    } = useDrafts(settings, printerSettings, products, showNotification);
 
     // Confirm Modal State
     const [confirmModal, setConfirmModal] = useState<{

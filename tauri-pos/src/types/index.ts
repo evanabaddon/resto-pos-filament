@@ -28,6 +28,7 @@ export interface CartItem {
     quantity: number;
     subtotal: number;
     notes?: string;
+    printed_qty?: number;
 }
 
 export interface Sale {

@@ -1,10 +1,13 @@
 import { useState, useCallback } from 'react';
 import { dbService } from '../services/db';
 import { api } from '../services/api';
-import type { OrderDraft, CartItem } from '../types';
+import { printerService, type PrinterSettings } from '../services/printer';
+import type { OrderDraft, CartItem, Product } from '../types';
 
 export const useDrafts = (
     settings: any,
+    printerSettings: PrinterSettings,
+    products: Product[],
     showNotification: (msg: string, type: 'success' | 'error' | 'info') => void
 ) => {
     const [drafts, setDrafts] = useState<OrderDraft[]>([]);
@@ -187,34 +190,45 @@ export const useDrafts = (
             return false;
         }
 
-        const subtotal = cart.reduce((sum, item) => sum + Number(item.subtotal), 0);
-        const taxRate = settings?.tax_rate || 0;
-        const tax = (subtotal * taxRate) / 100;
-        const total = calculateTotal(cart);
-
-        const saleData = {
-            items: cart.map(item => ({
-                product_id: item.product.id,
-                quantity: item.quantity,
-                price: item.product.price,
-                subtotal: item.subtotal,
-                notes: item.notes || null,
-                product_name: item.product.name,
-                category_id: item.product.category_id
-            })),
-            subtotal,
-            tax,
-            discount,
-            total,
-            payment_method: null,
-            customer_name: customerName,
-            order_type: orderType,
-            table_number: tableNumber,
-            member_id: null,
-            created_at: getLocalDBString()
-        };
-
         try {
+            // INCREMENTAL PRINTING LOGIC
+            // Print items that have not been printed yet
+            const updatedCart = await printerService.printKitchenTickets(
+                cart,
+                { ...settings, table_number: tableNumber, customer_name: customerName, order_type: orderType },
+                printerSettings,
+                products,
+                'DRAFT' // Placeholder invoice number
+            );
+
+            const subtotal = updatedCart.reduce((sum, item) => sum + Number(item.subtotal), 0);
+            const taxRate = settings?.tax_rate || 0;
+            const tax = (subtotal * taxRate) / 100;
+            const total = calculateTotal(updatedCart);
+
+            const saleData = {
+                items: updatedCart.map(item => ({
+                    product_id: item.product.id,
+                    quantity: item.quantity,
+                    price: item.product.price,
+                    subtotal: item.subtotal,
+                    notes: item.notes || null,
+                    product_name: item.product.name,
+                    category_id: item.product.category_id,
+                    printed_qty: item.printed_qty // PERSIST PRINTED QTY
+                })),
+                subtotal,
+                tax,
+                discount,
+                total,
+                payment_method: null,
+                customer_name: customerName,
+                order_type: orderType,
+                table_number: tableNumber,
+                member_id: null,
+                created_at: getLocalDBString()
+            };
+
             // If editing an existing draft, delete old one first
             if (activeDraft) {
                 if (activeDraft.source === 'local') {
@@ -228,14 +242,14 @@ export const useDrafts = (
             }
 
             await dbService.saveOfflineSale(saleData, true); // true = isDraft
-            showNotification('✅ Draft Tersimpan (Offline)', 'success');
+            showNotification('✅ Draft Tersimpan & Dikirim ke Dapur', 'success');
             return true;
         } catch (error: any) {
             console.error('Save draft error:', error);
             showNotification('Gagal menyimpan draft: ' + error.message, 'error');
             return false;
         }
-    }, [settings, activeDraft, showNotification]);
+    }, [settings, printerSettings, products, activeDraft, showNotification]);
 
     const deleteDraft = useCallback(async (draft: OrderDraft) => {
         try {
