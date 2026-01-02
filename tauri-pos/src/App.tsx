@@ -60,14 +60,16 @@ function PosApp() {
                 cashierPrinter: parsed.cashierPrinter || '',
                 cashierPaperWidth: parsed.cashierPaperWidth || '58mm',
                 autoPrint: parsed.autoPrint || false,
-                typeMappings: parsed.typeMappings || []
+                typeMappings: parsed.typeMappings || [],
+                templates: parsed.templates || undefined,
             };
         }
         return {
             cashierPrinter: '',
             cashierPaperWidth: '58mm',
             autoPrint: false,
-            typeMappings: []
+            typeMappings: [],
+            templates: undefined
         };
     });
 

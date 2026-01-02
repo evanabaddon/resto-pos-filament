@@ -165,7 +165,7 @@ export const useTransaction = ({
             // Print Cashier Receipt
             if (printerSettings.cashierPrinter) {
                 try {
-                    const text = printerService.generateReceiptText(savedSale, settings, printerSettings.cashierPaperWidth || '58mm');
+                    const text = printerService.generateReceiptText(savedSale, { ...settings, templates: printerSettings.templates }, printerSettings.cashierPaperWidth || '58mm');
                     await printerService.printJob(printerSettings.cashierPrinter, text);
 
                     if (printerSettings.autoPrint) {
@@ -203,7 +203,7 @@ export const useTransaction = ({
                 for (const [targetPrinter, group] of Object.entries(printerGroups)) {
                     try {
                         const ticketOrder = { ...savedSale, items: group.items };
-                        const ticketText = printerService.generateReceiptText(ticketOrder, settings, group.paperWidth);
+                        const ticketText = printerService.generateReceiptText(ticketOrder, { ...settings, templates: printerSettings.templates }, group.paperWidth, true);
                         await printerService.printJob(targetPrinter, ticketText);
                     } catch (e) { console.error('Kitchen print failed', e); }
                 }

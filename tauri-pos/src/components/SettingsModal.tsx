@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { printerService, type PrinterSettings } from '../services/printer';
+import { printerService, type PrinterSettings, DEFAULT_TEMPLATES } from '../services/printer';
 import { useTheme } from '../context/ThemeContext';
 
 interface SettingsModalProps {
@@ -24,18 +24,54 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     onResetDatabase
 }) => {
     const { theme, toggleTheme } = useTheme();
-    const [activeTab, setActiveTab] = useState<'general' | 'printer'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'printer' | 'template'>('general');
     const [apiUrl, setApiUrl] = useState(currentApiUrl || '');
     const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
     const [newMapping, setNewMapping] = useState<{ productType: 'raw' | 'produced' | 'retail' | 'bar'; printerName: string; paperWidth: '58mm' | '80mm' }>({ productType: 'produced', printerName: '', paperWidth: '58mm' });
+
+    // Template Editor State
+    const [templateType, setTemplateType] = useState<'payment' | 'kitchen'>('payment');
+    const [templateContent, setTemplateContent] = useState('');
 
     // Sync local API URL with prop when opened
     useEffect(() => {
         if (isOpen) {
             setApiUrl(currentApiUrl);
             printerService.getPrinters().then(setAvailablePrinters);
+            // Load initial template
+            const initialTemplate = printerSettings.templates?.[templateType] || DEFAULT_TEMPLATES[templateType];
+            setTemplateContent(initialTemplate);
         }
     }, [isOpen, currentApiUrl]);
+
+    // When template type changes, load the content
+    useEffect(() => {
+        if (isOpen) {
+            const content = printerSettings.templates?.[templateType] || DEFAULT_TEMPLATES[templateType];
+            setTemplateContent(content);
+        }
+    }, [templateType, printerSettings.templates, isOpen]);
+
+    const handleSaveTemplate = () => {
+        const currentTemplates = printerSettings.templates || { ...DEFAULT_TEMPLATES };
+        const updatedTemplates = {
+            ...currentTemplates,
+            [templateType]: templateContent
+        };
+        onUpdatePrinterSettings({ ...printerSettings, templates: updatedTemplates });
+        showNotification?.('✅ Template berhasil disimpan!', 'success');
+    };
+
+    const handleResetTemplate = () => {
+        if (confirm('Reset template ke default? Perubahan akan hilang.')) {
+            setTemplateContent(DEFAULT_TEMPLATES[templateType]);
+        }
+    };
+
+    const insertPlaceholder = (placeholder: string) => {
+        setTemplateContent(prev => prev + placeholder);
+        // Ideally insert at cursor, but appending is safer for MVP without ref
+    };
 
     const handleAddMapping = () => {
         if (newMapping.printerName && newMapping.productType) {
@@ -70,7 +106,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 z-[60] flex backdrop-blur-sm items-center justify-center p-4 animate-fade-in" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh] animate-scale-up border border-gray-100 dark:border-gray-700" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-6xl p-0 overflow-hidden flex flex-col max-h-[90vh] animate-scale-up border border-gray-100 dark:border-gray-700" onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
                     <h2 className="text-lg font-bold text-gray-800 dark:text-white">⚙️ Pengaturan</h2>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">✕</button>
@@ -88,6 +124,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                         className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'printer' ? 'border-b-2 border-primary-600 text-primary-600 bg-white dark:bg-gray-800 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-50 dark:bg-gray-900'}`}
                     >
                         Printer & Struk
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('template')}
+                        className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'template' ? 'border-b-2 border-primary-600 text-primary-600 bg-white dark:bg-gray-800 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-50 dark:bg-gray-900'}`}
+                    >
+                        Edit Template
                     </button>
                 </div>
 
@@ -179,7 +221,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                 </div>
                             </div>
                         </div>
-                    ) : (
+                    ) : activeTab === 'printer' ? (
                         <div className="space-y-6">
                             {/* Cashier Printer */}
                             <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
@@ -304,6 +346,104 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4 animate-fade-in h-full flex flex-col">
+                            <div className="flex justify-between items-center">
+                                <div className="flex gap-2 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+                                    <button
+                                        onClick={() => setTemplateType('payment')}
+                                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${templateType === 'payment' ? 'bg-white dark:bg-gray-600 shadow-sm text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
+                                    >
+                                        🧾 Struk Pembayaran
+                                    </button>
+                                    <button
+                                        onClick={() => setTemplateType('kitchen')}
+                                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${templateType === 'kitchen' ? 'bg-white dark:bg-gray-600 shadow-sm text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
+                                    >
+                                        🍳 Tiket Dapur
+                                    </button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={handleResetTemplate} className="text-xs text-red-500 hover:text-red-700 underline">Reset Default</button>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[500px]">
+                                <div className="flex flex-col gap-2 h-full">
+                                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Editor Template</label>
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                        <span className="text-xs text-gray-500 w-full mb-0.5">Placeholder Data:</span>
+                                        {['{{store_name}}', '{{date}}', '{{items}}', '{{total}}', '{{line}}', '{{footer}}'].map(tag => (
+                                            <button key={tag} onClick={() => insertPlaceholder(tag)} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 font-mono text-blue-600 dark:text-blue-400">
+                                                {tag}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                        <span className="text-xs text-gray-500 w-full mb-0.5">Format Alignment:</span>
+                                        <button onClick={() => insertPlaceholder('{{c: teks}}')} className="px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-xs rounded border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-800 font-mono text-purple-600 dark:text-purple-400" title="Rata Tengah">
+                                            Center
+                                        </button>
+                                        <button onClick={() => insertPlaceholder('{{r: teks}}')} className="px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-xs rounded border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-800 font-mono text-purple-600 dark:text-purple-400" title="Rata Kanan">
+                                            Right
+                                        </button>
+                                        <button onClick={() => insertPlaceholder('{{lr: Kiri | Kanan}}')} className="px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-xs rounded border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-800 font-mono text-purple-600 dark:text-purple-400" title="Kiri | Kanan">
+                                            Left | Right
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                        <span className="text-xs text-gray-500 w-full mb-0.5">Format Styling:</span>
+                                        <button onClick={() => insertPlaceholder('{{b: teks}}')} className="px-2 py-1 bg-rose-50 dark:bg-rose-900/30 text-xs rounded border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-800 font-mono font-bold text-rose-600 dark:text-rose-400" title="Tebal">
+                                            Bold
+                                        </button>
+                                        <button onClick={() => insertPlaceholder('{{size:2: teks}}')} className="px-2 py-1 bg-rose-50 dark:bg-rose-900/30 text-xs rounded border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-800 font-mono text-rose-600 dark:text-rose-400" title="Ukuran Besar">
+                                            Large (2x)
+                                        </button>
+                                    </div>
+                                    <textarea
+                                        className="flex-1 w-full p-3 font-mono text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 resize-none"
+                                        value={templateContent}
+                                        onChange={(e) => setTemplateContent(e.target.value)}
+                                        spellCheck={false}
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2 h-full">
+                                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Preview (Simulasi)</label>
+                                    <div className="flex-1 w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 overflow-auto shadow-inner">
+                                        <div
+                                            className="font-mono text-[11px] leading-tight text-black dark:text-gray-300 whitespace-pre-wrap select-none"
+                                            dangerouslySetInnerHTML={{
+                                                __html: printerService.renderTemplate(templateContent, {
+                                                    store_name: "RESTO LIVE PREVIEW",
+                                                    store_address: "Jl. Demo No. 123",
+                                                    invoice_number: "INV-001",
+                                                    cashier_name: "Budi",
+                                                    table_number: "No. 5",
+                                                    items: [
+                                                        { quantity: 2, product_name: "Nasi Goreng", price: 25000, subtotal: 50000, notes: "Pedas" },
+                                                        { quantity: 1, product_name: "Es Teh Manis", price: 5000, subtotal: 5000 }
+                                                    ],
+                                                    subtotal: 55000,
+                                                    tax: 5500,
+                                                    tax_rate: 10,
+                                                    discount: 0,
+                                                    total: 60500,
+                                                    is_ticket: templateType === 'kitchen'
+                                                }, '58mm', 'html')
+                                            }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-400 text-center">Preview Bold & Large (Mode HTML)</p>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center bg-yellow-50 dark:bg-yellow-900/10 p-2 rounded border border-yellow-200 dark:border-yellow-800 mt-auto">
+                                <p className="text-xs text-yellow-800 dark:text-yellow-200">ℹ️ Pastikan tag <code>{`{{items}}`}</code> ada untuk menampilkan daftar pesanan.</p>
+                                <button onClick={handleSaveTemplate} className="px-3 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700 font-bold">
+                                    Simpan Template Ini
+                                </button>
                             </div>
                         </div>
                     )}
