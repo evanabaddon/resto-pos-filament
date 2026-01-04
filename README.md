@@ -307,6 +307,38 @@ Fitur canggih yang bisa disesuaikan dengan kebutuhan outlet.
 - **Toggleable Modules**: Bebas aktifkan/matikan fitur sesuai skala bisnis Anda, mulai dari **CRM (Loyalty)**, **HRM (Payroll)**, **KDS (Kitchen)**, **WhatsApp Center**, **Fiscal Planning**, hingga modul cerdas **AI Forecasting** dan **AI Menu Engineering**.
 - **Centralized Settings**: Panel pengaturan terpusat untuk semua konfigurasi modul.
 
+### 📺 TV Display Configuration (Smart TV Slideshow) 🆕
+Sistem manajemen konten digital untuk menampilkan slideshow di Smart TV atau layar digital restoran.
+- **🖼️ Multi-Configuration Management**: Buat dan kelola beberapa konfigurasi slideshow (misal: "Pagi", "Siang", "Malam", "Umum") untuk berbagai waktu atau suasana.
+- **📤 Direct File Upload**: Upload gambar langsung dari komputer dengan drag & drop, tanpa perlu hosting eksternal.
+  - **Built-in Image Editor**: Crop dan resize gambar langsung di form upload.
+  - **Multiple Images**: Upload hingga 10 gambar per konfigurasi (max 5MB per file).
+  - **Reorderable**: Atur ulang urutan gambar dengan drag & drop.
+- **🎵 Background Music Integration**: Tambahkan URL YouTube atau media lainnya untuk musik latar.
+- **⚙️ Customizable Duration**: Atur durasi tampilan setiap gambar (dalam milliseconds).
+- **🔄 One-Click Activation**: Toggle switch di tabel untuk mengaktifkan konfigurasi yang diinginkan.
+  - **Auto-Deactivate**: Sistem otomatis menonaktifkan konfigurasi lain saat satu konfigurasi diaktifkan.
+  - **Smart Notification**: Notifikasi real-time saat konfigurasi berubah.
+- **📡 RESTful API Endpoint**: Akses konfigurasi aktif melalui API untuk integrasi dengan Smart TV.
+  - **Endpoint**: `GET /api/tv-config`
+  - **Response Format**:
+    ```json
+    {
+      "images": [
+        "https://pos.suralaya.id/storage/tv-display/image1.jpg",
+        "https://pos.suralaya.id/storage/tv-display/image2.jpg"
+      ],
+      "music_url": "https://www.youtube.com/watch?v=...",
+      "slide_duration": 10000
+    }
+    ```
+- **🎯 Use Cases**:
+  - Tampilkan menu promosi di layar TV restoran
+  - Slideshow foto makanan untuk menarik perhatian pelanggan
+  - Informasi event atau promo khusus
+  - Konten berbeda untuk waktu berbeda (pagi/siang/malam)
+- **🔐 Access Control**: Hanya SuperAdmin yang dapat mengelola konfigurasi TV display.
+
 ---
 
 ## 🗺️ Roadmap Strategis 2026: Strategic Expansion
