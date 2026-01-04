@@ -752,3 +752,48 @@ Route::prefix('webhook')->group(function () {
         }
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| TV Display Configuration API
+|--------------------------------------------------------------------------
+*/
+
+// Get Active TV Configuration
+Route::get('/tv-config', function () {
+    try {
+        $config = \App\Models\TvConfig::active()->first();
+
+        if (!$config) {
+            return response()->json([
+                'images' => [],
+                'music_url' => '',
+                'slide_duration' => 10000
+            ]);
+        }
+
+        // Transform images array to full URLs
+        $images = [];
+        if (is_array($config->images)) {
+            foreach ($config->images as $imagePath) {
+                // Convert storage path to full URL
+                if (is_string($imagePath)) {
+                    $images[] = asset('storage/' . $imagePath);
+                }
+            }
+        }
+
+        return response()->json([
+            'images' => $images,
+            'music_url' => $config->music_url ?? '',
+            'slide_duration' => $config->slide_duration ?? 10000
+        ]);
+    } catch (\Exception $e) {
+        Log::error('TV Config API Error: ' . $e->getMessage());
+        return response()->json([
+            'images' => [],
+            'music_url' => '',
+            'slide_duration' => 10000
+        ], 500);
+    }
+});
