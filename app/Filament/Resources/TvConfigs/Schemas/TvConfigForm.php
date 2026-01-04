@@ -13,6 +13,13 @@ class TvConfigForm
     {
         return $schema
             ->components([
+                TextInput::make('name')
+                    ->label('Configuration Name')
+                    ->required()
+                    ->placeholder('e.g., Pagi, Siang, Malam, Umum')
+                    ->helperText('Give this configuration a descriptive name')
+                    ->maxLength(255),
+
                 FileUpload::make('images')
                     ->label('TV Display Images')
                     ->directory('tv-display')

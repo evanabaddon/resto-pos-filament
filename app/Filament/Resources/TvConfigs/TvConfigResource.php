@@ -32,6 +32,8 @@ class TvConfigResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
+    protected static ?string $recordTitleAttribute = 'name';
+
     public static function canViewAny(): bool
     {
         return auth()->user()->role === \App\Enums\UserRole::SuperAdmin;

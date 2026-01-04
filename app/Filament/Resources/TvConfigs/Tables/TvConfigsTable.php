@@ -6,8 +6,9 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\Action;
-use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Table;
 
 class TvConfigsTable
 {
@@ -15,14 +16,28 @@ class TvConfigsTable
     {
         return $table
             ->columns([
-                TextColumn::make('is_active')
-                    ->label('Status')
-                    ->badge()
-                    ->formatStateUsing(fn($state) => $state ? 'Active' : 'Inactive')
-                    ->colors([
-                        'success' => fn($state) => $state === true,
-                        'gray' => fn($state) => $state === false,
-                    ]),
+                TextColumn::make('name')
+                    ->label('Configuration Name')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
+
+                ToggleColumn::make('is_active')
+                    ->label('Active')
+                    ->beforeStateUpdated(function ($record, $state) {
+                        if ($state) {
+                            // Deactivate all other configs before activating this one
+                            \App\Models\TvConfig::where('id', '!=', $record->id)
+                                ->update(['is_active' => false]);
+                        }
+                    })
+                    ->afterStateUpdated(function ($record, $state) {
+                        \Filament\Notifications\Notification::make()
+                            ->title($state ? 'Configuration Activated' : 'Configuration Deactivated')
+                            ->body($record->name . ' is now ' . ($state ? 'active' : 'inactive'))
+                            ->success()
+                            ->send();
+                    }),
 
                 TextColumn::make('images')
                     ->label('Images')
@@ -55,18 +70,6 @@ class TvConfigsTable
                 //
             ])
             ->recordActions([
-                Action::make('activate')
-                    ->label('Activate')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->visible(fn($record) => !$record->is_active)
-                    ->requiresConfirmation()
-                    ->action(function ($record) {
-                        // Deactivate all others
-                        \App\Models\TvConfig::where('id', '!=', $record->id)->update(['is_active' => false]);
-                        // Activate this one
-                        $record->update(['is_active' => true]);
-                    }),
                 EditAction::make(),
             ])
             ->toolbarActions([

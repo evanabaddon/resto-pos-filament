@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class TvConfig extends Model
 {
     protected $fillable = [
+        'name',
         'images',
         'music_url',
         'slide_duration',
