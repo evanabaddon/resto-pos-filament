@@ -16,7 +16,13 @@ export interface PrinterSettings {
         paperWidth: '58mm' | '80mm';
     }[];
     templates?: PrinterTemplates;
+    cpl?: number;
 }
+
+// Printer cache to reduce PowerShell calls
+let cachedPrinters: string[] | null = null;
+let cacheTime = 0;
+const CACHE_DURATION = 60000; // 1 minute
 
 const DEFAULT_TEMPLATES = {
     payment: `{{c:{{store_name}}}}
@@ -69,14 +75,38 @@ const DEFAULT_TEMPLATES = {
 };
 
 export const printerService = {
-    // Get list of printers from backend
+    // Get list of printers from backend with caching
     getPrinters: async (): Promise<string[]> => {
+        const now = Date.now();
+
+        // Return cached printers if still valid
+        if (cachedPrinters && (now - cacheTime) < CACHE_DURATION) {
+            console.log('Using cached printers:', cachedPrinters);
+            return cachedPrinters;
+        }
+
         try {
-            return await invoke('get_printers');
+            console.log('Fetching printers from backend...');
+            cachedPrinters = await invoke('get_printers');
+            cacheTime = now;
+            console.log('Printers cached:', cachedPrinters);
+            return cachedPrinters!; // Non-null assertion since we just assigned it
         } catch (error) {
             console.error('Failed to get printers:', error);
+            // Return cached printers if available, even if expired
+            if (cachedPrinters) {
+                console.warn('Using stale cache due to error');
+                return cachedPrinters;
+            }
             return [];
         }
+    },
+
+    // Invalidate printer cache (call when printers are added/removed)
+    invalidatePrinterCache: () => {
+        console.log('Invalidating printer cache');
+        cachedPrinters = null;
+        cacheTime = 0;
     },
 
     // Send text content to a specific printer
@@ -89,8 +119,26 @@ export const printerService = {
         }
     },
 
+    // New method: Print receipt using Rust backend with escpos-rs
+    printReceipt: async (printerName: string, template: string, data: any, paperWidth: '58mm' | '80mm' = '58mm', cpl?: number): Promise<string> => {
+        try {
+            return await invoke('print_receipt', {
+                receiptData: {
+                    printer_name: printerName,
+                    template,
+                    data,
+                    paper_width: paperWidth,
+                    cpl
+                }
+            });
+        } catch (error) {
+            console.error(`Failed to print receipt to ${printerName}:`, error);
+            throw error;
+        }
+    },
+
     // Helper to format receipt using template
-    renderTemplate: (template: string, data: any, width: '58mm' | '80mm' = '58mm', format: 'escpos' | 'html' = 'escpos'): string => {
+    renderTemplate: (template: string, data: any, width: '58mm' | '80mm' = '58mm', format: 'escpos' | 'html' = 'escpos', cpl?: number): string => {
         // ESC/POS Constants
         const ESC = '\x1b';
         const GS = '\x1d';
@@ -111,7 +159,7 @@ export const printerService = {
             strip = (s: string) => s.replace(/<[^>]*>/g, '');
         }
 
-        const chars = width === '80mm' ? 48 : 32;
+        const chars = cpl || (width === '80mm' ? 48 : 32);
         const lineStr = '-'.repeat(chars);
 
         // Helpers
@@ -248,11 +296,11 @@ export const printerService = {
             tax_rate: settings?.tax_rate,
         };
 
-        return printerService.renderTemplate(template, data, width);
+        return printerService.renderTemplate(template, data, width, 'escpos', settings?.cpl);
     },
 
-    printKitchenTickets: async (cart: any[], settings: any, printerSettings: PrinterSettings, products: any[] = [], invoiceNumber: string = 'DRAFT'): Promise<any[]> => {
-        if (!printerSettings.typeMappings) return cart;
+    printKitchenTickets: async (cart: any[], settings: any, printerSettings: PrinterSettings, products: any[] = [], invoiceNumber: string = 'DRAFT'): Promise<{ updatedCart: any[], errors: string[] }> => {
+        if (!printerSettings.typeMappings) return { updatedCart: cart, errors: [] };
 
         // Group items by printer
         const printerGroups: Record<string, { items: any[], paperWidth: '58mm' | '80mm' }> = {};
@@ -292,42 +340,51 @@ export const printerService = {
             }
         });
 
-        // Print Groups
-        for (const [printerName, group] of Object.entries(printerGroups)) {
+        // Parallel printing with timeout for better performance and reliability
+        const errors: string[] = [];
+        const printPromises = Object.entries(printerGroups).map(async ([printerName, group]) => {
             try {
                 const ticketData = {
                     items: group.items,
                     invoice_number: invoiceNumber,
-                    table_number: settings.table_number || '', // Passed in settings? usually settings is just business info.
-                    // We might need to pass full order context in settings or separate arg.
-                    // For now, assume settings has header info or we pass a context object.
-                    // The 'order' arg in generateReceiptText usually has 'table_number'.
-                    // I will mix settings into it.
+                    table_number: settings.table_number || '',
                     ...settings,
                     is_ticket: true
                 };
 
-                // Ensure templates are passed
                 const fullSettings = { ...settings, templates: printerSettings.templates };
-
                 const text = printerService.generateReceiptText(ticketData, fullSettings, group.paperWidth, true);
-                if (printerName) {
-                    await printerService.printJob(printerName, text);
-                }
-            } catch (e) {
-                console.error(`Failed to print kitchen ticket to ${printerName}`, e);
-                // If failed, we might NOT want to update printed_qty? 
-                // For now, assume optimistic update to avoid infinite loops of errors.
-            }
-        }
 
-        // Return updated cart with new printed_qty
-        return cart.map((item, index) => {
-            if (itemsToUpdate.has(index)) {
-                return { ...item, printed_qty: itemsToUpdate.get(index) };
+                // Race between print and timeout (10 seconds)
+                await Promise.race([
+                    printerService.printJob(printerName, text),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Print timeout (10s)')), 10000)
+                    )
+                ]);
+
+                console.log(`✅ Successfully printed kitchen ticket to ${printerName}`);
+            } catch (e: any) {
+                const errorMsg = `Printer "${printerName}" failed: ${e.message || e}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
             }
-            return item;
         });
+
+        // Wait for all print jobs to complete (or fail)
+        await Promise.allSettled(printPromises);
+
+        // Return updated cart with new printed_qty and any errors
+
+        return {
+            updatedCart: cart.map((item, index) => {
+                if (itemsToUpdate.has(index)) {
+                    return { ...item, printed_qty: itemsToUpdate.get(index) };
+                }
+                return item;
+            }),
+            errors
+        };
     },
 
     generateShiftReportText: (shiftData: any, settings: any, width: '58mm' | '80mm' = '58mm'): string => {
@@ -338,7 +395,7 @@ export const printerService = {
             store_name: settings?.store_name,
         };
 
-        return printerService.renderTemplate(template, data, width);
+        return printerService.renderTemplate(template, data, width, 'escpos', settings?.cpl);
     }
 };
 

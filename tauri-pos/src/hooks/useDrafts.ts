@@ -193,13 +193,17 @@ export const useDrafts = (
         try {
             // INCREMENTAL PRINTING LOGIC
             // Print items that have not been printed yet
-            const updatedCart = await printerService.printKitchenTickets(
+            const { updatedCart, errors } = await printerService.printKitchenTickets(
                 cart,
                 { ...settings, table_number: tableNumber, customer_name: customerName, order_type: orderType },
                 printerSettings,
                 products,
                 'DRAFT' // Placeholder invoice number
             );
+
+            if (errors.length > 0) {
+                showNotification(`⚠️ Beberapa printer gagal: ${errors.join(', ')}`, 'error');
+            }
 
             const subtotal = updatedCart.reduce((sum, item) => sum + Number(item.subtotal), 0);
             const taxRate = settings?.tax_rate || 0;

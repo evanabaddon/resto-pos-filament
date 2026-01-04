@@ -184,13 +184,17 @@ export const useTransaction = ({
             // Even though we prioritize printing at "Save Draft", user might pay directly.
             // This ensures any unprinted items (added at payment) are printed.
             try {
-                await printerService.printKitchenTickets(
+                const { errors } = await printerService.printKitchenTickets(
                     cartToProcess,
                     { ...settings, table_number: tableNumber, customer_name: customerName, order_type: orderType },
                     printerSettings,
                     [],
                     savedSale.invoice_number
                 );
+
+                if (errors.length > 0) {
+                    showNotification(`⚠️ Beberapa printer gagal: ${errors.join(', ')}`, 'error');
+                }
             } catch (e) {
                 console.error('Kitchen print failed:', e);
             }

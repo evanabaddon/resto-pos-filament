@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import type { Product, Category } from '../types';
 import { imageCacheService } from '../services/imageCache';
 import { convertFileSrc } from '@tauri-apps/api/core';
@@ -12,71 +12,95 @@ interface ProductGridProps {
     addToCart: (product: Product) => void;
 }
 
-export const ProductGrid: React.FC<ProductGridProps> = React.memo(({
+const ProductCard = memo(({ product, addToCart }: { product: Product; addToCart: (p: Product) => void }) => {
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+        const loadImage = async () => {
+            if (!product.image) return;
+
+            const filename = product.image.split('/').pop();
+            if (!filename) return;
+
+            try {
+                // Try local cache
+                const localPath = await imageCacheService.getLocalImagePath(filename);
+                if (localPath && isMounted) {
+                    setImageUrl(convertFileSrc(localPath));
+                    return;
+                }
+            } catch (e) {
+                console.error("Cache check failed", e);
+            }
+
+            // Fallback to server
+            if (isMounted) {
+                const apiUrl = localStorage.getItem('pos_api_url') || 'http://localhost:8000/api';
+                const baseUrl = apiUrl.replace('/api', '');
+                let imagePath = product.image;
+                if (!imagePath.startsWith('storage/')) {
+                    imagePath = `storage/${imagePath}`;
+                }
+                setImageUrl(`${baseUrl}/${imagePath}`);
+            }
+        };
+
+        loadImage();
+        return () => { isMounted = false; };
+    }, [product.image, product.id]);
+
+    return (
+        <div
+            onClick={() => addToCart(product)}
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all group select-none flex flex-col h-full"
+        >
+            <div className="h-32 w-full bg-gray-200 dark:bg-gray-700 relative overflow-hidden flex-shrink-0">
+                {imageUrl ? (
+                    <img
+                        src={imageUrl}
+                        alt={product.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (placeholder) placeholder.classList.remove('hidden');
+                        }}
+                    />
+                ) : null}
+                <div className={`w-full h-full flex items-center justify-center text-4xl bg-gray-100 dark:bg-gray-700 text-gray-300 dark:text-gray-600 ${imageUrl ? 'hidden' : ''}`}>
+                    🍽️
+                </div>
+                {product.stock !== undefined && (
+                    <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                        <div className={`text-white text-xs px-2 py-0.5 rounded backdrop-blur-sm ${(product.stock || 0) <= 0 ? 'bg-red-600/90' : 'bg-black/60 dark:bg-black/40'
+                            }`}>
+                            Stok: {product.stock}
+                        </div>
+                        {(product.prepared_stock || 0) > 0 && (
+                            <div className="bg-blue-600/80 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm">
+                                Siap: {product.prepared_stock}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+            <div className="p-3 flex flex-col flex-grow">
+                <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm line-clamp-2 min-h-[2.5rem] mb-auto">{product.name}</h3>
+                <p className="text-primary-600 dark:text-primary-400 font-bold mt-1">Rp {product.price.toLocaleString('id-ID')}</p>
+            </div>
+        </div>
+    );
+});
+
+export const ProductGrid: React.FC<ProductGridProps> = memo(({
     categories,
     selectedCategory,
     setSelectedCategory,
     filteredProducts,
     addToCart
 }) => {
-    const [imageUrls, setImageUrls] = useState<Record<number, string>>({});
-
-    // Load cached images for products
-    useEffect(() => {
-        const loadImages = async () => {
-            const urls: Record<number, string> = {};
-
-            for (const product of filteredProducts) {
-                if (product.image) {
-                    // Extract filename from path
-                    const filename = product.image.split('/').pop();
-                    if (filename) {
-                        try {
-                            // Try to get local cached image first
-                            const localPath = await imageCacheService.getLocalImagePath(filename);
-                            if (localPath) {
-                                // Convert to Tauri asset URL
-                                const assetUrl = convertFileSrc(localPath);
-                                urls[product.id] = assetUrl;
-                                console.log(`✅ Using cached image for ${product.name}: ${assetUrl}`);
-                            } else {
-                                // Fallback to server URL
-                                const apiUrl = localStorage.getItem('pos_api_url') || 'http://localhost:8000/api';
-                                const baseUrl = apiUrl.replace('/api', '');
-
-                                // Add /storage/ prefix if not present
-                                let imagePath = product.image;
-                                if (!imagePath.startsWith('storage/')) {
-                                    imagePath = `storage/${imagePath}`;
-                                }
-
-                                urls[product.id] = `${baseUrl}/${imagePath}`;
-                                console.log(`⚠️ Image not cached for ${product.name}, using server: ${urls[product.id]}`);
-                            }
-                        } catch (e) {
-                            // Fallback to server URL on error
-                            const apiUrl = localStorage.getItem('pos_api_url') || 'http://localhost:8000/api';
-                            const baseUrl = apiUrl.replace('/api', '');
-
-                            // Add /storage/ prefix if not present
-                            let imagePath = product.image;
-                            if (!imagePath.startsWith('storage/')) {
-                                imagePath = `storage/${imagePath}`;
-                            }
-
-                            urls[product.id] = `${baseUrl}/${imagePath}`;
-                            console.error(`❌ Error loading image for ${product.name}:`, e);
-                        }
-                    }
-                }
-            }
-
-            setImageUrls(urls);
-        };
-
-        loadImages();
-    }, [filteredProducts]);
-
     return (
         <div className="flex flex-col h-full min-w-0 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
             {/* Categories */}
@@ -107,60 +131,9 @@ export const ProductGrid: React.FC<ProductGridProps> = React.memo(({
             {/* Products Grid */}
             <div className="flex-1 overflow-y-auto p-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-12 gap-4 pb-20">
-                    {filteredProducts.map(product => {
-                        const imageUrl = imageUrls[product.id];
-
-                        return (
-                            <div
-                                key={product.id}
-                                onClick={() => addToCart(product)}
-                                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all group select-none"
-                            >
-                                <div className="h-32 w-full bg-gray-200 dark:bg-gray-700 relative overflow-hidden">
-                                    {imageUrl ? (
-                                        <img
-                                            src={imageUrl}
-                                            alt={product.name}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                            onError={(e) => {
-                                                // Fallback to placeholder if image fails to load
-                                                console.error(`🖼️ Image load error for ${product.name}:`, {
-                                                    url: imageUrl,
-                                                    error: e
-                                                });
-                                                e.currentTarget.style.display = 'none';
-                                                const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
-                                                if (placeholder) placeholder.classList.remove('hidden');
-                                            }}
-                                            onLoad={() => {
-                                                console.log(`🖼️ Image loaded successfully for ${product.name}`);
-                                            }}
-                                        />
-                                    ) : null}
-                                    <div className={`w-full h-full flex items-center justify-center text-4xl bg-gray-100 dark:bg-gray-700 text-gray-300 dark:text-gray-600 ${imageUrl ? 'hidden' : ''}`}>
-                                        🍽️
-                                    </div>
-                                    {product.stock !== undefined && (
-                                        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-                                            <div className={`text-white text-xs px-2 py-0.5 rounded backdrop-blur-sm ${(product.stock || 0) <= 0 ? 'bg-red-600/90' : 'bg-black/60 dark:bg-black/40'
-                                                }`}>
-                                                Stok: {product.stock}
-                                            </div>
-                                            {(product.prepared_stock || 0) > 0 && (
-                                                <div className="bg-blue-600/80 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm">
-                                                    Siap: {product.prepared_stock}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="p-3">
-                                    <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm line-clamp-2 min-h-[2.5rem]">{product.name}</h3>
-                                    <p className="text-primary-600 dark:text-primary-400 font-bold mt-1">Rp {product.price.toLocaleString('id-ID')}</p>
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {filteredProducts.map(product => (
+                        <ProductCard key={product.id} product={product} addToCart={addToCart} />
+                    ))}
 
                     {filteredProducts.length === 0 && (
                         <div className="col-span-full flex flex-col items-center justify-center py-20 text-gray-400 dark:text-gray-500">
@@ -172,4 +145,4 @@ export const ProductGrid: React.FC<ProductGridProps> = React.memo(({
             </div>
         </div>
     );
-}); // End of memo
+});

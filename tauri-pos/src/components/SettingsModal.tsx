@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { printerService, type PrinterSettings, DEFAULT_TEMPLATES } from '../services/printer';
 import { useTheme } from '../context/ThemeContext';
 
@@ -28,6 +28,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     const [apiUrl, setApiUrl] = useState(currentApiUrl || '');
     const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
     const [newMapping, setNewMapping] = useState<{ productType: 'raw' | 'produced' | 'retail' | 'bar'; printerName: string; paperWidth: '58mm' | '80mm' }>({ productType: 'produced', printerName: '', paperWidth: '58mm' });
+    const [isLoadingPrinters, setIsLoadingPrinters] = useState(false);
 
     // Template Editor State
     const [templateType, setTemplateType] = useState<'payment' | 'kitchen'>('payment');
@@ -37,7 +38,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             setApiUrl(currentApiUrl);
-            printerService.getPrinters().then(setAvailablePrinters);
+            setIsLoadingPrinters(true);
+            printerService.getPrinters()
+                .then(setAvailablePrinters)
+                .finally(() => setIsLoadingPrinters(false));
             // Load initial template
             const initialTemplate = printerSettings.templates?.[templateType] || DEFAULT_TEMPLATES[templateType];
             setTemplateContent(initialTemplate);
@@ -67,6 +71,31 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             setTemplateContent(DEFAULT_TEMPLATES[templateType]);
         }
     };
+
+    // Memoized preview data to avoid recreating on every render
+    const previewData = useMemo(() => ({
+        store_name: "RESTO LIVE PREVIEW",
+        store_address: "Jl. Demo No. 123",
+        invoice_number: "INV-001",
+        cashier_name: "Budi",
+        table_number: "No. 5",
+        items: [
+            { quantity: 2, product_name: "Nasi Goreng", price: 25000, subtotal: 50000, notes: "Pedas" },
+            { quantity: 1, product_name: "Es Teh Manis", price: 5000, subtotal: 5000 }
+        ],
+        subtotal: 55000,
+        tax: 5500,
+        tax_rate: 10,
+        discount: 0,
+        total: 60500,
+        is_ticket: templateType === 'kitchen'
+    }), [templateType]);
+
+    // Memoized preview HTML to avoid re-rendering on every keystroke
+    const previewHtml = useMemo(() =>
+        printerService.renderTemplate(templateContent, previewData, '58mm', 'html'),
+        [templateContent, previewData]
+    );
 
     const insertPlaceholder = (placeholder: string) => {
         setTemplateContent(prev => prev + placeholder);
@@ -235,6 +264,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                         <option value="">-- Pilih Printer --</option>
                                         {availablePrinters.map(p => <option key={p} value={p}>{p}</option>)}
                                     </select>
+                                    {isLoadingPrinters && (
+                                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 px-2">
+                                            <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Loading...
+                                        </span>
+                                    )}
                                     <select
                                         className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 dark:text-white"
                                         value={printerSettings.cashierPaperWidth || '58mm'}
@@ -243,6 +281,44 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                         <option value="58mm">58mm</option>
                                         <option value="80mm">80mm</option>
                                     </select>
+                                    <button
+                                        onClick={async () => {
+                                            if (!printerSettings.cashierPrinter) {
+                                                showNotification?.('⚠️ Pilih printer terlebih dahulu', 'error');
+                                                return;
+                                            }
+                                            try {
+                                                showNotification?.('🖨️ Mengirim test print...', 'info');
+                                                const testText = `TEST PRINTER\n--------------------------------\nPrinter: ${printerSettings.cashierPrinter}\nWaktu: ${new Date().toLocaleString()}\n--------------------------------\nLebar: ${printerSettings.cpl || (printerSettings.cashierPaperWidth === '80mm' ? 48 : 32)} Karakter\nKiri                       Kanan\nTENGAH\n--------------------------------\nTerima Kasih\n\n\n`;
+                                                await printerService.printJob(printerSettings.cashierPrinter, testText);
+                                                showNotification?.('✅ Berhasil dikirim ke spooler!', 'success');
+                                            } catch (e: any) {
+                                                showNotification?.(`❌ Gagal: ${e.message || e}`, 'error');
+                                            }
+                                        }}
+                                        disabled={!printerSettings.cashierPrinter}
+                                        className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 font-medium text-sm"
+                                        title="Test Print"
+                                    >
+                                        🖨️ Test
+                                    </button>
+                                </div>
+
+                                <div className="mb-4 bg-yellow-50 dark:bg-yellow-900/10 p-2 rounded border border-yellow-200 dark:border-yellow-800">
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-xs font-bold text-yellow-800 dark:text-yellow-200 whitespace-nowrap">Kustom Lebar (CPL):</label>
+                                        <input
+                                            type="number"
+                                            placeholder={printerSettings.cashierPaperWidth === '80mm' ? "48" : "32"}
+                                            className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-200"
+                                            value={printerSettings.cpl || ''}
+                                            onChange={(e) => onUpdatePrinterSettings({ ...printerSettings, cpl: e.target.value ? parseInt(e.target.value) : undefined })}
+                                        />
+                                        <span className="text-xs text-yellow-700 dark:text-yellow-300">Karakter per baris</span>
+                                    </div>
+                                    <p className="text-[10px] text-yellow-700 dark:text-yellow-400 mt-1">
+                                        Atur manual jika hasil print terlalu kecil/lebar. (Standar 58mm=32, 80mm=48/64).
+                                    </p>
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -414,25 +490,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                     <div className="flex-1 w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 overflow-auto shadow-inner">
                                         <div
                                             className="font-mono text-[11px] leading-tight text-black dark:text-gray-300 whitespace-pre-wrap select-none"
-                                            dangerouslySetInnerHTML={{
-                                                __html: printerService.renderTemplate(templateContent, {
-                                                    store_name: "RESTO LIVE PREVIEW",
-                                                    store_address: "Jl. Demo No. 123",
-                                                    invoice_number: "INV-001",
-                                                    cashier_name: "Budi",
-                                                    table_number: "No. 5",
-                                                    items: [
-                                                        { quantity: 2, product_name: "Nasi Goreng", price: 25000, subtotal: 50000, notes: "Pedas" },
-                                                        { quantity: 1, product_name: "Es Teh Manis", price: 5000, subtotal: 5000 }
-                                                    ],
-                                                    subtotal: 55000,
-                                                    tax: 5500,
-                                                    tax_rate: 10,
-                                                    discount: 0,
-                                                    total: 60500,
-                                                    is_ticket: templateType === 'kitchen'
-                                                }, '58mm', 'html')
-                                            }}
+                                            dangerouslySetInnerHTML={{ __html: previewHtml }}
                                         />
                                     </div>
                                     <p className="text-xs text-gray-400 text-center">Preview Bold & Large (Mode HTML)</p>
