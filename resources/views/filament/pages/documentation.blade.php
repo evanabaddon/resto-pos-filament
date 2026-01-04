@@ -22,18 +22,6 @@
                         class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                         📦 Inventory
                     </a>
-                    <a href="#reports"
-                        class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                        📊 Laporan & Analisis
-                    </a>
-                    <a href="#crm"
-                        class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                        🤝 CRM & Loyalty
-                    </a>
-                    <a href="#ai"
-                        class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                        🤖 AI Features
-                    </a>
                     <a href="#ordering"
                         class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                         📱 Waiter & Self-Order
@@ -42,6 +30,10 @@
                         class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                         📅 Reservation & Pre-Order
                     </a>
+                    <a href="#crm"
+                        class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        📊 CRM & Loyalty
+                    </a>
                     <a href="#whatsapp"
                         class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                         💬 WhatsApp Center
@@ -49,6 +41,18 @@
                     <a href="#hrm"
                         class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                         👥 HRM & Payroll
+                    </a>
+                    <a href="#ai"
+                        class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        🤖 AI Features
+                    </a>
+                    <a href="#reports"
+                        class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        📊 Laporan & Analisis
+                    </a>
+                    <a href="#tv-display"
+                        class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        📺 TV Display Config
                     </a>
                     <a href="#troubleshooting"
                         class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
@@ -84,9 +88,25 @@
                     <div class="text-3xl mb-2">📦</div>
                     <div class="font-semibold text-sm">Inventory</div>
                 </a>
+                <a href="#ai" class="bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-lg transition">
+                    <div class="text-3xl mb-2">🤖</div>
+                    <div class="font-semibold text-sm">AI Features</div>
+                </a>
                 <a href="#ordering" class="bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-lg transition">
                     <div class="text-3xl mb-2">📱</div>
-                    <div class="font-semibold text-sm">Self-Order</div>
+                    <div class="font-semibold text-sm">Waiter & Self-Order</div>
+                </a>
+                <a href="#whatsapp" class="bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-lg transition">
+                    <div class="text-3xl mb-2">💬</div>
+                    <div class="font-semibold text-sm">WhatsApp</div>
+                </a>
+                <a href="#tv-display" class="bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-lg transition">
+                    <div class="text-3xl mb-2">📺</div>
+                    <div class="font-semibold text-sm">TV Display</div>
+                </a>
+                <a href="#troubleshooting" class="bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-lg transition">
+                    <div class="text-3xl mb-2">🔧</div>
+                    <div class="font-semibold text-sm">Troubleshooting</div>
                 </a>
             </div>
 
@@ -589,61 +609,6 @@
 
                 <hr class="border-gray-200 dark:border-gray-700">
 
-                {{-- Reports Section --}}
-                <section id="reports">
-                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                        <span class="text-2xl">📊</span>
-                        Laporan & Analisis
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <h4 class="font-semibold text-lg">Financial Report</h4>
-                        <p>Laporan keuangan komprehensif dengan fitur:</p>
-                        <ul class="list-disc pl-6 space-y-2">
-                            <li><strong>Period Comparison:</strong> Bandingkan performa dengan periode sebelumnya</li>
-                            <li><strong>Stock Valuation:</strong> Nilai total aset inventaris</li>
-                            <li><strong>Trend Chart:</strong> Grafik Revenue vs Expenses</li>
-                            <li><strong>PDF Export:</strong> Download laporan profesional</li>
-                        </ul>
-
-                        <h4 class="font-semibold text-lg mt-4">AI Menu Engineering</h4>
-                        <p>Analisis profitabilitas menu dengan klasifikasi:</p>
-                        <ul class="list-disc pl-6 space-y-2">
-                            <li><strong>Stars:</strong> Populer & Profitable (pertahankan!)</li>
-                            <li><strong>Plowhorses:</strong> Populer tapi margin rendah (naikkan harga)</li>
-                            <li><strong>Puzzles:</strong> Margin tinggi tapi kurang laku (promosi!)</li>
-                            <li><strong>Dogs:</strong> Tidak laku & tidak untung (hapus/ganti)</li>
-                        </ul>
-
-                        <h4 class="font-semibold text-lg mt-4">AI Forecasting</h4>
-                        <p>Prediksi kebutuhan restock 7 hari ke depan berdasarkan tren penjualan historis.</p>
-                    </div>
-                </section>
-
-                <hr class="border-gray-200 dark:border-gray-700">
-
-                {{-- CRM Section --}}
-                <section id="crm">
-                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                        <span class="text-2xl">🤝</span>
-                        CRM & Loyalty
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <h4 class="font-semibold text-lg">Daftar Member</h4>
-                        <p>Member otomatis dapat poin setiap transaksi. Atur nilai tukar di <strong>Settings →
-                                Kemitraan</strong>.</p>
-
-                        <h4 class="font-semibold text-lg mt-4">WhatsApp SOP</h4>
-                        <p>Sistem menyarankan pesan WhatsApp berdasarkan fase pelanggan:</p>
-                        <ul class="list-disc pl-6 space-y-2">
-                            <li><strong>Fase 1:</strong> Pelanggan baru (sambutan hangat)</li>
-                            <li><strong>Fase 2:</strong> Repeat customer (apresiasi loyalitas)</li>
-                            <li><strong>Fase 3:</strong> High value (reward khusus)</li>
-                        </ul>
-                    </div>
-                </section>
-
-                <hr class="border-gray-200 dark:border-gray-700">
-
                 {{-- Waiter & Self-Order Section --}}
                 <section id="ordering">
                     <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
@@ -791,6 +756,85 @@
 
                 <hr class="border-gray-200 dark:border-gray-700">
 
+                {{-- CRM Section --}}
+                <section id="crm">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🤝</span>
+                        CRM & Loyalty
+                    </h3>
+                    <div class="prose dark:prose-invert max-w-none">
+                        <h4 class="font-semibold text-lg">Daftar Member</h4>
+                        <p>Member otomatis dapat poin setiap transaksi. Atur nilai tukar di <strong>Settings →
+                                Kemitraan</strong>.</p>
+
+                        <h4 class="font-semibold text-lg mt-4">WhatsApp SOP</h4>
+                        <p>Sistem menyarankan pesan WhatsApp berdasarkan fase pelanggan:</p>
+                        <ul class="list-disc pl-6 space-y-2">
+                            <li><strong>Fase 1:</strong> Pelanggan baru (sambutan hangat)</li>
+                            <li><strong>Fase 2:</strong> Repeat customer (apresiasi loyalitas)</li>
+                            <li><strong>Fase 3:</strong> High value (reward khusus)</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <hr class="border-gray-200 dark:border-gray-700">
+
+                {{-- WhatsApp Center --}}
+                <section id="whatsapp">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">💬</span>
+                        WhatsApp Center
+                    </h3>
+                    <div class="prose dark:prose-invert max-w-none">
+                        <h4 class="font-semibold text-lg">Setup Awal</h4>
+                        <ol class="list-decimal pl-6 space-y-2">
+                            <li>Pastikan WhatsApp Gateway sudah running (PM2/Supervisor)</li>
+                            <li>Buka menu <strong>WhatsApp Center</strong></li>
+                            <li>Scan QR code dengan WhatsApp di HP Anda</li>
+                            <li>Tunggu hingga status "Connected"</li>
+                        </ol>
+
+                        <h4 class="font-semibold text-lg mt-4">Fitur Utama</h4>
+                        <ul class="list-disc pl-6 space-y-2">
+                            <li><strong>AI Reply:</strong> Generate balasan cerdas dengan context bisnis</li>
+                            <li><strong>Reply with Quote:</strong> Balas pesan dengan kutipan</li>
+                            <li><strong>Media Support:</strong> Kirim gambar, video, voice note, dokumen</li>
+                            <li><strong>Quick Actions:</strong> Convert chat ke Member atau Reservasi</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <hr class="border-gray-200 dark:border-gray-700">
+
+                {{-- HRM Section --}}
+                <section id="hrm">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">👥</span>
+                        HRM & Payroll
+                    </h3>
+                    <div class="prose dark:prose-invert max-w-none">
+                        <h4 class="font-semibold text-lg">Attendance System</h4>
+                        <p>Karyawan bisa clock-in/out dengan:</p>
+                        <ul class="list-disc pl-6 space-y-2">
+                            <li><strong>Face Recognition:</strong> Validasi wajah</li>
+                            <li><strong>GPS Geofencing:</strong> Pastikan di area outlet</li>
+                            <li><strong>Late Penalty:</strong> Pemotongan otomatis untuk keterlambatan</li>
+                        </ul>
+
+                        <h4 class="font-semibold text-lg mt-4">Payroll</h4>
+                        <p>Generate slip gaji otomatis dengan komponen:</p>
+                        <ul class="list-disc pl-6 space-y-1">
+                            <li>Gaji Pokok</li>
+                            <li>Tunjangan</li>
+                            <li>Overtime</li>
+                            <li>Denda keterlambatan</li>
+                            <li>Potongan pinjaman (auto-deduct)</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <hr class="border-gray-200 dark:border-gray-700">
+
                 {{-- AI Features --}}
                 <section id="ai">
                     <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
@@ -850,57 +894,146 @@
 
                 <hr class="border-gray-200 dark:border-gray-700">
 
-                {{-- WhatsApp Center --}}
-                <section id="whatsapp">
+                {{-- Reports Section --}}
+                <section id="reports">
                     <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                        <span class="text-2xl">💬</span>
-                        WhatsApp Center
+                        <span class="text-2xl">📊</span>
+                        Laporan & Analisis
                     </h3>
                     <div class="prose dark:prose-invert max-w-none">
-                        <h4 class="font-semibold text-lg">Setup Awal</h4>
-                        <ol class="list-decimal pl-6 space-y-2">
-                            <li>Pastikan WhatsApp Gateway sudah running (PM2/Supervisor)</li>
-                            <li>Buka menu <strong>WhatsApp Center</strong></li>
-                            <li>Scan QR code dengan WhatsApp di HP Anda</li>
-                            <li>Tunggu hingga status "Connected"</li>
-                        </ol>
-
-                        <h4 class="font-semibold text-lg mt-4">Fitur Utama</h4>
+                        <h4 class="font-semibold text-lg">Financial Report</h4>
+                        <p>Laporan keuangan komprehensif dengan fitur:</p>
                         <ul class="list-disc pl-6 space-y-2">
-                            <li><strong>AI Reply:</strong> Generate balasan cerdas dengan context bisnis</li>
-                            <li><strong>Reply with Quote:</strong> Balas pesan dengan kutipan</li>
-                            <li><strong>Media Support:</strong> Kirim gambar, video, voice note, dokumen</li>
-                            <li><strong>Quick Actions:</strong> Convert chat ke Member atau Reservasi</li>
+                            <li><strong>Period Comparison:</strong> Bandingkan performa dengan periode sebelumnya</li>
+                            <li><strong>Stock Valuation:</strong> Nilai total aset inventaris</li>
+                            <li><strong>Trend Chart:</strong> Grafik Revenue vs Expenses</li>
+                            <li><strong>PDF Export:</strong> Download laporan profesional</li>
                         </ul>
+
+                        <h4 class="font-semibold text-lg mt-4">AI Menu Engineering</h4>
+                        <p>Analisis profitabilitas menu dengan klasifikasi:</p>
+                        <ul class="list-disc pl-6 space-y-2">
+                            <li><strong>Stars:</strong> Populer & Profitable (pertahankan!)</li>
+                            <li><strong>Plowhorses:</strong> Populer tapi margin rendah (naikkan harga)</li>
+                            <li><strong>Puzzles:</strong> Margin tinggi tapi kurang laku (promosi!)</li>
+                            <li><strong>Dogs:</strong> Tidak laku & tidak untung (hapus/ganti)</li>
+                        </ul>
+
+                        <h4 class="font-semibold text-lg mt-4">AI Forecasting</h4>
+                        <p>Prediksi kebutuhan restock 7 hari ke depan berdasarkan tren penjualan historis.</p>
                     </div>
                 </section>
 
                 <hr class="border-gray-200 dark:border-gray-700">
 
-                {{-- HRM Section --}}
-                <section id="hrm">
+                {{-- TV Display Configuration --}}
+                <section id="tv-display">
                     <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                        <span class="text-2xl">👥</span>
-                        HRM & Payroll
+                        <span class="text-2xl">📺</span>
+                        TV Display Configuration (Smart TV Slideshow)
                     </h3>
                     <div class="prose dark:prose-invert max-w-none">
-                        <h4 class="font-semibold text-lg">Attendance System</h4>
-                        <p>Karyawan bisa clock-in/out dengan:</p>
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 mb-4">
+                            <p class="font-semibold text-blue-900 dark:text-blue-100">✨ Fitur Baru!</p>
+                            <p class="text-sm text-blue-800 dark:text-blue-200">
+                                Kelola konten digital untuk Smart TV atau layar digital restoran Anda. Tampilkan slideshow promosi, menu, atau informasi event secara dinamis.
+                            </p>
+                        </div>
+
+                        <h4 class="font-semibold text-lg">📋 Cara Membuat Konfigurasi</h4>
+                        <ol class="list-decimal pl-6 space-y-2">
+                            <li>Login sebagai <strong>SuperAdmin</strong></li>
+                            <li>Buka menu <strong>TV Display Config</strong> dari sidebar (grup Pengaturan)</li>
+                            <li>Klik <strong>New TV Configuration</strong></li>
+                            <li>Isi form konfigurasi:
+                                <ul class="list-disc pl-6 mt-2 space-y-1">
+                                    <li><strong>Configuration Name:</strong> Beri nama (misal: "Pagi", "Siang", "Malam", "Umum")</li>
+                                    <li><strong>TV Display Images:</strong> Upload gambar untuk slideshow
+                                        <ul class="list-disc pl-6 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                            <li>Klik area upload atau drag & drop gambar</li>
+                                            <li>Bisa upload hingga 10 gambar (max 5MB per file)</li>
+                                            <li>Gunakan image editor untuk crop/resize</li>
+                                            <li>Drag & drop untuk mengatur urutan</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Music/Video URL:</strong> URL YouTube atau media lainnya untuk background music (opsional)</li>
+                                    <li><strong>Slide Duration:</strong> Durasi tampilan setiap gambar dalam milliseconds (default: 10000ms = 10 detik)</li>
+                                    <li><strong>Active Configuration:</strong> Toggle ON untuk mengaktifkan konfigurasi ini</li>
+                                </ul>
+                            </li>
+                            <li>Klik <strong>Save</strong></li>
+                        </ol>
+
+                        <h4 class="font-semibold text-lg mt-4">🔄 Mengganti Konfigurasi Aktif</h4>
+                        <p>Anda bisa dengan mudah switch antara konfigurasi yang berbeda:</p>
                         <ul class="list-disc pl-6 space-y-2">
-                            <li><strong>Face Recognition:</strong> Validasi wajah</li>
-                            <li><strong>GPS Geofencing:</strong> Pastikan di area outlet</li>
-                            <li><strong>Late Penalty:</strong> Pemotongan otomatis untuk keterlambatan</li>
+                            <li>Di tabel listing, cari konfigurasi yang ingin diaktifkan</li>
+                            <li>Klik <strong>toggle switch</strong> di kolom "Active"</li>
+                            <li>Sistem otomatis menonaktifkan konfigurasi lain</li>
+                            <li>Notifikasi akan muncul untuk konfirmasi perubahan</li>
                         </ul>
 
-                        <h4 class="font-semibold text-lg mt-4">Payroll</h4>
-                        <p>Generate slip gaji otomatis dengan komponen:</p>
-                        <ul class="list-disc pl-6 space-y-1">
-                            <li>Gaji Pokok</li>
-                            <li>Tunjangan</li>
-                            <li>Overtime</li>
-                            <li>Denda keterlambatan</li>
-                            <li>Potongan pinjaman (auto-deduct)</li>
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 mt-4">
+                            <p class="font-semibold text-yellow-900 dark:text-yellow-100">⚠️ Penting</p>
+                            <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                                Hanya <strong>satu konfigurasi</strong> yang bisa aktif dalam satu waktu. Saat Anda mengaktifkan satu konfigurasi, yang lain otomatis dinonaktifkan.
+                            </p>
+                        </div>
+
+                        <h4 class="font-semibold text-lg mt-6">📡 Integrasi dengan Smart TV</h4>
+                        <p>Gunakan API endpoint untuk mengambil konfigurasi aktif:</p>
+
+                        <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg my-3">
+                            <p class="font-semibold mb-2">API Endpoint:</p>
+                            <code class="text-sm bg-gray-200 dark:bg-gray-800 px-2 py-1 rounded">
+                                GET https://pos.suralaya.id/api/tv-config
+                            </code>
+
+                            <p class="font-semibold mt-4 mb-2">Response Format:</p>
+                            <pre class="text-xs bg-gray-200 dark:bg-gray-800 p-3 rounded overflow-x-auto"><code>{
+                            "images": [
+                                "https://pos.suralaya.id/storage/tv-display/image1.jpg",
+                                "https://pos.suralaya.id/storage/tv-display/image2.jpg"
+                            ],
+                            "music_url": "https://www.youtube.com/watch?v=...",
+                            "slide_duration": 10000
+                            }</code></pre>
+                        </div>
+
+                        <h4 class="font-semibold text-lg mt-4">✨ Fitur Unggulan</h4>
+                        <ul class="list-disc pl-6 space-y-2">
+                            <li><strong>Multi-Configuration:</strong> Buat beberapa konfigurasi untuk waktu berbeda</li>
+                            <li><strong>File Upload:</strong> Upload gambar langsung tanpa hosting eksternal</li>
+                            <li><strong>Image Editor:</strong> Built-in editor untuk crop dan resize</li>
+                            <li><strong>Reorderable:</strong> Drag & drop untuk mengatur urutan gambar</li>
+                            <li><strong>One-Click Activation:</strong> Toggle switch untuk aktivasi cepat</li>
+                            <li><strong>RESTful API:</strong> Akses mudah untuk integrasi Smart TV</li>
                         </ul>
+
+                        <h4 class="font-semibold text-lg mt-4">🎯 Use Cases</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                            <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                                <p class="font-semibold text-green-900 dark:text-green-100">🍽️ Menu Promosi</p>
+                                <p class="text-sm text-green-800 dark:text-green-200 mt-1">
+                                    Tampilkan foto menu spesial atau promo terbaru
+                                </p>
+                            </div>
+                            <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                                <p class="font-semibold text-blue-900 dark:text-blue-100">📅 Event & Promo</p>
+                                <p class="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                                    Informasi event khusus atau program loyalty
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 mt-6">
+                            <p class="font-semibold text-green-900 dark:text-green-100">💡 Tips</p>
+                            <ul class="text-sm text-green-800 dark:text-green-200 list-disc pl-5 mt-2 space-y-1">
+                                <li>Gunakan gambar berkualitas tinggi (minimal 1920x1080px)</li>
+                                <li>Atur slide duration sesuai kompleksitas konten</li>
+                                <li>Buat konfigurasi berbeda untuk waktu berbeda</li>
+                            </ul>
+                        </div>
                     </div>
                 </section>
 
