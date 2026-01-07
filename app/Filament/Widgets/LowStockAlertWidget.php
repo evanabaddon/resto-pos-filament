@@ -19,11 +19,14 @@ class LowStockAlertWidget extends BaseWidget
 {
     protected static ?int $sort = 7;
 
+    // Enable lazy loading for better performance
+    protected static bool $isLazy = true;
+
     /**
      * Make widget full width
      */
     protected int|string|array $columnSpan = 'full';
-    
+
     public function table(Table $table): Table
     {
         return $table
@@ -38,18 +41,18 @@ class LowStockAlertWidget extends BaseWidget
                     ->label('NAMA BAHAN BAKU')
                     ->searchable()
                     ->sortable(),
-                    
+
                 TextColumn::make('stock')
                     ->label('STOK')
                     ->sortable()
                     ->badge()
-                    ->color(fn (int $state): string => match (true) {
+                    ->color(fn(int $state): string => match (true) {
                         $state <= 0 => 'danger',
                         $state <= 5 => 'danger',
                         $state <= 10 => 'warning',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (int $state): string => match (true) {
+                    ->formatStateUsing(fn(int $state): string => match (true) {
                         $state <= 0 => 'HABIS',
                         $state <= 5 => $state . ' (KRITIS)',
                         $state <= 10 => $state . ' (RENDAH)',
@@ -57,25 +60,25 @@ class LowStockAlertWidget extends BaseWidget
                     })
                     ->alignCenter()
                     ->size('sm'),
-                    
+
                 TextColumn::make('unit.name')
                     ->label('UNIT')
                     ->sortable()
                     ->alignCenter()
                     ->size('sm'),
-                    
+
                 TextColumn::make('base_price')
                     ->label('HARGA/UNIT')
                     ->money('IDR')
                     ->sortable()
                     ->alignRight()
                     ->tooltip('Harga beli per unit')
-                    ->description(fn (Product $record): string => $record->unit ? "per {$record->unit->name}" : '')
+                    ->description(fn(Product $record): string => $record->unit ? "per {$record->unit->name}" : '')
                     ->size('sm'),
-                    
+
                 TextColumn::make('total_stock_value')
                     ->label('NILAI STOK')
-                    ->getStateUsing(fn (Product $record): float => $record->stock * $record->base_price)
+                    ->getStateUsing(fn(Product $record): float => $record->stock * $record->base_price)
                     ->money('IDR')
                     ->alignRight()
                     ->weight('semibold')
@@ -85,7 +88,7 @@ class LowStockAlertWidget extends BaseWidget
                         return $totalValue <= 0 ? 'danger' : 'success';
                     })
                     ->size('sm'),
-                    
+
             ])
             ->recordActions([
                 // edit
@@ -93,14 +96,14 @@ class LowStockAlertWidget extends BaseWidget
                     ->label('')
                     ->icon('heroicon-o-pencil')
                     ->tooltip('Edit produk')
-                    ->url(fn (Product $record): string => ProductResource::getUrl('edit', ['record' => $record->id])),
+                    ->url(fn(Product $record): string => ProductResource::getUrl('edit', ['record' => $record->id])),
                 // quick purchase action
                 Action::make('quick_purchase')
                     ->label('')
                     ->icon('heroicon-o-shopping-cart')
                     ->color('warning')
                     ->tooltip('Buat pembelian')
-                    ->visible(fn (Product $record): bool => $record->stock <= 10)
+                    ->visible(fn(Product $record): bool => $record->stock <= 10)
                     ->action(function (Product $record) {
                         // Logic untuk redirect ke purchase creation dengan product_id
                         return redirect()->route('filament.admin.resources.purchases.create', [
@@ -145,7 +148,7 @@ class LowStockAlertWidget extends BaseWidget
                 Action::make('view_all_raw_materials')
                     ->label('Lihat semua bahan baku')
                     ->icon('heroicon-o-list-bullet')
-                    ->url(fn (): string => ProductResource::getUrl('index', [
+                    ->url(fn(): string => ProductResource::getUrl('index', [
                         'tableFilters' => [
                             'type' => ['value' => 'raw']
                         ]
@@ -153,30 +156,30 @@ class LowStockAlertWidget extends BaseWidget
             ])
             ->paginated(false);
     }
-    
+
     protected function getTableHeading(): ?string
     {
         return '⚠️ Alert Stok Bahan Baku Rendah';
     }
-    
+
     protected function getTableDescription(): ?string
     {
         // Hitung jumlah bahan baku dengan stok rendah
         $lowStockCount = Product::where('type', 'raw')
             ->where('stock', '<=', 10)
             ->count();
-            
-        return $lowStockCount > 0 
-            ? "{$lowStockCount} bahan baku dengan stok ≤ 10 unit" 
+
+        return $lowStockCount > 0
+            ? "{$lowStockCount} bahan baku dengan stok ≤ 10 unit"
             : 'Semua stok aman';
     }
-    
+
     public function refreshTable(): void
     {
         // Filament/Livewire akan handle refresh otomatis
         // Method ini hanya sebagai placeholder
     }
-    
+
     public static function canView(): bool
     {
         // Hanya tampilkan jika ada bahan baku dengan stok rendah

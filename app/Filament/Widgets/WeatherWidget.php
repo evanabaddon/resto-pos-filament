@@ -14,6 +14,9 @@ class WeatherWidget extends Widget
     protected string $view = 'filament.widgets.weather-widget';
     protected int|string|array $columnSpan = 'full';
 
+    // Enable lazy loading for better performance
+    protected static bool $isLazy = true;
+
     public $weatherData = null;
     public $locationName = null;
     public $error = null;
@@ -30,8 +33,8 @@ class WeatherWidget extends Widget
         // Cache Key based on location code
         $cacheKey = "bmkg_weather_{$code}";
 
-        // Cache 
-        $this->weatherData = Cache::remember($cacheKey, 3600, function () use ($code) {
+        // Cache for 2 hours to reduce API calls
+        $this->weatherData = Cache::remember($cacheKey, 7200, function () use ($code) {
             try {
                 $response = Http::timeout(5)->get("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={$code}");
                 if ($response->successful()) {

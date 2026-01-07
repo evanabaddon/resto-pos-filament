@@ -17,6 +17,9 @@ class CriticalStockWidget extends Widget
 
     protected static ?int $sort = -1; // Display at top
 
+    // Enable lazy loading for better performance
+    protected static bool $isLazy = true;
+
     // Poll every 5 minutes for updates
     protected static ?string $pollingInterval = '300s';
 

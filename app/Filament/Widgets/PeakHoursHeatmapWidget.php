@@ -5,10 +5,14 @@ namespace App\Filament\Widgets;
 use App\Models\Sale;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class PeakHoursHeatmapWidget extends ApexChartWidget
 {
     protected static ?int $sort = 6;
+
+    // Enable lazy loading for better performance
+    protected static bool $isLazy = true;
 
     /**
      * Chart Id
@@ -228,46 +232,49 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
      */
     protected function getHeatmapData(): array
     {
-        $data = Sale::select(
-            DB::raw('HOUR(created_at) as hour'),
-            DB::raw('DAYNAME(created_at) as day'),
-            DB::raw('COUNT(*) as transaction_count'),
-            DB::raw('AVG(final_total) as avg_value')
-        )
-            ->where('status', 'completed')
-            ->where('created_at', '>=', now()->subDays(30))
-            ->groupBy('hour', 'day')
-            ->orderByRaw("FIELD(day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')")
-            ->orderBy('hour')
-            ->get();
+        // Cache for 1 hour to improve performance
+        return Cache::remember('peak_hours_heatmap_data', 3600, function () {
+            $data = Sale::select(
+                DB::raw('HOUR(created_at) as hour'),
+                DB::raw('DAYNAME(created_at) as day'),
+                DB::raw('COUNT(*) as transaction_count'),
+                DB::raw('AVG(final_total) as avg_value')
+            )
+                ->where('status', 'completed')
+                ->where('created_at', '>=', now()->subDays(30))
+                ->groupBy('hour', 'day')
+                ->orderByRaw("FIELD(day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')")
+                ->orderBy('hour')
+                ->get();
 
-        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        $hours = $this->getOperationalHours();
+            $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            $hours = $this->getOperationalHours();
 
-        $heatmap = [];
+            $heatmap = [];
 
-        // Initialize with zeros
-        foreach ($days as $day) {
-            foreach ($hours as $hour) {
-                $heatmap[$day][$hour] = [
-                    'count' => 0,
-                    'avg_value' => 0,
-                ];
+            // Initialize with zeros
+            foreach ($days as $day) {
+                foreach ($hours as $hour) {
+                    $heatmap[$day][$hour] = [
+                        'count' => 0,
+                        'avg_value' => 0,
+                    ];
+                }
             }
-        }
 
-        // Fill with actual data
-        foreach ($data as $record) {
-            // Only include data if it falls within operational hours
-            if (isset($heatmap[$record->day][$record->hour])) {
-                $heatmap[$record->day][$record->hour] = [
-                    'count' => $record->transaction_count,
-                    'avg_value' => round($record->avg_value),
-                ];
+            // Fill with actual data
+            foreach ($data as $record) {
+                // Only include data if it falls within operational hours
+                if (isset($heatmap[$record->day][$record->hour])) {
+                    $heatmap[$record->day][$record->hour] = [
+                        'count' => $record->transaction_count,
+                        'avg_value' => round($record->avg_value),
+                    ];
+                }
             }
-        }
 
-        return $heatmap;
+            return $heatmap;
+        });
     }
 
     /**

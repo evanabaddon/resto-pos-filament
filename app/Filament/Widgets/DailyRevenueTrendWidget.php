@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Sale;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class DailyRevenueTrendWidget extends ApexChartWidget
@@ -13,20 +14,26 @@ class DailyRevenueTrendWidget extends ApexChartWidget
     protected static ?string $heading = 'Trend Pendapatan 30 Hari Terakhir';
     protected static ?string $description = 'Pendapatan dan jumlah transaksi harian';
     protected static ?int $sort = 4;
-    
+
+    // Enable lazy loading for better performance
+    protected static bool $isLazy = true;
+
     protected function getOptions(): array
     {
-        $revenueData = Sale::select(
+        // Cache for 30 minutes to improve performance
+        $revenueData = Cache::remember('daily_revenue_trend_data', 1800, function () {
+            return Sale::select(
                 DB::raw('DATE(created_at) as date'),
                 DB::raw('SUM(final_total) as total_revenue'),
                 DB::raw('COUNT(*) as transaction_count')
             )
-            ->where('status', 'completed')
-            ->where('created_at', '>=', now()->subDays(30))
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
-        
+                ->where('status', 'completed')
+                ->where('created_at', '>=', now()->subDays(30))
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+        });
+
         if ($revenueData->isEmpty()) {
             return [
                 'chart' => [
@@ -49,14 +56,14 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                 ],
             ];
         }
-        
-        $dates = $revenueData->pluck('date')->map(function($date) {
+
+        $dates = $revenueData->pluck('date')->map(function ($date) {
             return Carbon::parse($date)->format('d M');
         })->toArray();
-        
+
         $revenues = $revenueData->pluck('total_revenue')->map(fn($r) => (int) $r)->toArray();
         $transactions = $revenueData->pluck('transaction_count')->map(fn($t) => (int) $t)->toArray();
-        
+
         return [
             'chart' => [
                 'type' => 'line',
@@ -215,6 +222,6 @@ class DailyRevenueTrendWidget extends ApexChartWidget
             ],
         ];
     }
-    
+
     protected static ?string $maxHeight = '400px';
 }

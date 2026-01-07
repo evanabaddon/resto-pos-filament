@@ -15,6 +15,9 @@ class AiDailySuggestionWidget extends Widget
     protected static ?int $sort = -5; // Show at the top
     protected int|string|array $columnSpan = 'full';
 
+    // Enable lazy loading for better performance
+    protected static bool $isLazy = true;
+
     public $suggestion;
 
     public function mount()
@@ -30,7 +33,8 @@ class AiDailySuggestionWidget extends Widget
 
     protected function getSuggestion()
     {
-        return Cache::remember('ai_daily_suggestion', now()->addHour(), function () {
+        // Increased cache to 2 hours to reduce API calls
+        return Cache::remember('ai_daily_suggestion', 7200, function () {
             try {
                 $context = $this->getQuickContext();
                 $service = new DeepSeekService();

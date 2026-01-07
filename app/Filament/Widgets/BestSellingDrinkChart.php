@@ -5,51 +5,59 @@ namespace App\Filament\Widgets;
 use App\Models\SaleItem;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class BestSellingDrinkChart extends ApexChartWidget
 {
     protected static ?string $chartId = 'bestSellingDrinkChart';
     protected static ?string $heading = 'Minuman Terlaris (7 Hari Terakhir)';
     protected static ?string $description = 'Top 10 minuman dengan penjualan tertinggi';
-    protected static ?int $sort = 1;
-    
+    protected static ?int $sort = 2;
+
+    // Enable lazy loading for better performance
+    protected static bool $isLazy = true;
+
     // Property untuk filter
     public ?string $filter = '7days';
-    
+
     // Override method getHeading() untuk mendukung filter
     public function getHeading(): string
     {
         return $this->getHeadingByFilter();
     }
-    
+
     protected function getOptions(): array
     {
-        $query = SaleItem::select(
+        // Cache for 15 minutes, separate cache per filter
+        $cacheKey = 'best_selling_drink_' . $this->filter;
+        $products = Cache::remember($cacheKey, 900, function () {
+            $query = SaleItem::select(
                 'products.name as product_name',
                 DB::raw('SUM(sale_items.quantity) as total_quantity')
             )
-            ->join('products', 'sale_items.product_id', '=', 'products.id')
-            ->whereHas('sale', function($query) {
-                $query->where('status', 'completed');
-                
-                // Filter berdasarkan periode
-                if ($this->filter === 'today') {
-                    $query->whereDate('created_at', today());
-                } elseif ($this->filter === 'yesterday') {
-                    $query->whereDate('created_at', today()->subDay());
-                } elseif ($this->filter === '7days') {
-                    $query->where('created_at', '>=', now()->subDays(7));
-                } elseif ($this->filter === '30days') {
-                    $query->where('created_at', '>=', now()->subDays(30));
-                }
-            })
-            ->where('products.type', 'bar')
-            ->groupBy('products.name', 'products.id')
-            ->orderByDesc('total_quantity')
-            ->limit(10);
-        
-        $products = $query->get();
-        
+                ->join('products', 'sale_items.product_id', '=', 'products.id')
+                ->whereHas('sale', function ($query) {
+                    $query->where('status', 'completed');
+
+                    // Filter berdasarkan periode
+                    if ($this->filter === 'today') {
+                        $query->whereDate('created_at', today());
+                    } elseif ($this->filter === 'yesterday') {
+                        $query->whereDate('created_at', today()->subDay());
+                    } elseif ($this->filter === '7days') {
+                        $query->where('created_at', '>=', now()->subDays(7));
+                    } elseif ($this->filter === '30days') {
+                        $query->where('created_at', '>=', now()->subDays(30));
+                    }
+                })
+                ->where('products.type', 'bar')
+                ->groupBy('products.name', 'products.id')
+                ->orderByDesc('total_quantity')
+                ->limit(10);
+
+            return $query->get();
+        });
+
         // Jika data kosong
         if ($products->isEmpty()) {
             return [
@@ -70,7 +78,7 @@ class BestSellingDrinkChart extends ApexChartWidget
                 ],
             ];
         }
-        
+
         $productNames = $products->pluck('product_name')->toArray();
         $quantities = $products->pluck('total_quantity')->toArray();
 
@@ -86,7 +94,7 @@ class BestSellingDrinkChart extends ApexChartWidget
             '#84CC16', // lime-500
             '#F97316', // orange-500
         ];
-        
+
         return [
             'chart' => [
                 'type' => 'bar',
@@ -133,7 +141,7 @@ class BestSellingDrinkChart extends ApexChartWidget
                 ]
             ],
             'dataLabels' => [
-                'enabled' => true 
+                'enabled' => true
             ],
             'tooltip' => [
                 'y' => [
@@ -142,10 +150,10 @@ class BestSellingDrinkChart extends ApexChartWidget
             ],
         ];
     }
-    
+
     protected function getHeadingByFilter(): string
     {
-        return match($this->filter) {
+        return match ($this->filter) {
             'today' => 'Minuman Terlaris (Hari Ini)',
             'yesterday' => 'Minuman Terlaris (Kemarin)',
             '7days' => 'Minuman Terlaris (7 Hari Terakhir)',
@@ -153,7 +161,7 @@ class BestSellingDrinkChart extends ApexChartWidget
             default => 'Minuman Terlaris (7 Hari Terakhir)',
         };
     }
-    
+
     // Method untuk menampilkan filter dropdown di widget
     protected function getFilters(): ?array
     {
