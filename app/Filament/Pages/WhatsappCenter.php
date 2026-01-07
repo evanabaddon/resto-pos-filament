@@ -239,12 +239,6 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
     public function checkConnection()
     {
-        // Only check connection if we're on the WhatsApp Center page
-        // This prevents slow page loads on other pages when gateway is offline
-        if (!request()->is('admin/whatsapp-center*')) {
-            return;
-        }
-
         try {
             // Use very short timeout (1 second) to prevent slow page loads
             $response = Http::timeout(1)->get($this->getGatewayUrl() . '/status');
