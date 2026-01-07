@@ -401,10 +401,13 @@ class Pos extends Page
     public function getProductsProperty()
     {
         // Cache products for 5 minutes to improve performance
+        // Get current page from Livewire pagination (default to 1 if not set)
+        $currentPage = $this->paginators['page'] ?? 1;
+
         $cacheKey = 'pos_products_' .
             $this->selectedCategory . '_' .
             md5($this->searchQuery) . '_' .
-            ($this->paginators['page'] ?? 1); // Use Livewire pagination property
+            $currentPage;
 
         return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
             // MEMORY OPTIMIZATION: Select specific columns only
