@@ -42,7 +42,6 @@ trait HasPayment
             $this->showLoadModal = false;
 
             $this->resetPos();
-
         } catch (\Exception $e) {
             $this->dispatch('show-notification', message: 'Error: ' . $e->getMessage(), type: 'error');
         }
@@ -164,7 +163,7 @@ trait HasPayment
                 'member_id' => $this->memberId,
             ];
 
-            // Use Service
+            // 🚀 PHASE 2: Process order (main transaction)
             $orderService = app(OrderService::class);
             $sale = $orderService->processOrder($orderData, $this->items, $isUpdate, $existingSale);
 
@@ -173,7 +172,19 @@ trait HasPayment
                 $this->saleId = $sale->id;
             }
 
-            // 🔹 TENTUKAN APAKAH INI UPDATE
+            // � PHASE 2: Show success notification IMMEDIATELY
+            $invoiceNumber = $sale->invoice_number;
+            if ($isUpdate) {
+                $this->dispatch('show-notification', message: "✅ Order #{$invoiceNumber} berhasil diupdate!", type: 'success');
+            } else {
+                $this->dispatch('show-notification', message: "✅ Order #{$invoiceNumber} berhasil disimpan!", type: 'success');
+            }
+
+            // 🚀 PHASE 2: Reset POS IMMEDIATELY so cashier can start next transaction
+            $this->resetPos();
+            $this->dispatch('refreshSalesList');
+
+            // �🔹 TENTUKAN APAKAH INI UPDATE
             if ($isUpdate) {
                 // 🔹 DAPATKAN ITEM BARU/TAMBAHAN
                 $newItems = $this->getNewOrUpdatedItems();
@@ -183,7 +194,7 @@ trait HasPayment
                     'new_items_count' => count($newItems)
                 ]);
 
-                // 🔹 PRINT HANYA ITEM BARU JIKA ADA
+                // 🔹 PRINT HANYA ITEM BARU JIKA ADA (ASYNC - tidak block kasir)
                 if (!empty($newItems)) {
                     // Async background print
                     \App\Jobs\PrintOrderJob::dispatchAfterResponse($sale, $newItems, true);
@@ -196,13 +207,9 @@ trait HasPayment
                     } catch (\Exception $e) {
                         \Log::warning('Client print handoff failed: ' . $e->getMessage());
                     }
-
-                    $this->dispatch('show-notification', message: '✅ Item berhasil ditambah & dalam antrian cetak!', type: 'success');
-                } else {
-                    $this->dispatch('show-notification', message: '✅ Order berhasil diupdate!', type: 'success');
                 }
             } else {
-                // 🔹 NEW ORDER - PRINT SEMUA
+                // 🔹 NEW ORDER - PRINT SEMUA (ASYNC - tidak block kasir)
                 // Async background print
                 \App\Jobs\PrintOrderJob::dispatchAfterResponse($sale);
 
@@ -214,26 +221,10 @@ trait HasPayment
                 } catch (\Exception $e) {
                     \Log::warning('Client print handoff failed: ' . $e->getMessage());
                 }
-
-                $this->dispatch('show-notification', message: '✅ Order baru berhasil dikirim ke divisi!', type: 'success');
             }
 
             // 🔹 RESET previousItems
             $this->previousItems = [];
-
-            // 🔹 TAMPILKAN NOTIFIKASI BERBEDA
-            if ($isUpdate) {
-                $this->dispatch('show-notification', message: 'Transaksi #' . $sale->invoice_number . ' berhasil diupdate!', type: 'success');
-            } else {
-                $this->dispatch('show-notification', message: 'Transaksi baru #' . $sale->invoice_number . ' berhasil disimpan!', type: 'success');
-            }
-
-            // 🔹 Refresh list di modal
-            $this->dispatch('refreshSalesList');
-
-            $this->resetPos();
-            // $this->dispatch('reload-page');
-
         } catch (\Exception $e) {
             \Log::error('💥 Gagal menyimpan penjualan: ' . $e->getMessage());
             $this->dispatch('show-notification', message: 'Gagal menyimpan penjualan: ' . $e->getMessage(), type: 'error');
