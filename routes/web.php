@@ -218,20 +218,25 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
     if (!Auth::check())
         abort(403);
 
-    $gatewayUrl = rtrim(env('WA_GATEWAY_URL', 'http://127.0.0.1:3000'), '/');
-    $url = "$gatewayUrl/avatar/$jid";
+    // Cache avatar for 1 hour to prevent repeated gateway requests
+    return Cache::remember("wa_avatar_{$jid}", 3600, function () use ($jid) {
+        $gatewayUrl = rtrim(env('WA_GATEWAY_URL', 'http://127.0.0.1:3000'), '/');
+        $url = "$gatewayUrl/avatar/$jid";
 
-    try {
-        $response = Http::timeout(2)->get($url);
-        if ($response->successful()) {
-            return response($response->body())
-                ->header('Content-Type', $response->header('Content-Type', 'image/jpeg'))
-                ->header('Cache-Control', 'public, max-age=3600');
+        try {
+            // Reduced timeout to 1 second for faster failure
+            $response = Http::timeout(1)->get($url);
+            if ($response->successful()) {
+                return response($response->body())
+                    ->header('Content-Type', $response->header('Content-Type', 'image/jpeg'))
+                    ->header('Cache-Control', 'public, max-age=3600');
+            }
+        } catch (\Exception $e) {
+            // Gateway offline or fetch failed - log for debugging
+            Log::debug("WhatsApp avatar fetch failed for {$jid}: " . $e->getMessage());
         }
-    } catch (\Exception $e) {
-        // Gateway offline or fetch failed
-    }
 
-    // Return 404 to trigger onerror in frontend
-    return response()->noContent(404);
+        // Return 404 to trigger onerror in frontend
+        return response()->noContent(404);
+    });
 })->name('whatsapp.avatar')->where('jid', '.*');
