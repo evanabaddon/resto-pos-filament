@@ -142,7 +142,7 @@
         {{-- Grid Produk - Modern Design --}}
         <div class="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-50 relative" id="product-grid-container">
 
-            {{-- Loading Indicator - Top Center --}}
+            {{-- Loading Indicator - Center --}}
             <div wire:loading wire:target="searchQuery, selectedCategory, updatePerPage, setCategory, resetPage"
                 class="absolute top-1/2 left-1/2 transform -translate-x-1/2 z-50">
                 <div class="bg-white p-2 rounded-full shadow-lg flex items-center gap-2 border border-violet-100">
