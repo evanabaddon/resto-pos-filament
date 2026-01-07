@@ -294,8 +294,6 @@ trait HasCart
                         type: 'warning'
                     );
 
-                    // Force refresh to show old value
-                    $this->dispatch('$refresh');
                     return;
                 }
             } elseif ($product && $product->stock !== null) {
@@ -311,8 +309,6 @@ trait HasCart
                         type: 'warning'
                     );
 
-                    // Force refresh to show old value
-                    $this->dispatch('$refresh');
                     return;
                 }
             }
