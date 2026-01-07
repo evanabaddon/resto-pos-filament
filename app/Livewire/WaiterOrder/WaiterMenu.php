@@ -14,6 +14,10 @@ class WaiterMenu extends Component
     public $search = '';
     public $perPage = 12; // Initial load count
 
+    // 🚀 OPTIMIZATION: Per-request caching (safe - no stale data)
+    protected $productCache = [];
+    protected $availabilityCache = [];
+
     public function mount()
     {
         $this->categories = Category::orderBy('name')->get();
@@ -36,7 +40,8 @@ class WaiterMenu extends Component
         // Always reload from cache first to ensure sync
         $this->cart = \Illuminate\Support\Facades\Cache::get($cacheKey, []);
 
-        $product = Product::with(['recipes.ingredient'])->find($productId);
+        // 🚀 OPTIMIZATION: Use cached product (per-request only)
+        $product = $this->getProduct($productId);
         if (!$product) {
             $this->dispatch('notify', message: 'Produk tidak ditemukan', type: 'error');
             return;
@@ -48,15 +53,14 @@ class WaiterMenu extends Component
 
         // Check stock availability
         if (in_array($product->type, ['produced', 'bar'])) {
-            $stockChecker = app(\App\Services\RecipeStockChecker::class);
-
             // Pass the CURRENT CART (excluding self)
             $cartForCheck = $this->cart;
             if (isset($cartForCheck[$productId])) {
                 unset($cartForCheck[$productId]);
             }
 
-            $availability = $stockChecker->checkAvailability($product, $requestedQty, $cartForCheck);
+            // 🚀 OPTIMIZATION: Use memoized availability check (per-request only)
+            $availability = $this->checkStockAvailability($product, $requestedQty, $cartForCheck);
 
             if (!$availability['available']) {
                 $maxPortions = $availability['max_portions'];
@@ -105,85 +109,114 @@ class WaiterMenu extends Component
         $this->addToCartBatch($productId, 1);
     }
 
+    // 🚀 OPTIMIZATION: Product caching (per-request only - safe)
+    protected function getProduct($productId)
+    {
+        if (isset($this->productCache[$productId])) {
+            return $this->productCache[$productId];
+        }
+
+        // ALWAYS fresh query - includes current stock
+        $product = Product::with(['recipes.ingredient', 'recipes.unit'])->find($productId);
+        $this->productCache[$productId] = $product;
+
+        return $product;
+    }
+
+    // 🚀 OPTIMIZATION: Availability memoization (per-request only - safe)
+    protected function checkStockAvailability($product, $qty, $cart)
+    {
+        $cacheKey = "{$product->id}_{$qty}_" . md5(json_encode($cart));
+
+        if (isset($this->availabilityCache[$cacheKey])) {
+            return $this->availabilityCache[$cacheKey];
+        }
+
+        // ALWAYS fresh check from database
+        $stockChecker = app(\App\Services\RecipeStockChecker::class);
+        $result = $stockChecker->checkAvailability($product, $qty, $cart);
+
+        $this->availabilityCache[$cacheKey] = $result;
+
+        return $result;
+    }
+
     public function render()
     {
-        // 1. Get Featured Products (Upselling) - Limited
-        $featuredProducts = Product::select([
-            'id',
-            'name',
-            'sell_price',
-            'stock',
-            'type',
-            'category_id',
-            'image',
-            'is_sellable'
-        ])
-            ->where('is_favorite', true)
-            ->where('is_sellable', true)
-            ->where('name', '!=', 'Down Payment (DP)')
-            ->where(function ($q) {
-                $q->where('stock', '>', 0)
-                    ->orWhereIn('type', ['produced', 'bar'])
-                    ->orWhereNull('stock');
-            })
-            ->with([
-                'category:id,name',
-                'unit:id,symbol,name'
+        // 🚀 OPTIMIZATION: Cache featured products (5 minutes - changes rarely)
+        $featuredProducts = \Illuminate\Support\Facades\Cache::remember(
+            'waiter_featured_products',
+            300,
+            function () {
+                return Product::select([
+                    'id',
+                    'name',
+                    'sell_price',
+                    'stock',
+                    'type',
+                    'category_id',
+                    'image',
+                    'is_sellable'
+                ])
+                    ->where('is_favorite', true)
+                    ->where('is_sellable', true)
+                    ->where('name', '!=', 'Down Payment (DP)')
+                    ->where(function ($q) {
+                        $q->where('stock', '>', 0)
+                            ->orWhereIn('type', ['produced', 'bar'])
+                            ->orWhereNull('stock');
+                    })
+                    ->with([
+                        'category:id,name',
+                        'unit:id,symbol,name'
+                    ])
+                    ->limit(10)
+                    ->get();
+            }
+        );
+
+        // 🚀 OPTIMIZATION: Cache product list (5 minutes - safe for display)
+        $cacheKey = 'waiter_products_' .
+            $this->selectedCategoryId . '_' .
+            md5($this->search) . '_' .
+            $this->perPage;
+
+        $products = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
+            return Product::select([
+                'id',
+                'name',
+                'sell_price',
+                'stock',
+                'type',
+                'category_id',
+                'image',
+                'is_sellable'
             ])
-            ->limit(10)
-            ->get();
+                ->where('is_sellable', true)
+                ->where('name', '!=', 'Down Payment (DP)')
+                ->where(function ($q) {
+                    $q->where('stock', '>', 0)
+                        ->orWhereIn('type', ['produced', 'bar'])
+                        ->orWhereNull('stock');
+                })
+                ->when($this->selectedCategoryId !== 'all', function ($query) {
+                    $query->where('category_id', $this->selectedCategoryId);
+                })
+                ->when($this->search, function ($query) {
+                    $query->where('name', 'like', '%' . $this->search . '%');
+                })
+                ->with([
+                    'category:id,name',
+                    'unit:id,symbol,name'
+                    // 🚀 OPTIMIZATION: Don't eager load recipes - load on demand in addToCart
+                ])
+                ->orderBy('name')
+                ->take($this->perPage)
+                ->get();
+        });
 
-        // 2. Get Standard Products - PAGINATED / LIMITED
-        $products = Product::select([
-            'id',
-            'name',
-            'sell_price',
-            'stock',
-            'type',
-            'category_id',
-            'image',
-            'is_sellable'
-        ])
-            ->where('is_sellable', true)
-            ->where('name', '!=', 'Down Payment (DP)')
-            ->where(function ($q) {
-                $q->where('stock', '>', 0)
-                    ->orWhereIn('type', ['produced', 'bar'])
-                    ->orWhereNull('stock');
-            })
-            ->when($this->selectedCategoryId !== 'all', function ($query) {
-                $query->where('category_id', $this->selectedCategoryId);
-            })
-            ->when($this->search, function ($query) {
-                $query->where('name', 'like', '%' . $this->search . '%');
-            })
-            ->with([
-                'category:id,name',
-                'unit:id,symbol,name',
-                'recipes.ingredient', // Eager load for MaxPortions calculation
-                'recipes.unit'
-            ])
-            ->orderBy('name') // Optimization: Ensure consistent order for pagination
-            ->take($this->perPage) // Pagination Limit
-            ->get();
-
-        // Check if there are more products to load
-        $totalProducts = Product::where('is_sellable', true)
-            ->where('name', '!=', 'Down Payment (DP)')
-            ->where(function ($q) {
-                $q->where('stock', '>', 0)
-                    ->orWhereIn('type', ['produced', 'bar'])
-                    ->orWhereNull('stock');
-            })
-            ->when($this->selectedCategoryId !== 'all', function ($query) {
-                $query->where('category_id', $this->selectedCategoryId);
-            })
-            ->when($this->search, function ($query) {
-                $query->where('name', 'like', '%' . $this->search . '%');
-            })
-            ->count();
-
-        $hasMore = $totalProducts > $this->perPage;
+        // 🚀 OPTIMIZATION: Use collection count instead of separate query
+        $hasMore = $products->count() >= $this->perPage;
 
         return view('livewire.waiter-order.menu', [
             'products' => $products,
