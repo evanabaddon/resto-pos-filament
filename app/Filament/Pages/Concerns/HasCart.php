@@ -98,11 +98,11 @@ trait HasCart
         if (!$product)
             return;
 
-        // 🔧 FIX: Invalidate availability cache for this product when adding
-        $this->invalidateProductAvailabilityCache($productId);
-
         // Check stock availability for produced items with recipes
         if (in_array($product->type, ['produced', 'bar'])) {
+            // 🔧 FIX: Only invalidate cache for produced/bar items
+            $this->invalidateProductAvailabilityCache($productId);
+
             // Prepare cart quantities for check
             $cartQuantities = $this->getCartQuantitiesProperty();
             if (isset($cartQuantities[$product->id])) {

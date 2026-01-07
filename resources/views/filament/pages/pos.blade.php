@@ -142,11 +142,11 @@
         {{-- Grid Produk - Modern Design --}}
         <div class="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-50 relative" id="product-grid-container">
 
-            {{-- Loading Overlay (Non-blocking opacity) --}}
+            {{-- Loading Indicator - Top Center --}}
             <div wire:loading wire:target="searchQuery, selectedCategory, updatePerPage, setCategory, resetPage"
-                class="absolute inset-0 z-50 bg-slate-50/50 flex flex-col items-center justify-start pt-20 transition-all duration-300 pointer-events-none">
-                <div class="bg-white p-3 rounded-full shadow-lg flex items-center gap-2 animate-bounce">
-                    <svg class="animate-spin h-5 w-5 text-violet-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                class="absolute top-1/2 left-1/2 transform -translate-x-1/2 z-50">
+                <div class="bg-white p-2 rounded-full shadow-lg flex items-center gap-2 border border-violet-100">
+                    <svg class="animate-spin h-4 w-4 text-violet-600" xmlns="http://www.w3.org/2000/svg" fill="none"
                         viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
                         </circle>
@@ -154,7 +154,7 @@
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                         </path>
                     </svg>
-                    <span class="text-xs font-bold text-violet-600">Memuat...</span>
+                    <span class="text-xs font-medium text-violet-600">Memuat...</span>
                 </div>
             </div>
 
@@ -465,11 +465,11 @@
     </div>
 
     <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0 bg-slate-50/50 relative">
-        {{-- Loading Overlay for Cart Actions --}}
+        {{-- Loading Indicator - Center --}}
         <div wire:loading
             wire:target="addProduct, addMoreProduct, updateQuantity, removeItem, clearCart, applyDiscountCode"
-            class="absolute inset-0 z-10 bg-slate-50/60 flex items-center justify-center transition-opacity duration-200">
-            <div class="bg-white p-2 rounded-full shadow-md flex items-center gap-2 animate-bounce">
+            class="absolute top-1/2 left-1/2 z-10">
+            <div class="bg-white p-2 rounded-full shadow-lg flex items-center gap-2 border border-violet-100">
                 <svg class="animate-spin h-4 w-4 text-violet-600" xmlns="http://www.w3.org/2000/svg" fill="none"
                     viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
@@ -478,7 +478,7 @@
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                     </path>
                 </svg>
-                <span class="text-[10px] font-bold text-violet-600">Sync...</span>
+                <span class="text-xs font-medium text-violet-600">Sync...</span>
             </div>
         </div>
 
