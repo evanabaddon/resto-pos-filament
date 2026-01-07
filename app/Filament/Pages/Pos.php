@@ -404,10 +404,12 @@ class Pos extends Page
         // Get current page from Livewire pagination (default to 1 if not set)
         $currentPage = $this->paginators['page'] ?? 1;
 
+        // Include perPage in cache key to handle different screen sizes
         $cacheKey = 'pos_products_' .
             $this->selectedCategory . '_' .
             md5($this->searchQuery) . '_' .
-            $currentPage;
+            $currentPage . '_' .
+            $this->perPage; // Add perPage to cache key
 
         return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
             // MEMORY OPTIMIZATION: Select specific columns only
