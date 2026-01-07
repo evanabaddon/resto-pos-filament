@@ -55,14 +55,14 @@
 
             <div class="space-y-3 mb-6">
                 @foreach($cartItems as $item)
-                    <div class="flex justify-between items-start text-xs text-gray-600">
-                        <span>{{ $item['qty'] }}x {{ $item['name'] }}</span>
-                        <span class="font-bold text-gray-900">Rp
-                            {{ number_format($item['price'] * $item['qty'], 0, ',', '.') }}</span>
-                    </div>
-                    @if(!empty($item['note']))
-                        <div class="text-[10px] text-gray-400 italic -mt-2 ml-4">Catatan: {{ $item['note'] }}</div>
-                    @endif
+                <div class="flex justify-between items-start text-xs text-gray-600">
+                    <span>{{ $item['qty'] }}x {{ $item['name'] }}</span>
+                    <span class="font-bold text-gray-900">Rp
+                        {{ number_format($item['price'] * $item['qty'], 0, ',', '.') }}</span>
+                </div>
+                @if(!empty($item['note']))
+                <div class="text-[10px] text-gray-400 italic -mt-2 ml-4">Catatan: {{ $item['note'] }}</div>
+                @endif
                 @endforeach
             </div>
 
@@ -87,7 +87,7 @@
         <!-- CTA -->
         <button wire:click="placeOrder" wire:loading.attr="disabled"
             class="w-full bg-black text-white text-center py-4 rounded-2xl font-bold text-base shadow-xl transform active:scale-95 transition-all">
-            <span wire:loading.remove>Kirim Pesanan (Ke Dapur)</span>
+            <span wire:loading.remove>Kirim Pesanan</span>
             <span wire:loading>Memproses...</span>
         </button>
 
