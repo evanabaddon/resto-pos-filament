@@ -404,7 +404,7 @@ class Pos extends Page
         $cacheKey = 'pos_products_' .
             $this->selectedCategory . '_' .
             md5($this->searchQuery) . '_' .
-            $this->page;
+            ($this->paginators['page'] ?? 1); // Use Livewire pagination property
 
         return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
             // MEMORY OPTIMIZATION: Select specific columns only
