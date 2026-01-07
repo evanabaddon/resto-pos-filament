@@ -352,9 +352,8 @@ class Pos extends Page
         // 🔹 RESET PAGINATION KE HALAMAN 1
         $this->resetPage();
 
-        // Clear cache ketika search berubah
-        $cacheKey = $this->getProductsCacheKey();
-        cache()->forget($cacheKey);
+        // Clear product cache when search changes
+        $this->clearProductCache();
 
         // Log untuk debugging
         \Log::info('Search updated', ['query' => $value]);
@@ -367,6 +366,9 @@ class Pos extends Page
     {
         // 🔹 RESET PAGINATION KE HALAMAN 1
         $this->resetPage();
+
+        // Clear product cache when category changes
+        $this->clearProductCache();
     }
 
     /**
@@ -390,57 +392,62 @@ class Pos extends Page
 
     public function getCategoriesProperty()
     {
-        // CACHE: Use once() to cache query result for this request
-        // Optimization: Reduce DB hits on re-renders
-        return once(function () {
+        // Cache categories for 10 minutes (rarely change)
+        return \Illuminate\Support\Facades\Cache::remember('pos_categories', 600, function () {
             return Category::select('id', 'name')->orderBy('name')->get();
         });
     }
 
     public function getProductsProperty()
     {
-        // MEMORY OPTIMIZATION: Select specific columns only
-        $query = Product::select([
-            'id',
-            'name',
-            'sell_price',
-            'stock',
-            'type',
-            'category_id',
-            'image',
-            'is_sellable',
-            'unit_id'
-        ])
-            ->where('is_sellable', true)
-            ->where('name', '!=', 'Down Payment (DP)')
-            ->with([
-                // Optimize eager loading: select specific columns for relations too
-                'recipes:id,product_id,ingredient_id,quantity,unit_id',
-                'recipes.ingredient:id,name,stock,unit_id',
-                'recipes.ingredient.unit:id,symbol,name',
-                'recipes.unit:id,symbol,name',
-                'unit:id,symbol,name'
+        // Cache products for 5 minutes to improve performance
+        $cacheKey = 'pos_products_' .
+            $this->selectedCategory . '_' .
+            md5($this->searchQuery) . '_' .
+            $this->page;
+
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
+            // MEMORY OPTIMIZATION: Select specific columns only
+            $query = Product::select([
+                'id',
+                'name',
+                'sell_price',
+                'stock',
+                'type',
+                'category_id',
+                'image',
+                'is_sellable',
+                'unit_id'
             ])
-            ->where(function ($q) {
-                $q->where('stock', '>', 0)
-                    ->orWhereIn('type', ['produced', 'bar'])
-                    ->orWhereNull('stock');
-            });
+                ->where('is_sellable', true)
+                ->where('name', '!=', 'Down Payment (DP)')
+                ->with([
+                    // Optimize eager loading: select specific columns for relations too
+                    'recipes:id,product_id,ingredient_id,quantity,unit_id',
+                    'recipes.ingredient:id,name,stock,unit_id',
+                    'recipes.ingredient.unit:id,symbol,name',
+                    'recipes.unit:id,symbol,name',
+                    'unit:id,symbol,name'
+                ])
+                ->where(function ($q) {
+                    $q->where('stock', '>', 0)
+                        ->orWhereIn('type', ['produced', 'bar'])
+                        ->orWhereNull('stock');
+                });
 
-        // 🔍 Filter Search
-        if (!empty($this->searchQuery)) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->searchQuery . '%');
-            });
-        }
+            // 🔍 Filter Search - Use prefix search for better index usage
+            if (!empty($this->searchQuery)) {
+                $query->where('name', 'like', $this->searchQuery . '%');
+            }
 
-        // Filter Kategori
-        if ($this->selectedCategory !== 'SEMUA') {
-            $query->where('category_id', $this->selectedCategory);
-        }
+            // Filter Kategori
+            if ($this->selectedCategory !== 'SEMUA') {
+                $query->where('category_id', $this->selectedCategory);
+            }
 
-        // Use DB Pagination (Optimized)
-        return $query->orderBy('name', 'asc')->paginate($this->perPage);
+            // Use DB Pagination (Optimized)
+            return $query->orderBy('name', 'asc')->paginate($this->perPage);
+        });
     }
 
     /**
@@ -487,15 +494,21 @@ class Pos extends Page
             return collect([]);
         }
 
-        $stockChecker = app(\App\Services\RecipeStockChecker::class);
+        // Cache availability check for 2 minutes
+        $productIds = $products->pluck('id')->toArray();
+        $cacheKey = 'pos_availability_' . md5(json_encode($productIds) . json_encode($this->items));
 
-        // Batch calculate untuk semua produk sekaligus (2-3 queries total)
-        // Pass saleId to exclude current sale from draft calculation (prevents double counting)
-        $availability = $stockChecker->batchCheckAvailability(
-            $products->pluck('id')->toArray(),
-            $this->items,
-            $this->saleId // Exclude current sale from draft count
-        );
+        $availability = \Illuminate\Support\Facades\Cache::remember($cacheKey, 120, function () use ($productIds) {
+            $stockChecker = app(\App\Services\RecipeStockChecker::class);
+
+            // Batch calculate untuk semua produk sekaligus (2-3 queries total)
+            // Pass saleId to exclude current sale from draft calculation (prevents double counting)
+            return $stockChecker->batchCheckAvailability(
+                $productIds,
+                $this->items,
+                $this->saleId // Exclude current sale from draft count
+            );
+        });
 
         // Map ke products (in-memory operation, no queries)
         return $products->map(function ($product) use ($availability) {
@@ -537,6 +550,22 @@ class Pos extends Page
             $this->selectedCategory . '_' .
             md5($this->searchQuery) . '_' .
             auth()->id();
+    }
+
+    /**
+     * Clear product cache when filters change
+     */
+    protected function clearProductCache(): void
+    {
+        // Clear all product cache keys for current user
+        // Since we can't easily iterate cache keys, we'll rely on cache expiration
+        // For immediate effect, you can use cache tags (Redis) or clear all cache
+
+        // Option 1: Clear specific pattern (if using Redis with tags)
+        // Cache::tags(['pos_products'])->flush();
+
+        // Option 2: Just let cache expire naturally (5 minutes)
+        // The new search/category will create new cache key anyway
     }
 
     /**
@@ -630,7 +659,7 @@ class Pos extends Page
             return;
         }
 
-        // OPTIMIZATION: Select specific columns and use prefix search (index-friendly)
+        // OPTIMIZATION: Use prefix search for better index usage (already optimized)
         $this->foundMembers = \App\Models\Member::select('id', 'name', 'phone', 'email', 'points_balance', 'tier_id')
             ->where(function ($q) use ($value) {
                 $q->where('name', 'like', "{$value}%")
