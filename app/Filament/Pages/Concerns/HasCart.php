@@ -4,34 +4,113 @@ namespace App\Filament\Pages\Concerns;
 
 use App\Models\Product;
 use App\Models\DiscountCode;
+use App\Services\RecipeStockChecker;
 use Illuminate\Support\Collection;
 
 trait HasCart
 {
+    // 🚀 PHASE 1 OPTIMIZATIONS
+    protected $productCache = []; // Cache loaded products
+    protected $availabilityCache = []; // Memoize stock availability checks
+    protected $pendingRecalculation = false; // Debounce recalculation
+
+    /**
+     * Get product with caching to avoid repeated queries
+     */
+    protected function getProduct($productId)
+    {
+        if (isset($this->productCache[$productId])) {
+            return $this->productCache[$productId];
+        }
+
+        $product = Product::with(['recipes.ingredient.unit', 'recipes.unit'])->find($productId);
+
+        if ($product) {
+            $this->productCache[$productId] = $product;
+        }
+
+        return $product;
+    }
+
+    /**
+     * Check stock availability with memoization
+     */
+    protected function checkStockAvailability($product, $qty, $cartQuantities)
+    {
+        $cacheKey = "{$product->id}_{$qty}_" . md5(json_encode($cartQuantities));
+
+        if (isset($this->availabilityCache[$cacheKey])) {
+            return $this->availabilityCache[$cacheKey];
+        }
+
+        $stockChecker = app(RecipeStockChecker::class);
+        $result = $stockChecker->checkAvailability($product, $qty, $cartQuantities);
+
+        $this->availabilityCache[$cacheKey] = $result;
+
+        return $result;
+    }
+
+    /**
+     * Schedule recalculation (debounced)
+     */
+    protected function scheduleRecalculation()
+    {
+        $this->pendingRecalculation = true;
+    }
+
+    /**
+     * Livewire dehydrate hook - execute pending recalculation
+     */
+    public function dehydrate()
+    {
+        if ($this->pendingRecalculation) {
+            $this->calculateTotals();
+            $this->pendingRecalculation = false;
+        }
+    }
+
+    /**
+     * Clear availability cache when cart changes significantly
+     */
+    protected function invalidateAvailabilityCache()
+    {
+        $this->availabilityCache = [];
+    }
+
+    /**
+     * Clear availability cache for specific product
+     */
+    protected function invalidateProductAvailabilityCache($productId)
+    {
+        // Remove all cache entries for this product
+        foreach (array_keys($this->availabilityCache) as $key) {
+            if (str_starts_with($key, "{$productId}_")) {
+                unset($this->availabilityCache[$key]);
+            }
+        }
+    }
+
     public function addProduct($productId)
     {
-        // 🔹 OPTIMIZATION: Eager load recipes for stock check
-        $product = Product::with(['recipes.ingredient.unit', 'recipes.unit'])->find($productId);
+        // 🚀 PHASE 1: Use cached product loading
+        $product = $this->getProduct($productId);
         if (!$product)
             return;
 
+        // 🔧 FIX: Invalidate availability cache for this product when adding
+        $this->invalidateProductAvailabilityCache($productId);
+
         // Check stock availability for produced items with recipes
         if (in_array($product->type, ['produced', 'bar'])) {
-            $stockChecker = app(\App\Services\RecipeStockChecker::class);
-
             // Prepare cart quantities for check
-            // EXCLUDE current product from cart because $requestedQty (1) is the NEW Total for this check?
-            // Case 1: New Item. requested=1. Cart doesn't have it.
-            // Case 2: Update. requested=Total. Cart has old qty.
-
-            // Here we are adding 1. So requested = 1.
-            // Cart should represent "Other items".
             $cartQuantities = $this->getCartQuantitiesProperty();
             if (isset($cartQuantities[$product->id])) {
                 unset($cartQuantities[$product->id]);
             }
 
-            $availability = $stockChecker->checkAvailability($product, 1, $cartQuantities);
+            // 🚀 PHASE 1: Use memoized availability check
+            $availability = $this->checkStockAvailability($product, 1, $cartQuantities);
 
             if (!$availability['available']) {
                 $maxPortions = $availability['max_portions'];
@@ -50,9 +129,6 @@ trait HasCart
                         message: "⚠️ Hanya tersedia {$maxPortions} porsi {$product->name}.",
                         type: 'warning'
                     );
-                    // allow adding if max > 0? No, availability=false means requested(1) > max.
-                    // So if max=0, completely block.
-                    // If max > 0 but < 1 (impossible for 1), block.
                 }
             }
         }
@@ -70,15 +146,14 @@ trait HasCart
             $newQuantity = $this->items[$foundKey]['quantity'] + 1;
 
             if (in_array($product->type, ['produced', 'bar'])) {
-                $stockChecker = app(\App\Services\RecipeStockChecker::class);
-
                 // Exclude self from cart for total check
                 $cartQuantities = $this->getCartQuantitiesProperty();
                 if (isset($cartQuantities[$product->id])) {
                     unset($cartQuantities[$product->id]);
                 }
 
-                $availability = $stockChecker->checkAvailability($product, $newQuantity, $cartQuantities);
+                // 🚀 PHASE 1: Use memoized availability check
+                $availability = $this->checkStockAvailability($product, $newQuantity, $cartQuantities);
 
                 if (!$availability['available']) {
                     $this->dispatch(
@@ -103,19 +178,20 @@ trait HasCart
             ];
         }
 
-        $this->recalculateTotals();
+        // 🚀 PHASE 1: Schedule debounced recalculation
+        $this->scheduleRecalculation();
         $this->dispatch('cartUpdated', count: count($this->items));
     }
 
     public function addMoreProduct($productId, $quantity = 1)
     {
-        // 🔹 Batched Add Logic
-        // 🔹 OPTIMIZATION: Eager load recipes for stock check
-        $product = Product::with(['recipes.ingredient.unit', 'recipes.unit'])->find($productId);
+        // 🚀 PHASE 1: Use cached product loading
+        $product = $this->getProduct($productId);
         if (!$product || $quantity < 1)
             return;
 
-        $stockChecker = app(\App\Services\RecipeStockChecker::class);
+        // 🔧 FIX: Invalidate availability cache for this product
+        $this->invalidateProductAvailabilityCache($productId);
 
         // Find existing item key
         $foundKey = null;
@@ -137,7 +213,8 @@ trait HasCart
                 unset($cartQuantities[$product->id]);
             }
 
-            $availability = $stockChecker->checkAvailability($product, $newTargetQty, $cartQuantities);
+            // 🚀 PHASE 1: Use memoized availability check
+            $availability = $this->checkStockAvailability($product, $newTargetQty, $cartQuantities);
 
             if (!$availability['available']) {
                 $this->dispatch(
@@ -174,7 +251,8 @@ trait HasCart
             ];
         }
 
-        $this->recalculateTotals();
+        // 🚀 PHASE 1: Schedule debounced recalculation
+        $this->scheduleRecalculation();
         $this->dispatch('cartUpdated', count: count($this->items));
     }
 
@@ -186,9 +264,66 @@ trait HasCart
         }
 
         if (isset($this->items[$index])) {
+            $productId = $this->items[$index]['product_id'];
+            $oldQuantity = $this->items[$index]['quantity']; // Store old value
+
+            // 🔧 FIX: Check availability before updating quantity
+            $product = $this->getProduct($productId);
+
+            if ($product && in_array($product->type, ['produced', 'bar'])) {
+                // Invalidate cache for this product
+                $this->invalidateProductAvailabilityCache($productId);
+
+                // Exclude self from cart for total check
+                $cartQuantities = $this->getCartQuantitiesProperty();
+                if (isset($cartQuantities[$product->id])) {
+                    unset($cartQuantities[$product->id]);
+                }
+
+                // Check if new quantity is available
+                $availability = $this->checkStockAvailability($product, $quantity, $cartQuantities);
+
+                if (!$availability['available']) {
+                    // Reset to old quantity
+                    $this->items[$index]['quantity'] = $oldQuantity;
+                    $this->items[$index]['subtotal'] = $this->items[$index]['price'] * $oldQuantity;
+
+                    $this->dispatch(
+                        'show-notification',
+                        message: "⚠️ Hanya tersedia {$availability['max_portions']} porsi {$product->name}.",
+                        type: 'warning'
+                    );
+
+                    // Force refresh to show old value
+                    $this->dispatch('$refresh');
+                    return;
+                }
+            } elseif ($product && $product->stock !== null) {
+                // For retail/raw products, check stock
+                if ($product->stock < $quantity) {
+                    // Reset to old quantity
+                    $this->items[$index]['quantity'] = $oldQuantity;
+                    $this->items[$index]['subtotal'] = $this->items[$index]['price'] * $oldQuantity;
+
+                    $this->dispatch(
+                        'show-notification',
+                        message: "⚠️ Stok {$product->name} tidak cukup (Sisa: {$product->stock}).",
+                        type: 'warning'
+                    );
+
+                    // Force refresh to show old value
+                    $this->dispatch('$refresh');
+                    return;
+                }
+            }
+
+            // Update quantity if check passed
             $this->items[$index]['quantity'] = $quantity;
             $this->items[$index]['subtotal'] = $this->items[$index]['price'] * $quantity;
-            $this->recalculateTotals();
+
+            // 🚀 PHASE 1: Invalidate availability cache and schedule recalculation
+            $this->invalidateAvailabilityCache();
+            $this->scheduleRecalculation();
         }
     }
 
@@ -197,7 +332,10 @@ trait HasCart
         if (isset($this->items[$index])) {
             unset($this->items[$index]);
             $this->items = array_values($this->items);
-            $this->recalculateTotals();
+
+            // 🚀 PHASE 1: Invalidate availability cache and schedule recalculation
+            $this->invalidateAvailabilityCache();
+            $this->scheduleRecalculation();
 
             $this->dispatch('cartUpdated', count: count($this->items));
         }
