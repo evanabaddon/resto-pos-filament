@@ -444,9 +444,9 @@ class Pos extends Page
                         ->orWhereNull('stock');
                 });
 
-            // 🔍 Filter Search - Use prefix search for better index usage
+            // 🔍 Filter Search - Use full wildcard search for better UX
             if (!empty($this->searchQuery)) {
-                $query->where('name', 'like', $this->searchQuery . '%');
+                $query->where('name', 'like', '%' . $this->searchQuery . '%');
             }
 
             // Filter Kategori
