@@ -439,6 +439,40 @@ Schedule::command('queue:work --stop-when-empty')->everyMinute();
 
 ---
 
+### 2. WhatsApp Gateway Deployment (cPanel & VPS)
+
+Khusus untuk **cPanel (Shared Hosting)**, Anda tidak dapat menjalankan aplikasi Node.js di port custom (contoh: 3000) pada domain utama karena port 80/443 sudah diambil oleh PHP/Apache.
+
+#### **Strategi Deployment (Subdomain Approach)**
+Solusi terbaik adalah menggunakan **Subdomain** khusus untuk Node.js agar berjalan di port standar HTTPS (443).
+
+1.  **Buat Subdomain**:
+    - Login ke cPanel -> **Subdomains**.
+    - Buat subdomain baru, misal: `wa.domainanda.com`.
+    - Arahkan Document Root ke folder project Node.js: `/public_html/wa-gateway`.
+
+2.  **Setup Node.js App**:
+    - Login ke cPanel -> **Setup Node.js App**.
+    - Klik **Create Application**.
+    - **Node.js Version**: Pilih v18.x / v20.x.
+    - **Application Mode**: Production.
+    - **Application Root**: `/wa-gateway` (Folder tempat code WA berada).
+    - **Application URL**: Pilih subdomain `wa.domainanda.com`.
+    - **Application Startup File**: `index.js`.
+    - Klik **Create** lalu **Start App**.
+
+3.  **Update Config Laravel**:
+    - Edit file `.env` di project Laravel Anda.
+    - Ubah URL Gateway ke subdomain yang baru dibuat:
+    ```env
+    WA_GATEWAY_URL=https://wa.shadow.biz.id
+    ```
+
+> [!NOTE]
+> Dengan cara ini, Anda tidak perlu membuka port 3000 di firewall. Aplikasi akan berjalan di balik Reverse Proxy cPanel (Passenger) secara otomatis.
+
+---
+
 ### 🛠️ Persyaratan Sistem (Requirements)
 - **PHP 8.2+** (Extension: BCMath, Ctype, Fileinfo, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML, GD)
 - **MySQL 8.0+** / MariaDB 10.4+
