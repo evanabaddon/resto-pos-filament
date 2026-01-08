@@ -238,6 +238,13 @@ trait HasPayment
     {
         $newItems = [];
 
+        \Log::info('🔍 Check New/Updated Items', [
+            'current_items_count' => count($this->items),
+            'previous_items_count' => count($this->previousItems),
+            'first_current' => $this->items[0] ?? null,
+            'first_previous' => $this->previousItems[0] ?? null
+        ]);
+
         foreach ($this->items as $currentItem) {
             $foundInPrevious = false;
 
