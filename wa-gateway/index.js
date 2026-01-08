@@ -33,13 +33,13 @@ async function connectToWhatsApp() {
 
     sock = makeWASocket({
         version,
-        logger: pino({ level: 'silent' }),
+        logger: pino({ level: 'warn' }), // Enable warning logs
         auth: state,
         browser: Browsers.ubuntu('Chrome'),
         syncFullHistory: false,
-        connectTimeoutMs: 60000,
-        keepAliveIntervalMs: 10000,
-        retryRequestDelayMs: 250
+        connectTimeoutMs: 90000, // Increase to 90s
+        keepAliveIntervalMs: 20000, // Increase to 20s
+        retryRequestDelayMs: 2000 // Increase delay
     })
 
     sock.ev.on('connection.update', async (update) => {
@@ -52,12 +52,17 @@ async function connectToWhatsApp() {
         }
 
         if (connection === 'close') {
-            const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut
+            const statusCode = (lastDisconnect?.error)?.output?.statusCode;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut &&
+                statusCode !== 428 && // Precondition Required (ignore)
+                statusCode !== 515;   // Restart Required (ignore)
+
             console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect)
             status = 'disconnected';
             qrCodeData = null;
             if (shouldReconnect) {
-                connectToWhatsApp()
+                // Add delay before reconnecting to prevent rapid loop
+                setTimeout(() => connectToWhatsApp(), 3000);
             } else {
                 console.log('Connection closed due to LOGOUT (401). Clearing credentials and restarting...');
                 const authPath = path.join(__dirname, 'auth_info_baileys');
