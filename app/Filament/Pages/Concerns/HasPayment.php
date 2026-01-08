@@ -180,11 +180,7 @@ trait HasPayment
                 $this->dispatch('show-notification', message: "✅ Order #{$invoiceNumber} berhasil disimpan!", type: 'success');
             }
 
-            // 🚀 PHASE 2: Reset POS IMMEDIATELY so cashier can start next transaction
-            $this->resetPos();
-            $this->dispatch('refreshSalesList');
-
-            // �🔹 TENTUKAN APAKAH INI UPDATE
+            // 🔹 TENTUKAN APAKAH INI UPDATE
             if ($isUpdate) {
                 // 🔹 DAPATKAN ITEM BARU/TAMBAHAN
                 $newItems = $this->getNewOrUpdatedItems();
@@ -225,6 +221,11 @@ trait HasPayment
 
             // 🔹 RESET previousItems
             $this->previousItems = [];
+
+            // 🚀 PHASE 2: Reset POS AFTER printing logic
+            $this->resetPos();
+            $this->dispatch('refreshSalesList');
+
         } catch (\Exception $e) {
             \Log::error('💥 Gagal menyimpan penjualan: ' . $e->getMessage());
             $this->dispatch('show-notification', message: 'Gagal menyimpan penjualan: ' . $e->getMessage(), type: 'error');

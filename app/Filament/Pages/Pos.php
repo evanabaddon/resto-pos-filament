@@ -1203,6 +1203,7 @@ class Pos extends Page
         // $this->resetPage(); // Disabled to prevent Alpine/dom-morph error
 
         // jangan ubah $showCashInModal agar modal hanya dikontrol saat mount/cek session
+        $this->previousItems = []; // Reset tracking items
     }
 
 
