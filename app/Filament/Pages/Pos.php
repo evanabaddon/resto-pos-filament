@@ -1053,6 +1053,17 @@ class Pos extends Page
             ];
         })->values()->toArray();
 
+        // 🔹 POPULATE previousItems agar sistem tahu mana item lama vs baru
+        $this->previousItems = array_map(function ($item) {
+            return [
+                'product_id' => $item['product_id'],
+                'name' => $item['name'],
+                'quantity' => $item['quantity'],
+                'price' => $item['price'],
+                'notes' => $item['notes'],
+            ];
+        }, $this->items);
+
         $this->recalculateTotals();
         $this->showLoadModal = false;
         $this->dispatch('show-notification', message: 'Transaksi berhasil dimuat.', type: 'success');
