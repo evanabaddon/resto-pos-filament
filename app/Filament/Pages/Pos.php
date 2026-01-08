@@ -137,6 +137,9 @@ class Pos extends Page
     public $showRewardModal = false;
     public $pointRedemptionAmount = 0;
 
+    // Cache Control
+    public $cacheVersion = 1;
+
     /**
      * Cetak Ulang Order (Kitchen/Bar)
      */
@@ -409,7 +412,8 @@ class Pos extends Page
             $this->selectedCategory . '_' .
             md5($this->searchQuery) . '_' .
             $currentPage . '_' .
-            $this->perPage; // Add perPage to cache key
+            $this->perPage . '_' .
+            $this->cacheVersion; // Add cacheVersion to force refresh
 
         return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
             // MEMORY OPTIMIZATION: Select specific columns only
@@ -571,6 +575,17 @@ class Pos extends Page
 
         // Option 2: Just let cache expire naturally (5 minutes)
         // The new search/category will create new cache key anyway
+    }
+
+    /**
+     * Manual Cache Refresh Trigger
+     */
+    public function refreshProducts()
+    {
+        $this->cacheVersion++;
+        $this->resetPage(); // Reset pagination to page 1
+
+        $this->dispatch('show-notification', message: 'Data produk berhasil diperbarui!', type: 'success');
     }
 
     /**
