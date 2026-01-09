@@ -37,6 +37,7 @@ class InventoryForecasting extends Page
     public ?string $lastGeneratedAt = null;
     public bool $isLoading = false;
     public int $forecastDays = 7;
+    public ?string $selectedDay = null; // New property for day selection
 
     public function mount(InventoryService $inventoryService)
     {
@@ -45,6 +46,7 @@ class InventoryForecasting extends Page
         }
 
         $this->historyData = $inventoryService->getForecastingData(30);
+        $this->selectedDay = date('l'); // Default to today (English)
 
         // Load cached results
         $cached = Cache::get('inventory_forecast_consolidated_v5');
@@ -63,7 +65,8 @@ class InventoryForecasting extends Page
             $data = $inventoryService->getForecastingData(30);
 
             // Forecast for 7 days, but prompt will now also ask for specialized TOMORROW forecast
-            $result = $deepSeekService->forecastStock($data, 7);
+            // Pass the selected day manually to override "Today" context
+            $result = $deepSeekService->forecastStock($data, 7, $this->selectedDay);
 
             if ($result) {
                 $this->aiResults = $result;

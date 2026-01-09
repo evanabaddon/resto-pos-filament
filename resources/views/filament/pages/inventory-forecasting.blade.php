@@ -15,6 +15,16 @@
                         Export PDF
                     </x-filament::button>
 
+                    <select wire:model="selectedDay" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="Monday">Senin</option>
+                        <option value="Tuesday">Selasa</option>
+                        <option value="Wednesday">Rabu</option>
+                        <option value="Thursday">Kamis</option>
+                        <option value="Friday">Jumat</option>
+                        <option value="Saturday">Sabtu</option>
+                        <option value="Sunday">Minggu</option>
+                    </select>
+
                     <div
                         class="flex items-center gap-2 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
                         <x-heroicon-m-clock class="w-4 h-4" />
@@ -37,6 +47,20 @@
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">Belum Ada Analisis</h3>
                 <p class="text-sm text-gray-500 mb-6 text-center max-w-xs px-4">AI akan memprediksi kebutuhan stok Anda
                     berdasarkan data konsumsi 7 hari terakhir.</p>
+                
+                <div class="mb-4 flex items-center gap-2">
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Set Hari Ini:</span>
+                    <select wire:model="selectedDay" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="Monday">Senin</option>
+                        <option value="Tuesday">Selasa</option>
+                        <option value="Wednesday">Rabu</option>
+                        <option value="Thursday">Kamis</option>
+                        <option value="Friday">Jumat</option>
+                        <option value="Saturday">Sabtu</option>
+                        <option value="Sunday">Minggu</option>
+                    </select>
+                </div>
+
                 <x-filament::button wire:click="generateAiForecast" size="lg" icon="heroicon-m-sparkles"
                     wire:loading.attr="disabled">
                     <span wire:loading.remove wire:target="generateAiForecast">Generate Analisis Sekarang</span>

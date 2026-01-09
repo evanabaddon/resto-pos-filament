@@ -317,14 +317,26 @@ class DeepSeekService
     /**
      * Generate an AI-powered stock forecast and restocking recommendation
      */
-    public function forecastStock(array $consumptionData, int $forecastDays = 7)
+    public function forecastStock(array $consumptionData, int $forecastDays = 7, ?string $overrideToday = null)
     {
         $settings = app(GeneralSettings::class);
         $aiName = $settings->ai_assistant_name ?? 'Business Assistant';
         $appName = $settings->app_name ?? 'Restoran Kami';
 
-        $currentDay = date('l'); // e.g. Monday
-        $nextDay = date('l', strtotime('+1 day'));
+        $currentDay = $overrideToday ?: date('l'); // e.g. Monday or from override
+
+        if ($overrideToday) {
+            // Calculate next day based on the override
+            $timestamp = strtotime($currentDay);
+            if ($timestamp !== false) {
+                $nextDay = date('l', strtotime($currentDay . ' +1 day'));
+            } else {
+                // Fallback if input is not a standard English day string
+                $nextDay = 'Besok';
+            }
+        } else {
+            $nextDay = date('l', strtotime('+1 day'));
+        }
 
         $systemPrompt = "Anda adalah {$aiName}, Pakar Manajemen Inventaris untuk '{$appName}'.
         
