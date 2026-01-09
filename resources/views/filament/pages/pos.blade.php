@@ -77,11 +77,11 @@
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
                     <h1 class="text-base font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
-                        <span>🍔</span> Menu Produk
+                        <span>🍔</span> {{ __('messages.menu_product') }}
                     </h1>
                     <button wire:click="refreshProducts" wire:loading.class="animate-spin text-violet-600"
                         class="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-violet-600 transition-all bg-white border border-slate-200 shadow-sm"
-                        title="Reload Produk">
+                        title="{{ __('messages.reload_product') }}">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
@@ -91,9 +91,9 @@
                 </div>
                 {{-- Validasi Kategori Name --}}
                 <div class="flex items-center gap-2 text-[10px] font-bold">
-                    <span class="text-slate-400 uppercase tracking-wider">Kategori:</span>
+                    <span class="text-slate-400 uppercase tracking-wider">{{ __('messages.category') }}:</span>
                     <span class="text-violet-600 bg-violet-50 px-2 py-0.5 rounded border border-violet-100 uppercase">
-                        {{ $selectedCategory === 'SEMUA' ? 'SEMUA' : ($categories->firstWhere('id', $selectedCategory)->name ?? '-') }}
+                        {{ $selectedCategory === 'all' ? __('messages.all_categories') : ($categories->firstWhere('id', $selectedCategory)->name ?? '-') }}
                     </span>
                 </div>
             </div>
@@ -111,7 +111,7 @@
                     </div>
                     <input wire:model.live.debounce.1000ms="searchQuery" id="product-search-input" type="text"
                         class="pl-9 block w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 rounded-lg text-xs py-1.5 transition-all font-medium placeholder-slate-400"
-                        placeholder="Cari menu... (Ctrl+K)" autocomplete="off">
+                        placeholder="{{ __('messages.search_product') }} (Ctrl+K)" autocomplete="off">
 
                     @if($searchQuery)
                         <button wire:click="$set('searchQuery', '')"
@@ -132,9 +132,9 @@
                         class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10 sm:hidden">
                     </div>
 
-                    <button wire:click="setCategory('SEMUA')"
-                        class="whitespace-nowrap px-3 py-2 rounded-lg text-[10px] font-bold transition-all border shrink-0 touch-target {{ $selectedCategory === 'SEMUA' ? 'bg-violet-600 text-white border-violet-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
-                        SEMUA
+                    <button wire:click="setCategory('all')"
+                        class="whitespace-nowrap px-3 py-2 rounded-lg text-[10px] font-bold transition-all border shrink-0 touch-target {{ $selectedCategory === 'all' ? 'bg-violet-600 text-white border-violet-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                        {{ __('messages.all_categories') }}
                     </button>
                     @foreach ($categories as $category)
                                     <button wire:click="setCategory('{{ $category->id }}')" class="whitespace-nowrap px-3 py-2 rounded-lg text-[10px] font-bold transition-all border shrink-0 touch-target
@@ -163,7 +163,7 @@
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                         </path>
                     </svg>
-                    <span class="text-xs font-medium text-violet-600">Memuat...</span>
+                    <span class="text-xs font-medium text-violet-600">{{ __('messages.loading') }}</span>
                 </div>
             </div>
 
@@ -223,9 +223,9 @@
                                     <div class="absolute top-1.5 right-1.5 z-10 pointer-events-none">
                                         <span
                                             class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-tight shadow-sm border
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {{ $remainingPortions > 5 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             {{ $remainingPortions > 5 ? 'bg-white/90 text-emerald-700 border-emerald-100' :
                                 ($remainingPortions > 0 ? 'bg-white/90 text-amber-700 border-amber-100' : 'bg-white/90 text-rose-700 border-rose-100') }}">
-                                            {{ $remainingPortions }} porsi
+                                            {{ $remainingPortions }} {{ __('messages.portions') }}
                                         </span>
                                     </div>
                             @endif
@@ -236,7 +236,7 @@
                             <div
                                 class="absolute inset-0 z-20 flex items-center justify-center bg-white/90 rounded-xl pointer-events-none">
                                 <span
-                                    class="px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold rounded shadow-lg transform -rotate-6 tracking-wider">HABIS</span>
+                                    class="px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold rounded shadow-lg transform -rotate-6 tracking-wider">{{ __('messages.out_of_stock') }}</span>
                             </div>
                         @endif
 
@@ -292,8 +292,8 @@
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-sm font-bold text-slate-600">Produk tidak ditemukan</h3>
-                        <p class="text-xs mt-1">Coba kata kunci lain atau pilih kategori berbeda.</p>
+                        <h3 class="text-sm font-bold text-slate-600">{{ __('messages.empty_cart') }}</h3>
+                        <p class="text-xs mt-1">{{ __('messages.search_product') }}</p>
                     </div>
                 @endforelse
             </div>
@@ -328,7 +328,7 @@
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
                     <h1 class="text-base font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
-                        <span>🛒</span> Keranjang
+                        <span>🛒</span> {{ __('messages.order_list') }}
                     </h1>
                     <span
                         class="font-mono font-bold text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100">{{ $orderNumber }}</span>
@@ -351,13 +351,13 @@
                     <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200 shrink-0 gap-1 items-center">
                         <button wire:click="setOrderType('Dine In')"
                             class="h-full px-3 rounded-md text-[10px] font-bold transition flex items-center gap-1.5 {{ $orderType === 'Dine In' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200' }}"
-                            title="Dine In">
-                            <span>🍽️</span> Dine In
+                            title="{{ __('messages.dine_in') }}">
+                            <span>🍽️</span> {{ __('messages.dine_in') }}
                         </button>
                         <button wire:click="setOrderType('Take Away')"
                             class="h-full px-3 rounded-md text-[10px] font-bold transition flex items-center gap-1.5 {{ $orderType === 'Take Away' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200' }}"
-                            title="Take Away">
-                            <span>🥡</span> Take Away
+                            title="{{ __('messages.take_away') }}">
+                            <span>🥡</span> {{ __('messages.take_away') }}
                         </button>
                     </div>
 
@@ -372,7 +372,7 @@
                         </div>
                         <input type="text" wire:model="customerName"
                             class="block w-full h-full pl-8 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-medium truncate"
-                            placeholder="Nama Pelanggan">
+                            placeholder="{{ __('messages.customer_name') }}">
                     </div>
 
                     {{-- 3. Table Number (Conditional) --}}
@@ -381,7 +381,7 @@
                         <div class="w-14 shrink-0 relative animate-fade-in-right">
                             <input type="text" wire:model="tableNumber"
                                 class="block w-full h-full px-0 text-center bg-slate-50 border border-slate-200 rounded-lg text-xs placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all font-bold text-slate-700"
-                                placeholder="No.">
+                                placeholder="{{ __('messages.table_no') }}">
                         </div>
                     @endif
                 </div>
@@ -413,7 +413,7 @@
                             <div class="flex items-center gap-1">
                                 <button wire:click="openRewardModal"
                                     class="text-[9px] font-bold text-white bg-violet-600 hover:bg-violet-700 px-2 py-1 rounded shadow-sm transition">
-                                    Tukar Poin
+                                    {{ __('messages.redeem') }}
                                 </button>
                                 <button wire:click="removeMember"
                                     class="text-rose-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition">
@@ -436,12 +436,12 @@
                                 </div>
                                 <input type="text" wire:model.live.debounce.300ms="memberSearchQuery"
                                     class="block w-full pl-9 pr-3 py-1.5 border border-slate-200 bg-slate-50/50 rounded-lg text-xs placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm font-medium"
-                                    placeholder="Cari Member..." autocomplete="off">
+                                    placeholder="{{ __('messages.search_member') }}" autocomplete="off">
                             </div>
 
                             <button type="button" wire:click="$dispatch('openCreateMemberModal')"
                                 class="shrink-0 bg-violet-600 text-white p-1.5 rounded-lg hover:bg-violet-700 transition shadow-sm flex items-center justify-center custom-quick-add-btn"
-                                title="Member Baru">
+                                title="{{ __('messages.member_new') }}">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 4v16m8-8H4"></path>
@@ -486,7 +486,7 @@
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                         </path>
                     </svg>
-                    <span class="text-xs font-medium text-violet-600">Sync...</span>
+                    <span class="text-xs font-medium text-violet-600">{{ __('messages.syncing') }}</span>
                 </div>
             </div>
 
@@ -553,16 +553,16 @@
                                 <div class="flex gap-2">
                                     <button wire:click="openEditNotes({{ $index }})"
                                         class="text-[10px] text-amber-500 hover:text-amber-700 font-bold flex items-center gap-0.5"
-                                        title="Edit Catatan">
+                                        title="{{ __('messages.notes') }}">
                                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
                                             </path>
                                         </svg>
-                                        {{ !empty($item['notes']) ? 'Edit' : '' }}
+                                        {{ !empty($item['notes']) ? __('messages.edit') : '' }}
                                     </button>
                                     <button wire:click="removeItem({{ $index }})"
-                                        class="text-[10px] text-rose-400 hover:text-rose-600 font-bold" title="Hapus Item">
+                                        class="text-[10px] text-rose-400 hover:text-rose-600 font-bold" title="{{ __('messages.remove_item_tooltip') }}">
                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -587,7 +587,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                             d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                     </svg>
-                    <p class="text-xs">Keranjang masih kosong</p>
+                    <p class="text-xs">{{ __('messages.empty_cart') }}</p>
                 </div>
             @endforelse
 
@@ -602,14 +602,14 @@
             <div class="px-3 py-2 border-b border-gray-100 bg-slate-50/50 flex gap-2">
                 <input type="text" wire:model.defer="discountCodeInput"
                     class="flex-1 bg-white border border-slate-300 rounded-lg py-1.5 px-3 text-xs focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition min-w-0"
-                    placeholder="Kode Voucher...">
+                    placeholder="{{ __('messages.voucher_code_placeholder') }}">
                 <button wire:click="applyDiscountCode"
                     class="bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap">
-                    Pakai
+                    {{ __('messages.apply') }}
                 </button>
                 <button wire:click="$dispatch('openManualDiscountModal')"
                     class="text-violet-600 bg-violet-50 hover:bg-violet-100 px-3 py-1.5 rounded-lg text-xs font-bold transition border border-violet-100">
-                    Manual
+                    {{ __('messages.manual') }}
                 </button>
             </div>
 
@@ -624,22 +624,22 @@
             {{-- Ringkasan Harga --}}
             <div class="px-4 py-3 space-y-1 bg-white">
                 <div class="flex justify-between text-[11px] text-slate-500 mobile-text-xs">
-                    <span>Subtotal</span>
+                    <span>{{ __('messages.subtotal') }}</span>
                     <span class="font-mono font-medium">Rp{{ number_format($total, 0, ',', '.') }}</span>
                 </div>
                 <div class="flex justify-between text-[11px] text-slate-500 mobile-text-xs">
-                    <span>Pajak (10%)</span>
+                    <span>{{ __('messages.tax') }} (10%)</span>
                     <span class="font-mono font-medium">Rp{{ number_format($tax, 0, ',', '.') }}</span>
                 </div>
                 @if($discount > 0)
                     <div class="flex justify-between text-[11px] text-emerald-600 mobile-text-xs font-bold">
-                        <span>Potongan</span>
+                        <span>{{ __('messages.discount') }}</span>
                         <span class="font-mono">- Rp{{ number_format($discount, 0, ',', '.') }}</span>
                     </div>
                 @endif
                 <div class="border-t border-dashed border-gray-200 pt-2 mt-1">
                     <div class="flex justify-between items-end">
-                        <span class="text-xs font-bold text-slate-800 mobile-text-sm">Total Tagihan</span>
+                        <span class="text-xs font-bold text-slate-800 mobile-text-sm">{{ __('messages.grand_total') }}</span>
                         <span
                             class="text-xl font-black text-violet-600 mobile-text-lg leading-none">Rp{{ number_format($finalTotal, 0, ',', '.') }}</span>
                     </div>
@@ -666,8 +666,8 @@
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                         </path>
                     </svg>
-                    <span wire:loading.remove wire:target="openPaymentModal">Bayar Sekarang</span>
-                    <span wire:loading wire:target="openPaymentModal">Memproses...</span>
+                    <span wire:loading.remove wire:target="openPaymentModal">{{ __('messages.process_payment') }}</span>
+                    <span wire:loading wire:target="openPaymentModal">{{ __('messages.analyzing') }}</span>
                 </button>
 
                 {{-- 2. Secondary Actions: SAVE & PRINT --}}
@@ -680,13 +680,13 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                         </svg>
-                        <span wire:loading.remove wire:target="saveSale">Simpan Order</span>
-                        <span wire:loading wire:target="saveSale">Menyimpan...</span>
+                        <span wire:loading.remove wire:target="saveSale">{{ __('messages.save') }}</span>
+                        <span wire:loading wire:target="saveSale">{{ __('messages.save') }}...</span>
                     </button>
 
                     <button wire:click="reprintOrder" wire:loading.attr="disabled"
                         class="cursor-pointer bg-slate-700 hover:bg-slate-800 text-white py-2 rounded-lg font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed touch-target"
-                        {{ !$saleId ? 'disabled' : '' }} title="Cetak ulang order ke dapur">
+                        {{ !$saleId ? 'disabled' : '' }} title="{{ __('messages.reprint_order_kitchen') }}">
                         <svg wire:loading.remove wire:target="reprintOrder" class="w-4 h-4" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -699,7 +699,7 @@
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                             </path>
                         </svg>
-                        Cetak Order
+                        {{ __('messages.print_order') }}
                     </button>
                 </div>
 
@@ -712,7 +712,7 @@
                                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
                             </path>
                         </svg>
-                        Daftar Order
+                        {{ __('messages.order_list_button') }}
                     </button>
 
                     <button wire:click="openMergeModal"
@@ -721,7 +721,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                         </svg>
-                        Gabung Bill
+                        {{ __('messages.merge_bill') }}
                     </button>
 
                     <button wire:click="cancelSale"
@@ -730,7 +730,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
-                        Batal
+                        {{ __('messages.cancel') }}
                     </button>
                 </div>
             </div>
@@ -768,11 +768,11 @@
                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
                                             </path>
                                         </svg>
-                                        Catatan untuk {{ $this->editingItem['name'] ?? 'Item' }}
+                                        {{ __('messages.note_for') }} {{ $this->editingItem['name'] ?? 'Item' }}
                                     </span>
                                 </h3>
                                 <p class="text-sm text-blue-100 mt-1">
-                                    Tambahkan catatan khusus untuk item ini
+                                    {{ __('messages.add_special_note') }}
                                 </p>
                             </div>
                             <button @click="$wire.cancelEditNotes()"
@@ -790,12 +790,12 @@
                         <!-- Input Notes -->
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Catatan Khusus
-                                <span class="text-xs text-gray-500">(contoh: "Pedas", "Tanpa acar", "Tambah keju")</span>
+                                {{ __('messages.special_note') }}
+                                <span class="text-xs text-gray-500">{{ __('messages.note_example') }}</span>
                             </label>
                             <textarea wire:model="itemNotes" rows="3"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm"
-                                placeholder="Masukkan catatan khusus untuk item ini..." autofocus></textarea>
+                                placeholder="{{ __('messages.enter_note_placeholder') }}" autofocus></textarea>
                         </div>
 
                         <!-- Examples -->
@@ -805,7 +805,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                Contoh catatan populer:
+                                {{ __('messages.popular_notes') }}
                             </p>
                             <div class="grid grid-cols-2 gap-2 text-xs text-yellow-700">
                                 <span class="bg-yellow-100 px-2 py-1 rounded">• Pedas level 3</span>
@@ -822,7 +822,7 @@
                     <div class="px-6 py-3 bg-gray-100 border-t border-gray-200 rounded-b-lg flex justify-end space-x-3">
                         <button @click="$wire.cancelEditNotes()"
                             class="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition">
-                            Batal
+                            {{ __('messages.cancel') }}
                         </button>
                         <button wire:click="saveItemNotes" wire:loading.attr="disabled"
                             wire:loading.class="opacity-50 cursor-not-allowed"
@@ -839,7 +839,7 @@
                                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                                     </path>
                                 </svg>
-                                Simpan Catatan
+                                {{ __('messages.save_note') }}
                             </span>
                         </button>
                     </div>
@@ -870,8 +870,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h2 class="text-xl font-bold text-gray-900">Merger Bill</h2>
-                            <p class="text-sm text-gray-500">Gabungkan beberapa transaksi draft menjadi satu invoice.</p>
+                            <h2 class="text-xl font-bold text-gray-900">{{ __('messages.merge_bill_title') }}</h2>
+                            <p class="text-sm text-gray-500">{{ __('messages.merge_bill_desc') }}</p>
                         </div>
                     </div>
                     <button wire:click="$set('showMergeModal', false)"
@@ -897,11 +897,11 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 6h16M4 12h16M4 18h7"></path>
                                 </svg>
-                                Pilih Transaksi (Draft)
+                                {{ __('messages.select_transaction') }}
                             </h3>
                             <span
                                 class="text-xs px-2 py-1 bg-white border border-gray-200 rounded-md text-gray-500 font-mono">
-                                {{ count($salesData) }} Available
+                                {{ count($salesData) }} {{ __('messages.available') }}
                             </span>
                         </div>
 
@@ -912,7 +912,7 @@
                                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                     </path>
                                 </svg>
-                                <p>Tidak ada transaksi draft tersedia.</p>
+                                <p>{{ __('messages.no_draft') }}</p>
                             </div>
                         @else
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -936,7 +936,7 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                     d="M5 13l4 4L19 7"></path>
                                                             </svg>
-                                                            TARGET
+                                                            {{ __('messages.make_target') }}
                                                         </span>
                                                     @elseif($isSelected)
                                                         <div
@@ -985,7 +985,7 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                     d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                                             </svg>
-                                                            Jadikan Tujuan
+                                                            {{ __('messages.set_target') }}
                                                         </button>
                                                     </div>
                                                 @endif
@@ -1005,7 +1005,7 @@
                                         d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                     </path>
                                 </svg>
-                                Ringkasan Merge
+                                {{ __('messages.merge_summary') }}
                             </h3>
 
                             <!-- Flow Visualization -->
@@ -1013,9 +1013,8 @@
                                 <!-- Source List -->
                                 <div class="space-y-2">
                                     <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                                        Sumber ({{ max(0, count($selectedSalesToMerge) - ($mergeTargetSale ? 1 : 0)) }})
-                                        <span class="font-normal normal-case text-red-400 ml-1 text-[10px]">(Akan
-                                            Dihapus)</span>
+                                        {{ __('messages.source') }} ({{ max(0, count($selectedSalesToMerge) - ($mergeTargetSale ? 1 : 0)) }})
+                                        <span class="font-normal normal-case text-red-400 ml-1 text-[10px]">{{ __('messages.will_be_deleted') }}</span>
                                     </div>
                                     <div
                                         class="bg-gray-50 rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto border border-gray-100">
@@ -1038,8 +1037,7 @@
                                         @endforeach
 
                                         @if(!$hasSources)
-                                            <div class="text-xs text-gray-400 italic text-center py-2">Belum ada transaksi
-                                                sumber</div>
+                                            <div class="text-xs text-gray-400 italic text-center py-2">{{ __('messages.no_source_transaction') }}</div>
                                         @endif
                                     </div>
                                 </div>
@@ -1057,8 +1055,7 @@
 
                                 <!-- Target Display -->
                                 <div>
-                                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Target
-                                        Invoice</div>
+                                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{{ __('messages.target_invoice') }}</div>
                                     @if($mergeTargetSale)
                                         @php $target = collect($salesData)->firstWhere('id', $mergeTargetSale); @endphp
                                         <div
@@ -1071,7 +1068,7 @@
                                                 </svg>
                                             </div>
                                             <div class="relative z-10">
-                                                <div class="text-xs text-green-600 font-bold mb-1">FINAL INVOICE</div>
+                                                <div class="text-xs text-green-600 font-bold mb-1">{{ __('messages.final_invoice') }}</div>
                                                 <div class="text-xl font-black text-gray-900 font-mono mb-1">
                                                     {{ $target['invoice_number'] ?? '...' }}
                                                 </div>
@@ -1081,8 +1078,7 @@
                                         </div>
                                     @else
                                         <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
-                                            <span class="text-sm text-gray-400 font-medium">Pilih salah satu &<br>klik "Jadikan
-                                                Tujuan"</span>
+                                            <span class="text-sm text-gray-400 font-medium">{!! __('messages.select_transaction_instruction') !!}</span>
                                         </div>
                                     @endif
                                 </div>
@@ -1092,7 +1088,7 @@
                             <div class="mt-auto pt-6 border-t border-gray-100">
                                 <!-- Est Total -->
                                 <div class="flex justify-between items-end mb-4">
-                                    <span class="text-sm text-gray-500 font-medium">Estimasi Total</span>
+                                    <span class="text-sm text-gray-500 font-medium">{{ __('messages.est_total') }}</span>
                                     <div class="text-2xl font-bold text-purple-600">
                                         Rp{{ number_format(collect($salesData)->whereIn('id', $selectedSalesToMerge)->sum('final_total'), 0, ',', '.') }}
                                     </div>
@@ -1109,11 +1105,11 @@
                                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                         </path>
                                     </svg>
-                                    <span>GABUNGKAN SEKARANG</span>
+                                    <span>{{ __('messages.merge_now') }}</span>
                                 </button>
                                 <button wire:click="$set('showMergeModal', false)"
                                     class="w-full mt-3 py-2 text-sm text-gray-500 hover:text-gray-700 font-medium cursor-pointer">
-                                    Batal
+                                    {{ __('messages.cancel') }}
                                 </button>
                             </div>
                         </div>
@@ -1145,8 +1141,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h2 class="text-lg font-bold">Tukar Poin Reward</h2>
-                            <p class="text-xs text-violet-100">Saldo Poin:
+                            <h2 class="text-lg font-bold">{{ __('messages.reward_redemption_title') }}</h2>
+                            <p class="text-xs text-violet-100">{{ __('messages.point_balance') }}:
                                 {{ number_format($selectedMember->points_balance ?? 0) }}
                             </p>
                         </div>
@@ -1166,12 +1162,11 @@
                     {{-- Section 1: Pay with Points --}}
                     <div class="bg-white p-4 rounded-xl border border-violet-100 shadow-sm">
                         <h3 class="font-bold text-gray-800 text-sm mb-2 flex items-center gap-2">
-                            <span>💳</span> Tukar Poin Jadi Diskon
+                            <span>💳</span> {{ __('messages.redeem_points_discount') }}
                         </h3>
                         <div class="flex gap-2">
                             <div class="flex-1">
-                                <label class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Jumlah
-                                    Poin</label>
+                                <label class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{{ __('messages.point_amount') }}</label>
                                 <div class="relative mt-1">
                                     <input type="number" wire:model.live.debounce.500ms="pointRedemptionAmount"
                                         class="block w-full pl-3 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-sm font-bold"
@@ -1183,11 +1178,11 @@
                                 </div>
                                 <div class="flex justify-between items-center mt-1">
                                     <div class="text-[10px] text-gray-400 font-bold">
-                                        Dimiliki: {{ $selectedMember->points_balance ?? 0 }}
+                                        {{ __('messages.owned') }}: {{ $selectedMember->points_balance ?? 0 }}
                                     </div>
                                     <div
                                         class="text-[10px] font-bold {{ ($selectedMember->points_balance ?? 0) - (int) $pointRedemptionAmount < 0 ? 'text-red-500' : 'text-violet-600' }}">
-                                        Sisa:
+                                        {{ __('messages.remaining') }}:
                                         {{ max(0, ($selectedMember->points_balance ?? 0) - (int) $pointRedemptionAmount) }}
                                     </div>
                                 </div>
@@ -1199,8 +1194,7 @@
                                 </svg>
                             </div>
                             <div class="flex-1">
-                                <label class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Nilai
-                                    Diskon</label>
+                                <label class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{{ __('messages.discount_value') }}</label>
                                 @inject('settings', 'App\Settings\GeneralSettings')
                                 <div
                                     class="mt-1 py-2 px-3 bg-gray-100 border border-gray-200 rounded-lg text-sm font-bold text-gray-700">
@@ -1215,14 +1209,14 @@
                         <button wire:click="redeemPointsForDiscount"
                             class="mt-3 w-full bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-lg text-xs font-bold transition shadow-sm active:scale-95 flex justify-center items-center gap-2"
                             {{ (int) $pointRedemptionAmount <= 0 || (int) $pointRedemptionAmount > ($selectedMember->points_balance ?? 0) ? 'disabled' : '' }}>
-                            Gunakan Poin
+                            {{ __('messages.use_points') }}
                         </button>
                     </div>
 
                     {{-- Section 2: Product Rewards --}}
                     <div>
                         <h3 class="font-bold text-gray-800 text-sm mb-2 flex items-center gap-2 px-1">
-                            <span>🎁</span> Tukar Produk
+                            <span>🎁</span> {{ __('messages.redeem_product') }}
                         </h3>
                         <div class="space-y-3">
                             @forelse($this->availableRewards as $reward)
@@ -1256,7 +1250,7 @@
                             @empty
                                 <div
                                     class="text-center py-6 text-gray-400 text-sm bg-white rounded-xl border border-gray-100 border-dashed">
-                                    Tidak ada reward produk yang tersedia.
+                                    {{ __('messages.no_product_reward') }}
                                 </div>
                             @endforelse
                         </div>

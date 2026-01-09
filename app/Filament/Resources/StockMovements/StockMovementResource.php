@@ -24,7 +24,25 @@ class StockMovementResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Produk';
 
-    protected static ?string $navigationLabel = 'Mutasi Stok';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.stock_movements');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.stock_movement');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.stock_movements');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.menu_product');
+    }
 
     protected static ?int $navigationSort = 49;
 

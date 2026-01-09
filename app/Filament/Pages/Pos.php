@@ -38,9 +38,24 @@ class Pos extends Page
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-path-rounded-square';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Transaksi';
+    protected static string|UnitEnum|null $navigationGroup = null;
 
-    protected static ?string $navigationLabel = 'POS';
+    protected static ?string $navigationLabel = null;
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.pos_page_title');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.transactions');
+    }
+
+    public function getTitle(): string
+    {
+        return __('messages.pos_page_title');
+    }
 
     // RBAC: super_admin, admin, cashier, waiter
     public static function canAccess(): bool
@@ -79,7 +94,7 @@ class Pos extends Page
     public function handlePaymentRequested($saleId)
     {
         if (auth()->user()->role === \App\Enums\UserRole::Waiter) {
-            $this->dispatch('show-notification', message: 'Akses Ditolak: Waiter tidak dapat memproses pembayaran (hanya input order).', type: 'error');
+            $this->dispatch('show-notification', message: __('messages.access_denied_waiter'), type: 'error');
             return;
         }
 
@@ -101,7 +116,7 @@ class Pos extends Page
     public $orderType = 'Dine In';
     public $orderNumber = '';
     public $customerName = '';
-    public $selectedCategory = 'SEMUA';
+    public $selectedCategory = 'all';
     public $discountCodeInput = '';
     public $discountMessage = '';
     public $discountApplied = false;
@@ -146,7 +161,7 @@ class Pos extends Page
     public function reprintOrder()
     {
         if (!$this->saleId) {
-            $this->dispatch('show-notification', message: 'Tidak ada transaksi aktif untuk dicetak ulang.', type: 'warning');
+            $this->dispatch('show-notification', message: __('messages.no_active_transaction_reprint'), type: 'warning');
             return;
         }
 
@@ -155,10 +170,10 @@ class Pos extends Page
             $service = new OrderPrintService();
             $service->printOrderByProductType($sale);
 
-            $this->dispatch('show-notification', message: 'Print job ulang berhasil dikirim ke Dapur/Bar.', type: 'success');
+            $this->dispatch('show-notification', message: __('messages.reprint_success'), type: 'success');
         } catch (\Exception $e) {
             \Log::error('Reprint failed: ' . $e->getMessage());
-            $this->dispatch('show-notification', message: 'Gagal mencetak ulang: ' . $e->getMessage(), type: 'error');
+            $this->dispatch('show-notification', message: __('messages.reprint_failed', ['error' => $e->getMessage()]), type: 'error');
         }
     }
 
@@ -224,7 +239,7 @@ class Pos extends Page
         $this->cashSessionId = $session->id;
         session(['cash_session_id' => $session->id]);
 
-        $this->dispatch('show-notification', message: 'Kas awal Rp ' . number_format($cashInHand, 0, ',', '.') . ' berhasil diset.', type: 'success');
+        $this->dispatch('show-notification', message: __('messages.cash_in_success', ['amount' => number_format($cashInHand, 0, ',', '.')]), type: 'success');
     }
 
     public function handleCashInCancelled()
@@ -247,7 +262,7 @@ class Pos extends Page
         $this->dispatch('refreshSalesList')->to(PosLoadModal::class);
 
         // Notify user
-        $this->dispatch('show-notification', message: 'Data penjualan offline berhasil dimuat.', type: 'info');
+        $this->dispatch('show-notification', message: __('messages.offline_sales_synced'), type: 'info');
     }
 
 
@@ -256,8 +271,8 @@ class Pos extends Page
     {
         if ($this->cashInHand <= 0) {
             Notification::make()
-                ->title('Input tidak valid')
-                ->body('Masukkan nominal kas awal yang benar.')
+                ->title(__('messages.invalid_input'))
+                ->body(__('messages.invalid_cash_in_amount'))
                 ->danger()
                 ->send();
             return;
@@ -275,7 +290,7 @@ class Pos extends Page
 
         $this->showCashInModal = false;
 
-        $this->dispatch('show-notification', message: 'Kas awal Rp ' . number_format($this->cashInHand, 0, ',', '.') . ' berhasil diset.', type: 'success');
+        $this->dispatch('show-notification', message: __('messages.cash_in_success', ['amount' => number_format($this->cashInHand, 0, ',', '.')]), type: 'success');
     }
 
     public function cancelCashIn()
@@ -290,8 +305,8 @@ class Pos extends Page
 
         if (!$session) {
             Notification::make()
-                ->title('Tidak ada sesi aktif')
-                ->body('Tidak ada sesi kas yang sedang berjalan.')
+                ->title(__('messages.no_active_session'))
+                ->body(__('messages.no_running_cash_session'))
                 ->warning()
                 ->send();
             return;
@@ -320,8 +335,8 @@ class Pos extends Page
         $difference = $cashOut - $expectedCash;
 
         Notification::make()
-            ->title('Shift Ditutup')
-            ->body('Shift kasir telah ditutup. Selisih: Rp ' . number_format($difference, 0, ',', '.'))
+            ->title(__('messages.shift_closed'))
+            ->body(__('messages.shift_closed_variance', ['difference' => number_format($difference, 0, ',', '.')]))
             ->success()
             ->send();
 
@@ -334,7 +349,7 @@ class Pos extends Page
     public function cancelSale(): void
     {
         $this->resetPos();
-        $this->dispatch('show-notification', message: 'Transaksi dibatalkan.', type: 'info');
+        $this->dispatch('show-notification', message: __('messages.transaction_cancelled'), type: 'info');
     }
 
     public function getNameUserLogin(): string
@@ -390,7 +405,7 @@ class Pos extends Page
     {
         $this->searchQuery = '';
         $this->resetPage();
-        $this->dispatch('show-notification', message: 'Pencarian dibersihkan', type: 'info');
+        $this->dispatch('show-notification', message: __('messages.search_cleared'), type: 'info');
     }
 
     public function getCategoriesProperty()
@@ -450,7 +465,7 @@ class Pos extends Page
             }
 
             // Filter Kategori
-            if ($this->selectedCategory !== 'SEMUA') {
+            if ($this->selectedCategory !== 'all') {
                 $query->where('category_id', $this->selectedCategory);
             }
 
@@ -663,7 +678,7 @@ class Pos extends Page
             $this->itemNotes = '';
 
             $this->dispatch('closeNotesModal');
-            $this->dispatch('show-notification', message: 'Catatan berhasil disimpan!', type: 'success');
+            $this->dispatch('show-notification', message: __('messages.notes_saved'), type: 'success');
         }
     }
 
@@ -711,7 +726,7 @@ class Pos extends Page
             $this->memberSearchQuery = '';
             $this->foundMembers = [];
 
-            $this->dispatch('show-notification', message: "Member terpilih: {$member->name}", type: 'success');
+            $this->dispatch('show-notification', message: __('messages.member_selected', ['name' => $member->name]), type: 'success');
         }
     }
 
@@ -723,7 +738,7 @@ class Pos extends Page
         $this->memberId = null;
         $this->selectedMember = null;
         $this->customerName = ''; // Optional reset
-        $this->dispatch('show-notification', message: 'Member dihapus dari transaksi.', type: 'info');
+        $this->dispatch('show-notification', message: __('messages.member_removed'), type: 'info');
     }
 
 
@@ -738,7 +753,7 @@ class Pos extends Page
     public function openRewardModal()
     {
         if (!$this->selectedMember) {
-            $this->dispatch('show-notification', message: 'Pilih member terlebih dahulu!', type: 'error');
+            $this->dispatch('show-notification', message: __('messages.select_member_first'), type: 'error');
             return;
         }
         $this->showRewardModal = true;
@@ -752,12 +767,12 @@ class Pos extends Page
         $reward = \App\Models\LoyaltyReward::with('product')->find($rewardId);
 
         if (!$reward || !$reward->product) {
-            $this->dispatch('show-notification', message: 'Reward tidak valid.', type: 'error');
+            $this->dispatch('show-notification', message: __('messages.invalid_reward'), type: 'error');
             return;
         }
 
         if ($this->selectedMember->points_balance < $reward->points_required) {
-            $this->dispatch('show-notification', message: 'Poin tidak mencukupi!', type: 'error');
+            $this->dispatch('show-notification', message: __('messages.insufficient_points'), type: 'error');
             return;
         }
 
@@ -765,13 +780,13 @@ class Pos extends Page
         $this->addItemToCart($reward->product, 1, 0, "🎁 Reward: " . $reward->name);
 
         $this->showRewardModal = false;
-        $this->dispatch('show-notification', message: 'Reward berhasil ditambahkan ke keranjang!', type: 'success');
+        $this->dispatch('show-notification', message: __('messages.reward_added'), type: 'success');
     }
 
     public function updatedPointRedemptionAmount()
     {
         if ($this->selectedMember && $this->pointRedemptionAmount > $this->selectedMember->points_balance) {
-            $this->dispatch('show-notification', message: 'Jumlah poin melebihi saldo member!', type: 'error');
+            $this->dispatch('show-notification', message: __('messages.points_exceed_balance'), type: 'error');
         }
     }
 
@@ -783,7 +798,7 @@ class Pos extends Page
         $pointsToRedeem = (int) $this->pointRedemptionAmount;
 
         if ($pointsToRedeem <= 0) {
-            $this->dispatch('show-notification', message: 'Jumlah poin harus lebih dari 0.', type: 'error');
+            $this->dispatch('show-notification', message: __('messages.points_must_be_positive'), type: 'error');
             return;
         }
 
@@ -805,7 +820,7 @@ class Pos extends Page
         if ($this->selectedMember->points_balance < $totalPointsNeeded) {
             $this->dispatch(
                 'show-notification',
-                message: "Poin tidak cukup! Sisa: " . ($this->selectedMember->points_balance - $existingPointsUsed),
+                message: __('messages.points_insufficient_remaining', ['balance' => ($this->selectedMember->points_balance - $existingPointsUsed)]),
                 type: 'error'
             );
             return;
@@ -820,7 +835,7 @@ class Pos extends Page
             $newTotalPoints = $existingPointsUsed + $pointsToRedeem;
             $newTotalDiscount = $newTotalPoints * $pointValue;
 
-            $this->items[$existingDiscountIndex]['name'] = '✨ Diskon Poin (' . number_format($newTotalPoints) . ' Pts)';
+            $this->items[$existingDiscountIndex]['name'] = __('messages.discount_points_name', ['points' => number_format($newTotalPoints)]);
             $this->items[$existingDiscountIndex]['price'] = -$newTotalDiscount;
             $this->items[$existingDiscountIndex]['subtotal'] = -$newTotalDiscount;
             $this->items[$existingDiscountIndex]['notes'] = 'Redeemed: ' . $newTotalPoints . ' Pts';
@@ -829,7 +844,7 @@ class Pos extends Page
             $discountAmount = $pointsToRedeem * $pointValue;
             $this->items[] = [
                 'product_id' => null,
-                'name' => '✨ Diskon Poin (' . number_format($pointsToRedeem) . ' Pts)',
+                'name' => __('messages.discount_points_name', ['points' => number_format($pointsToRedeem)]),
                 'quantity' => 1,
                 'price' => -$discountAmount,
                 'subtotal' => -$discountAmount,
@@ -840,7 +855,7 @@ class Pos extends Page
         $this->recalculateTotals();
         $this->showRewardModal = false;
         $this->pointRedemptionAmount = 0;
-        $this->dispatch('show-notification', message: "Diskon berhasil ditambahkan!", type: 'success');
+        $this->dispatch('show-notification', message: __('messages.discount_success'), type: 'success');
     }
 
     protected function addItemToCart($product, $qty, $price, $note = '')
@@ -916,7 +931,7 @@ class Pos extends Page
                 if (!$availability['available']) {
                     $this->dispatch(
                         'show-notification',
-                        message: "⚠️ Hanya tersedia {$availability['max_portions']} porsi {$product->name}.",
+                        message: __('messages.only_x_portions_available', ['portions' => $availability['max_portions'], 'product' => $product->name]),
                         type: 'warning'
                     );
                     return;
@@ -977,10 +992,10 @@ class Pos extends Page
         if ($type === 'percentage') {
             $percentage = min(100, max(0, $value));
             $discountAmount = $this->total * ($percentage / 100);
-            $this->discountMessage = "Diskon Manual: {$percentage}%" . ($reason ? " ({$reason})" : "");
+            $this->discountMessage = __('messages.manual_discount_label', ['value' => "{$percentage}%" . ($reason ? " ({$reason})" : "")]);
         } else {
             $discountAmount = min($this->total, max(0, $value));
-            $this->discountMessage = "Diskon Manual: Rp " . number_format($discountAmount, 0, ',', '.') . ($reason ? " ({$reason})" : "");
+            $this->discountMessage = __('messages.manual_discount_label', ['value' => "Rp " . number_format($discountAmount, 0, ',', '.') . ($reason ? " ({$reason})" : "")]);
         }
 
         $this->discount = $discountAmount;
@@ -991,7 +1006,7 @@ class Pos extends Page
         $this->recalculateTotals();
 
         $this->dispatch('close-modal', id: 'manual-discount-modal');
-        $this->dispatch('show-notification', message: 'Diskon manual berhasil diterapkan.', type: 'success');
+        $this->dispatch('show-notification', message: __('messages.manual_discount_applied'), type: 'success');
     }
 
     public function openLoadModal()
@@ -1045,7 +1060,7 @@ class Pos extends Page
 
             return [
                 'product_id' => $first->product_id,
-                'name' => $product?->name ?? $first->product_name ?? '(Produk dihapus)',
+                'name' => $product?->name ?? $first->product_name ?? __('messages.product_deleted'),
                 'quantity' => $qty,
                 'price' => $price,
                 'subtotal' => $price * $qty,
@@ -1066,7 +1081,7 @@ class Pos extends Page
 
         $this->recalculateTotals();
         $this->showLoadModal = false;
-        $this->dispatch('show-notification', message: 'Transaksi berhasil dimuat.', type: 'success');
+        $this->dispatch('show-notification', message: __('messages.transaction_loaded'), type: 'success');
     }
 
 
@@ -1077,7 +1092,7 @@ class Pos extends Page
 
         // Header
         $content .= "<div class='text-center'>";
-        $content .= "<h1 class='font-bold text-lg uppercase'>STRUK PEMBAYARAN</h1>";
+        $content .= "<h1 class='font-bold text-lg uppercase'>" . __('messages.receipt_title') . "</h1>";
         $content .= "<p class='text-sm'>" . config('app.name') . "</p>";
         $content .= "<p class='text-xs'>" . $sale->created_at->format('d/m/Y H:i') . "</p>";
         $content .= "</div>";
@@ -1086,9 +1101,9 @@ class Pos extends Page
 
         // Info Transaksi
         $content .= "<div class='space-y-1 text-sm'>";
-        $content .= "<div class='flex justify-between'><span>No. Transaksi:</span><span class='font-semibold'>" . $sale->invoice_number . "</span></div>";
-        $content .= "<div class='flex justify-between'><span>Kasir:</span><span>" . ($sale->user->name ?? 'System') . "</span></div>";
-        $content .= "<div class='flex justify-between'><span>Customer:</span><span>" . ($sale->customer_name ?? 'Umum') . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>" . __('messages.receipt_transaction_no') . "</span><span class='font-semibold'>" . $sale->invoice_number . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>" . __('messages.receipt_cashier') . "</span><span>" . ($sale->user->name ?? 'System') . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>" . __('messages.receipt_customer') . "</span><span>" . ($sale->customer_name ?? 'Umum') . "</span></div>";
         $content .= "</div>";
 
         $content .= "<div class='border-t border-dashed border-gray-300 my-2'></div>";
@@ -1110,13 +1125,17 @@ class Pos extends Page
 
         // Summary
         $content .= "<div class='space-y-1 text-sm'>";
-        $content .= "<div class='flex justify-between'><span>Subtotal:</span><span>Rp" . number_format($sale->subtotal, 0, ',', '.') . "</span></div>";
-        $content .= "<div class='flex justify-between'><span>Pajak (10%):</span><span>Rp" . number_format($sale->tax, 0, ',', '.') . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>" . __('messages.receipt_subtotal') . "</span><span>Rp" . number_format($sale->subtotal, 0, ',', '.') . "</span></div>";
+
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $taxPercentage = $settings->tax_percentage ?? 10;
+
+        $content .= "<div class='flex justify-between'><span>" . __('messages.receipt_tax', ['rate' => $taxPercentage]) . "</span><span>Rp" . number_format($sale->tax, 0, ',', '.') . "</span></div>";
         if ($sale->discount > 0) {
-            $content .= "<div class='flex justify-between text-green-600'><span>Potongan:</span><span>- Rp" . number_format($sale->discount, 0, ',', '.') . "</span></div>";
+            $content .= "<div class='flex justify-between text-green-600'><span>" . __('messages.receipt_discount') . "</span><span>- Rp" . number_format($sale->discount, 0, ',', '.') . "</span></div>";
         }
         $content .= "<div class='border-t border-gray-300 pt-1'>";
-        $content .= "<div class='flex justify-between font-bold'><span>TOTAL:</span><span>Rp" . number_format($sale->final_total, 0, ',', '.') . "</span></div>";
+        $content .= "<div class='flex justify-between font-bold'><span>" . __('messages.receipt_total') . "</span><span>Rp" . number_format($sale->final_total, 0, ',', '.') . "</span></div>";
         $content .= "</div>";
         $content .= "</div>";
 
@@ -1124,11 +1143,11 @@ class Pos extends Page
 
         // Payment Info
         $content .= "<div class='space-y-1 text-sm'>";
-        $content .= "<div class='flex justify-between'><span>Metode:</span><span class='font-semibold'>" . ($sale->paymentMethod->name ?? 'Cash') . "</span></div>";
-        $content .= "<div class='flex justify-between'><span>Bayar:</span><span>Rp" . number_format($sale->amount_paid, 0, ',', '.') . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>" . __('messages.receipt_method') . "</span><span class='font-semibold'>" . ($sale->paymentMethod->name ?? 'Cash') . "</span></div>";
+        $content .= "<div class='flex justify-between'><span>" . __('messages.receipt_pay') . "</span><span>Rp" . number_format($sale->amount_paid, 0, ',', '.') . "</span></div>";
         if ($sale->paymentMethod?->code === 'cash') {
             $change = $sale->amount_paid - $sale->final_total;
-            $content .= "<div class='flex justify-between'><span>Kembali:</span><span class='font-semibold'>Rp" . number_format($change, 0, ',', '.') . "</span></div>";
+            $content .= "<div class='flex justify-between'><span>" . __('messages.receipt_change') . "</span><span class='font-semibold'>Rp" . number_format($change, 0, ',', '.') . "</span></div>";
         }
         $content .= "</div>";
 
@@ -1136,8 +1155,8 @@ class Pos extends Page
 
         // Footer
         $content .= "<div class='text-center text-xs'>";
-        $content .= "<p>Terima kasih atas kunjungan Anda</p>";
-        $content .= "<p class='font-semibold'>*** SELAMAT MENIKMATI ***</p>";
+        $content .= "<p>" . __('messages.receipt_footer_1') . "</p>";
+        $content .= "<p class='font-semibold'>" . __('messages.receipt_footer_2') . "</p>";
         $content .= "</div>";
 
         return $content;

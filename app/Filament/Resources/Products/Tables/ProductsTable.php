@@ -25,14 +25,14 @@ class ProductsTable
         return $table
             ->columns([
                 ImageColumn::make('image')
-                    ->label('Gambar')
+                    ->label(__('messages.image'))
                     ->default('https://placehold.co/50')
                     ->circular(true)
                     ->width(50)
                     ->disk('public'),
 
                 ToggleColumn::make('is_sellable')
-                    ->label('Jual')
+                    ->label('Jual') // Short label might be better kept as is or translated short
                     ->sortable(),
 
                 ToggleColumn::make('is_favorite')
@@ -40,14 +40,14 @@ class ProductsTable
                     ->sortable(),
 
                 TextColumn::make('name')
-                    ->label('Nama')
+                    ->label(__('messages.product_name'))
                     ->searchable(),
 
                 TextColumn::make('category.name')
-                    ->label('Kategori'),
+                    ->label(__('messages.category')),
 
                 TextColumn::make('type')
-                    ->label('Tipe')
+                    ->label(__('messages.type'))
                     ->badge()
                     ->colors([
                         'info' => 'raw',
@@ -57,16 +57,16 @@ class ProductsTable
                     ])
                     ->formatStateUsing(function ($state) {
                         return match ($state) {
-                            'raw' => 'Bahan Baku',
-                            'retail' => 'Produk Jadi',
-                            'produced' => 'Produk Kitchen',
-                            'bar' => 'Produk Bar',
+                            'raw' => __('messages.raw_material'),
+                            'retail' => __('messages.retail_product'),
+                            'produced' => __('messages.kitchen_product'),
+                            'bar' => __('messages.bar_product'),
                             default => $state,
                         };
                     }),
 
                 TextColumn::make('stock_display')
-                    ->label('Stok')
+                    ->label(__('messages.current_stock'))
                     ->getStateUsing(function ($record) {
                         $stock = number_format($record->stock ?? 0, 2);
 
@@ -96,16 +96,16 @@ class ProductsTable
 
 
                 TextColumn::make('base_price')
-                    ->label('HPP')
+                    ->label(__('messages.base_price'))
                     ->money('IDR'),
 
                 TextColumn::make('sell_price')
-                    ->label('Harga Jual')
+                    ->label(__('messages.selling_price'))
                     ->money('IDR')
                     ->hidden(fn() => auth()->user()->role === 'inventory'),
 
                 TextColumn::make('profit')
-                    ->label('Keuntungan')
+                    ->label(__('messages.profit'))
                     ->money('IDR')
                     ->getStateUsing(function ($record) {
                         if (!$record->is_sellable)
@@ -151,21 +151,21 @@ class ProductsTable
             ->filters([
                 // 🔹 Filter kategori (relasi)
                 SelectFilter::make('category_id')
-                    ->label('Kategori')
+                    ->label(__('messages.category'))
                     ->relationship('category', 'name')
                     ->preload()
                     ->searchable(),
 
                 // 🔹 Filter stok rendah
                 TernaryFilter::make('low_stock')
-                    ->label('Stok Rendah')
-                    ->placeholder('Semua')
-                    ->trueLabel('Stok < 10')
-                    ->falseLabel('Stok ≥ 10')
+                    ->label(__('messages.low_stock'))
+                    ->placeholder(__('messages.all_stock'))
+                    ->trueLabel(__('messages.stock') . ' < 10')
+                    ->falseLabel(__('messages.stock') . ' ≥ 10')
             ])
             ->headerActions([
                 Action::make('recalculateHpp')
-                    ->label('Hitung Ulang Semua HPP')
+                    ->label(__('messages.recalculate_hpp'))
                     ->icon('heroicon-o-calculator')
                     ->requiresConfirmation()
                     ->modalHeading('Hitung Ulang HPP?')
@@ -227,18 +227,18 @@ class ProductsTable
             ->recordActions([
                 EditAction::make(),
                 ViewAction::make()
-                    ->label('Riwayat Stok')
+                    ->label(__('messages.stock_history'))
                     ->icon('heroicon-o-clock')
                     ->color('info')
                     ->modalSubmitAction(false)
-                    ->modalCancelAction(fn($action) => $action->label('Tutup')),
+                    ->modalCancelAction(fn($action) => $action->label(__('messages.close'))),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                     FilamentExportBulkAction::make('export')
-                        ->label('Export Selected')
-                        ->fileName('Daftar Produk')
+                        ->label(__('messages.export_selected'))
+                        ->fileName(__('messages.product_list'))
                         ->defaultFormat('xlsx'),
                 ]),
             ]);

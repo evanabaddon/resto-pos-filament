@@ -23,7 +23,7 @@ class ProductForm
         return $schema
             ->components([
                 FileUpload::make('image')
-                    ->label('Gambar Produk')
+                    ->label(__('messages.image'))
                     ->directory('products')
                     ->disk('public')
                     ->image()
@@ -33,31 +33,31 @@ class ProductForm
 
                 // 🏷 Nama Produk
                 TextInput::make('name')
-                    ->label('Nama Produk')
+                    ->label(__('messages.product_name'))
                     ->required(),
 
                 // 📦 Tipe Produk
                 Select::make('type')
-                    ->label('Tipe Produk')
+                    ->label(__('messages.product_type'))
                     ->options([
-                        'raw' => 'Bahan Baku',
-                        'produced' => 'Produk Kitchen (dengan resep)',
-                        'bar' => 'Produk Bar (dengan resep)',
-                        'retail' => 'Produk Jadi Siap Jual (tanpa resep)',
+                        'raw' => __('messages.raw_material'),
+                        'produced' => __('messages.kitchen_product'),
+                        'bar' => __('messages.bar_product'),
+                        'retail' => __('messages.retail_product'),
                     ])
                     ->required()
                     ->reactive(),
 
                 // Kategori
                 Select::make('category_id')
-                    ->label('Kategori')
+                    ->label(__('messages.category'))
                     ->relationship('category', 'name')
                     ->searchable()
                     ->preload(),
 
                 // ⚖ Satuan
                 Select::make('unit_id')
-                    ->label('Satuan')
+                    ->label(__('messages.unit'))
                     ->relationship('unit', 'name')
                     ->searchable()
                     ->required()
@@ -66,14 +66,14 @@ class ProductForm
                 // 📊 Stok
                 TextInput::make('stock')
                     ->numeric()
-                    ->label('Stok Saat Ini')
+                    ->label(__('messages.current_stock'))
                     ->hidden(fn(callable $get) => in_array($get('type'), ['produced', 'bar']))
                     // ->disabled(fn($record) => $record !== null)
                     ->default(0),
 
                 // ⚠️ Stock Alert Settings
                 Toggle::make('enable_stock_alert')
-                    ->label('Enable Stock Alert')
+                    ->label(__('messages.min_stock_alert'))
                     ->helperText('Aktifkan notifikasi otomatis saat stok menipis')
                     ->default(false)
                     ->reactive()
@@ -81,7 +81,7 @@ class ProductForm
 
                 TextInput::make('minimum_stock')
                     ->numeric()
-                    ->label('Minimum Stock Threshold')
+                    ->label(__('messages.min_stock_threshold'))
                     ->helperText('Alert akan muncul saat stok <= threshold ini')
                     ->suffix(fn(callable $get) => Product::find($get('id'))?->unit?->name ?? 'unit')
                     ->visible(fn(callable $get) => $get('enable_stock_alert') === true)
@@ -90,14 +90,14 @@ class ProductForm
                 // 🍳 Prepared Stock (untuk produk produced/bar)
                 TextInput::make('prepared_stock')
                     ->numeric()
-                    ->label('Ready Stock (Sudah Dimasak)')
+                    ->label(__('messages.ready_stock'))
                     ->helperText('Stok yang sudah dimasak dan siap dijual')
                     ->suffix(fn(callable $get) => Product::find($get('id'))?->unit?->name ?? 'porsi')
                     ->default(0)
                     ->visible(fn(callable $get) => in_array($get('type'), ['produced', 'bar'])),
 
                 Toggle::make('enable_stock_alert')
-                    ->label('Enable Ready Stock Alert')
+                    ->label(__('messages.ready_stock_alert'))
                     ->helperText('Aktifkan notifikasi saat ready stock menipis')
                     ->default(false)
                     ->reactive()
@@ -105,25 +105,25 @@ class ProductForm
 
                 TextInput::make('minimum_prepared_stock')
                     ->numeric()
-                    ->label('Minimum Ready Stock')
+                    ->label(__('messages.min_ready_stock'))
                     ->helperText('Alert akan muncul saat ready stock <= threshold ini')
                     ->suffix(fn(callable $get) => Product::find($get('id'))?->unit?->name ?? 'porsi')
                     ->visible(fn(callable $get) => $get('enable_stock_alert') === true && in_array($get('type'), ['produced', 'bar'])),
 
                 // 🍳 Komposisi bahan untuk produk produced DAN bar
                 Repeater::make('recipes')
-                    ->label('Komposisi Bahan')
+                    ->label(__('messages.recipe_composition'))
                     ->relationship()
                     ->compact()
                     ->table([
-                        TableColumn::make('Bahan'),
-                        TableColumn::make('Jumlah'),
-                        TableColumn::make('Satuan'),
-                        TableColumn::make('Harga Bahan'),
+                        TableColumn::make(__('messages.ingredient')),
+                        TableColumn::make(__('messages.quantity')),
+                        TableColumn::make(__('messages.unit')),
+                        TableColumn::make(__('messages.cost_price')),
                     ])
                     ->schema([
                         Select::make('ingredient_id')
-                            ->label('Bahan')
+                            ->label(__('messages.ingredient'))
                             ->relationship(
                                 name: 'ingredient',
                                 titleAttribute: 'name',
@@ -140,7 +140,7 @@ class ProductForm
                             }),
 
                         Select::make('unit_id')
-                            ->label('Satuan')
+                            ->label(__('messages.unit'))
                             ->searchable()
                             ->preload()
                             ->required()
@@ -177,7 +177,7 @@ class ProductForm
                             }),
 
                         TextInput::make('quantity')
-                            ->label('Jumlah')
+                            ->label(__('messages.quantity'))
                             ->numeric()
                             ->required()
                             ->default(1)
@@ -189,7 +189,7 @@ class ProductForm
                             }),
 
                         TextInput::make('material_price')
-                            ->label('Harga Bahan')
+                            ->label(__('messages.cost_price'))
                             ->numeric()
                             ->readOnly()
                             ->prefix('Rp')
@@ -207,7 +207,7 @@ class ProductForm
                 TextInput::make('additional_cost')
                     ->numeric()
                     ->prefix('Rp')
-                    ->label('Biaya Tambahan Produksi (Opsional)')
+                    ->label(__('messages.additional_cost'))
                     ->default(0)
                     ->visible(fn($get) => in_array($get('type'), ['produced', 'bar']))
                     ->reactive()
@@ -218,7 +218,7 @@ class ProductForm
                 TextInput::make('base_price')
                     ->numeric()
                     ->prefix('Rp')
-                    ->label('Harga Pokok (HPP)')
+                    ->label(__('messages.base_price'))
                     ->nullable()
                     ->reactive()
                     ->readOnly(fn($get) => in_array($get('type'), ['produced', 'bar']))
@@ -289,7 +289,7 @@ class ProductForm
                 TextInput::make('sell_price')
                     ->numeric()
                     ->prefix('Rp')
-                    ->label('Harga Jual')
+                    ->label(__('messages.selling_price'))
                     ->required()
                     ->reactive()
                     ->live(onBlur: true)
@@ -312,7 +312,7 @@ class ProductForm
 
                 // 💰 Keuntungan (hanya tampilan, tidak disimpan)
                 TextInput::make('profit_display')
-                    ->label('Keuntungan')
+                    ->label(__('messages.profit'))
                     ->prefix('Rp')
                     ->readOnly()
                     ->reactive()
@@ -350,13 +350,13 @@ class ProductForm
                 // 🔘 Bisa dijual di POS
                 Toggle::make('is_sellable')
                     ->inline()
-                    ->label('Bisa Dijual di POS?')
+                    ->label(__('messages.is_sellable'))
                     ->default(fn(callable $get) => in_array($get('type'), ['produced', 'bar', 'retail'])),
 
                 // ⭐ Menu Unggulan (Upselling)
                 Toggle::make('is_favorite')
                     ->inline()
-                    ->label('Menu Unggulan (Upselling)')
+                    ->label(__('messages.is_favorite'))
                     ->helperText('Produk ini akan muncul di bagian "Rekomendasi" pada Waiter Order.')
                     ->default(false),
             ]);

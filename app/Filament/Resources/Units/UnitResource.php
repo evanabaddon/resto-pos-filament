@@ -24,7 +24,25 @@ class UnitResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Produk';
 
-    protected static ?string $navigationLabel = 'Satuan';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.units');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.unit');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.units');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.menu_product');
+    }
 
     // RBAC: super_admin, admin, inventory
     public static function canViewAny(): bool

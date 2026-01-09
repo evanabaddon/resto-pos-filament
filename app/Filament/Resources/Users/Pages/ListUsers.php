@@ -14,7 +14,7 @@ class ListUsers extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Tambah User')
+                ->label(__('messages.add_user'))
                 ->visible(function () {
                     return auth()->user()->role === \App\Enums\UserRole::SuperAdmin;
                 }),

@@ -9,6 +9,7 @@
 @source '../../../../resources/views/filament/**/*';
 @source '../../../../resources/views/layouts/**/*';
 @source '../../../../vendor/guava/calendar/resources/**/*';
+@source '../../../../vendor/bezhansalleh/filament-language-switch/resources/views/**/*.blade.php';
 
 
 

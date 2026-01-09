@@ -2,17 +2,16 @@
     <div class="space-y-6">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-                <h2 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-white">Smart Inventory Forecasting
+                <h2 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-white">{{ __('messages.forecasting_title') }}
                 </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Analisis Prediksi Stok & Kebutuhan Restock (Metode
-                    AI)</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('messages.forecasting_desc') }}</p>
             </div>
 
             @if($aiResults)
                 <div class="flex items-center gap-4">
                     <x-filament::button wire:click="exportToPdf" icon="heroicon-m-document-arrow-down" color="gray"
                         size="sm" wire:loading.attr="disabled">
-                        Export PDF
+                        {{ __('messages.export_pdf') }}
                     </x-filament::button>
 
                     <select wire:model="selectedDay" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -28,7 +27,7 @@
                     <div
                         class="flex items-center gap-2 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
                         <x-heroicon-m-clock class="w-4 h-4" />
-                        Dianalisa: {{ $lastGeneratedAt }}
+                        {{ __('messages.analyzed_at') }}: {{ $lastGeneratedAt }}
                         <button wire:click="generateAiForecast" wire:loading.attr="disabled"
                             class="ml-2 hover:text-primary-500 transition-colors disabled:opacity-50 group">
                             <x-heroicon-m-arrow-path
@@ -44,12 +43,11 @@
             <div
                 class="flex flex-col items-center justify-center py-12 bg-white dark:bg-gray-900 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 shadow-sm">
                 <x-heroicon-o-chart-bar class="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4" />
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Belum Ada Analisis</h3>
-                <p class="text-sm text-gray-500 mb-6 text-center max-w-xs px-4">AI akan memprediksi kebutuhan stok Anda
-                    berdasarkan data konsumsi 7 hari terakhir.</p>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ __('messages.no_analysis') }}</h3>
+                <p class="text-sm text-gray-500 mb-6 text-center max-w-xs px-4">{{ __('messages.no_analysis_desc') }}</p>
                 
                 <div class="mb-4 flex items-center gap-2">
-                    <span class="text-sm text-gray-600 dark:text-gray-400">Set Hari Ini:</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">{{ __('messages.set_today') }}:</span>
                     <select wire:model="selectedDay" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="Monday">Senin</option>
                         <option value="Tuesday">Selasa</option>
@@ -63,8 +61,8 @@
 
                 <x-filament::button wire:click="generateAiForecast" size="lg" icon="heroicon-m-sparkles"
                     wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="generateAiForecast">Generate Analisis Sekarang</span>
-                    <span wire:loading wire:target="generateAiForecast">Sedang Menganalisa...</span>
+                    <span wire:loading.remove wire:target="generateAiForecast">{{ __('messages.generate_analysis') }}</span>
+                    <span wire:loading wire:target="generateAiForecast">{{ __('messages.analyzing') }}</span>
                 </x-filament::button>
             </div>
         @else
@@ -175,14 +173,14 @@
                 <table class="w-full text-left divide-y divide-gray-200 dark:divide-white/5">
                     <thead>
                         <tr class="bg-gray-50 dark:bg-white/5">
-                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">Produk / Bahan
+                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">{{ __('messages.menu_product') }}
                             </th>
-                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">Stok Saat Ini</th>
-                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">Total Terpakai
+                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">{{ __('messages.current_stock') }}</th>
+                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">{{ __('messages.total_consumed') }}
                                 (7d)</th>
-                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">Rata-rata/Hari
+                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">{{ __('messages.daily_average') }}
                             </th>
-                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">Satuan</th>
+                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">{{ __('messages.unit') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-white/5">

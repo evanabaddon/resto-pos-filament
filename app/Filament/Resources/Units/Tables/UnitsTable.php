@@ -14,10 +14,10 @@ class UnitsTable
     {
         return $table
             ->columns([
-                TextColumn::make('name'),
-                TextColumn::make('symbol'),
-                TextColumn::make('baseUnit.name')->label('Base Unit'),
-                TextColumn::make('conversion_rate')->label('Rate')->formatStateUsing(fn($state) => number_format($state, 0, '.', ',')),
+                TextColumn::make('name')->label(__('messages.name')),
+                TextColumn::make('symbol')->label(__('messages.symbol')),
+                TextColumn::make('baseUnit.name')->label(__('messages.base_unit')),
+                TextColumn::make('conversion_rate')->label(__('messages.conversion_rate'))->formatStateUsing(fn($state) => number_format($state, 0, '.', ',')),
             ])
             ->filters([
                 //

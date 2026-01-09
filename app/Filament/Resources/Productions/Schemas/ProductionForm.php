@@ -17,10 +17,10 @@ class ProductionForm
     {
         return $schema
             ->components([
-                Section::make('Input Produksi')
+                Section::make(__('messages.production_input'))
                     ->schema([
                         Select::make('product_id')
-                            ->label('Produk (Kitchen/Bar)')
+                            ->label(__('messages.product_kitchen_bar'))
                             ->relationship('product', 'name', function ($query) {
                                 return $query->whereIn('type', ['produced', 'bar'])
                                     ->where('enable_stock_alert', true);
@@ -36,10 +36,11 @@ class ProductionForm
                                 }
 
                                 $product = Product::with(['recipes.ingredient.unit', 'recipes.unit'])->find($state);
-                                if (!$product) return;
+                                if (!$product)
+                                    return;
 
                                 // 1. Current Prepared Stock
-                                $info = "Stok Jadi saat ini: " . ($product->prepared_stock ?? 0) . " " . ($product->unit->name ?? 'porsi') . "\n";
+                                $info = __('messages.current_prepared_stock') . ": " . ($product->prepared_stock ?? 0) . " " . ($product->unit->name ?? __('messages.portion')) . "\n";
 
                                 // 2. Calculate Max Production based on Ingredients
                                 $maxPossible = null;
@@ -47,7 +48,8 @@ class ProductionForm
 
                                 foreach ($product->recipes as $recipe) {
                                     $ingredient = $recipe->ingredient;
-                                    if (!$ingredient) continue;
+                                    if (!$ingredient)
+                                        continue;
 
                                     // Get available stock (raw or prepared)
                                     $currentStock = in_array($ingredient->type, ['produced', 'bar']) && $ingredient->enable_stock_alert
@@ -60,7 +62,8 @@ class ProductionForm
                                         $recipe->ingredient->unit_id
                                     );
 
-                                    if ($requiredPerPortion <= 0) continue;
+                                    if ($requiredPerPortion <= 0)
+                                        continue;
 
                                     $maxForThisIngredient = floor($currentStock / $requiredPerPortion);
 
@@ -70,9 +73,9 @@ class ProductionForm
                                 }
 
                                 if (!is_null($maxPossible)) {
-                                    $info .= "Estimasi Maksimal Produksi: {$maxPossible} porsi (terbatas bahan baku)";
+                                    $info .= __('messages.max_production_estimate') . ": {$maxPossible} " . __('messages.portion') . " (" . __('messages.limited_by_ingredients') . ")";
                                 } else {
-                                    $info .= " Estimasi Maksimal: Tidak terbatas (tidak ada resep)";
+                                    $info .= " " . __('messages.max_production_estimate') . ": " . __('messages.unlimited_no_recipe');
                                 }
 
                                 $set('stock_info', $info);
@@ -85,14 +88,14 @@ class ProductionForm
                             ->columnSpanFull(),
 
                         TextInput::make('quantity')
-                            ->label('Jumlah Produksi')
+                            ->label(__('messages.production_quantity'))
                             ->numeric()
                             ->default(1)
                             ->minValue(1)
                             ->required(),
 
                         Textarea::make('notes')
-                            ->label('Catatan')
+                            ->label(__('messages.notes'))
                             ->rows(3)
                             ->columnSpanFull(),
                     ])

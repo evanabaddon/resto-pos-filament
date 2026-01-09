@@ -14,9 +14,9 @@ class UsersTable
     {
         return $table
             ->columns([
-                TextColumn::make('name'),
-                TextColumn::make('email'),
-                TextColumn::make('role')->label('Role')->sortable()->searchable(),
+                TextColumn::make('name')->label(__('messages.name')),
+                TextColumn::make('email')->label(__('messages.email')),
+                TextColumn::make('role')->label(__('messages.role'))->sortable()->searchable(),
             ])
             ->filters([
                 //

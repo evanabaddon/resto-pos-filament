@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 
+use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,7 +27,12 @@ class AppServiceProvider extends ServiceProvider
         Schema::defaultStringLength(191);
 
         // Register SaleItem Observer for prepared stock deduction
-        // Only deducts when product has enable_stock_alert = true
         \App\Models\SaleItem::observe(\App\Observers\SaleItemObserver::class);
+
+        // Configure Language Switcher
+        LanguageSwitch::configureUsing(function (LanguageSwitch $switch) {
+            $switch
+                ->locales(['id', 'en']);
+        });
     }
 }

@@ -5,6 +5,7 @@ use App\Models\PrintJob;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Services\RecipeStockChecker;
 use App\Settings\GeneralSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -67,7 +68,7 @@ Route::get('/pos/products-sync', function () {
                 // Hitung potensi dari bahan baku (jika ada resep)
                 $potential = 0;
                 if ($product->recipes->isNotEmpty()) {
-                    $potential = app(\App\Services\RecipeStockChecker::class)->getMaxPortions($product);
+                    $potential = app(RecipeStockChecker::class)->getMaxPortions($product);
                 }
 
                 $realStock = $prepared + $potential;
@@ -153,7 +154,7 @@ Route::post(
                         'order_type' => $orderData['order_type'] ?? 'offline', // Penanda ini transaksi dari offline mode
                         'user_id' => 2, // Default user (Admin ID=2, ID=1 not exists)
                         'cash_session_id' => $activeSession ? $activeSession->id : null, // Link ke sesi aktif
-
+    
                         'subtotal' => $calculatedSubtotal,
                         'tax' => $tax,
                         'final_total' => $finalTotal,
@@ -176,7 +177,7 @@ Route::post(
                         ]);
 
                         // Deduct Stock
-                        $product = \App\Models\Product::find($item['product_id'] ?? $item['id']);
+                        $product = Product::find($item['product_id'] ?? $item['id']);
                         if ($product && $product->stock !== null) {
                             $product->decrement('stock', $item['quantity']);
                         }
@@ -396,7 +397,7 @@ Route::get('/pos/sales-history', function () {
 // Delete Draft
 Route::delete('/pos/drafts/{id}', function ($id) {
     try {
-        $sale = \App\Models\Sale::where('id', $id)
+        $sale = Sale::where('id', $id)
             ->where('status', 'draft')
             ->first();
 
@@ -407,7 +408,7 @@ Route::delete('/pos/drafts/{id}', function ($id) {
         // Restore Stock
         foreach ($sale->items as $item) {
             if ($item->product_id) {
-                \App\Models\Product::where('id', $item->product_id)->increment('stock', $item->quantity);
+                Product::where('id', $item->product_id)->increment('stock', $item->quantity);
             }
         }
 
@@ -502,17 +503,17 @@ Route::post('/pos/sync-shifts', function (Request $request) {
 
 // Check if logout was requested while gateway was offline
 Route::get('/wa/check-logout', function () {
-    $logoutRequested = \Illuminate\Support\Facades\Cache::get('wa_logout_requested', false);
+    $logoutRequested = Cache::get('wa_logout_requested', false);
 
-    \Illuminate\Support\Facades\Log::info('WA Gateway checking logout flag', [
+    Log::info('WA Gateway checking logout flag', [
         'logout_requested' => $logoutRequested,
         'timestamp' => now()->toDateTimeString()
     ]);
 
     if ($logoutRequested) {
         // Clear the flag IMMEDIATELY after reading
-        \Illuminate\Support\Facades\Cache::forget('wa_logout_requested');
-        \Illuminate\Support\Facades\Log::info('WA logout flag cleared');
+        Cache::forget('wa_logout_requested');
+        Log::info('WA logout flag cleared');
     }
 
     return response()->json([

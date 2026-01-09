@@ -9,14 +9,29 @@ use UnitEnum;
 class KitchenDisplay extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-computer-desktop';
-    protected static ?string $navigationLabel = 'Layar Dapur (KDS)';
-    protected static ?string $title = 'Layar Dapur (KDS)';
+    protected static ?string $navigationLabel = null;
+    protected static ?string $title = null;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Transaksi';
+    protected static string|UnitEnum|null $navigationGroup = null;
 
     protected string $view = 'filament.pages.kitchen-display';
 
     protected static string $layout = 'layouts.kds-layout';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.kds_page_title');
+    }
+
+    public function getTitle(): string
+    {
+        return __('messages.kds_page_title');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.transactions');
+    }
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -118,21 +133,26 @@ class KitchenDisplay extends Page
         }
     }
 
+    protected function getDepartmentName()
+    {
+        return match ($this->activeTab) {
+            'bar' => __('messages.bar'),
+            'retail' => __('messages.retail'),
+            default => __('messages.kitchen'),
+        };
+    }
+
     protected function sendBatchReadyNotification($sale, $batchTimestamp)
     {
         $recipient = $sale->user ?? auth()->user();
         if (!$recipient)
             return;
 
-        $departmentName = match ($this->activeTab) {
-            'bar' => 'Bar',
-            'retail' => 'Ritel',
-            default => 'Dapur',
-        };
+        $departmentName = $this->getDepartmentName();
 
-        $customerInfo = $sale->customer_name ?? 'Pelanggan';
-        $locationInfo = $sale->table_number ? "Meja #{$sale->table_number}" : $sale->order_type;
-        $titleText = "Pesanan {$departmentName} Siap!";
+        $customerInfo = $sale->customer_name ?? __('messages.guest');
+        $locationInfo = $sale->table_number ? __('messages.table_number') . $sale->table_number : ($sale->order_type ?? __('messages.order'));
+        $titleText = __('messages.order_ready_title', ['department' => $departmentName]);
 
         // Fetch items for specific message details
         $itemsInBatch = $sale->items()
@@ -141,9 +161,9 @@ class KitchenDisplay extends Page
 
         if ($itemsInBatch->count() <= 2) {
             $itemNames = $itemsInBatch->map(fn($i) => $i->product_name ?? $i->product->name ?? 'Unknown Item')->implode(', ');
-            $bodyText = "{$itemNames} untuk {$customerInfo} ({$locationInfo}) telah siap.";
+            $bodyText = __('messages.order_ready_body', ['items' => $itemNames, 'customer' => $customerInfo, 'location' => $locationInfo]);
         } else {
-            $bodyText = "Sebagian pesanan {$departmentName} untuk {$customerInfo} ({$locationInfo}) telah siap.";
+            $bodyText = __('messages.order_partially_ready_body', ['department' => $departmentName, 'customer' => $customerInfo, 'location' => $locationInfo]);
         }
 
         $this->sendNotification($recipient, $titleText, $bodyText, 'heroicon-o-check-badge', $sale->id);
@@ -156,18 +176,14 @@ class KitchenDisplay extends Page
         if (!$recipient)
             return;
 
-        $departmentName = match ($this->activeTab) {
-            'bar' => 'Bar',
-            'retail' => 'Ritel',
-            default => 'Dapur',
-        };
+        $departmentName = $this->getDepartmentName();
 
         $itemName = $item->product_name ?? $item->product->name ?? 'Unknown Item';
-        $customerInfo = $sale->customer_name ?? 'Pelanggan';
-        $locationInfo = $sale->table_number ? "Meja #{$sale->table_number}" : $sale->order_type;
+        $customerInfo = $sale->customer_name ?? __('messages.guest');
+        $locationInfo = $sale->table_number ? __('messages.table_number') . $sale->table_number : ($sale->order_type ?? __('messages.order'));
 
-        $titleText = "Pesanan {$departmentName} Siap!";
-        $bodyText = "{$itemName} untuk {$customerInfo} ({$locationInfo}) sudah siap.";
+        $titleText = __('messages.order_ready_title', ['department' => $departmentName]);
+        $bodyText = __('messages.order_ready_body', ['items' => $itemName, 'customer' => $customerInfo, 'location' => $locationInfo]);
 
         $this->sendNotification($recipient, $titleText, $bodyText, 'heroicon-o-check-circle', $sale->id);
     }
@@ -198,7 +214,7 @@ class KitchenDisplay extends Page
                 'actions' => [
                     [
                         'name' => 'Lihat',
-                        'label' => 'Lihat',
+                        'label' => __('messages.view'),
                         'url' => '#',
                         'color' => 'primary',
                         'view' => 'filament::components.button.index',
@@ -235,11 +251,7 @@ class KitchenDisplay extends Page
                 default => ['produced'], // kitchen
             };
 
-            $departmentName = match ($this->activeTab) {
-                'bar' => 'Bar',
-                'retail' => 'Ritel',
-                default => 'Dapur',
-            };
+            $departmentName = $this->getDepartmentName();
 
             $query = $sale->items()
                 ->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') = ?", [$timestamp])
@@ -259,16 +271,16 @@ class KitchenDisplay extends Page
 
             if ($recipient) {
                 try {
-                    $customerInfo = $sale->customer_name ?? 'Pelanggan';
-                    $locationInfo = $sale->table_number ? "Meja #{$sale->table_number}" : $sale->order_type;
-                    $titleText = "Pesanan {$departmentName} Siap!";
+                    $customerInfo = $sale->customer_name ?? __('messages.guest');
+                    $locationInfo = $sale->table_number ? __('messages.table_number') . $sale->table_number : ($sale->order_type ?? __('messages.order'));
+                    $titleText = __('messages.order_ready_title', ['department' => $departmentName]);
 
                     // Mention items in batch if small, otherwise summary
                     if ($itemsToMark->count() <= 2) {
                         $itemNames = $itemsToMark->map(fn($i) => $i->product_name ?? $i->product->name ?? 'Unknown Item')->implode(', ');
-                        $bodyText = "{$itemNames} untuk {$customerInfo} ({$locationInfo}) telah siap.";
+                        $bodyText = __('messages.order_ready_body', ['items' => $itemNames, 'customer' => $customerInfo, 'location' => $locationInfo]);
                     } else {
-                        $bodyText = "Sebagian pesanan {$departmentName} untuk {$customerInfo} ({$locationInfo}) telah siap.";
+                        $bodyText = __('messages.order_partially_ready_body', ['department' => $departmentName, 'customer' => $customerInfo, 'location' => $locationInfo]);
                     }
 
                     // 1. Send Flash/Toast Notification
@@ -294,7 +306,7 @@ class KitchenDisplay extends Page
                         'actions' => [
                             [
                                 'name' => 'Lihat',
-                                'label' => 'Lihat',
+                                'label' => __('messages.view'),
                                 'url' => '#',
                                 'color' => 'primary',
                                 'view' => 'filament::components.button.index',

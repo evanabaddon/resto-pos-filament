@@ -14,9 +14,9 @@ class CategoriesTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')->searchable(),
-                TextColumn::make('slug'),
-                TextColumn::make('created_at')->dateTime(),
+                TextColumn::make('name')->label(__('messages.name'))->searchable(),
+                TextColumn::make('slug')->label(__('messages.slug')),
+                TextColumn::make('created_at')->label(__('messages.created_at'))->dateTime(),
             ])
             ->filters([
                 //

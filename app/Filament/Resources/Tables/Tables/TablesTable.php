@@ -15,11 +15,11 @@ class TablesTable
         return $table
             ->columns([
                 \Filament\Tables\Columns\TextColumn::make('name')
-                    ->label('Nama Meja')
+                    ->label(__('messages.table_name'))
                     ->searchable()
                     ->sortable(),
                 \Filament\Tables\Columns\TextColumn::make('slug')
-                    ->label('Slug / ID')
+                    ->label(__('messages.slug_qr'))
                     ->copyable()
                     ->searchable(),
                 \Filament\Tables\Columns\TextColumn::make('status')
@@ -37,7 +37,7 @@ class TablesTable
                 EditAction::make(),
                 Action::make('qr_code')
                     ->icon('heroicon-o-qr-code')
-                    ->label('QR Menu')
+                    ->label(__('messages.qr_menu'))
                     ->modalContent(fn($record) => view('filament.tables.actions.qr-code', ['record' => $record]))
                     ->modalSubmitAction(false)
                     ->modalCancelAction(false)

@@ -24,7 +24,25 @@ class ProductionResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Produk';
 
-    protected static ?string $navigationLabel = 'Produksi';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.productions');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.production');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.productions');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.menu_product');
+    }
 
     protected static ?int $navigationSort = 3;
 

@@ -22,9 +22,25 @@ class ExpenseResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Transaksi';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.expenses');
+    }
 
-    protected static ?string $navigationLabel = 'Pengeluaran';
+    public static function getModelLabel(): string
+    {
+        return __('messages.expense');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.expenses');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.transactions');
+    }
 
     // RBAC: super_admin, admin, accountant
     public static function canViewAny(): bool

@@ -21,13 +21,27 @@ class TableResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Master Data';
+    protected static string|UnitEnum|null $navigationGroup = 'Master Data'; // Or translate 'master_data'
 
-    protected static ?string $label = 'Meja';
+    public static function getLabel(): ?string
+    {
+        return __('messages.table_resource');
+    }
 
-    protected static ?string $pluralLabel = 'Meja';
+    public static function getPluralLabel(): ?string
+    {
+        return __('messages.table_resource');
+    }
 
-    protected static ?string $navigationLabel = 'Manajemen Meja';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.table_management');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.master_data');
+    }
 
     public static function form(Schema $schema): Schema
     {

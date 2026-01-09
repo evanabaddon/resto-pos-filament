@@ -12,15 +12,19 @@ class UserForm
     {
         return $schema
             ->components([
-                TextInput::make('name')->required(),
-                TextInput::make('email')->required(),
+                TextInput::make('name')
+                    ->label(__('messages.name'))
+                    ->required(),
+                TextInput::make('email')
+                    ->label(__('messages.email'))
+                    ->required(),
                 Select::make('role')
                     ->options(\App\Enums\UserRole::class)
-                    ->label('Role')
+                    ->label(__('messages.role'))
                     ->searchable(),
                 TextInput::make('password')
                     ->password()
-                    ->label('Password'),
+                    ->label(__('messages.password')),
             ]);
     }
 }

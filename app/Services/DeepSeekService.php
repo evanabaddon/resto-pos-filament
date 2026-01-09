@@ -89,7 +89,7 @@ class DeepSeekService
                 ->timeout(120)
                 ->post(rtrim($this->baseUrl, '/') . '/chat/completions', array_merge([
                     'model' => $this->model,
-                    'messages' => $messages,
+                    'messages' => $this->formatMessagesForModel($messages),
                     'temperature' => 0.7,
                 ], $options));
 
@@ -529,5 +529,41 @@ class DeepSeekService
         $response = $this->chat($messages, ['temperature' => 0.8]);
 
         return $response['choices'][0]['message']['content'] ?? '';
+    }
+    /**
+     * Format messages based on model provider quirks
+     */
+    protected function formatMessagesForModel(array $messages): array
+    {
+        // Google/Gemini via OpenRouter often expects strict role ordering (System -> User -> Model)
+        // or system prompt merged into user prompt.
+        if (str_contains(strtolower($this->model), 'google') || str_contains(strtolower($this->model), 'gemini')) {
+            $formattedValues = [];
+            $systemPrompt = '';
+
+            foreach ($messages as $msg) {
+                if ($msg['role'] === 'system') {
+                    $systemPrompt .= $msg['content'] . "\n\n";
+                } else {
+                    $formattedValues[] = $msg;
+                }
+            }
+
+            if (!empty($systemPrompt) && !empty($formattedValues)) {
+                // Prepend system prompt to the first user message
+                if ($formattedValues[0]['role'] === 'user') {
+                    $formattedValues[0]['content'] = "SYSTEM INSTRUCTIONS:\n" . $systemPrompt . "USER REQUEST:\n" . $formattedValues[0]['content'];
+                } else {
+                    // Fallback if first message isn't user (rare)
+                    array_unshift($formattedValues, ['role' => 'user', 'content' => $systemPrompt]);
+                }
+            } else if (!empty($systemPrompt) && empty($formattedValues)) {
+                $formattedValues[] = ['role' => 'user', 'content' => $systemPrompt];
+            }
+
+            return $formattedValues;
+        }
+
+        return $messages;
     }
 }

@@ -23,9 +23,25 @@ class ReservationResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-calendar';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Transaksi';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.reservations');
+    }
 
-    protected static ?string $navigationLabel = 'Reservasi Meja';
+    public static function getModelLabel(): string
+    {
+        return __('messages.reservation');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.reservations');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.transactions');
+    }
 
     // RBAC: super_admin, admin, cashier, waiter
     public static function canViewAny(): bool

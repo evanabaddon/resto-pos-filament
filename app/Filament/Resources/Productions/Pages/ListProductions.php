@@ -13,7 +13,7 @@ class ListProductions extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()->label('Tambah Produksi'),
+            Actions\CreateAction::make(),
         ];
     }
 }

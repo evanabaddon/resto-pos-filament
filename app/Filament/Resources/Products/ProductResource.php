@@ -27,7 +27,25 @@ class ProductResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Produk';
 
-    protected static ?string $navigationLabel = 'Produk';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.products');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.product');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.products');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.menu_product'); // Or just 'Produk' if we want to keep it simple, but let's translate
+    }
 
     // RBAC: super_admin, admin, inventory
     public static function canViewAny(): bool
@@ -65,18 +83,18 @@ class ProductResource extends Resource
         return $schema
             ->schema([
                 RepeatableEntry::make('stockMovements')
-                    ->label('Riwayat Pergerakan Stok (20 Terakhir)')
+                    ->label(__('messages.stock_movement_history'))
                     ->schema([
                         Grid::make(4)
                             ->schema([
                                 TextEntry::make('created_at')
-                                    ->label('Tanggal')
+                                    ->label(__('messages.date'))
                                     ->dateTime('d M Y H:i')
                                     ->icon('heroicon-o-calendar')
                                     ->columnSpan(2),
 
                                 TextEntry::make('type')
-                                    ->label('Tipe')
+                                    ->label(__('messages.type'))
                                     ->badge()
                                     ->colors([
                                         'success' => 'increase',
@@ -86,18 +104,18 @@ class ProductResource extends Resource
                                     ->icon(fn($state) => $state === 'increase' ? 'heroicon-o-arrow-trending-up' : 'heroicon-o-arrow-trending-down'),
 
                                 TextEntry::make('quantity')
-                                    ->label('Jumlah')
+                                    ->label(__('messages.quantity'))
                                     ->numeric(2)
                                     ->weight('bold')
                                     ->size('lg'),
 
                                 TextEntry::make('reason')
-                                    ->label('Alasan')
+                                    ->label(__('messages.reason'))
                                     ->color('gray')
                                     ->columnSpan(4),
 
                                 TextEntry::make('notes')
-                                    ->label('Catatan')
+                                    ->label(__('messages.notes'))
                                     ->columnSpan(4)
                                     ->placeholder('-')
                                     ->prose(),

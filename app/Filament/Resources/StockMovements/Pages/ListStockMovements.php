@@ -13,7 +13,7 @@ class ListStockMovements extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Adjustment (Opname)'),
+            CreateAction::make(),
         ];
     }
 }

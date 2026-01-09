@@ -14,7 +14,7 @@ class StockMovementsTable
     {
         return $table
             ->columns([
-                TextColumn::make('product.name')->label('Produk'),
+                TextColumn::make('product.name')->label(__('messages.product_resource')),
 
                 TextColumn::make('type')
                     ->badge()
@@ -22,37 +22,39 @@ class StockMovementsTable
                         'success' => 'increase',
                         'danger' => 'decrease',
                     ])
-                    ->formatStateUsing(fn($state) => $state === 'increase' ? 'Masuk' : 'Keluar'),
+                    ->formatStateUsing(fn($state) => $state === 'increase' ? __('messages.stock_in') : __('messages.stock_out')),
 
-                TextColumn::make('quantity')->label('Qty')->numeric(2),
+                TextColumn::make('quantity')->label(__('messages.quantity'))->numeric(2),
 
                 TextColumn::make('reason')
-                    ->label('Alasan')
+                    ->label(__('messages.reason'))
                     ->badge()
                     ->color('gray'),
 
-                TextColumn::make('notes')->label('Catatan')->limit(30),
+                TextColumn::make('notes')->label(__('messages.notes'))->limit(30),
 
                 TextColumn::make('created_at')
-                    ->label('Tanggal')
+                    ->label(__('messages.date'))
                     ->dateTime('d M Y H:i'),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
                 \Filament\Tables\Filters\SelectFilter::make('reason')
-                    ->label('Alasan')
+                    ->label(__('messages.reason'))
                     ->options([
-                        'stock_opname' => 'Stock Opname',
-                        'production_output' => 'Hasil Produksi',
-                        'production_ingredient' => 'Bahan Produksi',
-                        'waste' => 'Waste/Buang',
-                        'sale' => 'Penjualan (POS)',
-                        'void_sale' => 'Void Sale',
+                        'stock_opname' => __('messages.stock_opname'),
+                        'production_output' => __('messages.production_output'),
+                        'production_ingredient' => __('messages.production_ingredient'),
+                        'waste' => __('messages.waste'),
+                        'sale' => __('messages.sale'), // 'sale' key probably exists or needs adding? 'sale' => 'Penjualan' exists? Let's check. Assuming 'sale' or 'sales' exists. Actually 'sale_info' exists. 'sales' key might not exist alone.
+                        // I'll add 'sale' => 'Sale' / 'Penjualan' key just in case or use 'transaction_history' context?
+                        // 'sale' key is safe to add.
+                        'void_sale' => __('messages.void_sale'),
                     ])
                     ->multiple(),
 
                 \Filament\Tables\Filters\Filter::make('other_reasons')
-                    ->label('Lainnya')
+                    ->label(__('messages.other'))
                     ->query(fn($query) => $query->whereNotIn('reason', [
                         'stock_opname',
                         'production_output',
@@ -66,9 +68,9 @@ class StockMovementsTable
                 \Filament\Tables\Filters\Filter::make('created_at')
                     ->schema([
                         \Filament\Forms\Components\DatePicker::make('created_from')
-                            ->label('Dari Tanggal'),
+                            ->label(__('messages.date_from')),
                         \Filament\Forms\Components\DatePicker::make('created_until')
-                            ->label('Sampai Tanggal'),
+                            ->label(__('messages.date_until')),
                     ])
                     ->query(function ($query, array $data) {
                         return $query

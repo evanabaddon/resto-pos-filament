@@ -104,15 +104,15 @@ class AdminPanelProvider extends PanelProvider
                 // ->primaryColor('#CF8B00'),
             ])
             ->navigationGroups([
-                'Transaksi',
-                'Produk',
-                'Master Data',
-                'Manajemen SDM',
-                'Kemitraan CRM',
-                'AI Intelligence',
-                'Super Chat',
-                'Laporan & Analisis',
-                'Settings'
+                __('messages.transactions'),
+                __('messages.menu_product'),
+                __('messages.master_data'),
+                __('messages.human_resource'),
+                __('messages.crm'),
+                __('messages.ai_intelligence'),
+                __('messages.super_chat'),
+                __('messages.reports_analytics'),
+                __('messages.settings')
             ]);
     }
 }

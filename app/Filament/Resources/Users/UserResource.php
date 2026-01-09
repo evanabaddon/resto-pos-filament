@@ -24,7 +24,15 @@ class UserResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Pengaturan';
 
-    protected static ?string $navigationLabel = 'Pengguna';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.users');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.settings');
+    }
     protected static ?int $navigationSort = 1;
 
     public static function canViewAny(): bool

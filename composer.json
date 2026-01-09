@@ -12,6 +12,7 @@
         "php": "^8.2",
         "alperenersoy/filament-export": "^4.0",
         "barryvdh/laravel-dompdf": "^3.1",
+        "bezhansalleh/filament-language-switch": "^4.0",
         "filament/filament": "^4.1",
         "filament/spatie-laravel-settings-plugin": "^4.1",
         "guava/calendar": "^2.0",

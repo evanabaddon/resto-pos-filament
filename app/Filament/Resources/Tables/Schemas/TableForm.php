@@ -13,26 +13,26 @@ class TableForm
     {
         return $schema
             ->components([
-                Section::make('Informasi Meja')
+                Section::make(__('messages.table_info'))
                     ->schema([
                         TextInput::make('name')
-                            ->label('Nama Meja')
+                            ->label(__('messages.table_name'))
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn($state, callable $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
 
                         TextInput::make('slug')
-                            ->label('Unique Slug / QR Code Link')
+                            ->label(__('messages.slug_qr'))
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->maxLength(255),
 
                         Select::make('status')
                             ->options([
-                                'available' => 'Tersedia',
-                                'occupied' => 'Terisi',
-                                'reserved' => 'Reservasi',
+                                'available' => __('messages.status_available'),
+                                'occupied' => __('messages.status_occupied'),
+                                'reserved' => __('messages.status_reserved'),
                             ])
                             ->default('available')
                             ->required(),

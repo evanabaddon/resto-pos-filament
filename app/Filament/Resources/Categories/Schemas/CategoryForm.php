@@ -14,6 +14,7 @@ class CategoryForm
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label(__('messages.name'))
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
@@ -22,14 +23,16 @@ class CategoryForm
                             $set('slug', Str::slug($state));
                         }
                     }),
-                
+
                 TextInput::make('slug')
+                    ->label(__('messages.slug'))
                     ->required()
                     ->maxLength(255)
                     ->unique('categories', 'slug', ignoreRecord: true)
                     ->rules(['alpha_dash']),
-                
+
                 Textarea::make('description')
+                    ->label(__('messages.description'))
                     ->columnSpanFull(),
             ]);
     }

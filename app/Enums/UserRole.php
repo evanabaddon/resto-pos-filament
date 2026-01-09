@@ -17,13 +17,13 @@ enum UserRole: string implements HasLabel
     public function getLabel(): ?string
     {
         return match ($this) {
-            self::SuperAdmin => 'Super Admin',
-            self::Admin => 'Admin Operasional',
-            self::Accountant => 'Staff Keuangan',
-            self::Inventory => 'Staff Gudang',
-            self::Kitchen => 'Kitchen / Dapur',
-            self::Cashier => 'Cashier',
-            self::Waiter => 'Waiter',
+            self::SuperAdmin => __('messages.role_super_admin'),
+            self::Admin => __('messages.role_admin'),
+            self::Accountant => __('messages.role_accountant'),
+            self::Inventory => __('messages.role_inventory'),
+            self::Kitchen => __('messages.role_kitchen'),
+            self::Cashier => __('messages.role_cashier'),
+            self::Waiter => __('messages.role_waiter'),
         };
     }
 

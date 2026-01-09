@@ -12,25 +12,25 @@ class ProductionsTable
         return $table
             ->columns([
                 TextColumn::make('created_at')
-                    ->label('Tanggal')
+                    ->label(__('messages.date'))
                     ->dateTime('d M Y H:i')
                     ->sortable(),
 
                 TextColumn::make('product.name')
-                    ->label('Produk')
+                    ->label(__('messages.product_resource'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('quantity')
-                    ->label('Jumlah')
+                    ->label(__('messages.quantity'))
                     ->numeric()
                     ->sortable(),
 
                 TextColumn::make('user.name')
-                    ->label('Oleh'),
+                    ->label(__('messages.by')),
 
                 TextColumn::make('notes')
-                    ->label('Catatan')
+                    ->label(__('messages.notes'))
                     ->limit(30),
             ])
             ->defaultSort('created_at', 'desc');

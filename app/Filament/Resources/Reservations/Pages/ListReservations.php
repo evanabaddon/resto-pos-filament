@@ -13,7 +13,7 @@ class ListReservations extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Tambah Reservasi'),
+            CreateAction::make(),
         ];
     }
 }

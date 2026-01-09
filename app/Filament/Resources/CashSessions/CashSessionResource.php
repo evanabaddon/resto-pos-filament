@@ -24,9 +24,25 @@ class CashSessionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-presentation-chart-line';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Transaksi';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.cash_sessions');
+    }
 
-    protected static ?string $navigationLabel = 'Sesi Kasir';
+    public static function getModelLabel(): string
+    {
+        return __('messages.cash_session');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.cash_sessions');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.transactions');
+    }
 
     // RBAC: super_admin, admin, accountant
     public static function canViewAny(): bool

@@ -23,16 +23,16 @@ class ListSales extends ListRecords
     public function getTabs(): array
     {
         $tabs = [
-            'Semua Penjualan' => Tab::make()->label('Semua Penjualan'),
-            'Lunas' => Tab::make()
-                ->label('Lunas')
+            'all' => Tab::make()->label(__('messages.all_sales')),
+            'completed' => Tab::make()
+                ->label(__('messages.paid'))
                 ->modifyQueryUsing(function ($query) {
                     $query->where('status', 'completed');
                 })->badge(function () {
                     return Sale::where('status', 'completed')->count();
                 })->badgeColor('success'),
-            'Belum Lunas' => Tab::make()
-                ->label('Belum Lunas')
+            'draft' => Tab::make()
+                ->label(__('messages.unpaid'))
                 ->modifyQueryUsing(function ($query) {
                     $query->where('status', 'draft');
                 })->badge(function () {

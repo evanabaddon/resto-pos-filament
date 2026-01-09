@@ -11,8 +11,8 @@
                 <div class="px-6 py-4 border-b border-gray-200 flex-shrink-0">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h2 class="text-xl font-bold text-gray-900">Transaksi Tersimpan</h2>
-                            <p class="text-sm text-gray-500 mt-1">Kelola transaksi draft, pembayaran, dan riwayat.</p>
+                            <h2 class="text-xl font-bold text-gray-900">{{ __('messages.saved_transaction') }}</h2>
+                            <p class="text-sm text-gray-500 mt-1">{{ __('messages.saved_transaction_desc') }}</p>
                         </div>
                         <button wire:click="closeModal"
                             class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
@@ -37,15 +37,15 @@
                             </div>
                             <input wire:model.live.debounce.300ms="search" type="text"
                                 class="pl-10 block w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm py-2"
-                                placeholder="Cari Invoice (#...) atau Nama Pelanggan...">
+                                placeholder="{{ __('messages.search_invoice_placeholder') }}">
                         </div>
 
                         {{-- Tabs --}}
                         <div
                             class="flex space-x-1 w-full md:w-auto overflow-x-auto pb-1 hide-scrollbar bg-gray-100 p-1 rounded-lg">
-                            @foreach(['draft' => 'Draft', 'completed' => 'Selesai', 'split' => 'Split', 'all' => 'Semua'] as $key => $label)
+                            @foreach(['draft' => 'Draft', 'completed' => __('messages.completed'), 'split' => 'Split', 'all' => __('messages.all')] as $key => $label)
                                             <button wire:click="setTab('{{ $key }}')" class="px-4 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap
-                                                                            {{ $activeTab === $key
+                                                                                                {{ $activeTab === $key
                                 ? 'bg-white text-blue-600 shadow-sm ring-1 ring-gray-200'
                                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200' }}">
                                                 {{ $label }}
@@ -92,7 +92,7 @@
                                         </div>
                                         <h3 class="font-bold text-gray-900 mt-1 truncate w-40"
                                             title="{{ $sale->customer_name }}">
-                                            {{ $sale->customer_name ?? 'Umum' }}
+                                            {{ $sale->customer_name ?? __('messages.general_customer') }}
                                         </h3>
                                         <span class="text-xs text-gray-500 flex items-center mt-0.5">
                                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +117,7 @@
                                 <div class="flex flex-wrap gap-1 mb-4">
                                     <span
                                         class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide
-                                                        {{ $sale->order_type == 'Dine In' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-orange-50 text-orange-700 border border-orange-100' }}">
+                                                                {{ $sale->order_type == 'Dine In' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-orange-50 text-orange-700 border border-orange-100' }}">
                                         {{ $sale->order_type }}
                                     </span>
                                     @if($sale->paymentMethod)
@@ -133,29 +133,29 @@
                                     @if($sale->status === 'draft')
                                         <button wire:click="loadSale({{ $sale->id }})"
                                             class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-                                            ✏️ EDIT
+                                            ✏️ {{ __('messages.edit') }}
                                         </button>
                                         <button wire:click="reprintOrder({{ $sale->id }})"
                                             class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-                                            title="Cetak ulang order ke dapur">
-                                            🖨️ CETAK
+                                            title="{{ __('messages.reprint_order_kitchen') }}">
+                                            🖨️ {{ __('messages.print') }}
                                         </button>
                                         <button wire:click="openSplitBill({{ $sale->id }})"
                                             class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors">
-                                            ✂️ SPLIT
+                                            ✂️ {{ __('messages.split') }}
                                         </button>
                                         <button wire:click="confirmDelete({{ $sale->id }})"
                                             class="cursor-pointer flex items-center justify-center px-3 py-2 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
-                                            🗑️ HAPUS
+                                            🗑️ {{ __('messages.delete') }}
                                         </button>
                                         <button wire:click="openPayment({{ $sale->id }})"
                                             class="col-span-2 cursor-pointer flex items-center justify-center px-3 py-3 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-all shadow-md hover:shadow-lg transform active:scale-95">
-                                            💵 BAYAR SEKARANG
+                                            💵 {{ __('messages.pay_now') }}
                                         </button>
                                     @elseif($sale->status === 'completed')
                                         <button wire:click="printReceipt({{ $sale->id }})"
                                             class="col-span-2 flex items-center justify-center px-3 py-2 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
-                                            🖨️ CETAK STRUK
+                                            🖨️ {{ __('messages.print_receipt') }}
                                         </button>
                                     @else
                                         <button disabled
@@ -173,8 +173,8 @@
                                         d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
                                     </path>
                                 </svg>
-                                <p class="text-lg font-medium text-gray-500">Tidak ada transaksi ditemukan.</p>
-                                <p class="text-sm mt-1">Coba ubah filter atau kata kunci pencarian.</p>
+                                <p class="text-lg font-medium text-gray-500">{{ __('messages.no_transaction_found') }}</p>
+                                <p class="text-sm mt-1">{{ __('messages.no_transaction_found_desc') }}</p>
                             </div>
                         @endforelse
                     </div>
@@ -223,8 +223,8 @@
                 <div class="px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h2 class="text-xl font-bold text-gray-900">Split Bill - Pembagian per Item</h2>
-                            <p class="text-sm text-gray-500 mt-1">Assign item ke masing-masing customer</p>
+                            <h2 class="text-xl font-bold text-gray-900">{{ __('messages.split_bill_title') }}</h2>
+                            <p class="text-sm text-gray-500 mt-1">{{ __('messages.split_bill_desc') }}</p>
                         </div>
                         <button wire:click="closeSplitBillModal"
                             class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
@@ -243,7 +243,8 @@
                         <div class="grid grid-cols-2 gap-4 text-sm">
                             <div>
                                 <p class="font-semibold text-blue-900">{{ $selectedSaleForSplit->invoice_number }}</p>
-                                <p class="text-blue-700">{{ $selectedSaleForSplit->customer_name ?? 'Pelanggan Umum' }}</p>
+                                <p class="text-blue-700">
+                                    {{ $selectedSaleForSplit->customer_name ?? __('messages.general_customer') }}</p>
                             </div>
                             <div class="text-right">
                                 <p class="text-blue-800 font-bold text-lg">
@@ -258,7 +259,8 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         {{-- Jumlah Pembagian --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah Pembagian</label>
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2">{{ __('messages.split_amount') }}</label>
                             <div class="flex items-center space-x-2">
                                 <button wire:click="decrementSplitCount"
                                     class="cursor-pointer w-8 h-8 flex items-center justify-center bg-gray-200 rounded-lg text-gray-600 hover:bg-gray-300 transition-colors"
@@ -279,20 +281,20 @@
                         <div class="flex items-end">
                             <button wire:click="autoAssignEqual"
                                 class="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
-                                🎯 Auto Assign Equal
+                                🎯 {{ __('messages.auto_assign_equal') }}
                             </button>
                         </div>
 
                         {{-- Total Verification --}}
                         <div class="bg-green-50 border border-green-200 rounded-lg p-3">
                             <div class="text-sm text-green-700">
-                                <div class="font-semibold">Total setelah split:</div>
+                                <div class="font-semibold">{{ __('messages.total_after_split') }}:</div>
                                 <div class="font-bold text-lg">
                                     Rp{{ number_format(collect($splitAssignments)->sum('total'), 0, ',', '.') }}
                                 </div>
                                 @if(collect($splitAssignments)->sum('total') != $selectedSaleForSplit->final_total)
                                     <div class="text-xs text-red-600 mt-1">
-                                        ⚠️ Total belum sesuai
+                                        ⚠️ {{ __('messages.total_mismatch') }}
                                     </div>
                                 @endif
                             </div>
@@ -304,18 +306,18 @@
                         @for($i = 0; $i < $splitCount; $i++)
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Nama Customer {{ $i + 1 }}
+                                    {{ __('messages.customer_name_label') }} {{ $i + 1 }}
                                 </label>
                                 <input type="text" wire:model="customerNames.{{ $i }}"
                                     class="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Nama customer...">
+                                    placeholder="{{ __('messages.customer_name_placeholder') }}">
                             </div>
                         @endfor
                     </div>
 
                     {{-- Items Assignment --}}
                     <div class="space-y-4">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Assign Items</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('messages.assign_items') }}</h3>
                         @foreach($selectedSaleForSplit->items as $item)
                             <div class="border border-gray-200 rounded-lg p-4 bg-white">
                                 <div class="flex items-center justify-between mb-3">
@@ -328,7 +330,7 @@
                                     </div>
                                     <button wire:click="clearItemAssignment({{ $item->id }})"
                                         class="cursor-pointer text-xs text-red-600 hover:text-red-700 font-medium">
-                                        Clear
+                                        {{ __('messages.clear') }}
                                     </button>
                                 </div>
 
@@ -370,7 +372,7 @@
                                 @endphp
                                 <div class="mt-2">
                                     <div class="flex justify-between text-xs text-gray-500 mb-1">
-                                        <span>Assigned: {{ $assigned }}/{{ $item->quantity }}</span>
+                                        <span>{{ __('messages.assigned') }}: {{ $assigned }}/{{ $item->quantity }}</span>
                                         <span>{{ round($percentage) }}%</span>
                                     </div>
                                     <div class="w-full bg-gray-200 rounded-full h-2">
@@ -384,7 +386,7 @@
 
                     {{-- Split Summary --}}
                     <div class="mt-8">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Ringkasan Split</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('messages.split_summary') }}</h3>
                         <div class="grid grid-cols-1 md:grid-cols-{{ $splitCount }} gap-4">
                             @foreach($splitAssignments as $index => $split)
                                 @if($split['total'] > 0)
@@ -398,7 +400,7 @@
 
                                         {{-- Detail Items --}}
                                         <div class="mb-3">
-                                            <h5 class="text-sm font-medium text-gray-700 mb-2">Items:</h5>
+                                            <h5 class="text-sm font-medium text-gray-700 mb-2">{{ __('messages.items') }}:</h5>
                                             <div class="space-y-2 max-h-40 overflow-y-auto">
                                                 @forelse($split['items'] ?? [] as $item)
                                                     <div class="bg-white rounded border border-gray-100 p-2 text-xs">
@@ -416,7 +418,7 @@
                                                         </div>
                                                     </div>
                                                 @empty
-                                                    <p class="text-gray-500 text-xs text-center py-2">Tidak ada items</p>
+                                                    <p class="text-gray-500 text-xs text-center py-2">{{ __('messages.no_items') }}</p>
                                                 @endforelse
                                             </div>
                                         </div>
@@ -424,16 +426,16 @@
                                         {{-- Summary --}}
                                         <div class="border-t border-gray-300 pt-2 space-y-1 text-sm">
                                             <div class="flex justify-between">
-                                                <span class="text-gray-600">Subtotal:</span>
+                                                <span class="text-gray-600">{{ __('messages.subtotal') }}:</span>
                                                 <span>Rp{{ number_format($split['subtotal'], 0, ',', '.') }}</span>
                                             </div>
                                             <div class="flex justify-between">
-                                                <span class="text-gray-600">Pajak (10%):</span>
+                                                <span class="text-gray-600">{{ __('messages.tax') }} (10%):</span>
                                                 <span>Rp{{ number_format($split['tax'], 0, ',', '.') }}</span>
                                             </div>
                                             <div class="border-t border-gray-300 pt-1 mt-1">
                                                 <div class="flex justify-between font-bold text-base">
-                                                    <span>Total:</span>
+                                                    <span>{{ __('messages.total') }}:</span>
                                                     <span
                                                         class="text-orange-600">Rp{{ number_format($split['total'], 0, ',', '.') }}</span>
                                                 </div>
@@ -456,12 +458,12 @@
                     <div class="flex space-x-3">
                         <button wire:click="closeSplitBillModal"
                             class="cursor-pointer flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                            Batal
+                            {{ __('messages.cancel') }}
                         </button>
                         <button wire:click="confirmSplitBill"
                             class="cursor-pointer flex-1 px-4 py-2 bg-orange-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-orange-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                             {{ collect($splitAssignments)->sum('total') != $selectedSaleForSplit->final_total ? 'disabled' : '' }}>
-                            ✅ Konfirmasi Split Bill
+                            ✅ {{ __('messages.confirm_split_bill') }}
                         </button>
                     </div>
                 </div>
@@ -483,20 +485,21 @@
                         </svg>
                     </div>
 
-                    <h3 class="text-lg font-bold text-center text-gray-900 mb-2">Hapus Transaksi?</h3>
+                    <h3 class="text-lg font-bold text-center text-gray-900 mb-2">
+                        {{ __('messages.delete_transaction_title') }}</h3>
                     <p class="text-sm text-center text-gray-500 mb-6">
-                        Apakah Anda yakin ingin menghapus transaksi ini? <br>
-                        <span class="font-medium text-red-600">Stok item akan dikembalikan ke inventory.</span>
+                        {{ __('messages.delete_transaction_desc') }} <br>
+                        <span class="font-medium text-red-600">{{ __('messages.stock_return_alert') }}</span>
                     </p>
 
                     <div class="flex space-x-3">
                         <button wire:click="cancelDelete"
                             class="cursor-pointer flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                            Batal
+                            {{ __('messages.cancel') }}
                         </button>
                         <button wire:click="executeDelete"
                             class="cursor-pointer flex-1 px-4 py-2 bg-red-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm">
-                            Ya, Hapus
+                            {{ __('messages.yes_delete') }}
                         </button>
                     </div>
                 </div>

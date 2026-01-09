@@ -16,8 +16,8 @@
                     <div
                         class="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white to-transparent">
                     </div>
-                    <h2 class="text-lg font-bold relative z-10">Manual Discount</h2>
-                    <p class="text-xs text-indigo-100 relative z-10">Berikan potongan harga khusus</p>
+                    <h2 class="text-lg font-bold relative z-10">{{ __('messages.manual_discount_title') }}</h2>
+                    <p class="text-xs text-indigo-100 relative z-10">{{ __('messages.manual_discount_desc') }}</p>
                 </div>
 
                 <div class="p-6 w-full space-y-5">
@@ -26,20 +26,20 @@
                     <div class="flex bg-slate-100 p-1 rounded-xl">
                         <button wire:click="$set('discountType', 'fixed')"
                             class="flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 
-                                        {{ $discountType === 'fixed' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
-                            Nominal (Rp)
+                                            {{ $discountType === 'fixed' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
+                            {{ __('messages.nominal') }}
                         </button>
                         <button wire:click="$set('discountType', 'percentage')"
                             class="flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 
-                                        {{ $discountType === 'percentage' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
-                            Persentase (%)
+                                            {{ $discountType === 'percentage' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
+                            {{ __('messages.percentage') }}
                         </button>
                     </div>
 
                     {{-- Input Value --}}
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                            {{ $discountType === 'fixed' ? 'Masukan Nominal' : 'Masukan Persen' }}
+                            {{ $discountType === 'fixed' ? __('messages.enter_nominal') : __('messages.enter_percentage') }}
                         </label>
                         <div class="relative">
                             @if($discountType === 'fixed')
@@ -63,22 +63,22 @@
 
                     {{-- Reason Input (Optional) --}}
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Keterangan
-                            (Opsional)</label>
+                        <label
+                            class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('messages.reason_optional') }}</label>
                         <input type="text" wire:model="reason"
                             class="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition focus:bg-white"
-                            placeholder="Cth: Promo Teman, VIP, dll">
+                            placeholder="{{ __('messages.reason_placeholder') }}">
                     </div>
 
                     {{-- Actions --}}
                     <div class="flex gap-3 pt-2">
                         <button wire:click="close"
                             class="flex-1 py-3 bg-white border-2 border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-50 transition active:scale-95">
-                            Batal
+                            {{ __('messages.cancel') }}
                         </button>
                         <button wire:click="apply"
                             class="flex-[2] py-3 bg-violet-600 text-white font-bold text-sm rounded-xl shadow-lg shadow-violet-200 hover:bg-violet-700 transition active:scale-95 flex items-center justify-center gap-2">
-                            Terapkan
+                            {{ __('messages.apply') }}
                         </button>
                     </div>
                 </div>

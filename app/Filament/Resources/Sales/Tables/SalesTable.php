@@ -24,45 +24,46 @@ class SalesTable
             ->modifyQueryUsing(fn($query) => $query->with(['items.product', 'member', 'user', 'paymentMethod']))
             ->columns([
                 TextColumn::make('updated_at')
-                    ->label('Tanggal')
+                    ->label(__('messages.transaction_date'))
                     ->dateTime()
                     ->formatStateUsing(fn($state) => $state->diffForHumans()),
-                TextColumn::make('invoice_number')->label('Invoice Number')->searchable()->sortable(),
-                TextColumn::make('customer_name')->label('Customer Name')->searchable()->sortable(),
-                TextColumn::make('order_type')->label('Order Type')->searchable()->sortable(),
+                TextColumn::make('invoice_number')->label(__('messages.invoice_number'))->searchable()->sortable(),
+                TextColumn::make('customer_name')->label(__('messages.customer_name'))->searchable()->sortable(),
+                TextColumn::make('order_type')->label(__('messages.order_type'))->searchable()->sortable(),
                 TextColumn::make('final_total')
-                    ->label('Total Amount')
+                    ->label(__('messages.total_amount'))
                     ->sortable()
-                    ->money('IDR')->summarize(Sum::make()->money('IDR')->label('Total Penjualan')),
+                    ->money('IDR')->summarize(Sum::make()->money('IDR')->label(__('messages.total_amount'))),
                 TextColumn::make('discount')
-                    ->label('Diskon')
+                    ->label(__('messages.total_discount'))
                     ->money('IDR')
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                DateRangeFilter::make('created_at')->label('Tanggal Transaksi'),
+                DateRangeFilter::make('created_at')->label(__('messages.transaction_date')),
             ])
             ->recordActions([
                 EditAction::make(),
 
                 Action::make('previewReceipt')
-                    ->label('Preview')
+                    ->label(__('messages.preview_receipt'))
                     ->icon('heroicon-o-eye')
                     ->color('info')
-                    ->modalHeading('Preview Struk')
+                    ->color('info')
+                    ->modalHeading(__('messages.preview_receipt'))
                     ->modalContent(function (Sale $record) {
                         $sale = $record->load(['items.product', 'paymentMethod', 'user']);
                         return view('filament.components.receipt-preview-content', ['sale' => $sale]);
                     })
                     ->modalFooterActions([
                         Action::make('print')
-                            ->label('Cetak')
+                            ->label(__('messages.print'))
                             ->icon('heroicon-o-printer')
                             ->color('success')
                             ->action(fn(Sale $record) => (new ReceiptPrintService($record))->printReceipt()),
                         Action::make('close')
-                            ->label('Tutup')
+                            ->label(__('messages.close'))
                             ->color('gray')
                             ->close(),
                     ]),
@@ -71,13 +72,13 @@ class SalesTable
                 \Filament\Actions\ActionGroup::make([
                     // Print Struk Direct
                     Action::make('printReceipt')
-                        ->label('Print Struk')
+                        ->label(__('messages.print'))
                         ->icon('heroicon-o-printer')
                         ->action(fn(Sale $record) => (new ReceiptPrintService($record))->printReceipt()),
 
                     // Print Struk HTML
                     Action::make('printHtml')
-                        ->label('Print Struk (HTML)')
+                        ->label(__('messages.print_receipt_html'))
                         ->icon('heroicon-o-document-text')
                         ->color('success')
                         ->url(fn(Sale $record) => route('sales.print', $record))
@@ -85,7 +86,7 @@ class SalesTable
 
                     // Cetak Ulang Order
                     Action::make('reprintOrder')
-                        ->label('Cetak Ulang Order')
+                        ->label(__('messages.reprint_order'))
                         ->icon('heroicon-o-arrow-path')
                         ->color('warning')
                         ->requiresConfirmation()
@@ -93,20 +94,20 @@ class SalesTable
                             try {
                                 $service = new \App\Services\OrderPrintService();
                                 $service->printOrderByProductType($record);
-                                Notification::make()->title('Order dikirim ulang')->success()->send();
+                                Notification::make()->title(__('messages.order_resent'))->success()->send();
                             } catch (\Exception $e) {
-                                Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                                Notification::make()->title(__('messages.failed'))->body($e->getMessage())->danger()->send();
                             }
                         }),
 
                     // Assign Member
                     Action::make('assignMember')
-                        ->label('Klaim Poin Member')
+                        ->label(__('messages.assign_member'))
                         ->icon('heroicon-o-user-plus')
                         ->visible(fn(Sale $record) => $record->status === 'completed' && !$record->member_id)
                         ->schema([
                             \Filament\Forms\Components\Select::make('member_id')
-                                ->label('Pilih Member')
+                                ->label(__('messages.select_member'))
                                 ->relationship('member', 'name')
                                 ->searchable()
                                 ->preload()
@@ -123,31 +124,31 @@ class SalesTable
                                 $member->addPoints($points);
                                 // Pass sale creation date to avoid "visited just now" regarding old sales
                                 $member->recordVisit($record->amount_paid, $record->created_at);
-                                Notification::make()->title('Poin Diklaim')->success()->send();
+                                Notification::make()->title(__('messages.points_claimed'))->success()->send();
                             } catch (\Exception $e) {
-                                Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                                Notification::make()->title(__('messages.failed'))->body($e->getMessage())->danger()->send();
                             }
                         }),
 
                     // Void / Delete
                     \Filament\Actions\DeleteAction::make()
-                        ->label('Void Transaksi')
-                        ->modalHeading('Void Transaksi & Restore Stok')
+                        ->label(__('messages.void_transaction'))
+                        ->modalHeading(__('messages.void_transaction_restore_stock'))
                         ->hidden(fn() => !in_array(auth()->user()->role, [\App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::Admin]))
                         ->action(function (Sale $record) {
                             try {
                                 $orderService = new \App\Services\OrderService();
                                 $orderService->deleteSale($record->id);
-                                Notification::make()->title('Transaksi Void Berhasil')->success()->send();
+                                Notification::make()->title(__('messages.void_transaction_success'))->success()->send();
                             } catch (\Exception $e) {
                                 Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
                             }
                         }),
                 ])
-                    ->label('Terkait')
+                    ->label(__('messages.related_actions'))
                     ->icon('heroicon-m-ellipsis-vertical')
                     ->color('gray')
-                    ->tooltip('Menu Aksi'),
+                    ->tooltip(__('messages.related_actions')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

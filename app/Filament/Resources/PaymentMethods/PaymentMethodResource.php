@@ -24,7 +24,15 @@ class PaymentMethodResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Master Data';
 
-    protected static ?string $navigationLabel = 'Metode Pembayaran';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.payment_method_resource');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.master_data');
+    }
 
     // RBAC: super_admin, admin only
     public static function canViewAny(): bool

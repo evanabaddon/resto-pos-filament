@@ -30,9 +30,20 @@ class StockOpname extends Page implements HasTable
 
     protected static ?int $navigationSort = 50;
 
-    protected static ?string $navigationLabel = 'Stock Opname';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.stock_opname_page');
+    }
 
-    protected static ?string $title = 'Stock Opname (Bulk Input)';
+    public function getTitle(): string
+    {
+        return __('messages.stock_opname_title');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.menu_product');
+    }
 
     // Store physical counts in Livewire state (not database)
     public array $physicalCounts = [];
@@ -98,12 +109,12 @@ class StockOpname extends Page implements HasTable
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('name')
-                    ->label('Produk')
+                    ->label(__('messages.product_resource'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('stock_display')
-                    ->label('Stock Sistem')
+                    ->label(__('messages.system_stock'))
                     ->state(function (Product $record) {
                         return in_array($record->type, ['produced', 'bar']) ? $record->prepared_stock : $record->stock;
                     })
@@ -113,7 +124,7 @@ class StockOpname extends Page implements HasTable
                     ->alignEnd(),
 
                 TextColumn::make('physical_count')
-                    ->label('Stock Fisik')
+                    ->label(__('messages.physical_stock'))
                     ->state(function (Product $record) {
                         $defaultStock = in_array($record->type, ['produced', 'bar']) ? ($record->prepared_stock ?? 0) : $record->stock;
                         return $this->physicalCounts[$record->id] ?? $defaultStock;
@@ -125,7 +136,7 @@ class StockOpname extends Page implements HasTable
                     ->color(fn(Product $record) => isset($this->physicalCounts[$record->id]) ? 'success' : 'gray'),
 
                 TextColumn::make('variance')
-                    ->label('Selisih')
+                    ->label(__('messages.variance'))
                     ->state(function (Product $record) {
                         $systemStock = in_array($record->type, ['produced', 'bar']) ? ($record->prepared_stock ?? 0) : $record->stock;
                         $physicalCount = $this->physicalCounts[$record->id] ?? $systemStock;
@@ -137,7 +148,7 @@ class StockOpname extends Page implements HasTable
                     ->alignEnd(),
 
                 TextColumn::make('value_loss')
-                    ->label('Kerugian')
+                    ->label(__('messages.loss_value'))
                     ->state(function (Product $record) {
                         $physicalCount = $this->physicalCounts[$record->id] ?? $record->stock;
                         $variance = $physicalCount - $record->stock;
@@ -150,17 +161,17 @@ class StockOpname extends Page implements HasTable
             ])
             ->filters([
                 SelectFilter::make('category_id')
-                    ->label('Category')
+                    ->label(__('messages.category'))
                     ->relationship('category', 'name')
                     ->preload(),
             ])
             ->recordActions([
                 Action::make('edit_count')
-                    ->label('Edit')
+                    ->label(__('messages.edit'))
                     ->icon('heroicon-o-pencil')
                     ->schema([
                         TextInput::make('physical_count')
-                            ->label('Stock Fisik')
+                            ->label(__('messages.physical_stock'))
                             ->numeric()
                             ->step(0.01)
                             ->required()
@@ -171,20 +182,20 @@ class StockOpname extends Page implements HasTable
                         $this->physicalCounts[$record->id] = (float) $data['physical_count'];
 
                         Notification::make()
-                            ->title('Stock Fisik Diperbarui')
-                            ->body("{$record->name} diperbarui ke {$data['physical_count']}")
+                            ->title(__('messages.stock_updated_title'))
+                            ->body("{$record->name} " . __('messages.updated_to') . " {$data['physical_count']}")
                             ->success()
                             ->send();
                     }),
             ])
             ->headerActions([
                 Action::make('submit_all_edited')
-                    ->label('Simpan Semua Perubahan')
+                    ->label(__('messages.submit_all'))
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->modalHeading('Simpan Semua Perubahan')
-                    ->modalDescription(fn() => sprintf('Simpan stock opname untuk %d produk yang diubah?', count($this->physicalCounts)))
+                    ->modalHeading(__('messages.submit_all'))
+                    ->modalDescription(fn() => sprintf(__('messages.submit_confirmation_desc') ?? 'Simpan stock opname untuk %d produk yang diubah?', count($this->physicalCounts)))
                     ->visible(fn() => count($this->physicalCounts) > 0)
                     ->action(function () {
                         // Get all edited products
@@ -194,7 +205,7 @@ class StockOpname extends Page implements HasTable
                     }),
 
                 Action::make('reset_all')
-                    ->label('Reset Semua Perubahan')
+                    ->label(__('messages.reset_all'))
                     ->icon('heroicon-o-arrow-path')
                     ->color('gray')
                     ->requiresConfirmation()
@@ -202,7 +213,7 @@ class StockOpname extends Page implements HasTable
                     ->action(function () {
                         $this->physicalCounts = [];
                         Notification::make()
-                            ->title('Semua perubahan direset')
+                            ->title(__('messages.all_reset'))
                             ->success()
                             ->send();
                     }),
@@ -272,15 +283,15 @@ class StockOpname extends Page implements HasTable
 
         if ($itemsAdjusted === 0) {
             Notification::make()
-                ->title('No Changes')
-                ->body('No variance found in selected products.')
+                ->title(__('messages.no_changes'))
+                ->body(__('messages.no_variance'))
                 ->warning()
                 ->send();
             return;
         }
 
         Notification::make()
-            ->title('Stock Opname Completed')
+            ->title(__('messages.opname_completed'))
             ->body(sprintf(
                 '%d items adjusted. Total variance: %s. Total loss: Rp %s',
                 $itemsAdjusted,

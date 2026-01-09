@@ -24,23 +24,23 @@ class SaleForm
         return $schema
             ->columns(1)
             ->components([
-                Section::make('Informasi Penjualan')
+                Section::make(__('messages.sale_info'))
                     ->schema([
                         Group::make([
                             TextInput::make('invoice_number')
-                                ->label('Nomor Invoice')
+                                ->label(__('messages.invoice_number'))
                                 ->required()
                                 ->unique(Sale::class, 'invoice_number', ignoreRecord: true)
                                 ->default(fn() => static::generateInvoiceNumber())
                                 ->disabled(fn($operation) => $operation === 'edit'),
 
                             TextInput::make('customer_name')
-                                ->label('Nama Pelanggan')
+                                ->label(__('messages.customer_name'))
                                 ->required()
                                 ->maxLength(255),
 
                             Select::make('user_id')
-                                ->label('Kasir')
+                                ->label(__('messages.cashier'))
                                 ->relationship('user', 'name')
                                 ->default(auth()->id())
                                 ->required()
@@ -48,12 +48,12 @@ class SaleForm
                                 ->preload(),
 
                             ToggleButtons::make('order_type')
-                                ->label('Tipe Pesanan')
+                                ->label(__('messages.order_type'))
                                 ->required()
                                 ->options([
-                                    'Dine In' => 'Dine In',
-                                    'Take Away' => 'Take Away',
-                                    'Delivery' => 'Delivery',
+                                    'Dine In' => __('messages.dine_in'),
+                                    'Take Away' => __('messages.take_away'),
+                                    'Delivery' => __('messages.delivery'),
                                 ])
                                 ->icons([
                                     'Dine In' => 'heroicon-m-building-storefront',
@@ -65,25 +65,25 @@ class SaleForm
                         ])->columns(2),
 
                         Select::make('cash_session_id')
-                            ->label('Sesi Kasir')
+                            ->label(__('messages.cash_session'))
                             ->relationship('session', 'id')
                             ->searchable()
                             ->preload()
                             ->required(),
 
                         Textarea::make('note')
-                            ->label('Catatan')
+                            ->label(__('messages.notes'))
                             ->rows(3)
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Item Penjualan')
+                Section::make(__('messages.sale_items'))
                     ->schema([
                         Repeater::make('items')
                             ->relationship('items')
                             ->schema([
                                 Select::make('product_id')
-                                    ->label('Produk')
+                                    ->label(__('messages.product_resource'))
                                     ->relationship('product', 'name')
                                     ->searchable()
                                     ->preload()
@@ -103,7 +103,7 @@ class SaleForm
                                     ->dehydrated(),
 
                                 TextInput::make('quantity')
-                                    ->label('Qty')
+                                    ->label(__('messages.quantity'))
                                     ->numeric()
                                     ->required()
                                     ->default(1)
@@ -115,7 +115,7 @@ class SaleForm
                                     }),
 
                                 TextInput::make('unit_price')
-                                    ->label('Harga Satuan')
+                                    ->label(__('messages.unit_price'))
                                     ->numeric()
                                     ->required()
                                     ->prefix('Rp')
@@ -126,7 +126,7 @@ class SaleForm
                                     }),
 
                                 TextInput::make('discount')
-                                    ->label('Diskon Item')
+                                    ->label(__('messages.item_discount'))
                                     ->numeric()
                                     ->default(0)
                                     ->minValue(0)
@@ -138,7 +138,7 @@ class SaleForm
                                     }),
 
                                 TextInput::make('item_total')
-                                    ->label('Subtotal Item')
+                                    ->label(__('messages.item_subtotal'))
                                     ->disabled()
                                     ->dehydrated(false)
                                     ->numeric()
@@ -160,7 +160,7 @@ class SaleForm
                                 fn(Action $action) => $action->requiresConfirmation(),
                             )
                             ->addAction(
-                                fn(Action $action) => $action->label('Tambah Item'),
+                                fn(Action $action) => $action->label(__('messages.add_item')),
                             )
                             ->live()
                             ->afterStateUpdated(function ($state, $set, $get) {
@@ -169,11 +169,11 @@ class SaleForm
                             ->reorderableWithButtons(),
                     ]),
 
-                Section::make('Ringkasan Pembayaran')
+                Section::make(__('messages.payment_summary'))
                     ->schema([
                         Group::make([
                             TextInput::make('subtotal_display')
-                                ->label('Subtotal')
+                                ->label(__('messages.subtotal'))
                                 ->disabled()
                                 ->dehydrated(false)
                                 ->prefix('Rp')
@@ -183,7 +183,7 @@ class SaleForm
                                 }),
 
                             TextInput::make('discount')
-                                ->label('Diskon Total')
+                                ->label(__('messages.total_discount'))
                                 ->numeric()
                                 ->default(0)
                                 ->minValue(0)
@@ -194,7 +194,7 @@ class SaleForm
                                 }),
 
                             TextInput::make('tax_percentage')
-                                ->label('Pajak (%)')
+                                ->label(__('messages.tax_percent'))
                                 ->numeric()
                                 ->default(fn() => app(\App\Settings\GeneralSettings::class)->enable_tax ? app(\App\Settings\GeneralSettings::class)->tax_percentage : 0)
                                 ->minValue(0)
@@ -221,7 +221,7 @@ class SaleForm
 
                         Group::make([
                             TextInput::make('tax_amount_display')
-                                ->label('Nominal Pajak')
+                                ->label(__('messages.tax_amount'))
                                 ->disabled()
                                 ->dehydrated(false)
                                 ->prefix('Rp')
@@ -231,7 +231,7 @@ class SaleForm
                                 }),
 
                             TextInput::make('final_total_display')
-                                ->label('Total Akhir')
+                                ->label(__('messages.final_total'))
                                 ->disabled()
                                 ->dehydrated(false)
                                 ->prefix('Rp')
@@ -247,10 +247,10 @@ class SaleForm
                         ])->columns(2),
                     ]),
 
-                Section::make('Pembayaran')
+                Section::make(__('messages.payment_title'))
                     ->schema([
                         Select::make('payment_method_id')
-                            ->label('Metode Pembayaran')
+                            ->label(__('messages.payment_method'))
                             ->relationship('paymentMethod', 'name')
                             ->searchable()
                             ->preload()
@@ -265,26 +265,26 @@ class SaleForm
                         Hidden::make('payment_method'),
 
                         Select::make('status')
-                            ->label('Status')
+                            ->label(__('messages.status'))
                             ->required()
                             ->options([
-                                'draft' => 'Pending',
-                                'completed' => 'Dibayar',
-                                'cancelled' => 'Dibatalkan',
-                                'refunded' => 'Dikembalikan',
+                                'draft' => __('messages.status_pending'),
+                                'completed' => __('messages.status_completed'),
+                                'cancelled' => __('messages.status_cancelled'),
+                                'refunded' => __('messages.status_refunded'),
                             ])
                             ->default('pending'),
 
                         Group::make([
                             Select::make('split_from')
-                                ->label('Split Dari Penjualan')
+                                ->label(__('messages.split_from'))
                                 ->relationship('splitFrom', 'invoice_number')
                                 ->searchable()
                                 ->preload()
                                 ->visible(fn($operation) => $operation === 'create'),
 
                             TextInput::make('split_number')
-                                ->label('Nomor Split')
+                                ->label(__('messages.split_number'))
                                 ->numeric()
                                 ->minValue(1)
                                 ->visible(function ($get) {
@@ -292,7 +292,7 @@ class SaleForm
                                 }),
 
                             TextInput::make('split_into')
-                                ->label('Split Menjadi')
+                                ->label(__('messages.split_into'))
                                 ->numeric()
                                 ->minValue(2)
                                 ->visible(function ($get) {

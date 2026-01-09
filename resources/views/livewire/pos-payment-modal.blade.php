@@ -11,7 +11,7 @@
                 {{-- Header --}}
                 <div class="bg-white px-6 py-4 flex items-center justify-between flex-shrink-0 border-b border-slate-100/50">
                     <div>
-                        <h2 class="text-lg font-bold text-slate-800 tracking-tight">Selesaikan Pembayaran</h2>
+                        <h2 class="text-lg font-bold text-slate-800 tracking-tight">{{ __('messages.complete_payment') }}</h2>
                         <p class="text-slate-400 text-xs mt-0.5 font-medium">Transaction <span class="font-mono text-violet-500">#{{ $invoiceNumber }}</span></p>
                     </div>
                     <button wire:click="closeModal" class="text-slate-400 hover:text-slate-600 transition p-2 rounded-full hover:bg-slate-100 touch-target">
@@ -25,7 +25,7 @@
                     {{-- 1. Total Tagihan (Hero Card) --}}
                     <div class="bg-white rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.08)] border border-slate-100 p-5 text-center relative overflow-hidden group">
                         <div class="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Total Tagihan</p>
+                        <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">{{ __('messages.total_bill') }}</p>
                         <h3 class="text-4xl sm:text-5xl font-black text-slate-800 tracking-tight flex justify-center items-start gap-1">
                             <span class="text-xl sm:text-2xl text-slate-400 font-bold mt-1">Rp</span>{{ number_format($finalTotal, 0, ',', '.') }}
                         </h3>
@@ -38,7 +38,7 @@
 
                     {{-- 2. Metode Pembayaran (Grid) --}}
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Metode Pembayaran</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">{{ __('messages.payment_method_label') }}</label>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             @foreach($paymentMethods as $method)
                                 <button 
@@ -73,7 +73,7 @@
                     {{-- 3. Input Pembayaran (Contextual) --}}
                     @if($isCashPayment)
                         <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm animate-fade-in-up">
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nominal Diterima</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('messages.amount_received') }}</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <span class="text-slate-400 text-xl font-bold">Rp</span>
@@ -91,9 +91,9 @@
                             <div class="mt-4 overflow-hidden rounded-xl border {{ $amount_paid >= $finalTotal ? 'border-emerald-200 bg-emerald-50' : 'border-slate-100 bg-slate-50' }} transition-colors duration-300">
                                 <div class="flex items-center justify-between p-4">
                                     <div class="flex flex-col">
-                                        <span class="text-xs font-bold uppercase tracking-wider {{ $amount_paid >= $finalTotal ? 'text-emerald-600' : 'text-slate-500' }}">Kembalian</span>
+                                        <span class="text-xs font-bold uppercase tracking-wider {{ $amount_paid >= $finalTotal ? 'text-emerald-600' : 'text-slate-500' }}">{{ __('messages.change') }}</span>
                                         @if($amount_paid > 0 && $amount_paid < $finalTotal)
-                                            <span class="text-[10px] font-bold text-rose-500 mt-0.5">⚠️ Kurang {{ number_format($finalTotal - $amount_paid, 0, ',', '.') }}</span>
+                                            <span class="text-[10px] font-bold text-rose-500 mt-0.5">⚠️ {{ __('messages.shortage') }} {{ number_format($finalTotal - $amount_paid, 0, ',', '.') }}</span>
                                         @endif
                                     </div>
                                     <span class="text-2xl font-black {{ $amount_paid >= $finalTotal ? 'text-emerald-600' : 'text-slate-300' }}">
@@ -104,7 +104,7 @@
                                 @if($finalTotal > 0 && $amount_paid == 0)
                                     <div class="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
                                         <button wire:click="$set('amount_paid', {{ $finalTotal }})" class="flex-shrink-0 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:border-violet-300 hover:text-violet-600 transition">
-                                            Uang Pas
+                                            {{ __('messages.exact_amount') }}
                                         </button>
                                         <button wire:click="$set('amount_paid', {{ ceil($finalTotal / 10000) * 10000 }})" class="flex-shrink-0 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:border-violet-300 hover:text-violet-600 transition">
                                             {{ number_format(ceil($finalTotal / 10000) * 10000, 0, ',', '.') }}
@@ -126,12 +126,12 @@
                                     @else ✓
                                     @endif
                                 </div>
-                                <h3 class="text-violet-900 font-bold text-lg mb-1">{{ $selectedPaymentMethod['name'] }} Selected</h3>
-                                <p class="text-violet-600 text-sm">Silakan proses pembayaran sejumlah <span class="font-bold">Rp{{ number_format($finalTotal, 0, ',', '.') }}</span></p>
+                                <h3 class="text-violet-900 font-bold text-lg mb-1">{{ $selectedPaymentMethod['name'] }} {{ __('messages.selected') }}</h3>
+                                <p class="text-violet-600 text-sm">{{ __('messages.process_payment_amount') }} <span class="font-bold">Rp{{ number_format($finalTotal, 0, ',', '.') }}</span></p>
                             </div>
                         @else
                             <div class="border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center bg-slate-50/50">
-                                <p class="text-slate-400 font-bold text-sm">Silakan pilih metode pembayaran di atas</p>
+                                <p class="text-slate-400 font-bold text-sm">{{ __('messages.select_payment_method') }}</p>
                             </div>
                         @endif
                     @endif
@@ -143,7 +143,7 @@
                      style="padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));">
                     <button wire:click="closeModal"
                         class="flex-1 py-3.5 px-6 rounded-xl bg-white border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 transition focus:scale-[0.98] shadow-sm">
-                        BATAL
+                        {{ __('messages.cancel') }}
                     </button>
                     
                     <button wire:click="processPayment"
@@ -153,7 +153,7 @@
                         {{ (!$payment_method || ($isCashPayment && $amount_paid < $finalTotal)) ? 'disabled' : '' }}>
                         
                         <span wire:loading.remove wire:target="processPayment" class="flex items-center gap-2">
-                            <span>PROSES BAYAR</span>
+                            <span>{{ __('messages.process_pay') }}</span>
                             <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                         </span>
                         
@@ -162,7 +162,7 @@
                               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            MEMPROSES...
+                            {{ __('messages.processing') }}
                         </span>
                     </button>
                 </div>
@@ -199,7 +199,7 @@
                     <div class="flex gap-3 w-full">
                          <button wire:click="closeReceiptPreview" 
                                 class="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 py-3 rounded-xl font-bold text-sm transition">
-                            Tutup
+                            {{ __('messages.close') }}
                         </button>
                         <button wire:click="manualPrintReceipt" 
                                 wire:loading.attr="disabled"
@@ -207,7 +207,7 @@
                                 class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition active:scale-[0.98] group">
                              <span wire:loading.remove wire:target="manualPrintReceipt" class="flex items-center gap-2">
                                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                 CETAK
+                                 {{ __('messages.print') }}
                              </span>
                               <span wire:loading wire:target="manualPrintReceipt" class="animate-spin">
                                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -218,14 +218,14 @@
                     {{-- Secondary Option: Browser Print --}}
                     <button onclick="printReceipt()" 
                             class="w-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white py-2 rounded-xl font-bold text-xs transition border border-white/10">
-                        🖨️ Cetak via Browser
+                        🖨️ {{ __('messages.print_browser') }}
                     </button>
                 </div>
                 
                  @if ($isPrinting)
                     <div class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-xl flex items-center gap-3 animate-slide-up z-[70]">
                         <svg class="animate-spin h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <span class="font-bold text-sm">Sedang mengirim ke printer...</span>
+                        <span class="font-bold text-sm">{{ __('messages.sending_to_printer') }}</span>
                     </div>
                  @endif
              </div>

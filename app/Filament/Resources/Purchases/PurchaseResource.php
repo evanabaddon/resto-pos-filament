@@ -22,9 +22,25 @@ class PurchaseResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-shopping-cart';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Transaksi';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.purchases');
+    }
 
-    protected static ?string $navigationLabel = 'Pembelian';
+    public static function getModelLabel(): string
+    {
+        return __('messages.purchase');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.purchases');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.transactions');
+    }
 
     // RBAC: super_admin, admin, inventory, accountant
     public static function canViewAny(): bool

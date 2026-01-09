@@ -15,18 +15,18 @@ class ListProducts extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Tambah Produk'),
+            CreateAction::make()->label(__('messages.create_product')),
         ];
     }
 
     public function getTabs(): array
     {
         return [
-            'Semua Produk' => Tab::make()->label('Semua Produk'),
-            'Produk Jadi' => Tab::make()->label('Produk Jadi')->modifyQueryUsing(fn (Builder $query) => $query->where('type', 'retail')),
-            'Product Kitchen' => Tab::make()->label('Product Kitchen')->modifyQueryUsing(fn (Builder $query) => $query->where('type', 'produced')),
-            'Produk Bar' => Tab::make()->label('Produk Bar')->modifyQueryUsing(fn (Builder $query) => $query->where('type', 'bar')),
-            'Bahan Baku' => Tab::make()->label('Bahan Baku')->modifyQueryUsing(fn (Builder $query) => $query->where('type', 'raw')),
+            'all' => Tab::make()->label(__('messages.all_products')),
+            'retail' => Tab::make()->label(__('messages.retail_products'))->modifyQueryUsing(fn(Builder $query) => $query->where('type', 'retail')),
+            'kitchen' => Tab::make()->label(__('messages.kitchen_products'))->modifyQueryUsing(fn(Builder $query) => $query->where('type', 'produced')),
+            'bar' => Tab::make()->label(__('messages.bar_products'))->modifyQueryUsing(fn(Builder $query) => $query->where('type', 'bar')),
+            'raw' => Tab::make()->label(__('messages.raw_materials'))->modifyQueryUsing(fn(Builder $query) => $query->where('type', 'raw')),
         ];
     }
 }

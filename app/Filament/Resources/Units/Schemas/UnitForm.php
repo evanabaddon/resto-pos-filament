@@ -12,15 +12,15 @@ class UnitForm
     {
         return $schema
             ->components([
-                TextInput::make('name')->required(),
-                TextInput::make('symbol'),
+                TextInput::make('name')->label(__('messages.name'))->required(),
+                TextInput::make('symbol')->label(__('messages.symbol')),
                 Select::make('base_unit_id')
                     ->relationship('baseUnit', 'name')
-                    ->label('Base Unit')
+                    ->label(__('messages.base_unit'))
                     ->searchable(),
                 TextInput::make('conversion_rate')
                     ->numeric()
-                    ->label('Konversi (1 base = x unit ini)'),
+                    ->label(__('messages.conversion_rate')),
             ]);
     }
 }
