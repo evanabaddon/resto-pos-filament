@@ -134,12 +134,19 @@
                                         // Silently handle missing avatars
                                     }
                                 }">
-                                    <template x-if="!showFallback">
-                                        <img src="/storage/avatars/{{ str_replace(['@', '.'], '_', $chat->remote_jid) }}.jpg"
-                                            class="w-12 h-12 rounded-full object-cover bg-gray-200 dark:bg-gray-700" loading="lazy"
-                                            x-on:error="handleError(); $event.target.style.display='none'; return false;"
-                                            onerror="return false;">
-                                    </template>
+                                    @php
+                                        $avatarFilename = str_replace(['@', '.'], '_', $chat->remote_jid) . '.jpg';
+                                        $avatarPath = public_path("storage/avatars/{$avatarFilename}");
+                                        $avatarExists = file_exists($avatarPath);
+                                    @endphp
+                                    
+                                    @if($avatarExists)
+                                        <template x-if="!showFallback">
+                                            <img src="/storage/avatars/{{ $avatarFilename }}"
+                                                class="w-12 h-12 rounded-full object-cover bg-gray-200 dark:bg-gray-700" loading="lazy"
+                                                x-on:error="handleError()">
+                                        </template>
+                                    @endif
 
                                     <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium shadow-sm select-none"
                                         style="background-color: {{ '#' . substr(md5($chat->remote_jid), 0, 6) }}"

@@ -303,6 +303,13 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                         // Save to storage
                         $filename = str_replace(['@', '.'], '_', $jid) . '.jpg';
                         Storage::disk('public')->put("avatars/{$filename}", $body);
+
+                        // Ensure correct file permissions (fix 403 errors on some servers)
+                        $fullPath = storage_path("app/public/avatars/{$filename}");
+                        if (file_exists($fullPath)) {
+                            chmod($fullPath, 0644);
+                        }
+
                         $successCount++;
 
                     } else {
