@@ -21,7 +21,10 @@ class ManagePrinter extends SettingsPage
 
     protected static string $settings = PrinterSettings::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Pengaturan';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.settings');
+    }
 
     protected static ?int $navigationSort = 2;
 
@@ -30,96 +33,106 @@ class ManagePrinter extends SettingsPage
         return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 
+    public function getTitle(): string
+    {
+        return __('messages.manage_printer');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.manage_printer');
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                Section::make('Printer Configuration')
-                    ->description('Konfigurasi tipe printer dan koneksi')
+                Section::make(__('messages.printer_configuration'))
+                    ->description(__('messages.printer_config_desc'))
                     ->schema([
                         Select::make('printer_type')
-                            ->label('Tipe Printer')
+                            ->label(__('messages.printer_type'))
                             ->options([
-                                'network' => 'Network Printer (IP)',
-                                'usb' => 'USB Printer',
+                                'network' => __('messages.network_printer'),
+                                'usb' => __('messages.usb_printer'),
                             ])
                             ->default('usb')
                             ->live()
                             ->required(),
                     ]),
 
-                Section::make('USB Printer Settings')
-                    ->description('Konfigurasi untuk USB Printer - Bisa gunakan satu printer untuk semua atau printer terpisah')
+                Section::make(__('messages.usb_printer_settings'))
+                    ->description(__('messages.usb_settings_desc'))
                     ->visible(fn($get) => $get('printer_type') === 'usb')
                     ->schema([
                         Select::make('usb_printer_mode')
-                            ->label('Mode USB Printer')
+                            ->label(__('messages.usb_printer_mode'))
                             ->options([
-                                'single' => 'Satu Printer untuk Semua Divisi',
-                                'multiple' => 'Printer Terpisah per Divisi',
+                                'single' => __('messages.single_printer_mode'),
+                                'multiple' => __('messages.multiple_printer_mode'),
                             ])
                             ->default('single')
                             ->live()
                             ->required(),
 
                         TextInput::make('usb_printer_name')
-                            ->label('Nama Printer USB (Utama)')
+                            ->label(__('messages.usb_printer_name'))
                             ->placeholder('POS-58')
-                            ->helperText('Digunakan jika mode "Satu Printer" atau sebagai fallback')
+                            ->helperText(__('messages.usb_printer_name_helper'))
                             ->default('POS-58')
                             ->required(),
 
                         TextInput::make('usb_kitchen_printer_name')
-                            ->label('Nama Printer Dapur')
+                            ->label(__('messages.usb_kitchen_printer_name'))
                             ->placeholder('Kitchen-POS-58')
-                            ->helperText('Kosongkan jika menggunakan printer utama')
+                            ->helperText(__('messages.usb_kitchen_helper'))
                             ->visible(fn($get) => $get('usb_printer_mode') === 'multiple'),
 
                         TextInput::make('usb_bar_printer_name')
-                            ->label('Nama Printer Bar')
+                            ->label(__('messages.usb_bar_printer_name'))
                             ->placeholder('Bar-POS-58')
-                            ->helperText('Kosongkan jika menggunakan printer utama')
+                            ->helperText(__('messages.usb_bar_helper'))
                             ->visible(fn($get) => $get('usb_printer_mode') === 'multiple'),
 
                         TextInput::make('usb_general_printer_name')
-                            ->label('Nama Printer Umum')
+                            ->label(__('messages.usb_general_printer_name'))
                             ->placeholder('General-POS-58')
-                            ->helperText('Kosongkan jika menggunakan printer utama')
+                            ->helperText(__('messages.usb_general_helper'))
                             ->visible(fn($get) => $get('usb_printer_mode') === 'multiple'),
                     ]),
 
-                Section::make('Network Printer Settings')
-                    ->description('Konfigurasi untuk Network Printer')
+                Section::make(__('messages.network_printer_settings'))
+                    ->description(__('messages.network_settings_desc'))
                     ->visible(fn($get) => $get('printer_type') === 'network')
                     ->schema([
                         TextInput::make('kitchen_printer_ip')
-                            ->label('Kitchen Printer IP')
+                            ->label(__('messages.kitchen_printer_ip'))
                             ->placeholder('192.168.1.100')
                             ->required(),
                         TextInput::make('kitchen_printer_port')
-                            ->label('Kitchen Printer Port')
+                            ->label(__('messages.kitchen_printer_port'))
                             ->numeric()
                             ->placeholder('9100')
                             ->default(9100)
                             ->required(),
 
                         TextInput::make('bar_printer_ip')
-                            ->label('Bar Printer IP')
+                            ->label(__('messages.bar_printer_ip'))
                             ->placeholder('192.168.1.101')
                             ->required(),
                         TextInput::make('bar_printer_port')
-                            ->label('Bar Printer Port')
+                            ->label(__('messages.bar_printer_port'))
                             ->numeric()
                             ->placeholder('9100')
                             ->default(9100)
                             ->required(),
 
                         TextInput::make('general_printer_ip')
-                            ->label('General Printer IP')
+                            ->label(__('messages.general_printer_ip'))
                             ->placeholder('192.168.1.102')
                             ->required(),
                         TextInput::make('general_printer_port')
-                            ->label('General Printer Port')
+                            ->label(__('messages.general_printer_port'))
                             ->numeric()
                             ->placeholder('9100')
                             ->default(9100)
@@ -132,7 +145,7 @@ class ManagePrinter extends SettingsPage
     {
         return [
             Action::make('testPrinters')
-                ->label('Test Printers')
+                ->label(__('messages.test_printers'))
                 ->color('success')
                 ->action('testPrinters'),
         ];
@@ -142,29 +155,29 @@ class ManagePrinter extends SettingsPage
     {
         try {
             $printService = new ReceiptPrintService();
-            $detectedPrinters = $printService->detectUsbPrinters();
+            $detectedPrinters = $printService->getAvailablePrinters();
 
             // ✅ FIX: Pastikan $detectedPrinters adalah array
             if (empty($detectedPrinters)) {
                 Notification::make()
-                    ->title('No USB Printers Found')
-                    ->body('Tidak ada printer USB yang terdeteksi. Pastikan printer sudah terinstall.')
+                    ->title(__('messages.no_usb_printers_found'))
+                    ->body(__('messages.no_usb_printers_body'))
                     ->warning()
                     ->send();
                 return;
             }
 
             // ✅ FIX: Gunakan implode hanya jika array tidak empty
-            $message = "USB Printers Detected:\n" . implode("\n", $detectedPrinters);
+            $message = __('messages.usb_printers_detected') . ":\n" . implode("\n", $detectedPrinters);
 
             Notification::make()
-                ->title('USB Printers Detection')
+                ->title(__('messages.usb_printers_detected'))
                 ->body($message)
                 ->success()
                 ->send();
         } catch (\Exception $e) {
             Notification::make()
-                ->title('Detection Failed')
+                ->title(__('messages.detection_failed'))
                 ->body('Gagal mendeteksi printer: ' . $e->getMessage())
                 ->danger()
                 ->send();
@@ -188,10 +201,10 @@ class ManagePrinter extends SettingsPage
                     try {
                         $testResult = $printService->testPrinter($printerName);
                         $results[] = $testResult['success']
-                            ? "✅ USB Printer (All): SUCCESS - {$printerName}"
-                            : "❌ USB Printer (All): FAILED - {$testResult['error']}";
+                            ? __('messages.test_success_msg', ['division' => 'USB Printer (All)', 'name' => $printerName])
+                            : __('messages.test_failed_msg', ['division' => 'USB Printer (All)', 'error' => $testResult['error']]);
                     } catch (\Exception $e) {
-                        $results[] = "❌ USB Printer (All): FAILED - {$e->getMessage()}";
+                        $results[] = __('messages.test_failed_msg', ['division' => 'USB Printer (All)', 'error' => $e->getMessage()]);
                     }
                 } else {
                     // Test multiple printers
@@ -206,29 +219,29 @@ class ManagePrinter extends SettingsPage
                         try {
                             $testResult = $printService->testPrinter($printerName);
                             $results[] = $testResult['success']
-                                ? "✅ {$division}: SUCCESS - {$printerName}"
-                                : "❌ {$division}: FAILED - {$testResult['error']}";
+                                ? __('messages.test_success_msg', ['division' => $division, 'name' => $printerName])
+                                : __('messages.test_failed_msg', ['division' => $division, 'error' => $testResult['error']]);
                         } catch (\Exception $e) {
-                            $results[] = "❌ {$division}: FAILED - {$e->getMessage()}";
+                            $results[] = __('messages.test_failed_msg', ['division' => $division, 'error' => $e->getMessage()]);
                         }
                     }
                 }
             } else {
                 // TEST NETWORK PRINTERS - Untuk hosting, skip network test
-                $results[] = "ℹ️ Network printer test skipped in hosting environment";
+                $results[] = "ℹ️ " . __('messages.network_test_skipped');
             }
 
             // ✅ FIX: Pastikan $results tidak null
-            $message = "Test Results:\n" . (!empty($results) ? implode("\n", $results) : "No tests performed");
+            $message = __('messages.printer_test_results') . ":\n" . (!empty($results) ? implode("\n", $results) : "No tests performed");
 
             Notification::make()
-                ->title('Printer Test Results')
+                ->title(__('messages.printer_test_results'))
                 ->body($message)
                 ->success()
                 ->send();
         } catch (\Exception $e) {
             Notification::make()
-                ->title('Test Failed')
+                ->title(__('messages.test_failed'))
                 ->body('Printer test failed: ' . $e->getMessage())
                 ->danger()
                 ->send();
@@ -237,10 +250,10 @@ class ManagePrinter extends SettingsPage
 
     protected function generateTestContent(string $printerName): string
     {
-        return "TEST {$printerName} PRINTER\n" .
-            "Connection Successful\n" .
+        return __('messages.test_printer_name', ['name' => $printerName]) . "\n" .
+            __('messages.connection_successful') . "\n" .
             "Time: " . now()->format('Y-m-d H:i:s') . "\n" .
             "========================\n" .
-            "Printer configuration is working correctly!\n\n\n";
+            __('messages.printer_config_working') . "\n\n\n";
     }
 }

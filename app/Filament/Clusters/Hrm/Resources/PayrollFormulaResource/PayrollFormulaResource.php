@@ -32,34 +32,29 @@ class PayrollFormulaResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-calculator';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+    protected static string|UnitEnum|null $navigationGroup = null; // Removed hardcoded group
 
     protected static ?string $cluster = HrmCluster::class;
 
-    // RBAC: super_admin, admin, accountant
-    public static function canViewAny(): bool
+    public static function getNavigationLabel(): string
     {
-        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Accountant;
+        return __('messages.payroll_formula_resource');
     }
 
-    public static function canCreate(): bool
+    public static function getModelLabel(): string
     {
-        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Accountant;
+        return __('messages.payroll_formula_resource');
     }
 
-    public static function canEdit(Model $record): bool
+    public static function getPluralModelLabel(): string
     {
-        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin || auth()->user()->role === \App\Enums\UserRole::Accountant;
+        return __('messages.payroll_formulas_resource'); // Make sure this key exists or use singular
     }
 
-    public static function canDelete(Model $record): bool
+    public static function getNavigationGroup(): ?string
     {
-        return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
+        return __('messages.hrm_cluster');
     }
-
-    protected static ?int $navigationSort = 6;
-
-    protected static ?string $navigationLabel = 'Rumus Gaji';
 
     public static function form(Schema $schema): Schema
     {
@@ -71,26 +66,26 @@ class PayrollFormulaResource extends Resource
                         Grid::make(2)
                             ->schema([
                                 TextInput::make('name')
-                                    ->label('Nama Rumus')
+                                    ->label(__('messages.formula_name'))
                                     ->required()
                                     ->maxLength(255),
 
                                 Toggle::make('settings.is_advanced')
-                                    ->label('Mode Advanced (Manual Script)')
+                                    ->label(__('messages.advanced_mode'))
                                     ->live()
                                     ->inline(false)
                                     ->default(false),
                             ]),
 
                         // SIMPLE MODE SECTION
-                        Section::make('Konfigurasi Sederhana')
-                            ->description('Atur komponen gaji tanpa koding. Script akan digenerate otomatis.')
+                        Section::make(__('messages.simple_config'))
+                            ->description('Atur komponen gaji tanpa koding. Script akan digenerate otomatis.') // Consider translating desc
                             ->visible(fn(Get $get) => !$get('settings.is_advanced'))
                             ->schema([
                                 Grid::make(2)
                                     ->schema([
                                         TextInput::make('settings.overtime_rate')
-                                            ->label('Rate Lembur (Per Jam)')
+                                            ->label(__('messages.overtime_rate'))
                                             ->numeric()
                                             ->prefix('Rp')
                                             ->default(0)
@@ -98,7 +93,7 @@ class PayrollFormulaResource extends Resource
                                             ->afterStateUpdated(fn(Set $set, Get $get) => self::generateScript($set, $get)),
 
                                         TextInput::make('settings.late_penalty')
-                                            ->label('Denda Terlambat (Per Kejadian)')
+                                            ->label(__('messages.late_penalty'))
                                             ->numeric()
                                             ->prefix('Rp')
                                             ->default(0)
@@ -106,11 +101,11 @@ class PayrollFormulaResource extends Resource
                                             ->afterStateUpdated(fn(Set $set, Get $get) => self::generateScript($set, $get)),
 
                                         Select::make('settings.salary_type')
-                                            ->label('Tipe Gaji')
+                                            ->label(__('messages.salary_type'))
                                             ->options([
-                                                'monthly' => 'Bulanan Tetap (Full)',
-                                                'prorated_30' => 'Bulanan Prorata (Dibagi 30 Hari)',
-                                                'daily' => 'Harian Murni (Gaji Pokok = Rate Harian)',
+                                                'monthly' => (__('messages.monthly_fixed')),
+                                                'prorated_30' => (__('messages.monthly_prorated')),
+                                                'daily' => (__('messages.daily_pure')),
                                             ])
                                             ->default('monthly')
                                             ->required()
@@ -118,7 +113,7 @@ class PayrollFormulaResource extends Resource
                                             ->afterStateUpdated(fn(Set $set, Get $get) => self::generateScript($set, $get)),
 
                                         TextInput::make('settings.early_leave_penalty')
-                                            ->label('Denda Pulang Cepat (Per Kejadian)')
+                                            ->label(__('messages.early_leave_penalty'))
                                             ->numeric()
                                             ->prefix('Rp')
                                             ->default(0)
@@ -126,7 +121,7 @@ class PayrollFormulaResource extends Resource
                                             ->afterStateUpdated(fn(Set $set, Get $get) => self::generateScript($set, $get)),
 
                                         TextInput::make('settings.absent_penalty')
-                                            ->label('Denda Tidak Masuk (Per Hari)')
+                                            ->label(__('messages.absent_penalty'))
                                             ->numeric()
                                             ->prefix('Rp')
                                             ->default(0)
@@ -137,25 +132,25 @@ class PayrollFormulaResource extends Resource
 
 
                                 Repeater::make('settings.deductions')
-                                    ->label('Potongan Tambahan (Recurring)')
-                                    ->helperText('Potongan ini akan selalu diterapkan setiap generate gaji.')
+                                    ->label(__('messages.additional_deductions'))
+                                    ->helperText('Potongan ini akan selalu diterapkan setiap generate gaji.') // Translate?
                                     ->schema([
                                         TextInput::make('name')
-                                            ->label('Nama Potongan')
-                                            ->placeholder('Contoh: BPJS, Koperasi')
+                                            ->label(__('messages.deduction_name'))
+                                            ->placeholder('Contoh: BPJS, Koperasi') // Translate?
                                             ->required(),
                                         Select::make('type')
-                                            ->label('Tipe Potongan')
+                                            ->label(__('messages.deduction_type'))
                                             ->options([
-                                                'fixed' => 'Nominal Tetap (Rp)',
-                                                'percentage' => 'Persentase dari Gaji Pokok (%)',
+                                                'fixed' => (__('messages.fixed_amount')),
+                                                'percentage' => (__('messages.percentage')),
                                             ])
                                             ->default('fixed')
                                             ->required()
                                             ->live()
                                             ->afterStateUpdated(fn(Set $set, Get $get) => self::generateScript($set, $get)),
                                         TextInput::make('amount')
-                                            ->label('Jumlah / Persentase')
+                                            ->label(__('messages.amount_percentage'))
                                             ->numeric()
                                             ->default(0)
                                             ->live()
@@ -167,10 +162,10 @@ class PayrollFormulaResource extends Resource
                             ]),
 
                         // ADVANCED MODE SECTION
-                        Section::make('Script Editor')
+                        Section::make(__('messages.script_editor'))
                             ->schema([
                                 Textarea::make('script')
-                                    ->label('Script Rumus (PHP Expression)')
+                                    ->label(__('messages.script_formula'))
                                     ->helperText('Variables: $base_salary, $attendance_days, $overtime_minutes, $late_count, $early_leave_count. Return array of [total, deductions, overtime_amount].')
                                     ->rows(10)
                                     ->required()
@@ -187,7 +182,7 @@ class PayrollFormulaResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nama')
+                    ->label(__('messages.formula_name'))
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

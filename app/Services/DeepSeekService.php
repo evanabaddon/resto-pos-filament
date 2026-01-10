@@ -40,6 +40,8 @@ class DeepSeekService
                     ])
                         ->timeout(30)
                         ->get('https://openrouter.ai/api/v1/models');
+
+                    /** @var \Illuminate\Http\Client\Response $response */
                     if ($response->successful()) {
                         $models = $response->json()['data'] ?? [];
                         return collect($models)->mapWithKeys(function ($model) {
@@ -93,6 +95,7 @@ class DeepSeekService
                     'temperature' => 0.7,
                 ], $options));
 
+            /** @var \Illuminate\Http\Client\Response $response */
             if ($response->successful()) {
                 return $response->json();
             }

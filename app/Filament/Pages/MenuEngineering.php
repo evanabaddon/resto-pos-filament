@@ -13,14 +13,27 @@ use UnitEnum;
 class MenuEngineering extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-presentation-chart-line';
-    protected static ?string $navigationLabel = 'Menu Engineering (AI)';
+    protected static ?string $navigationLabel = null; // Defined in getNavigationLabel
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.menu_engineering');
+    }
 
     public static function canAccess(): bool
     {
         return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
-    protected static ?string $title = 'AI Menu Engineering';
-    protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
+    protected static ?string $title = null;
+    public function getTitle(): string
+    {
+        return __('messages.menu_engineering_title');
+    }
+
+    protected static string|UnitEnum|null $navigationGroup = null; // Defined in getNavigationGroup
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.reports_analytics');
+    }
     protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.pages.menu-engineering';
@@ -61,7 +74,7 @@ class MenuEngineering extends Page
             $advice = $deepSeek->analyzeMenuMatrix($this->matrixData);
 
             if (!$advice || !isset($advice['overall_analysis'])) {
-                throw new \Exception('Gagal mendapatkan saran strategis dari AI. Silakan coba lagi.');
+                throw new \Exception(__('messages.ai_error_advice'));
             }
 
             $this->aiAdvice = $advice;
@@ -75,13 +88,13 @@ class MenuEngineering extends Page
             ], now()->addDays(7));
 
             Notification::make()
-                ->title('Analisis Berhasil')
-                ->body('Data profitabilitas menu dan saran AI telah diperbarui.')
+                ->title(__('messages.analysis_success'))
+                ->body(__('messages.analysis_success_body'))
                 ->success()
                 ->send();
         } catch (\Exception $e) {
             Notification::make()
-                ->title('Gagal melakukan analisis')
+                ->title(__('messages.analysis_failed'))
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
@@ -92,8 +105,8 @@ class MenuEngineering extends Page
     {
         if (!$this->matrixData || empty($this->matrixData['items'])) {
             Notification::make()
-                ->title('Export Gagal')
-                ->body('Data analisis belum tersedia untuk di-export.')
+                ->title(__('messages.export_failed'))
+                ->body(__('messages.export_failed_body'))
                 ->danger()
                 ->send();
             return;
@@ -112,7 +125,7 @@ class MenuEngineering extends Page
             );
         } catch (\Exception $e) {
             Notification::make()
-                ->title('Gagal melakukan export')
+                ->title(__('messages.export_failed'))
                 ->body($e->getMessage())
                 ->danger()
                 ->send();

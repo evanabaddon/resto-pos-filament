@@ -26,11 +26,17 @@ class AppSettings extends SettingsPage
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Pengaturan';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.settings');
+    }
 
     protected static ?int $navigationSort = 99;
 
-    protected static ?string $navigationLabel = 'General Settings';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.general_settings');
+    }
 
     protected static string $settings = GeneralSettings::class;
 
@@ -52,18 +58,19 @@ class AppSettings extends SettingsPage
                             ->schema([
                                 Grid::make(2)
                                     ->schema([
-                                        Section::make('Alamat & Lokasi')
-                                            ->description('Pengaturan alamat lengkap dan wilayah (Integrasi Wilayah.id).')
+                                        Section::make(__('messages.address_location'))
+                                            ->description(__('messages.address_location_desc'))
                                             ->schema([
                                                 Grid::make(2)
                                                     ->schema([
                                                         Select::make('province_code')
-                                                            ->label('Provinsi')
+                                                            ->label(__('messages.province'))
                                                             ->searchable()
                                                             ->live()
                                                             ->options(function () {
                                                                 try {
                                                                     // Fetch provinces
+                                                                    /** @var \Illuminate\Http\Client\Response $response */
                                                                     $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get('https://wilayah.id/api/provinces.json');
                                                                     if ($response->successful()) {
                                                                         return collect($response->json('data'))->pluck('name', 'code');
@@ -80,6 +87,7 @@ class AppSettings extends SettingsPage
                                                                 // Set Name
                                                                 if ($state) {
                                                                     try {
+                                                                        /** @var \Illuminate\Http\Client\Response $response */
                                                                         $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get('https://wilayah.id/api/provinces.json');
                                                                         if ($response->successful()) {
                                                                             $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
@@ -91,7 +99,7 @@ class AppSettings extends SettingsPage
                                                             }),
 
                                                         Select::make('regency_code')
-                                                            ->label('Kabupaten/Kota')
+                                                            ->label(__('messages.regency'))
                                                             ->searchable()
                                                             ->live()
                                                             ->disabled(fn(Get $get) => !$get('province_code'))
@@ -101,6 +109,7 @@ class AppSettings extends SettingsPage
                                                                     return [];
 
                                                                 try {
+                                                                    /** @var \Illuminate\Http\Client\Response $response */
                                                                     $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/regencies/{$code}.json");
                                                                     if ($response->successful()) {
                                                                         return collect($response->json('data'))->pluck('name', 'code');
@@ -117,6 +126,7 @@ class AppSettings extends SettingsPage
                                                                 if ($state) {
                                                                     try {
                                                                         $pCode = $get('province_code');
+                                                                        /** @var \Illuminate\Http\Client\Response $response */
                                                                         $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/regencies/{$pCode}.json");
                                                                         if ($response->successful()) {
                                                                             $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
@@ -128,7 +138,7 @@ class AppSettings extends SettingsPage
                                                             }),
 
                                                         Select::make('district_code')
-                                                            ->label('Kecamatan')
+                                                            ->label(__('messages.district'))
                                                             ->searchable()
                                                             ->live()
                                                             ->disabled(fn(Get $get) => !$get('regency_code'))
@@ -138,6 +148,7 @@ class AppSettings extends SettingsPage
                                                                     return [];
 
                                                                 try {
+                                                                    /** @var \Illuminate\Http\Client\Response $response */
                                                                     $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/districts/{$code}.json");
                                                                     if ($response->successful()) {
                                                                         return collect($response->json('data'))->pluck('name', 'code');
@@ -153,6 +164,7 @@ class AppSettings extends SettingsPage
                                                                 if ($state) {
                                                                     try {
                                                                         $rCode = $get('regency_code');
+                                                                        /** @var \Illuminate\Http\Client\Response $response */
                                                                         $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/districts/{$rCode}.json");
                                                                         if ($response->successful()) {
                                                                             $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
@@ -164,7 +176,7 @@ class AppSettings extends SettingsPage
                                                             }),
 
                                                         Select::make('village_code')
-                                                            ->label('Kelurahan/Desa')
+                                                            ->label(__('messages.village'))
                                                             ->searchable()
                                                             ->live()
                                                             ->disabled(fn(Get $get) => !$get('district_code'))
@@ -174,6 +186,7 @@ class AppSettings extends SettingsPage
                                                                     return [];
 
                                                                 try {
+                                                                    /** @var \Illuminate\Http\Client\Response $response */
                                                                     $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/villages/{$code}.json");
                                                                     if ($response->successful()) {
                                                                         return collect($response->json('data'))->pluck('name', 'code');
@@ -187,6 +200,7 @@ class AppSettings extends SettingsPage
                                                                 if ($state) {
                                                                     try {
                                                                         $dCode = $get('district_code');
+                                                                        /** @var \Illuminate\Http\Client\Response $response */
                                                                         $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/villages/{$dCode}.json");
                                                                         if ($response->successful()) {
                                                                             $name = collect($response->json('data'))->where('code', $state)->first()['name'] ?? null;
@@ -202,29 +216,30 @@ class AppSettings extends SettingsPage
                                                             }),
 
                                                         TextInput::make('postal_code')
-                                                            ->label('Kode Pos')
+                                                            ->label(__('messages.postal_code'))
                                                             ->numeric(),
 
                                                         TextInput::make('bmkg_location_code')
-                                                            ->label('Kode Lokasi BMKG (Auto)')
+                                                            ->label(__('messages.bmkg_code_auto'))
                                                             ->readOnly()
                                                             ->columnSpan(2)
-                                                            ->helperText('Otomatis terisi berdasarkan Kelurahan/Desa yang dipilih. Digunakan untuk fitur cuaca.')
+                                                            ->helperText(__('messages.bmkg_code_helper'))
                                                             ->suffixAction(
                                                                 Action::make('test_bmkg')
                                                                     ->icon('heroicon-o-beaker')
-                                                                    ->label('Test')
+                                                                    ->label(__('messages.test'))
                                                                     ->action(function ($state) {
                                                                         if (!$state) {
-                                                                            \Filament\Notifications\Notification::make()->title('Kode belum terisi')->warning()->send();
+                                                                            \Filament\Notifications\Notification::make()->title(__('messages.code_not_filled'))->warning()->send();
                                                                             return;
                                                                         }
 
                                                                         try {
+                                                                            /** @var \Illuminate\Http\Client\Response $response */
                                                                             $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={$state}");
 
                                                                             if (!$response) {
-                                                                                throw new \Exception('Gagal menghubungi server BMKG (Empty Response).');
+                                                                                throw new \Exception(__('messages.failed_fetch_data'));
                                                                             }
 
                                                                             if ($response->successful()) {
@@ -233,81 +248,81 @@ class AppSettings extends SettingsPage
                                                                                 $nama = "{$lokasi['desa']}, {$lokasi['kecamatan']}, {$lokasi['kotkab']}";
 
                                                                                 \Filament\Notifications\Notification::make()
-                                                                                    ->title('Kode Valid!')
-                                                                                    ->body("Lokasi ditemukan: {$nama}")
+                                                                                    ->title(__('messages.code_valid'))
+                                                                                    ->body(__('messages.location_found', ['name' => $nama]))
                                                                                     ->success()
                                                                                     ->send();
                                                                             } else {
-                                                                                \Filament\Notifications\Notification::make()->title('Gagal mengambil data.')->body('Pastikan kode benar/server BMKG sedang bermasalah.')->danger()->send();
+                                                                                \Filament\Notifications\Notification::make()->title(__('messages.failed_fetch_data'))->body(__('messages.check_code_server'))->danger()->send();
                                                                             }
                                                                         } catch (\Exception $e) {
-                                                                            \Filament\Notifications\Notification::make()->title('Connection Error')->body($e->getMessage())->danger()->send();
+                                                                            \Filament\Notifications\Notification::make()->title(__('messages.connection_error'))->body($e->getMessage())->danger()->send();
                                                                         }
                                                                     })
                                                             ),
                                                     ]),
                                             ]),
 
-                                        Section::make('Identitas Aplikasi')
+                                        Section::make(__('messages.app_identity'))
                                             ->columnSpan(1)
                                             ->schema([
                                                 TextInput::make('app_name')
-                                                    ->label('App Name')
+                                                    ->label(__('messages.app_name'))
                                                     ->required()
                                                     ->placeholder('Nama Restoran Anda'),
 
                                                 FileUpload::make('app_logo')
-                                                    ->label('Logo')
+                                                    ->label(__('messages.app_logo'))
                                                     ->image()
                                                     ->disk('public') // Ensure public visibility
                                                     ->directory('settings/logo')
                                                     ->maxSize(2048),
 
                                                 FileUpload::make('app_favicon')
-                                                    ->label('Favicon')
+                                                    ->label(__('messages.app_favicon'))
                                                     ->image()
                                                     ->disk('public') // Ensure public visibility
                                                     ->directory('settings/favicon')
                                                     ->maxSize(512),
                                             ]),
 
-                                        Section::make('Informasi Perusahaan (Untuk Laporan/Struk)')
+                                        Section::make(__('messages.company_info'))
                                             ->columnSpan(1)
                                             ->schema([
                                                 Textarea::make('company_address')
-                                                    ->label('Alamat Perusahaan')
+                                                    ->label(__('messages.company_address'))
                                                     ->rows(3),
                                                 TextInput::make('company_phone')
-                                                    ->label('Telepon'),
+                                                    ->label(__('messages.company_phone')),
                                                 TextInput::make('company_email')
-                                                    ->label('Email')
+                                                    ->label(__('messages.company_email'))
                                                     ->email(),
                                                 TextInput::make('app_website')
-                                                    ->label('Website')
+                                                    ->label(__('messages.website'))
                                                     ->url(),
                                             ]),
 
-                                        Section::make('Konfigurasi POS')
+                                        Section::make(__('messages.pos_configuration'))
                                             ->columnSpan(1)
                                             ->schema([
                                                 Toggle::make('enable_table_number')
-                                                    ->label('Aktifkan Nomor Meja')
-                                                    ->helperText('Tampilkan input nomor meja saat transaksi Dine In'),
+                                                    ->label(__('messages.enable_table_number'))
+                                                    ->helperText(__('messages.enable_table_number_helper')),
 
                                                 Toggle::make('enable_tax')
-                                                    ->label('Aktifkan Pajak')
+                                                    ->label(__('messages.enable_tax'))
                                                     ->live()
-                                                    ->helperText('Jika aktif, pajak akan dihitung pada setiap transaksi'),
+                                                    ->helperText(__('messages.enable_tax_helper')),
 
                                                 TextInput::make('tax_percentage')
-                                                    ->label('Persentase Pajak (%)')
+                                                    ->label(__('messages.tax_percentage'))
                                                     ->numeric()
                                                     ->suffix('%')
                                                     ->visible(fn(Get $get) => $get('enable_tax'))
                                                     ->default(0),
 
                                                 Select::make('printer_width')
-                                                    ->label('Ukuran Printer')
+                                                    ->label(__('messages.printer_width'))
                                                     ->options([
                                                         '58mm' => '58mm (Standard)',
                                                         '80mm' => '80mm (Large)',
@@ -318,29 +333,29 @@ class AppSettings extends SettingsPage
                                                 Grid::make(2)
                                                     ->schema([
                                                         Select::make('operational_start_hour')
-                                                            ->label('Jam Buka')
+                                                            ->label(__('messages.open_hour'))
                                                             ->options(array_combine(range(0, 23), array_map(fn($h) => sprintf('%02d:00', $h), range(0, 23))))
                                                             ->required()
                                                             ->default(10),
 
                                                         Select::make('operational_end_hour')
-                                                            ->label('Jam Tutup')
+                                                            ->label(__('messages.close_hour'))
                                                             ->options(array_combine(range(0, 23), array_map(fn($h) => sprintf('%02d:00', $h), range(0, 23))))
                                                             ->required()
                                                             ->default(22),
                                                     ]),
                                             ]),
 
-                                        Section::make('Sosial Media')
+                                        Section::make(__('messages.social_media'))
                                             ->columnSpan(2)
                                             ->schema([
                                                 Grid::make(2)
                                                     ->schema([
                                                         TextInput::make('app_instagram')
-                                                            ->label('Instagram')
+                                                            ->label(__('messages.instagram'))
                                                             ->prefix('instagram.com/'),
                                                         TextInput::make('app_tiktok')
-                                                            ->label('TikTok')
+                                                            ->label(__('messages.tiktok'))
                                                             ->prefix('tiktok.com/@'),
                                                     ])
                                             ]),
@@ -350,23 +365,30 @@ class AppSettings extends SettingsPage
                                             ->schema([
                                                 Textarea::make('wa_template_reservation_confirmation')
                                                     ->label('Template Konfirmasi Reservasi Pro (WhatsApp)')
-                                                    ->rows(4)
-                                                    ->helperText('Variabel: {customer_name}, {app_name}, {date}, {time}, {guests}'),
+                                                    ->rows(4),
+                                                Section::make(__('messages.reservation_config'))
+                                                    ->columnSpan(2)
+                                                    ->schema([
+                                                        Textarea::make('wa_template_reservation_confirmation')
+                                                            ->label(__('messages.wa_template_reservation'))
+                                                            ->rows(4)
+                                                            ->helperText(__('messages.wa_template_reservation_helper')),
+                                                    ]),
                                             ])
-                                    ])
+                                    ]),
                             ]),
 
                         // TAB: FISCAL
-                        Tab::make('Fiscal / Pajak')
+                        Tab::make(__('messages.fiscal_tax'))
                             ->visible(fn() => app(GeneralSettings::class)->enable_fiscal_planning)
                             ->icon('heroicon-o-calculator')
                             ->schema([
 
-                                Section::make('Excel Template Configuration')
-                                    ->description('Konfigurasi template laporan pajak (Excel).')
+                                Section::make(__('messages.excel_template_config'))
+                                    ->description(__('messages.excel_template_desc'))
                                     ->schema([
                                         FileUpload::make('template_path')
-                                            ->label('File Template (Excel)')
+                                            ->label(__('messages.template_file'))
                                             ->disk('public')
                                             ->directory('fiscal-templates')
                                             ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']),
@@ -374,20 +396,20 @@ class AppSettings extends SettingsPage
                                         Grid::make(2)
                                             ->schema([
                                                 TextInput::make('start_row')
-                                                    ->label('Baris Mulai Data')
+                                                    ->label(__('messages.start_row'))
                                                     ->numeric()
                                                     ->default(2)
                                                     ->required(),
                                                 TextInput::make('date_column')
-                                                    ->label('Kolom Tanggal')
+                                                    ->label(__('messages.date_column'))
                                                     ->default('A')
                                                     ->required(),
                                                 TextInput::make('amount_column')
-                                                    ->label('Kolom Omzet (Total)')
+                                                    ->label(__('messages.amount_column'))
                                                     ->default('B')
                                                     ->required(),
                                                 TextInput::make('tax_column')
-                                                    ->label('Kolom Pajak')
+                                                    ->label(__('messages.tax_column'))
                                                     ->default('C')
                                                     ->required(),
                                             ])
@@ -395,15 +417,15 @@ class AppSettings extends SettingsPage
                             ]),
 
                         // TAB: KEMITRAAN (Loyalty)
-                        Tab::make('Kemitraan')
+                        Tab::make(__('messages.partnership'))
                             ->visible(fn() => app(GeneralSettings::class)->enable_crm)
                             ->icon('heroicon-o-user-group')
                             ->schema([
-                                Section::make('Konfigurasi Dasar')
-                                    ->description('Pengaturan nama program dan nilai tukar poin.')
+                                Section::make(__('messages.basic_config'))
+                                    ->description(__('messages.basic_config_desc'))
                                     ->schema([
                                         TextInput::make('loyalty_program_name')
-                                            ->label('Nama Program')
+                                            ->label(__('messages.loyalty_program_name'))
                                             ->default('Sedulur Suralaya')
                                             ->required(),
 
@@ -412,7 +434,14 @@ class AppSettings extends SettingsPage
                                             ->numeric()
                                             ->prefix('Rp')
                                             ->default(10000)
-                                            ->helperText('Contoh: Tiap belanja Rp 10.000 dapat 1 Poin.'),
+                                            ->required(),
+
+                                        TextInput::make('loyalty_point_exchange_rate')
+                                            ->label(__('messages.point_exchange_rate'))
+                                            ->numeric()
+                                            ->prefix('Rp')
+                                            ->default(10000)
+                                            ->helperText(__('messages.point_exchange_helper')),
 
                                         TextInput::make('loyalty_point_value')
                                             ->label('Nilai 1 Poin dalam Rupiah')
@@ -422,13 +451,13 @@ class AppSettings extends SettingsPage
                                             ->helperText('Contoh: 1 Poin bernilai Rp 1 saat ditukarkan.'),
                                     ]),
 
-                                Section::make('WhatsApp SOP Templates')
-                                    ->description('Atur pesan otomatis untuk sapaan WhatsApp.')
+                                Section::make(__('messages.wa_sop_templates'))
+                                    ->description(__('messages.wa_sop_desc'))
                                     ->schema([
                                         Textarea::make('wa_template_phase_1')
-                                            ->label('Fase 1: Kunjungan Pertama')
+                                            ->label(__('messages.phase_1'))
                                             ->rows(4)
-                                            ->helperText('Variabel: {name}, {points}'),
+                                            ->helperText(__('messages.phase_1_helper')),
                                         Textarea::make('wa_template_phase_2')
                                             ->label('Fase 2: Mulai Repeat (Visit >= 2)')
                                             ->rows(4),
@@ -437,43 +466,51 @@ class AppSettings extends SettingsPage
                                             ->rows(4)
                                             ->helperText('Variabel: {name}'),
 
-                                        Section::make('Cheat Sheet FAQ')
+                                        Textarea::make('wa_template_phase_2')
+                                            ->label(__('messages.phase_2'))
+                                            ->rows(4),
+                                        Textarea::make('wa_template_phase_3')
+                                            ->label(__('messages.phase_3'))
+                                            ->rows(4)
+                                            ->helperText(__('messages.phase_3_helper')),
+
+                                        Section::make(__('messages.cheat_sheet_faq'))
                                             ->schema([
                                                 Textarea::make('wa_template_faq_benefit')
-                                                    ->label('FAQ: Benefit Poin')
+                                                    ->label(__('messages.faq_benefit'))
                                                     ->rows(3),
                                                 Textarea::make('wa_template_faq_redemption')
-                                                    ->label('FAQ: Penukaran Hadiah')
+                                                    ->label(__('messages.faq_redemption'))
                                                     ->rows(3),
                                                 Textarea::make('wa_template_faq_use_points')
-                                                    ->label('FAQ: Bisa Dipakai Sekarang?')
+                                                    ->label(__('messages.faq_use_points'))
                                                     ->rows(3),
                                             ]),
                                     ]),
                             ]),
 
                         // TAB: AI ASSISTANT
-                        Tab::make('AI Assistant')
+                        Tab::make(__('messages.ai_assistant'))
                             ->icon('heroicon-o-cpu-chip')
                             ->schema([
-                                Section::make('AI Intelligence')
-                                    ->description('Atur persona dan instruksi khusus untuk asisten cerdas.')
+                                Section::make(__('messages.ai_intelligence'))
+                                    ->description(__('messages.ai_intelligence_desc'))
                                     ->schema([
                                         TextInput::make('ai_assistant_name')
-                                            ->label('Nama Asisten AI')
+                                            ->label(__('messages.ai_assistant_name'))
                                             ->default('Sarah (AI Admin)')
-                                            ->helperText('Nama ini akan digunakan saat AI membalas chat atau mengirim pesan WA.')
+                                            ->helperText(__('messages.ai_assistant_name_helper'))
                                             ->required(),
                                         Textarea::make('ai_crm_system_prompt')
-                                            ->label('AI Smart Message Prompt (Instruction)')
+                                            ->label(__('messages.ai_system_prompt'))
                                             ->rows(6)
-                                            ->helperText('Gunakan instruksi ini untuk mengatur gaya bahasa AI. Variabel tersedia: {app_name}, {program_name}, {available_promos}, {ai_name}'),
+                                            ->helperText(__('messages.ai_system_prompt_helper')),
 
-                                        Section::make('Konfigurasi API AI')
-                                            ->description('Pengaturan teknis koneksi ke penyedia AI (DeepSeek, OpenRouter, OpenAI, dll).')
+                                        Section::make(__('messages.ai_api_config'))
+                                            ->description(__('messages.ai_api_config_desc'))
                                             ->schema([
                                                 Select::make('ai_provider')
-                                                    ->label('AI Provider')
+                                                    ->label(__('messages.ai_provider'))
                                                     ->options([
                                                         'deepseek' => 'DeepSeek (Default)',
                                                         'openrouter' => 'OpenRouter (Free Models & More)',
@@ -494,14 +531,14 @@ class AppSettings extends SettingsPage
                                                 Grid::make(3)
                                                     ->schema([
                                                         TextInput::make('ai_base_url')
-                                                            ->label('Base API URL')
+                                                            ->label(__('messages.base_api_url'))
                                                             ->placeholder('https://api.deepseek.com')
                                                             ->required()
                                                             ->helperText(fn(Get $get) => $get('ai_provider') === 'openrouter' ? 'Terisi otomatis untuk OpenRouter.' : 'Endpoint API (OpenAI Compatible).'),
 
                                                         // Use Dynamic Select for models
                                                         Select::make('ai_model')
-                                                            ->label('Model Name')
+                                                            ->label(__('messages.model_name'))
                                                             ->options(function (Get $get) {
                                                                 $provider = $get('ai_provider') ?: 'deepseek';
                                                                 if ($provider === 'custom')
@@ -515,47 +552,49 @@ class AppSettings extends SettingsPage
                                                             ->suffixAction(
                                                                 Action::make('refresh_models')
                                                                     ->icon('heroicon-m-arrow-path')
-                                                                    ->label('Refresh')
-                                                                    ->tooltip('Perbarui daftar model dari API')
+                                                                    ->label(__('messages.refresh'))
+                                                                    ->tooltip(__('messages.refresh_models'))
                                                                     ->action(function (Get $get) {
                                                                         $provider = $get('ai_provider') ?: 'deepseek';
                                                                         \Illuminate\Support\Facades\Cache::forget("ai_models_{$provider}");
                                                                         \Filament\Notifications\Notification::make()
-                                                                            ->title('Daftar model diperbarui!')
+                                                                            ->title(__('messages.models_refreshed'))
                                                                             ->success()
                                                                             ->send();
                                                                     })
                                                             ),
 
                                                         TextInput::make('ai_model')
-                                                            ->label('Model Name')
+                                                            ->label(__('messages.model_name'))
                                                             ->placeholder('deepseek-chat')
                                                             ->visible(fn(Get $get) => $get('ai_provider') === 'custom')
                                                             ->required(),
 
                                                         TextInput::make('ai_api_key')
-                                                            ->label('API Key (Optional)')
+                                                            ->label(__('messages.api_key_optional'))
                                                             ->password()
                                                             ->revealable()
                                                             ->placeholder('sk-...')
-                                                            ->helperText('Jika kosong, akan menggunakan key dari file .env'),
+                                                            ->helperText(__('messages.api_key_helper')),
                                                     ])
                                             ]),
                                     ]),
                             ]),
 
                         // TAB: MODULES
-                        Tab::make('Modules (PRO)')
+                        Tab::make(__('messages.modules_pro'))
                             ->icon('heroicon-o-sparkles')
                             ->schema([
-                                Section::make('HRM (Human Resource Management)')
-                                    ->description('Manage Employees, Attendance, and Payroll.')
+                                Section::make(__('messages.hrm_module'))
+                                    ->description(__('messages.hrm_desc'))
                                     ->schema([
                                         TextInput::make('hrm_license_key')
-                                            ->label('License Key')
+                                            ->label(__('messages.license_key'))
                                             ->password() // Hide characters
                                             ->revealable()
-                                            ->helperText('Masukkan lisensi, format: HRM-PRO-XXXX')
+                                            ->revealable()
+                                            ->helperText(__('messages.enter_license_key', ['format' => 'HRM-PRO-XXXX']))
+                                            ->live(onBlur: true) // Validate on blur
                                             ->live(onBlur: true) // Validate on blur
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 // Simple Logic: Key must start with HRM-PRO-
@@ -568,7 +607,7 @@ class AppSettings extends SettingsPage
                                             }),
 
                                         Toggle::make('enable_hrm')
-                                            ->label('Enable HRM Module')
+                                            ->label(__('messages.enable_hrm'))
                                             ->inline(false)
                                             ->disabled(
                                                 fn(Get $get) =>
@@ -577,19 +616,21 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul SDM.'
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_hrm_desc')
                                             ),
                                     ]),
 
-                                Section::make('KDS (Kitchen Display System)')
-                                    ->description('Manage Kitchen Display System Module.')
+                                Section::make(__('messages.kds_module'))
+                                    ->description(__('messages.kds_desc'))
                                     ->schema([
                                         TextInput::make('kds_license_key')
-                                            ->label('License Key')
+                                            ->label(__('messages.license_key'))
                                             ->password() // Hide characters
                                             ->revealable()
-                                            ->helperText('Masukkan lisensi, format: KDS-PRO-XXXX')
+                                            ->revealable()
+                                            ->helperText(__('messages.enter_license_key', ['format' => 'KDS-PRO-XXXX']))
+                                            ->live(onBlur: true) // Validate on blur
                                             ->live(onBlur: true) // Validate on blur
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 // Simple Logic: Key must start with KDS-PRO-
@@ -602,7 +643,7 @@ class AppSettings extends SettingsPage
                                             }),
 
                                         Toggle::make('enable_kds')
-                                            ->label('Enable KDS Module')
+                                            ->label(__('messages.enable_kds'))
                                             ->inline(false)
                                             ->disabled(
                                                 fn(Get $get) =>
@@ -611,19 +652,21 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul KDS.'
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_kds_desc')
                                             ),
                                     ]),
 
-                                Section::make('Fiscal (Tax & Planning)')
-                                    ->description('Manage Fiscal Planning and Tax Reports.')
+                                Section::make(__('messages.fiscal_module'))
+                                    ->description(__('messages.fiscal_desc'))
                                     ->schema([
                                         TextInput::make('fiscal_license_key')
-                                            ->label('License Key')
+                                            ->label(__('messages.license_key'))
                                             ->password()
                                             ->revealable()
-                                            ->helperText('Masukkan lisensi, format: FISCAL-PRO-XXXX')
+                                            ->revealable()
+                                            ->helperText(__('messages.enter_license_key', ['format' => 'FISCAL-PRO-XXXX']))
+                                            ->live(onBlur: true)
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 if ($state && str_starts_with($state, 'FISCAL-PRO-')) {
@@ -634,7 +677,7 @@ class AppSettings extends SettingsPage
                                             }),
 
                                         Toggle::make('enable_fiscal_planning')
-                                            ->label('Aktifkan Modul Perencanaan Fiskal')
+                                            ->label(__('messages.enable_fiscal'))
                                             ->inline(false)
                                             ->disabled(
                                                 fn(Get $get) =>
@@ -643,19 +686,21 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('fiscal_license_key') ?? '', 'FISCAL-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan fitur target omzet harian dan randomizer.'
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_fiscal_desc')
                                             ),
                                     ]),
 
-                                Section::make('CRM (Loyalty & Member)')
-                                    ->description('Manage Customer Loyalty, Points, and Tiers.')
+                                Section::make(__('messages.crm_module'))
+                                    ->description(__('messages.crm_desc'))
                                     ->schema([
                                         TextInput::make('crm_license_key')
-                                            ->label('License Key')
+                                            ->label(__('messages.license_key'))
                                             ->password()
                                             ->revealable()
-                                            ->helperText('Masukkan lisensi, format: CRM-PRO-XXXX')
+                                            ->revealable()
+                                            ->helperText(__('messages.enter_license_key', ['format' => 'CRM-PRO-XXXX']))
+                                            ->live(onBlur: true)
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 if ($state && str_starts_with($state, 'CRM-PRO-')) {
@@ -666,7 +711,7 @@ class AppSettings extends SettingsPage
                                             }),
 
                                         Toggle::make('enable_crm')
-                                            ->label('Enable CRM Module')
+                                            ->label(__('messages.enable_crm'))
                                             ->inline(false)
                                             ->disabled(
                                                 fn(Get $get) =>
@@ -675,19 +720,21 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('crm_license_key') ?? '', 'CRM-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul Kemitraan.'
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_crm_desc')
                                             ),
                                     ]),
 
-                                Section::make('WhatsApp Center (Official Style)')
-                                    ->description('Manage Native WhatsApp Chat Integration.')
+                                Section::make(__('messages.wa_center_module'))
+                                    ->description(__('messages.wa_center_desc'))
                                     ->schema([
                                         TextInput::make('wa_license_key')
-                                            ->label('License Key')
+                                            ->label(__('messages.license_key'))
                                             ->password()
                                             ->revealable()
-                                            ->helperText('Masukkan lisensi, format: WA-PRO-XXXX')
+                                            ->revealable()
+                                            ->helperText(__('messages.enter_license_key', ['format' => 'WA-PRO-XXXX']))
+                                            ->live(onBlur: true)
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 if ($state && str_starts_with($state, 'WA-PRO-')) {
@@ -698,7 +745,7 @@ class AppSettings extends SettingsPage
                                             }),
 
                                         Toggle::make('enable_wa_center')
-                                            ->label('Enable WhatsApp Center')
+                                            ->label(__('messages.enable_wa_center'))
                                             ->inline(false)
                                             ->disabled(
                                                 fn(Get $get) =>
@@ -707,25 +754,27 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('wa_license_key') ?? '', 'WA-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul WhatsApp Center.'
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_wa_center_desc')
                                             ),
 
                                         Toggle::make('wa_auto_download_media')
-                                            ->label('Auto Download Media')
-                                            ->helperText('Jika dinonaktifkan, media hanya didownload saat diklik (menghemat storage).')
+                                            ->label(__('messages.auto_download_media'))
+                                            ->helperText(__('messages.auto_download_media_helper'))
                                             ->default(true)
                                             ->visible(fn(Get $get) => $get('enable_wa_center')),
                                     ]),
 
-                                Section::make('AI Forecasting (Smart Restock)')
-                                    ->description('AI-powered predictive restocking based on sales trends.')
+                                Section::make(__('messages.ai_forecasting_module'))
+                                    ->description(__('messages.ai_forecasting_desc'))
                                     ->schema([
                                         TextInput::make('ai_forecasting_license_key')
-                                            ->label('License Key')
+                                            ->label(__('messages.license_key'))
                                             ->password()
                                             ->revealable()
-                                            ->helperText('Masukkan lisensi, format: AI-PRO-XXXX')
+                                            ->revealable()
+                                            ->helperText(__('messages.enter_license_key', ['format' => 'AI-PRO-XXXX']))
+                                            ->live(onBlur: true)
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 if ($state && str_starts_with($state, 'AI-PRO-')) {
@@ -736,7 +785,7 @@ class AppSettings extends SettingsPage
                                             }),
 
                                         Toggle::make('enable_ai_forecasting')
-                                            ->label('Enable AI Forecasting Module')
+                                            ->label(__('messages.enable_ai_forecasting'))
                                             ->inline(false)
                                             ->disabled(
                                                 fn(Get $get) =>
@@ -745,19 +794,21 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('ai_forecasting_license_key') ?? '', 'AI-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul prediksi restock cerdas.'
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_ai_forecasting_desc')
                                             ),
                                     ]),
 
-                                Section::make('AI Menu Engineering (Profit Matrix)')
-                                    ->description('AI-powered menu classification and strategic pricing advice.')
+                                Section::make(__('messages.menu_engineering_module'))
+                                    ->description(__('messages.menu_engineering_desc'))
                                     ->schema([
                                         TextInput::make('menu_engineering_license_key')
-                                            ->label('License Key')
+                                            ->label(__('messages.license_key'))
                                             ->password()
                                             ->revealable()
-                                            ->helperText('Masukkan lisensi, format: MENU-PRO-XXXX')
+                                            ->revealable()
+                                            ->helperText(__('messages.enter_license_key', ['format' => 'MENU-PRO-XXXX']))
+                                            ->live(onBlur: true)
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 if ($state && str_starts_with($state, 'MENU-PRO-')) {
@@ -768,7 +819,7 @@ class AppSettings extends SettingsPage
                                             }),
 
                                         Toggle::make('enable_menu_engineering')
-                                            ->label('Enable AI Menu Engineering Module')
+                                            ->label(__('messages.enable_menu_engineering'))
                                             ->inline(false)
                                             ->disabled(
                                                 fn(Get $get) =>
@@ -777,19 +828,21 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('menu_engineering_license_key') ?? '', 'MENU-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul klasifikasi menu cerdas.'
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_menu_engineering_desc')
                                             ),
                                     ]),
 
-                                Section::make('Self Order (QR Menu)')
-                                    ->description('Turn your tables into revenue generators with AI-powered Self Order.')
+                                Section::make(__('messages.self_order_module'))
+                                    ->description(__('messages.self_order_desc'))
                                     ->schema([
                                         TextInput::make('self_order_license_key')
-                                            ->label('License Key')
+                                            ->label(__('messages.license_key'))
                                             ->password()
                                             ->revealable()
-                                            ->helperText('Masukkan lisensi, format: ORDER-PRO-XXXX')
+                                            ->revealable()
+                                            ->helperText(__('messages.enter_license_key', ['format' => 'ORDER-PRO-XXXX']))
+                                            ->live(onBlur: true)
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 if ($state && str_starts_with($state, 'ORDER-PRO-')) {
@@ -800,7 +853,7 @@ class AppSettings extends SettingsPage
                                             }),
 
                                         Toggle::make('enable_self_order')
-                                            ->label('Enable Self Order Module')
+                                            ->label(__('messages.enable_self_order'))
                                             ->inline(false)
                                             ->disabled(
                                                 fn(Get $get) =>
@@ -809,27 +862,27 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('self_order_license_key') ?? '', 'ORDER-PRO-')
-                                                    ? 'License key tidak valid. Masukkan key yang benar untuk mengaktifkan.'
-                                                    : 'Aktifkan modul Self Order QR.'
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_self_order_desc')
                                             ),
                                     ]),
                             ]),
 
                         // TAB: MAINTENANCE
-                        Tab::make('Maintenance')
+                        Tab::make(__('messages.maintenance'))
                             ->icon('heroicon-o-wrench-screwdriver')
                             ->schema([
-                                Section::make('Image Optimization')
-                                    ->description('Resize & optimize all product images to reduce size for POS performance.')
+                                Section::make(__('messages.image_optimization'))
+                                    ->description(__('messages.image_optimization_desc'))
                                     ->schema([
                                         Actions::make([
                                             Action::make('optimize_images')
-                                                ->label('Optimize All Images Now')
+                                                ->label(__('messages.optimize_images_now'))
                                                 ->color('warning')
                                                 ->icon('heroicon-o-bolt')
                                                 ->requiresConfirmation()
-                                                ->modalHeading('Optimize All Product Images?')
-                                                ->modalDescription('This will resize all product images to max 800px width and compress them to 80% quality. original files will be overwritten.')
+                                                ->modalHeading(__('messages.optimize_images_heading'))
+                                                ->modalDescription(__('messages.optimize_images_modal_desc'))
                                                 ->action(function () {
                                                     $products = \App\Models\Product::whereNotNull('image')->get();
                                                     $count = 0;
@@ -838,7 +891,7 @@ class AppSettings extends SettingsPage
                                                         // Initialize Image Manager (Driver: GD)
                                                         // Check if class exists to avoid crash if library not installed
                                                         if (!class_exists(\Intervention\Image\ImageManager::class)) {
-                                                            throw new \Exception('Intervention Image library is not installed.');
+                                                            throw new \Exception(__('messages.intervention_not_installed'));
                                                         }
 
                                                         $manager = new \Intervention\Image\ImageManager(
@@ -871,13 +924,13 @@ class AppSettings extends SettingsPage
                                                         }
 
                                                         \Filament\Notifications\Notification::make()
-                                                            ->title('Optimization Complete')
-                                                            ->body("Successfully processed {$count} images.")
+                                                            ->title(__('messages.optimization_complete'))
+                                                            ->body(__('messages.processed_images', ['count' => $count]))
                                                             ->success()
                                                             ->send();
                                                     } catch (\Exception $e) {
                                                         \Filament\Notifications\Notification::make()
-                                                            ->title('Error')
+                                                            ->title(__('messages.error'))
                                                             ->body($e->getMessage())
                                                             ->danger()
                                                             ->send();
@@ -888,5 +941,7 @@ class AppSettings extends SettingsPage
                             ]),
                     ])
             ]);
+
     }
+
 }

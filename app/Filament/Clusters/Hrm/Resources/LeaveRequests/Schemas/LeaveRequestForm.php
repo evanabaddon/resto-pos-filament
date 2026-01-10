@@ -17,53 +17,53 @@ class LeaveRequestForm
     {
         return $schema
             ->components([
-                Section::make('Informasi Pengajuan')
+                Section::make(__('messages.submission_info'))
                     ->schema([
                         Select::make('employee_id')
                             ->relationship('employee', 'name')
-                            ->label('Nama Pegawai')
+                            ->label(__('messages.employee_resource'))
                             ->searchable()
                             ->preload()
                             ->required(),
                         Select::make('type')
                             ->options([
-                                'sakit' => 'Sakit (Sick Leave)',
-                                'izin' => 'Izin (Permission)',
-                                'cuti_tahunan' => 'Cuti Tahunan (Annual Leave)',
-                                'cuti_khusus' => 'Cuti Khusus (Special Leave)',
+                                'sakit' => __('messages.sick_leave'),
+                                'izin' => __('messages.permission'),
+                                'cuti_tahunan' => __('messages.annual_leave'),
+                                'cuti_khusus' => __('messages.special_leave'),
                             ])
-                            ->label('Jenis Izin/Cuti')
+                            ->label(__('messages.leave_type'))
                             ->required(),
                         Grid::make(2)->schema([
                             DatePicker::make('start_date')
-                                ->label('Mulai Tanggal')
+                                ->label(__('messages.start_date'))
                                 ->required(),
                             DatePicker::make('end_date')
-                                ->label('Sampai Tanggal')
+                                ->label(__('messages.end_date'))
                                 ->required(),
                         ]),
                         Textarea::make('reason')
-                            ->label('Alasan')
+                            ->label(__('messages.reason'))
                             ->required()
                             ->columnSpanFull(),
                         FileUpload::make('attachment_path')
-                            ->label('Lampiran (Surat Dokter/dll)')
+                            ->label(__('messages.attachment'))
                             ->directory('leave-attachments')
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Persetujuan (Admin Only)')
+                Section::make(__('messages.approval_section'))
                     ->schema([
                         Select::make('status')
                             ->options([
-                                'pending' => 'Menunggu (Pending)',
-                                'approved' => 'Disetujui (Approved)',
-                                'rejected' => 'Ditolak (Rejected)',
+                                'pending' => __('messages.pending'),
+                                'approved' => __('messages.approved'),
+                                'rejected' => __('messages.rejected'),
                             ])
                             ->default('pending')
                             ->required(),
                         Textarea::make('rejection_reason')
-                            ->label('Alasan Penolakan')
+                            ->label(__('messages.rejection_reason'))
                             ->visible(fn($get) => $get('status') === 'rejected')
                             ->columnSpanFull(),
                     ]),

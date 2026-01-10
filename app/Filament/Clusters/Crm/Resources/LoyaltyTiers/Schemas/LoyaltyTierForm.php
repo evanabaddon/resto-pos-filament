@@ -14,23 +14,23 @@ class LoyaltyTierForm
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->label('Nama Level')
+                    ->label(__('messages.tier_name'))
                     ->required()
                     ->maxLength(255),
                 Grid::make(2)
                     ->schema([
                         TextInput::make('min_points')
-                            ->label('Min. Poin')
+                            ->label(__('messages.min_points'))
                             ->numeric()
                             ->default(0)
                             ->mask('999999'),
                         TextInput::make('min_visits')
-                            ->label('Min. Kunjungan')
+                            ->label(__('messages.min_visits'))
                             ->numeric()
                             ->default(0),
                     ]),
                 Textarea::make('benefit_description')
-                    ->label('Deskripsi Keuntungan')
+                    ->label(__('messages.benefit_desc'))
                     ->columnSpanFull(),
             ]);
     }

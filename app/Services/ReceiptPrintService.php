@@ -675,13 +675,13 @@ class ReceiptPrintService
     /**
      * Test printer connection
      */
-    public function testPrinter(): array
+    public function testPrinter(?string $printerName = null): array
     {
         $printer = null;
 
         try {
             $printers = $this->getAvailablePrinters();
-            $targetPrinter = $this->printerSettings->usb_printer_name;
+            $targetPrinter = $printerName ?? $this->printerSettings->usb_printer_name;
 
             Log::info('Testing printer connection', [
                 'target_printer' => $targetPrinter,

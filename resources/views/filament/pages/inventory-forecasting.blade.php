@@ -2,7 +2,8 @@
     <div class="space-y-6">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-                <h2 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-white">{{ __('messages.forecasting_title') }}
+                <h2 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-white">
+                    {{ __('messages.forecasting_title') }}
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('messages.forecasting_desc') }}</p>
             </div>
@@ -14,14 +15,15 @@
                         {{ __('messages.export_pdf') }}
                     </x-filament::button>
 
-                    <select wire:model="selectedDay" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="Monday">Senin</option>
-                        <option value="Tuesday">Selasa</option>
-                        <option value="Wednesday">Rabu</option>
-                        <option value="Thursday">Kamis</option>
-                        <option value="Friday">Jumat</option>
-                        <option value="Saturday">Sabtu</option>
-                        <option value="Sunday">Minggu</option>
+                    <select wire:model="selectedDay"
+                        class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="Monday">{{ __('messages.monday') }}</option>
+                        <option value="Tuesday">{{ __('messages.tuesday') }}</option>
+                        <option value="Wednesday">{{ __('messages.wednesday') }}</option>
+                        <option value="Thursday">{{ __('messages.thursday') }}</option>
+                        <option value="Friday">{{ __('messages.friday') }}</option>
+                        <option value="Saturday">{{ __('messages.saturday') }}</option>
+                        <option value="Sunday">{{ __('messages.sunday') }}</option>
                     </select>
 
                     <div
@@ -45,17 +47,18 @@
                 <x-heroicon-o-chart-bar class="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4" />
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ __('messages.no_analysis') }}</h3>
                 <p class="text-sm text-gray-500 mb-6 text-center max-w-xs px-4">{{ __('messages.no_analysis_desc') }}</p>
-                
+
                 <div class="mb-4 flex items-center gap-2">
                     <span class="text-sm text-gray-600 dark:text-gray-400">{{ __('messages.set_today') }}:</span>
-                    <select wire:model="selectedDay" class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="Monday">Senin</option>
-                        <option value="Tuesday">Selasa</option>
-                        <option value="Wednesday">Rabu</option>
-                        <option value="Thursday">Kamis</option>
-                        <option value="Friday">Jumat</option>
-                        <option value="Saturday">Sabtu</option>
-                        <option value="Sunday">Minggu</option>
+                    <select wire:model="selectedDay"
+                        class="text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="Monday">{{ __('messages.monday') }}</option>
+                        <option value="Tuesday">{{ __('messages.tuesday') }}</option>
+                        <option value="Wednesday">{{ __('messages.wednesday') }}</option>
+                        <option value="Thursday">{{ __('messages.thursday') }}</option>
+                        <option value="Friday">{{ __('messages.friday') }}</option>
+                        <option value="Saturday">{{ __('messages.saturday') }}</option>
+                        <option value="Sunday">{{ __('messages.sunday') }}</option>
                     </select>
                 </div>
 
@@ -69,33 +72,37 @@
             <!-- AI Analysis Section -->
             <div
                 class="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/10 dark:to-gray-900 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-500/20 shadow-sm">
-                
+
                 <div class="flex items-center justify-between mb-4">
-                     <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3">
                         <div class="p-2 bg-indigo-500 rounded-lg text-white">
                             <x-heroicon-m-sparkles class="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 class="font-bold text-indigo-900 dark:text-indigo-400">AI Inventory Insights</h3>
+                            <h3 class="font-bold text-indigo-900 dark:text-indigo-400">
+                                {{ __('messages.ai_inventory_insights') }}</h3>
                             <p class="text-xs text-indigo-700/60 dark:text-indigo-400/60">
-                                {{ app(\App\Settings\GeneralSettings::class)->ai_assistant_name }} Analysis</p>
+                                {{ app(\App\Settings\GeneralSettings::class)->ai_assistant_name }} Analysis
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 <div class="prose prose-sm dark:prose-invert max-w-none mb-6">
                     <p class="text-gray-700 dark:text-gray-300 italic">
-                        "{{ $aiResults['analysis'] ?? 'Analisis tidak tersedia.' }}"
+                        "{{ $aiResults['analysis'] ?? __('messages.analysis_unavailable') }}"
                     </p>
                 </div>
 
                 <!-- Daily Highlight Section -->
                 @if(isset($aiResults['tomorrow_forecast']) && !empty($aiResults['tomorrow_forecast']['items']))
-                    <div class="mb-8 bg-orange-50 dark:bg-orange-900/10 rounded-xl p-5 border border-orange-200 dark:border-orange-500/30">
-                         <div class="flex items-center gap-2 mb-3">
+                    <div
+                        class="mb-8 bg-orange-50 dark:bg-orange-900/10 rounded-xl p-5 border border-orange-200 dark:border-orange-500/30">
+                        <div class="flex items-center gap-2 mb-3">
                             <x-heroicon-m-fire class="w-5 h-5 text-orange-500" />
                             <h4 class="font-bold text-lg text-gray-900 dark:text-white">
-                                Fokus Besok: {{ $aiResults['tomorrow_forecast']['day'] ?? 'Unknown Day' }}
+                                {{ __('messages.daily_focus') }}:
+                                {{ $aiResults['tomorrow_forecast']['day'] ?? __('messages.unknown_day') }}
                             </h4>
                         </div>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -103,25 +110,26 @@
                         </p>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                             @foreach($aiResults['tomorrow_forecast']['items'] as $item)
-                                <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-orange-100 dark:border-orange-500/20 shadow-sm flex items-center justify-between">
+                            @foreach($aiResults['tomorrow_forecast']['items'] as $item)
+                                <div
+                                    class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-orange-100 dark:border-orange-500/20 shadow-sm flex items-center justify-between">
                                     <div>
                                         <div class="font-bold text-gray-800 dark:text-white">{{ $item['product_name'] }}</div>
                                         <div class="text-xs text-gray-500">{{ $item['reason'] }}</div>
                                     </div>
                                     <div class="text-right">
                                         <div class="text-lg font-bold text-orange-600">{{ $item['predicted'] }}</div>
-                                        <div class="text-[10px] text-gray-400">{{ $item['unit'] ?? 'Porsi' }}</div>
+                                        <div class="text-[10px] text-gray-400">{{ $item['unit'] ?? __('messages.portion') }}</div>
                                     </div>
                                 </div>
-                             @endforeach
+                            @endforeach
                         </div>
                     </div>
                 @endif
-                
+
                 <h4 class="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <x-heroicon-m-calendar class="w-5 h-5 text-gray-500" />    
-                    Rencana Mingguan (7 Hari)
+                    <x-heroicon-m-calendar class="w-5 h-5 text-gray-500" />
+                    {{ __('messages.weekly_plan') }}
                 </h4>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -135,7 +143,8 @@
                             ])>
                                 <div class="flex justify-between items-start mb-2">
                                     <h4 class="font-bold text-gray-900 dark:text-white">
-                                        {{ $rec['product_name'] ?? $rec['name'] ?? 'Unknown Product' }}</h4>
+                                        {{ $rec['product_name'] ?? $rec['name'] ?? 'Unknown Product' }}
+                                    </h4>
                                     <x-filament::badge :color="match ($rec['urgency'] ?? '') {
                                 'high' => 'danger',
                                 'medium' => 'warning',
@@ -147,10 +156,11 @@
                                 </div>
                                 <div class="space-y-1 text-sm">
                                     <p class="text-gray-600 dark:text-gray-400">
-                                        Prediksi (7 Hari): <span class="font-semibold">{{ $rec['predicted_need'] }}</span>
+                                        {{ __('messages.predicted_need') }} (7d): <span
+                                            class="font-semibold">{{ $rec['predicted_need'] }}</span>
                                     </p>
                                     <p class="text-gray-900 dark:text-white font-bold">
-                                        Saran Restock: +{{ $rec['suggested_restock'] }}
+                                        {{ __('messages.suggested_restock') }}: +{{ $rec['suggested_restock'] }}
                                     </p>
                                     <p class="text-xs mt-2 text-gray-500 italic">
                                         "{{ $rec['reason'] }}"
@@ -166,21 +176,26 @@
         <!-- Raw Consumption Data -->
         <x-filament::section>
             <x-slot name="heading">
-                Riwayat Konsumsi Produk (7 Hari Terakhir)
+                {{ __('messages.consumption_history') }}
             </x-slot>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left divide-y divide-gray-200 dark:divide-white/5">
                     <thead>
                         <tr class="bg-gray-50 dark:bg-white/5">
-                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">{{ __('messages.menu_product') }}
+                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">
+                                {{ __('messages.menu_product') }}
                             </th>
-                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">{{ __('messages.current_stock') }}</th>
-                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">{{ __('messages.total_consumed') }}
+                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">
+                                {{ __('messages.current_stock') }}</th>
+                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">
+                                {{ __('messages.total_consumed') }}
                                 (7d)</th>
-                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">{{ __('messages.daily_average') }}
+                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">
+                                {{ __('messages.daily_average') }}
                             </th>
-                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">{{ __('messages.unit') }}</th>
+                            <th class="px-4 py-3 text-sm font-semibold text-gray-950 dark:text-white">
+                                {{ __('messages.unit') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-white/5">
@@ -195,7 +210,8 @@
                                     {{ $data['current_stock'] }}
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                    {{ number_format($data['total_consumed'], 2) }}</td>
+                                    {{ number_format($data['total_consumed'], 2) }}
+                                </td>
                                 <td class="px-4 py-3 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
                                     {{ $data['average_daily'] }}
                                 </td>

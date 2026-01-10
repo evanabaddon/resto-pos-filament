@@ -3,7 +3,7 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Laporan Laba Rugi (Profit & Loss)</title>
+    <title>{{ __('messages.financial_report') }}</title>
     <style>
         @page {
             margin: 100px 25px;
@@ -129,47 +129,49 @@
 
 <body>
     <div class="header">
-        <h1>LAPORAN LABA RUGI (PROFIT & LOSS)</h1>
+        <h1>{{ __('messages.profit_loss_title') }}</h1>
         <p>
-            Periode: <strong>{{ \Carbon\Carbon::parse($startDate)->format('d F Y') }} -
-                {{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}</strong> |
-            Dicetak Oleh: <strong>{{ auth()->user()->name ?? 'System' }}</strong>
+            {{ __('messages.report_period') }}:
+            <strong>{{ \Carbon\Carbon::parse($startDate)->translatedFormat('d F Y') }} -
+                {{ \Carbon\Carbon::parse($endDate)->translatedFormat('d F Y') }}</strong> |
+            {{ __('messages.printed_by') }}: <strong>{{ auth()->user()->name ?? 'System' }}</strong>
         </p>
     </div>
 
     <!-- A. RINGKASAN KINERJA -->
-    <div class="section-title">A. RINGKASAN KINERJA</div>
+    <div class="section-title">A. {{ __('messages.performance_summary') }}</div>
     <table>
         <thead>
             <tr>
-                <th style="width: 60%;">Keterangan</th>
-                <th style="width: 40%; text-align: right;">Jumlah</th>
+                <th style="width: 60%;">{{ __('messages.description') }}</th>
+                <th style="width: 40%; text-align: right;">{{ __('messages.amount') }}</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td><strong>Total Pendapatan (Net Revenue)</strong></td>
+                <td><strong>{{ __('messages.total_revenue') }}</strong></td>
                 <td class="text-right font-bold text-green" style="font-size: 12px;">Rp
                     {{ number_format($totalRevenue, 0, ',', '.') }}
                 </td>
             </tr>
             <tr>
-                <td>(Kurang) Harga Pokok Penjualan (HPP)</td>
+                <td>{{ __('messages.cogs_deduction') }}</td>
                 <td class="text-right text-orange">Rp {{ number_format($totalHpp, 0, ',', '.') }}</td>
             </tr>
             <tr>
-                <td style="background-color: #f9fafb;"><strong>Laba Kotor (Gross Profit)</strong></td>
+                <td style="background-color: #f9fafb;"><strong>{{ __('messages.gross_profit') }}</strong></td>
                 <td class="text-right font-bold" style="background-color: #f9fafb;">Rp
                     {{ number_format($grossProfit, 0, ',', '.') }}
                 </td>
             </tr>
             <tr>
-                <td>(Kurang) Biaya Operasional & Gaji</td>
+                <td>{{ __('messages.expenses_deduction') }}</td>
                 <td class="text-right text-red">Rp {{ number_format($totalExpenses, 0, ',', '.') }}</td>
             </tr>
             <tr>
-                <td style="background-color: #ecfccb; border-bottom: 2px solid #84cc16;"><strong>LABA BERSIH (NET
-                        PROFIT)</strong></td>
+                <td style="background-color: #ecfccb; border-bottom: 2px solid #84cc16;">
+                    <strong>{{ __('messages.net_profit') }}</strong>
+                </td>
                 <td class="text-right font-bold text-green"
                     style="font-size: 14px; background-color: #ecfccb; border-bottom: 2px solid #84cc16;">Rp
                     {{ number_format($netProfit, 0, ',', '.') }}
@@ -180,14 +182,14 @@
 
     <!-- B. RINCIAN BIAYA MODAL (HPP) -->
     <div style="page-break-inside: avoid;">
-        <div class="section-title">B. RINCIAN BIAYA MODAL (HPP)</div>
+        <div class="section-title">B. {{ __('messages.cogs_breakdown') }}</div>
         <table>
             <thead>
                 <tr>
-                    <th style="width: 40%;">Nama Produk</th>
-                    <th style="width: 20%; text-align: center;">Qty Terjual</th>
-                    <th style="width: 20%; text-align: right;">Unit HPP</th>
-                    <th style="width: 20%; text-align: right;">Total HPP</th>
+                    <th style="width: 40%;">{{ __('messages.product') }}</th>
+                    <th style="width: 20%; text-align: center;">Qty {{ __('messages.sold') }}</th>
+                    <th style="width: 20%; text-align: right;">{{ __('messages.unit_hpp') }}</th>
+                    <th style="width: 20%; text-align: right;">{{ __('messages.total_hpp') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -200,13 +202,15 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="text-center" style="color: #999;">Belum ada data penjualan.</td>
+                        <td colspan="4" class="text-center" style="color: #999;">{{ __('messages.no_sales_data') }}</td>
                     </tr>
                 @endforelse
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="3" class="text-right font-bold" style="background: #fff7ed;">TOTAL HPP</td>
+                    <td colspan="3" class="text-right font-bold" style="background: #fff7ed;">
+                        {{ __('messages.total_hpp') }}
+                    </td>
                     <td class="text-right font-bold text-orange" style="background: #fff7ed;">
                         {{ number_format($totalHpp, 0, ',', '.') }}
                     </td>
@@ -217,20 +221,21 @@
 
     <!-- C. RINCIAN BIAYA OPERASIONAL -->
     <div style="page-break-inside: avoid;">
-        <div class="section-title">C. RINCIAN BIAYA OPERASIONAL</div>
+        <div class="section-title">C. {{ __('messages.expenses_breakdown') }}</div>
         <table>
             <thead>
                 <tr>
-                    <th style="width: 15%; text-align: center;">Tanggal</th>
-                    <th style="width: 25%;">Kategori</th>
-                    <th style="width: 40%;">Keterangan</th>
-                    <th style="width: 20%; text-align: right;">Jumlah</th>
+                    <th style="width: 15%; text-align: center;">{{ __('messages.date') }}</th>
+                    <th style="width: 25%;">{{ __('messages.category') }}</th>
+                    <th style="width: 40%;">{{ __('messages.description') }}</th>
+                    <th style="width: 20%; text-align: right;">{{ __('messages.amount') }}</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($breakdownExpenses as $expense)
                     <tr>
-                        <td class="text-center">{{ \Carbon\Carbon::parse($expense['date'])->format('d/m/Y') }}</td>
+                        <td class="text-center">{{ \Carbon\Carbon::parse($expense['date'])->translatedFormat('d/m/Y') }}
+                        </td>
                         <td><span
                                 style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold;">{{ strtoupper($expense['category'] ?? '-') }}</span>
                         </td>
@@ -239,13 +244,15 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="text-center" style="color: #999;">Tidak ada pengeluaran operasional.</td>
+                        <td colspan="4" class="text-center" style="color: #999;">{{ __('messages.no_expenses_data') }}</td>
                     </tr>
                 @endforelse
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="3" class="text-right font-bold" style="background: #fef2f2;">TOTAL BIAYA</td>
+                    <td colspan="3" class="text-right font-bold" style="background: #fef2f2;">
+                        {{ __('messages.total_expenses') }}
+                    </td>
                     <td class="text-right font-bold text-red" style="background: #fef2f2;">
                         {{ number_format($totalExpenses, 0, ',', '.') }}
                     </td>
@@ -256,12 +263,13 @@
 
     <!-- D. VALUASI ASET (Current Stock Value) -->
     <div style="page-break-inside: avoid;">
-        <div class="section-title">D. VALUASI ASET & STOK</div>
+        <div class="section-title">D. {{ __('messages.asset_stock_valuation') }}</div>
         <table>
             <tbody>
                 <tr>
-                    <td style="background-color: #eff6ff; border-bottom: 2px solid #3b82f6;"><strong>TOTAL NILAI ASET
-                            (STOK)</strong></td>
+                    <td style="background-color: #eff6ff; border-bottom: 2px solid #3b82f6;">
+                        <strong>{{ __('messages.total_asset_value') }}</strong>
+                    </td>
                     <td class="text-right font-bold"
                         style="font-size: 14px; background-color: #eff6ff; border-bottom: 2px solid #3b82f6; color: #1e40af;">
                         Rp {{ number_format($currentStockValue, 0, ',', '.') }}</td>
@@ -269,15 +277,16 @@
             </tbody>
         </table>
 
-        <div style="margin-top: 10px; margin-bottom: 5px; font-weight: bold; font-size: 10px; color: #666;">Top 10 Aset
-            Terbesar:</div>
+        <div style="margin-top: 10px; margin-bottom: 5px; font-weight: bold; font-size: 10px; color: #666;">
+            {{ __('messages.top_10_assets') }}:
+        </div>
         <table>
             <thead>
                 <tr>
-                    <th style="width: 40%;">Produk</th>
-                    <th style="width: 20%; text-align: center;">Stok</th>
-                    <th style="width: 20%; text-align: right;">Harga Dasar</th>
-                    <th style="width: 20%; text-align: right;">Nilai Total</th>
+                    <th style="width: 40%;">{{ __('messages.product') }}</th>
+                    <th style="width: 20%; text-align: center;">{{ __('messages.stock') }}</th>
+                    <th style="width: 20%; text-align: right;">{{ __('messages.base_price') }}</th>
+                    <th style="width: 20%; text-align: right;">{{ __('messages.total_value') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -292,7 +301,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="text-center" style="color: #999;">Tidak ada data aset.</td>
+                        <td colspan="4" class="text-center" style="color: #999;">{{ __('messages.no_asset_data') }}</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -301,8 +310,8 @@
 
     <!-- Footer -->
     <div class="footer">
-        Dicetak otomatis oleh Sistem {{ app(\App\Settings\GeneralSettings::class)->app_name }}
-        | Halaman <span class="page-number"></span>
+        {{ __('messages.generated_by_system', ['app_name' => app(\App\Settings\GeneralSettings::class)->app_name]) }}
+        <span class="page-number"></span>
     </div>
 </body>
 

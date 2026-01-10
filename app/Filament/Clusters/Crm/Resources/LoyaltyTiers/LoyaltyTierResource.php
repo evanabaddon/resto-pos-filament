@@ -20,13 +20,31 @@ class LoyaltyTierResource extends Resource
 {
     protected static ?string $model = LoyaltyTier::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Kemitraan (CRM)';
+    protected static string|UnitEnum|null $navigationGroup = null;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-star';
 
     protected static ?string $cluster = CrmCluster::class;
 
-    protected static ?string $modelLabel = 'Level';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.crm_cluster');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.loyalty_tier_resource');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.loyalty_tiers_resource');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.loyalty_tiers_nav');
+    }
 
     public static function canDelete(Model $record): bool
     {

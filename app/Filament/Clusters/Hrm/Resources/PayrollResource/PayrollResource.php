@@ -16,6 +16,7 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -39,7 +40,7 @@ class PayrollResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+    protected static string|UnitEnum|null $navigationGroup = null;
 
     protected static ?string $cluster = HrmCluster::class;
 
@@ -50,7 +51,25 @@ class PayrollResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
-    protected static ?string $navigationLabel = 'Penggajian (Payroll)';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.payroll_resource');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.payroll_resource');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.payrolls_resource');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.hrm_cluster');
+    }
 
     // RBAC: super_admin, admin, accountant
     public static function canViewAny(): bool
@@ -77,33 +96,33 @@ class PayrollResource extends Resource
     {
         return $schema
             ->components([
-                Section::make('Pegawai & Periode')
+                Section::make(__('messages.employee_period'))
                     ->columnSpanFull()
                     ->schema([
                         Forms\Components\Select::make('employee_id')
                             ->relationship('employee', 'name')
-                            ->label('Nama Pegawai')
+                            ->label(__('messages.employee_resource'))
                             ->disabled(),
                         Forms\Components\TextInput::make('month_year')
-                            ->label('Periode')
+                            ->label(__('messages.period'))
                             ->disabled(),
                         Forms\Components\Select::make('status')
                             ->options([
-                                'draft' => 'Draft',
-                                'paid' => 'Lunas (Paid)',
+                                'draft' => __('messages.draft') ?? 'Draft', // Fallback if key missing
+                                'paid' => __('messages.paid'),
                             ])
                             ->required(),
                     ]),
 
-                Section::make('Rincian Pendapatan')
+                Section::make(__('messages.income_details'))
                     ->columnSpanFull()
                     ->schema([
                         TextInput::make('base_salary')
-                            ->label('Gaji Pokok')
+                            ->label(__('messages.base_salary'))
                             ->numeric()
                             ->prefix('Rp'),
                         TextInput::make('total_attendance_days')
-                            ->label('Total Hadir (Hari)')
+                            ->label(__('messages.total_attendance_days'))
                             ->numeric()
                             ->helperText(function ($record) {
                                 if (!$record || !$record->details)
@@ -120,19 +139,19 @@ class PayrollResource extends Resource
                                 return count($parts) > 0 ? implode(', ', $parts) : null;
                             }),
                         TextInput::make('total_overtime_minutes')
-                            ->label('Total Lembur (Menit)')
+                            ->label(__('messages.total_overtime_minutes'))
                             ->numeric(),
                         TextInput::make('overtime_amount')
-                            ->label('Nominal Lembur')
+                            ->label(__('messages.overtime_amount'))
                             ->numeric()
                             ->prefix('Rp'),
                     ]),
 
-                Section::make('Rincian Potongan & Total')
+                Section::make(__('messages.deduction_details'))
                     ->columnSpanFull()
                     ->schema([
                         Placeholder::make('deduction_details')
-                            ->label('Detail Potongan')
+                            ->label(__('messages.deduction_details'))
                             ->content(function ($record) {
                                 if (!$record || !$record->details)
                                     return '-';
@@ -159,17 +178,17 @@ class PayrollResource extends Resource
                                     $str[] = "Pulang Cepat: {$details['early_leave_count']}x";
                                 }
 
-                                return count($str) > 0 ? implode(', ', $str) : 'Tidak ada potongan spesifik';
+                                return count($str) > 0 ? implode(', ', $str) : __('messages.no_deductions');
                             }),
                         TextInput::make('deductions')
-                            ->label('Total Potongan')
+                            ->label(__('messages.total_deductions'))
                             ->numeric()
                             ->prefix('Rp'),
 
                         // Placeholder::make('separator')->content('-------------------'),
 
                         TextInput::make('total_payout')
-                            ->label('Take Home Pay')
+                            ->label(__('messages.take_home_pay'))
                             ->numeric()
                             ->prefix('Rp')
                             ->extraInputAttributes(['class' => 'text-2xl font-bold text-success-600']),
@@ -182,23 +201,23 @@ class PayrollResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('employee.name')
-                    ->label('Pegawai')
+                    ->label(__('messages.employee_resource'))
                     ->searchable(),
                 Tables\Columns\TextColumn::make('month_year')
-                    ->label('Periode')
+                    ->label(__('messages.period'))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('base_salary')
-                    ->label('Gaji Pokok')
+                    ->label(__('messages.base_salary'))
                     ->money('IDR'),
                 Tables\Columns\TextColumn::make('overtime_amount')
-                    ->label('Lembur')
+                    ->label(__('messages.overtime_amount')) // Shortened? "Lembur"
                     ->money('IDR'),
                 Tables\Columns\TextColumn::make('deductions')
-                    ->label('Potongan')
+                    ->label(__('messages.total_deductions')) //"Potongan"
                     ->money('IDR')
                     ->color('danger'),
                 Tables\Columns\TextColumn::make('total_payout')
-                    ->label('Total')
+                    ->label(__('messages.total')) // "Total"
                     ->money('IDR')
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('status')
@@ -210,13 +229,13 @@ class PayrollResource extends Resource
             ])
             ->recordActions([
                 Action::make('mark_paid')
-                    ->label('Tandai Lunas')
+                    ->label(__('messages.mark_paid'))
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->modalHeading('Tandai Gaji Sebagai LUNAS')
-                    ->modalDescription('Anda yakin ingin menandai gaji ini sebagai LUNAS?')
-                    ->modalSubmitActionLabel('Tandai LUNAS')
+                    ->modalHeading(__('messages.mark_paid'))
+                    ->modalDescription(__('messages.mark_paid_desc'))
+                    ->modalSubmitActionLabel(__('messages.mark_paid'))
                     ->visible(fn(Payroll $record) => $record->status !== 'paid')
                     ->action(function (Payroll $record) {
                         $record->update(['status' => 'paid']);
@@ -250,17 +269,17 @@ class PayrollResource extends Resource
                             }
                         }
 
-                        Notification::make()->title('Gaji ditandai LUNAS')->success()->send();
+                        Notification::make()->title(__('messages.marked_as_paid_notification'))->success()->send();
                     }),
 
                 Action::make('mark_draft')
-                    ->label('Batal Lunas')
+                    ->label(__('messages.mark_draft'))
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
                     ->requiresConfirmation()
-                    ->modalHeading('Batal Lunas Gaji')
-                    ->modalDescription('Anda yakin ingin menandai gaji ini sebagai Draft?')
-                    ->modalSubmitActionLabel('Batal Lunas')
+                    ->modalHeading(__('messages.mark_draft'))
+                    ->modalDescription(__('messages.mark_draft_desc'))
+                    ->modalSubmitActionLabel(__('messages.mark_draft'))
                     ->visible(fn(Payroll $record) => $record->status === 'paid')
                     ->action(function (Payroll $record) {
 
@@ -279,11 +298,11 @@ class PayrollResource extends Resource
                         }
 
                         $record->update(['status' => 'draft']);
-                        Notification::make()->title('Status dikembalikan ke Draft')->success()->send();
+                        Notification::make()->title(__('messages.reverted_to_draft_notification'))->success()->send();
                     }),
 
                 Action::make('print')
-                    ->label('Slip')
+                    ->label(__('messages.payslip'))
                     ->icon('heroicon-o-printer')
                     ->url(fn($record) => route('payroll.print', $record))
                     ->openUrlInNewTab()
@@ -297,46 +316,46 @@ class PayrollResource extends Resource
                     DeleteBulkAction::make()
                         ->hidden(fn() => !in_array(auth()->user()->role, ['super_admin', 'admin'])),
                     BulkAction::make('mark_paid_bulk')
-                        ->label('Tandai Lunas (Terpilih)')
+                        ->label(__('messages.mark_paid_bulk'))
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->modalHeading('Tandai Gaji Sebagai LUNAS')
-                        ->modalDescription('Anda yakin ingin menandai gaji ini sebagai LUNAS?')
-                        ->modalSubmitActionLabel('Tandai LUNAS')
+                        ->modalHeading(__('messages.mark_paid'))
+                        ->modalDescription(__('messages.mark_paid_desc'))
+                        ->modalSubmitActionLabel(__('messages.mark_paid'))
                         ->action(function ($records) {
                             foreach ($records as $record) {
                                 if ($record->status !== 'paid') {
                                     $record->update(['status' => 'paid']);
                                 }
                             }
-                            Notification::make()->title('Data terpilih ditandai LUNAS')->success()->send();
+                            Notification::make()->title(__('messages.bulk_marked_paid_notification'))->success()->send();
                         }),
                 ]),
             ])
             ->headerActions([
                 Action::make('generate')
-                    ->label('Generate Payroll')
+                    ->label(__('messages.generate_payroll'))
                     ->icon('heroicon-o-calculator')
                     ->schema([
                         Forms\Components\Select::make('month')
-                            ->label('Bulan')
+                            ->label(__('messages.month'))
                             ->options([
-                                '01' => 'Januari',
-                                '02' => 'Februari',
-                                '03' => 'Maret',
-                                '04' => 'April',
-                                '05' => 'Mei',
-                                '06' => 'Juni',
-                                '07' => 'Juli',
-                                '08' => 'Agustus',
-                                '09' => 'September',
-                                '10' => 'Oktober',
-                                '11' => 'November',
-                                '12' => 'Desember',
+                                '01' => __('messages.month_names.01'),
+                                '02' => __('messages.month_names.02'),
+                                '03' => __('messages.month_names.03'),
+                                '04' => __('messages.month_names.04'),
+                                '05' => __('messages.month_names.05'),
+                                '06' => __('messages.month_names.06'),
+                                '07' => __('messages.month_names.07'),
+                                '08' => __('messages.month_names.08'),
+                                '09' => __('messages.month_names.09'),
+                                '10' => __('messages.month_names.10'),
+                                '11' => __('messages.month_names.11'),
+                                '12' => __('messages.month_names.12'),
                             ])->default(now()->format('m'))->required(),
                         Forms\Components\Select::make('year')
-                            ->label('Tahun')
+                            ->label(__('messages.year'))
                             ->options(function () {
                                 $years = range(now()->year - 1, now()->year + 1);
                                 return array_combine($years, $years);
@@ -404,19 +423,19 @@ class PayrollResource extends Resource
                             $leaves = $employee->leaveRequests()
                                 ->where('status', 'approved')
                                 ->where(function ($q) use ($startOfMonth, $endOfMonth) {
-                                    $q->whereBetween('start_date', [$startOfMonth, $endOfMonth])
-                                        ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
-                                        ->orWhere(function ($sub) use ($startOfMonth, $endOfMonth) {
-                                            $sub->where('start_date', '<', $startOfMonth)
-                                                ->where('end_date', '>', $endOfMonth);
-                                        });
-                                })
+                                $q->whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                                    ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
+                                    ->orWhere(function ($sub) use ($startOfMonth, $endOfMonth) {
+                                        $sub->where('start_date', '<', $startOfMonth)
+                                            ->where('end_date', '>', $endOfMonth);
+                                    });
+                            })
                                 ->get();
 
                             $sickDays = 0;
                             $permissionDays = 0; // Izin (Unpaid)
                             $paidLeaveDays = 0; // Cuti Tahunan (Paid usually)
-
+            
                             foreach ($leaves as $leave) {
                                 // Calculate days falling in this month
                                 $s = Carbon::parse($leave->start_date);
@@ -443,7 +462,7 @@ class PayrollResource extends Resource
                             // Sakit -> Paid (Add to attendance)
                             // Izin -> Unpaid (Do nothing, day is missing from attendance)
                             // Cuti Tahunan -> Paid (Add to attendance)
-
+            
                             $attendanceDays = $attendances->count() + $sickDays + $paidLeaveDays;
 
                             // DYNAMIC FORMULA CHECK
@@ -476,9 +495,9 @@ class PayrollResource extends Resource
                                         // Otherwise prepend return (for simple expressions)
                                         $result = null;
                                         if (str_contains($script, 'return')) {
-                                            $result = eval($script);
+                                            $result = eval ($script);
                                         } else {
-                                            $result = eval("return $script;");
+                                            $result = eval ("return $script;");
                                         }
 
                                         if (is_array($result)) {
@@ -522,7 +541,7 @@ class PayrollResource extends Resource
                             $deductions += $totalLoanDeduction;
                             $totalPayout -= $totalLoanDeduction;
                             // --------------------
-
+            
                             Log::info("Total Payout Calculated: {$totalPayout}");
 
                             Payroll::create([
@@ -548,7 +567,7 @@ class PayrollResource extends Resource
                         }
 
                         Notification::make()
-                            ->title("Berhasil generate $count slip gaji.")
+                            ->title(__('messages.payroll_generated_notification', ['count' => $count]))
                             ->success()
                             ->send();
                     })
@@ -559,15 +578,15 @@ class PayrollResource extends Resource
     {
         return $schema
             ->schema([
-                Section::make('Pegawai & Periode')
+                Section::make(__('messages.employee_period'))
                     ->columns(3)
                     ->schema([
                         TextEntry::make('employee.name')
-                            ->label('Nama Pegawai'),
+                            ->label(__('messages.employee_resource')),
                         TextEntry::make('month_year')
-                            ->label('Periode'),
+                            ->label(__('messages.period')),
                         TextEntry::make('status')
-                            ->label('Status')
+                            ->label(__('messages.status'))
                             ->badge()
                             ->color(fn(string $state): string => match ($state) {
                                 'draft' => 'gray',
@@ -575,25 +594,25 @@ class PayrollResource extends Resource
                             }),
                     ]),
 
-                Section::make('Rincian Pendapatan')
+                Section::make(__('messages.income_details'))
                     ->columns(2)
                     ->schema([
                         TextEntry::make('base_salary')
-                            ->label('Gaji Pokok')
+                            ->label(__('messages.base_salary'))
                             ->money('IDR'),
                         TextEntry::make('total_attendance_days')
-                            ->label('Total Hadir (Hari)'),
+                            ->label(__('messages.total_attendance_days')),
                         TextEntry::make('total_overtime_minutes')
-                            ->label('Total Lembur (Menit)'),
+                            ->label(__('messages.total_overtime_minutes')),
                         TextEntry::make('overtime_amount')
-                            ->label('Nominal Lembur')
+                            ->label(__('messages.overtime_amount'))
                             ->money('IDR'),
                     ]),
 
-                Section::make('Rincian Potongan & Total')
+                Section::make(__('messages.deduction_details'))
                     ->schema([
                         TextEntry::make('deduction_details')
-                            ->label('Detail Potongan')
+                            ->label(__('messages.deduction_details'))
                             ->html()
                             ->state(function ($record) {
                                 if (!$record || !$record->details)
@@ -611,14 +630,14 @@ class PayrollResource extends Resource
                                     return new \Illuminate\Support\HtmlString(implode('', $lines));
                                 }
 
-                                return 'Tidak ada potongan spesifik';
+                                return __('messages.no_deductions');
                             }),
                         TextEntry::make('deductions')
-                            ->label('Total Potongan')
+                            ->label(__('messages.total_deductions'))
                             ->money('IDR')
                             ->color('danger'),
                         TextEntry::make('total_payout')
-                            ->label('Take Home Pay')
+                            ->label(__('messages.take_home_pay'))
                             ->money('IDR')
                             ->weight('bold')
                             ->color('success')

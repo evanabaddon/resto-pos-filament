@@ -17,26 +17,26 @@ class AttendancesTable
         return $table
             ->columns([
                 TextColumn::make('employee.name')
-                    ->label('Nama Pegawai')
+                    ->label(__('messages.employee_resource'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('employee.shift.name')
-                    ->label('Shift')
+                    ->label(__('messages.shift_resource'))
                     ->sortable(),
                 TextColumn::make('date')
-                    ->label('Tanggal')
+                    ->label(__('messages.date'))
                     ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('clock_in')
-                    ->label('Jam Masuk')
+                    ->label(__('messages.clock_in'))
                     ->time('H:i')
                     ->sortable(),
                 TextColumn::make('clock_out')
-                    ->label('Jam Pulang')
+                    ->label(__('messages.clock_out'))
                     ->time('H:i')
                     ->sortable(),
                 TextColumn::make('status_details')
-                    ->label('Status')
+                    ->label(__('messages.status'))
                     ->badge()
                     ->state(function ($record) {
                         $states = [];
@@ -61,8 +61,8 @@ class AttendancesTable
                         default => 'success',
                     }),
                 TextColumn::make('snapshot_path')
-                    ->label('Foto')
-                    ->formatStateUsing(fn() => 'Lihat Foto')
+                    ->label(__('messages.snapshot'))
+                    ->formatStateUsing(fn() => __('messages.view_photo'))
                     ->icon('heroicon-o-camera')
                     ->url(fn($record) => Storage::url($record->snapshot_path))
                     ->openUrlInNewTab()
@@ -71,14 +71,14 @@ class AttendancesTable
             ->defaultSort('created_at', 'desc')
             ->filters([
                 \Filament\Tables\Filters\SelectFilter::make('employee')
-                    ->label('Pegawai')
+                    ->label(__('messages.employee_resource'))
                     ->relationship('employee', 'name')
                     ->searchable()
                     ->preload(),
                 \Filament\Tables\Filters\Filter::make('date')
                     ->form([
-                        \Filament\Forms\Components\DatePicker::make('date_from')->label('Dari Tanggal'),
-                        \Filament\Forms\Components\DatePicker::make('date_until')->label('Sampai Tanggal'),
+                        \Filament\Forms\Components\DatePicker::make('date_from')->label(__('messages.date_from')),
+                        \Filament\Forms\Components\DatePicker::make('date_until')->label(__('messages.date_until')),
                     ])
                     ->query(function ($query, array $data) {
                         return $query
@@ -92,9 +92,9 @@ class AttendancesTable
                             );
                     }),
                 \Filament\Tables\Filters\TernaryFilter::make('is_late')
-                    ->label('Filter Terlambat'),
+                    ->label(__('messages.filter_late')),
                 \Filament\Tables\Filters\TernaryFilter::make('is_early_leave')
-                    ->label('Filter Pulang Cepat'),
+                    ->label(__('messages.filter_early_leave')),
             ])
             ->actions([
                 EditAction::make(),

@@ -16,24 +16,24 @@ class ContractsTable
         return $table
             ->columns([
                 TextColumn::make('employee.name')
-                    ->label('Nama Pegawai')
+                    ->label(__('messages.employee_resource'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('start_date')
-                    ->label('Tanggal Mulai')
+                    ->label(__('messages.start_date'))
                     ->date()
                     ->sortable(),
                 TextColumn::make('end_date')
-                    ->label('Tanggal Selesai')
+                    ->label(__('messages.end_date'))
                     ->date()
                     ->sortable()
-                    ->placeholder('Selamanya'),
+                    ->placeholder(__('messages.forever')),
                 ImageColumn::make('signature_path')
-                    ->label('Tanda Tangan')
+                    ->label(__('messages.signature'))
                     ->checkFileExistence(false)
                     ->getStateUsing(fn($record) => $record->signature_path ? asset('storage/' . $record->signature_path) : null),
                 TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
+                    ->label(__('messages.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

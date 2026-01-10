@@ -22,6 +22,11 @@ class FactoryReset extends Page
 
     protected static ?string $navigationLabel = 'Factory Reset';
 
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.factory_reset');
+    }
+
     protected static ?int $navigationSort = 999;
 
     public static function canAccess(): bool
@@ -33,17 +38,17 @@ class FactoryReset extends Page
     {
         return [
             \Filament\Actions\Action::make('operational_reset')
-                ->label('Reset Operasional')
+                ->label(__('messages.operational_reset'))
                 ->icon('heroicon-o-arrow-path')
                 ->color('warning')
                 ->requiresConfirmation()
-                ->modalHeading('Konfirmasi Reset Operasional')
-                ->modalDescription('Ini akan menghapus SEMUA data transaksi (penjualan, pembelian, stock movement, dll) tapi SIMPAN produk & resep. Stok akan di-reset ke 0.')
+                ->modalHeading(__('messages.operational_reset_heading'))
+                ->modalDescription(__('messages.operational_reset_desc'))
                 ->modalIcon('heroicon-o-exclamation-triangle')
                 ->modalIconColor('warning')
                 ->schema([
                     Forms\Components\TextInput::make('password')
-                        ->label('Password SuperAdmin')
+                        ->label(__('messages.password_superadmin'))
                         ->password()
                         ->required()
                         ->rules([
@@ -56,7 +61,7 @@ class FactoryReset extends Page
                             },
                         ]),
                     Forms\Components\Checkbox::make('confirm')
-                        ->label('Saya mengerti risiko dan ingin melanjutkan')
+                        ->label(__('messages.i_understand_risks'))
                         ->accepted()
                         ->required(),
                 ])
@@ -65,17 +70,17 @@ class FactoryReset extends Page
                 }),
 
             \Filament\Actions\Action::make('factory_reset')
-                ->label('Factory Reset Total')
+                ->label(__('messages.factory_reset_total'))
                 ->icon('heroicon-o-trash')
                 ->color('danger')
                 ->requiresConfirmation()
-                ->modalHeading('⚠️ PERINGATAN: Factory Reset Total')
-                ->modalDescription('Ini akan menghapus SEMUA DATA termasuk produk, resep, kategori, karyawan, dll. Hanya user dan settings yang akan tetap ada. TIDAK BISA DI-UNDO!')
+                ->modalHeading(__('messages.factory_reset_heading'))
+                ->modalDescription(__('messages.factory_reset_desc'))
                 ->modalIcon('heroicon-o-exclamation-circle')
                 ->modalIconColor('danger')
                 ->schema([
                     Forms\Components\TextInput::make('password')
-                        ->label('Password SuperAdmin')
+                        ->label(__('messages.password_superadmin'))
                         ->password()
                         ->required()
                         ->rules([
@@ -88,7 +93,7 @@ class FactoryReset extends Page
                             },
                         ]),
                     Forms\Components\Checkbox::make('confirm')
-                        ->label('Saya mengerti ini akan menghapus SEMUA DATA dan TIDAK BISA DI-UNDO')
+                        ->label(__('messages.i_understand_factory'))
                         ->accepted()
                         ->required(),
                 ])
@@ -139,8 +144,8 @@ class FactoryReset extends Page
 
             Notification::make()
                 ->success()
-                ->title('Reset Operasional Berhasil')
-                ->body("Semua data transaksi telah dihapus. Backup: {$backup}")
+                ->title(__('messages.operational_reset_success'))
+                ->body(__('messages.operational_reset_success_body', ['backup' => $backup]))
                 ->send();
         } catch (\Exception $e) {
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
@@ -208,8 +213,8 @@ class FactoryReset extends Page
 
             Notification::make()
                 ->success()
-                ->title('Factory Reset Berhasil')
-                ->body("Semua data telah dihapus. Backup: {$backup}")
+                ->title(__('messages.factory_reset_success'))
+                ->body(__('messages.factory_reset_success_body', ['backup' => $backup]))
                 ->send();
         } catch (\Exception $e) {
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
@@ -231,8 +236,8 @@ class FactoryReset extends Page
 
             Notification::make()
                 ->success()
-                ->title('Restore Berhasil')
-                ->body("Database telah dikembalikan dari backup: {$filename}")
+                ->title(__('messages.restore_success'))
+                ->body(__('messages.restore_success_body', ['file' => $filename]))
                 ->send();
 
             redirect()->to(static::getUrl());
@@ -241,7 +246,7 @@ class FactoryReset extends Page
 
             Notification::make()
                 ->danger()
-                ->title('Restore Gagal')
+                ->title(__('messages.restore_failed'))
                 ->body('Terjadi kesalahan: ' . $e->getMessage())
                 ->send();
         }
@@ -255,13 +260,13 @@ class FactoryReset extends Page
 
             Notification::make()
                 ->success()
-                ->title('Backup Dihapus')
-                ->body("Backup {$filename} telah dihapus")
+                ->title(__('messages.backup_deleted'))
+                ->body(__('messages.backup_deleted_body', ['file' => $filename]))
                 ->send();
         } catch (\Exception $e) {
             Notification::make()
                 ->danger()
-                ->title('Gagal Menghapus')
+                ->title(__('messages.failed_to_delete'))
                 ->body('Terjadi kesalahan: ' . $e->getMessage())
                 ->send();
         }

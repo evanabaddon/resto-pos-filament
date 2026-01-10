@@ -5,9 +5,9 @@
             isLoaded: false,
             isCameraOpen: false,
             modelLoaded: false,
-            message: 'Memuat sistem...',
+            message: '{{ __('messages.system_loading') }}',
             
-            detectedName: 'Mendeteksi...',
+            detectedName: '{{ __('messages.detecting') }}',
             matchedEmployeeId: null,
             matchedEmployeeStatus: 'none', 
             faceMatcher: null,
@@ -19,11 +19,11 @@
                 script.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
                 // script.onload = () => this.loadModels(); // DEFER LOADING
                 document.head.appendChild(script);
-                this.message = 'Sistem Siap. Klik tombol untuk memulai.';
+                this.message = '{{ __('messages.system_ready') }}';
             },
 
             async loadModels() {
-                this.message = 'Sedang memuat model AI (ini mungkin memakan waktu)...';
+                this.message = '{{ __('messages.loading_ai_models') }}';
                 try {
                     await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
                     await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
@@ -32,7 +32,7 @@
                     
                     this.modelLoaded = true;
                 } catch (e) {
-                    this.message = 'Gagal memuat model AI: ' + e;
+                    this.message = '{{ __('messages.failed_load_ai') }}' + e;
                     throw e;
                 }
             },
@@ -43,12 +43,12 @@
                     try {
                         await this.loadModels();
                     } catch (e) {
-                        alert('Gagal memuat model: ' + e);
+                        alert('{{ __('messages.failed_load_ai') }}' + e);
                         return;
                     }
                 }
 
-                this.message = 'Menyiapkan data wajah...';
+                this.message = '{{ __('messages.preparing_face_data') }}';
                 
                 // Prepare Matcher
                 if (this.allEmployees && this.allEmployees.length > 0 && !this.faceMatcher) {
@@ -59,7 +59,7 @@
                     this.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
                 }
                 
-                this.message = 'Membuka kamera...';
+                this.message = '{{ __('messages.opening_camera') }}';
                 
                 try {
                     // Mobile Optimization: Prefer Front Camera & Lower Resolution
@@ -77,13 +77,13 @@
                     this.video.srcObject = this.stream;
                     this.isCameraOpen = true;
                     this.isLoaded = true;
-                    this.message = 'Kamera Aktif. Silakan berdiri di depan kamera.';
+                    this.message = '{{ __('messages.camera_active') }}';
                     
                     this.detectFace();
                 } catch (err) {
                     console.error(err);
-                    this.message = 'Gagal akses kamera: ' + err.name + ' - ' + err.message;
-                    alert('Gagal membuka kamera: ' + err.message + '\nPastikan izin kamera diberikan dan akses via HTTPS.');
+                    this.message = '{{ __('messages.camera_access_failed') }}' + err.name + ' - ' + err.message;
+                    alert('{{ __('messages.camera_access_failed') }}' + err.message + '\nPastikan izin kamera diberikan dan akses via HTTPS.');
                 }
             },
 
@@ -93,7 +93,7 @@
                     this.stream = null;
                 }
                 this.isCameraOpen = false;
-                this.message = 'Kamera dimatikan.';
+                this.message = '{{ __('messages.camera_stopped') }}';
                 this.detectedName = '...';
                 this.matchedEmployeeId = null;
                 this.matchedEmployeeStatus = 'none';
@@ -119,7 +119,7 @@
                                  const emp = this.allEmployees.find(e => e.id == this.matchedEmployeeId);
                                  this.matchedEmployeeStatus = emp ? emp.today_status : 'none';
                              } else {
-                                 this.detectedName = 'Wajah tidak dikenal';
+                                 this.detectedName = '{{ __('messages.unknown_face') }}';
                                  this.matchedEmployeeId = null;
                                  this.matchedEmployeeStatus = 'none';
                              }
@@ -170,7 +170,7 @@
         <div class="w-full max-w-5xl mb-6 text-center">
             <h1
                 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2 tracking-tight">
-                Mesin Absensi
+                {{ __('messages.attendance_machine') }}
             </h1>
             <p class="text-sm md:text-lg text-gray-500 dark:text-gray-400 font-medium" x-text="message"></p>
         </div>
@@ -191,13 +191,15 @@
                             <div class="mb-4 text-gray-400">
                                 <x-heroicon-o-video-camera class="w-16 h-16 mx-auto mb-2 opacity-50" />
                                 <p class="text-sm"
-                                    x-text="modelLoaded ? 'Sistem Siap Digunakan' : 'Memuat Resource...'"></p>
+                                    x-text="modelLoaded ? '{{ __('messages.system_ready_to_use') }}' : '{{ __('messages.loading_resources') }}'">
+                                </p>
                             </div>
 
                             <button @click="startCamera"
                                 class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-wait transition-all">
                                 <x-heroicon-m-play class="w-5 h-5 mr-2" />
-                                <span x-text="modelLoaded ? 'Buka Kamera Absensi' : 'Memuat & Buka Kamera'"></span>
+                                <span
+                                    x-text="modelLoaded ? '{{ __('messages.open_attendance_camera') }}' : '{{ __('messages.loading_opening_camera') }}'"></span>
                             </button>
                         </div>
                     </template>
@@ -209,7 +211,7 @@
                     <!-- Overlay Name Badge (Only show when camera is active) -->
                     <div class="absolute bottom-4 left-0 right-0 flex justify-center" x-show="isCameraOpen">
                         <div class="bg-black/40 backdrop-blur-md border border-white/10 px-6 py-2 rounded-full text-white font-semibold shadow-lg transition-all duration-300"
-                            :class="detectedName !== '...' && detectedName !== 'Wajah tidak dikenal' ? 'scale-100 opacity-100' : 'scale-95 opacity-0'">
+                            :class="detectedName !== '...' && detectedName !== '{{ __('messages.unknown_face') }}' ? 'scale-100 opacity-100' : 'scale-95 opacity-0'">
                             <span class="text-lg md:text-xl tracking-wide" x-text="detectedName"></span>
                         </div>
                     </div>
@@ -220,7 +222,7 @@
                     <button @click="stopCamera"
                         class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <x-heroicon-m-stop class="w-4 h-4 mr-2" />
-                        Tutup Kamera
+                        {{ __('messages.close_camera') }}
                     </button>
                 </div>
             </div>
@@ -231,11 +233,13 @@
                 <!-- Status Card -->
                 <div
                     class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 text-center transition-all hover:shadow-xl">
-                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Status Karyawan</p>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        {{ __('messages.employee_status') }}</p>
 
                     <template x-if="!matchedEmployeeId">
                         <h2 class="text-2xl font-bold text-gray-400"
-                            x-text="isCameraOpen ? 'Menunggu Wajah...' : 'Kamera Mati'"></h2>
+                            x-text="isCameraOpen ? '{{ __('messages.waiting_for_face') }}' : '{{ __('messages.camera_off') }}'">
+                        </h2>
                     </template>
 
                     <template x-if="matchedEmployeeId">
@@ -250,7 +254,7 @@
                                 }">
                                 <span class="mr-1.5 text-lg">•</span>
                                 <span
-                                    x-text="matchedEmployeeStatus === 'none' ? 'Belum Absen' : (matchedEmployeeStatus === 'checked_in' ? 'Sedang Bekerja' : 'Sudah Pulang')"></span>
+                                    x-text="matchedEmployeeStatus === 'none' ? '{{ __('messages.not_yet_present') }}' : (matchedEmployeeStatus === 'checked_in' ? '{{ __('messages.working_now') }}' : '{{ __('messages.already_home') }}')"></span>
                             </div>
                         </div>
                     </template>

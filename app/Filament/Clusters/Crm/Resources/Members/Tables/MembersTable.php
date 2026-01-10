@@ -29,13 +29,13 @@ class MembersTable
                     ->searchable()
                     ->sortable(),
                 PhoneColumn::make('phone')
-                    ->label('Nomor HP')
+                    ->label(__('messages.phone'))
                     ->searchable()
                     ->defaultCountry('ID')
                     ->displayFormat(PhoneInputNumberType::INTERNATIONAL)
                     ->copyable(),
                 TextColumn::make('tier.name')
-                    ->label('Level')
+                    ->label(__('messages.tier'))
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'Sedulur Tinetes' => 'warning',
@@ -43,21 +43,21 @@ class MembersTable
                         default => 'gray',
                     }),
                 TextColumn::make('points_balance')
-                    ->label('Poin')
+                    ->label(__('messages.points'))
                     ->sortable(),
                 TextColumn::make('total_visits')
-                    ->label('Kunjungan')
+                    ->label(__('messages.visits'))
                     ->sortable(),
                 TextColumn::make('last_visit_at')
-                    ->label('Terakhir Datang')
+                    ->label(__('messages.last_visit'))
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('last_contacted_at')
-                    ->label('Terakhir Followup')
+                    ->label(__('messages.last_contacted'))
                     ->since()
                     ->color(fn($state) => $state ? 'info' : 'gray')
                     ->sortable()
-                    ->placeholder('Belum pernah'),
+                    ->placeholder(__('messages.never')),
             ])
             ->filters([])
             ->actions([
@@ -68,11 +68,11 @@ class MembersTable
 
                     // 0. AI Personalized Message
                     Action::make('ai_personalized_wa')
-                        ->label('AI Smart Message')
+                        ->label(__('messages.wa_ai_smart'))
                         ->icon('heroicon-o-sparkles')
                         ->color('primary')
-                        ->modalHeading('AI Personalized Message')
-                        ->modalDescription('AI akan menganalisis riwayat belanja pelanggan ini untuk membuat pesan yang unik.')
+                        ->modalHeading(__('messages.ai_personalized_heading'))
+                        ->modalDescription(__('messages.ai_personalized_desc'))
                         ->form(function ($record) {
                             $service = new DeepSeekService();
                             $settings = app(GeneralSettings::class);
@@ -98,8 +98,8 @@ class MembersTable
                             // 2. Gather Business Context (Settings & Active Discounts)
                             $activePromos = DiscountCode::where('is_active', true)
                                 ->where(function ($q) {
-                                    $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
-                                })
+                                $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
+                            })
                                 ->limit(3)
                                 ->get(['code', 'name', 'type', 'value', 'min_purchase']);
 
@@ -135,8 +135,8 @@ class MembersTable
 
                             return [
                                 \Filament\Forms\Components\Textarea::make('message')
-                                    ->label('Pesan dari AI')
-                                    ->helperText('AI merangkai pesan ini khusus berdasarkan data belanja pelanggan.')
+                                    ->label(__('messages.ai_message_label'))
+                                    ->helperText(__('messages.ai_message_helper'))
                                     ->default($message)
                                     ->rows(8)
                                     ->required()
@@ -160,11 +160,11 @@ class MembersTable
 
                     // 0.5. Re-engage (AI with Preview)
                     Action::make('re_engage_ai')
-                        ->label('AI Re-engagement')
+                        ->label(__('messages.wa_ai_reengage'))
                         ->icon('heroicon-o-arrow-path')
                         ->color('info')
-                        ->modalHeading('AI Re-engagement Message')
-                        ->modalDescription('AI akan menganalisis data pelanggan untuk membuat pesan "Kami Merindukan Anda" yang personal.')
+                        ->modalHeading(__('messages.ai_reengage_heading'))
+                        ->modalDescription(__('messages.ai_reengage_desc'))
                         ->form(function ($record) {
                             $service = new DeepSeekService();
                             $settings = app(GeneralSettings::class);
@@ -190,8 +190,8 @@ class MembersTable
                             // Gather business context
                             $activePromos = DiscountCode::where('is_active', true)
                                 ->where(function ($q) {
-                                    $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
-                                })
+                                $q->whereNull('valid_until')->orWhere('valid_until', '>=', now());
+                            })
                                 ->limit(3)
                                 ->get(['code', 'name', 'type', 'value', 'min_purchase']);
 
@@ -229,8 +229,8 @@ class MembersTable
 
                             return [
                                 \Filament\Forms\Components\Textarea::make('message')
-                                    ->label('Pesan Re-engagement dari AI')
-                                    ->helperText('AI membuat pesan khusus untuk mengajak pelanggan kembali. Anda bisa edit sebelum kirim.')
+                                    ->label(__('messages.ai_reengage_label'))
+                                    ->helperText(__('messages.ai_reengage_helper'))
                                     ->default($message)
                                     ->rows(8)
                                     ->required()
@@ -254,11 +254,11 @@ class MembersTable
 
                     // 1. Smart SOP Action
                     Action::make('wa_sop')
-                        ->label('Sapaan Rutin (SOP)')
+                        ->label(__('messages.wa_sop'))
                         ->icon('heroicon-o-chat-bubble-left-right')
                         ->color('success')
-                        ->modalHeading('Kirim Pesan WhatsApp (SOP)')
-                        ->modalDescription('Pesan otomatis dibuat berdasarkan fase pelanggan (Baru/Repeat/Naik Tier). Silakan review sebelum kirim.')
+                        ->modalHeading(__('messages.wa_sop_heading'))
+                        ->modalDescription(__('messages.wa_sop_desc'))
                         ->form(function ($record) {
                             $settings = app(GeneralSettings::class);
                             $message = '';
@@ -284,7 +284,7 @@ class MembersTable
 
                             return [
                                 \Filament\Forms\Components\Textarea::make('message')
-                                    ->label('Pesan')
+                                    ->label(__('messages.message'))
                                     ->default($message)
                                     ->rows(6)
                                     ->required()
@@ -310,7 +310,7 @@ class MembersTable
 
                     // 2. Cheat Sheet - Benefit
                     Action::make('faq_benefit')
-                        ->label('FAQ: Benefit Poin')
+                        ->label(__('messages.wa_faq_benefit'))
                         ->icon('heroicon-o-question-mark-circle')
                         ->action(function ($record) {
                             $record->update(['last_contacted_at' => now()]);
@@ -330,7 +330,7 @@ class MembersTable
 
                     // 3. Cheat Sheet - Redemption
                     Action::make('faq_redemption')
-                        ->label('FAQ: Penukaran')
+                        ->label(__('messages.wa_faq_redemption'))
                         ->icon('heroicon-o-gift')
                         ->action(function ($record) {
                             $record->update(['last_contacted_at' => now()]);
@@ -350,7 +350,7 @@ class MembersTable
 
                     // 4. Cheat Sheet - Use Points
                     Action::make('faq_use_points')
-                        ->label('FAQ: Pakai Sekarang')
+                        ->label(__('messages.wa_faq_use_points'))
                         ->icon('heroicon-o-check-circle')
                         ->action(function ($record) {
                             $record->update(['last_contacted_at' => now()]);
@@ -370,16 +370,16 @@ class MembersTable
 
                     // 5. Reset Followup
                     Action::make('reset_followup')
-                        ->label('Reset Status Followup')
+                        ->label(__('messages.wa_reset_followup'))
                         ->icon('heroicon-o-arrow-path')
                         ->color('gray')
                         ->requiresConfirmation()
-                        ->modalHeading('Reset Status Followup?')
-                        ->modalDescription('Status "Terakhir Followup" akan dikembalikan ke "Belum pernah". Gunakan jika Anda tidak jadi mengirim pesan.')
+                        ->modalHeading(__('messages.reset_followup_heading'))
+                        ->modalDescription(__('messages.reset_followup_desc'))
                         ->action(function ($record) {
                             $record->update(['last_contacted_at' => null]);
                             \Filament\Notifications\Notification::make()
-                                ->title('Status Followup Direset')
+                                ->title(__('messages.followup_reset_success'))
                                 ->success()
                                 ->send();
                         }),

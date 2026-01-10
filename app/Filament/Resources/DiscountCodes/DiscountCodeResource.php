@@ -22,9 +22,25 @@ class DiscountCodeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-ticket';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Master Data';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.discount_codes');
+    }
 
-    protected static ?string $navigationLabel = 'Kode Promo / Diskon';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.master_data');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.discount_code');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.discount_codes');
+    }
 
     // RBAC: super_admin, admin only
     public static function canViewAny(): bool

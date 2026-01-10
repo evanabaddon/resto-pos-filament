@@ -35,14 +35,30 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     use InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chat-bubble-left-right';
-    protected static ?string $navigationLabel = 'WhatsApp Center';
+    protected static ?string $navigationLabel = null;
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.wa_center');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.super_chat');
+    }
 
     public static function canAccess(): bool
     {
         return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
-    protected static ?string $title = 'WhatsApp Gateway Integration';
-    protected static string|UnitEnum|null $navigationGroup = 'Super Chat';
+    protected static ?string $title = null;
+
+    public function getTitle(): string
+    {
+        return __('messages.wa_center');
+    }
+
+    protected static string|UnitEnum|null $navigationGroup = null;
     protected static ?int $navigationSort = 10;
 
     // Only show if module is enabled
@@ -82,7 +98,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     public function createMemberAction(): Action
     {
         return Action::make('createMember')
-            ->label('Daftarkan Member')
+            ->label(__('messages.register_member'))
             ->icon('heroicon-o-user-plus')
             ->color('success')
             ->schema([
@@ -98,7 +114,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                     ->default(fn() => $this->getCleanPhone()),
                 TextInput::make('email')
                     ->email()
-                    ->label('Email (Opsional)'),
+                    ->label(__('messages.email') . ' (Opsional)'), // Partial logic
             ])
             ->action(function (array $data) {
                 Member::create([
@@ -109,9 +125,9 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 ]);
 
                 $this->checkMemberStatus(); // Refresh status
-
+    
                 Notification::make()
-                    ->title('Member Created')
+                    ->title(__('messages.member_created'))
                     ->success()
                     ->send();
             });
@@ -120,12 +136,12 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     public function createReservationAction(): Action
     {
         return Action::make('createReservation')
-            ->label('Buat Reservasi')
+            ->label(__('messages.create_reservation'))
             ->icon('heroicon-o-calendar-days')
             ->color('primary')
             ->schema([
                 TextInput::make('customer_name')
-                    ->label('Nama Customer')
+                    ->label(__('messages.customer_name'))
                     ->required()
                     ->default(fn() => $this->getChatName()),
                 TextInput::make('customer_phone')
@@ -133,18 +149,18 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                     ->required()
                     ->default(fn() => $this->getCleanPhone()),
                 DateTimePicker::make('reservation_date')
-                    ->label('Tanggal & Jam')
+                    ->label(__('messages.reservation_date'))
                     ->required()
                     ->seconds(false)
                     ->native(false)
                     ->default(now()->addHour()),
                 TextInput::make('party_size')
-                    ->label('Jumlah Orang')
+                    ->label(__('messages.party_size'))
                     ->numeric()
                     ->required()
                     ->default(2),
                 Textarea::make('special_requests')
-                    ->label('Catatan Khusus'),
+                    ->label(__('messages.special_requests')),
             ])
             ->action(function (array $data) {
                 Reservation::create([
@@ -166,13 +182,13 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     public function logoutAction(): Action
     {
         return Action::make('logout')
-            ->label('Logout WhatsApp')
+            ->label(__('messages.logout_wa'))
             ->icon('heroicon-o-power')
             ->color('danger')
             ->requiresConfirmation()
-            ->modalHeading('Logout WhatsApp?')
-            ->modalDescription('Semua chat dan media WhatsApp akan dihapus untuk menghemat storage. Sesi akan direset dan Anda perlu scan QR code lagi.')
-            ->modalSubmitActionLabel('Ya, Logout')
+            ->modalHeading(__('messages.logout_confirmation_title'))
+            ->modalDescription(__('messages.logout_confirmation_desc'))
+            ->modalSubmitActionLabel(__('messages.logout_button'))
             ->modalIcon('heroicon-o-exclamation-triangle')
             ->action(function () {
                 $this->logout();
@@ -182,13 +198,13 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     public function forceResetAction(): Action
     {
         return Action::make('forceReset')
-            ->label('Force Reset')
+            ->label(__('messages.force_reset'))
             ->icon('heroicon-o-trash')
             ->color('danger')
             ->requiresConfirmation()
-            ->modalHeading('Reset Sesi WhatsApp?')
-            ->modalDescription('Gunakan ini jika koneksi bermasalah atau ingin mengosongkan storage. Semua data chat akan dihapus.')
-            ->modalSubmitActionLabel('Ya, Reset')
+            ->modalHeading(__('messages.reset_confirmation_title'))
+            ->modalDescription(__('messages.reset_confirmation_desc'))
+            ->modalSubmitActionLabel(__('messages.reset_button'))
             ->modalIcon('heroicon-o-exclamation-triangle')
             ->action(function () {
                 $this->logout();
@@ -241,6 +257,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     {
         try {
             // Use very short timeout (1 second) to prevent slow page loads
+            /** @var \Illuminate\Http\Client\Response $response */
             $response = Http::timeout(1)->get($this->getGatewayUrl() . '/status');
 
             if ($response->successful()) {
@@ -281,12 +298,12 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                     ->selectRaw('(SELECT COUNT(*) FROM whatsapp_messages as wm2 WHERE wm2.remote_jid = whatsapp_messages.remote_jid AND wm2.from_me = 0 AND wm2.status = "received") as unread_count')
                     // Join with members table to get name if exists (Handle +62, 08, dashes, spaces)
                     ->leftJoin('members', function ($join) {
-                        $cleanMember = "REPLACE(REPLACE(REPLACE(members.phone, '-', ''), ' ', ''), '+', '')";
-                        $waUser = "SUBSTRING_INDEX(whatsapp_messages.remote_jid, '@', 1)";
+                    $cleanMember = "REPLACE(REPLACE(REPLACE(members.phone, '-', ''), ' ', ''), '+', '')";
+                    $waUser = "SUBSTRING_INDEX(whatsapp_messages.remote_jid, '@', 1)";
 
-                        $join->on(DB::raw($cleanMember), '=', DB::raw($waUser))
-                            ->orOn(DB::raw($cleanMember), '=', DB::raw("CONCAT('0', SUBSTRING($waUser, 3))"));
-                    })
+                    $join->on(DB::raw($cleanMember), '=', DB::raw($waUser))
+                        ->orOn(DB::raw($cleanMember), '=', DB::raw("CONCAT('0', SUBSTRING($waUser, 3))"));
+                })
                     // Subquery to get the most relevant name (Member Name > Contact Name > Push Name)
                     ->selectRaw("
                         CASE 
@@ -306,17 +323,17 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                         END as effective_name
                     ")
                     ->whereIn('whatsapp_messages.id', function ($query) {
-                        $query->selectRaw('MAX(id)')
-                            ->from('whatsapp_messages')
-                            ->groupBy('remote_jid');
-                    })
+                    $query->selectRaw('MAX(id)')
+                        ->from('whatsapp_messages')
+                        ->groupBy('remote_jid');
+                })
                     ->when($this->search, function ($query) {
-                        $query->where(function ($q) {
-                            $q->where('push_name', 'like', "%{$this->search}%")
-                                ->orWhere('conversation_name', 'like', "%{$this->search}%")
-                                ->orWhere('remote_jid', 'like', "%{$this->search}%");
-                        });
-                    })
+                    $query->where(function ($q) {
+                        $q->where('push_name', 'like', "%{$this->search}%")
+                            ->orWhere('conversation_name', 'like', "%{$this->search}%")
+                            ->orWhere('remote_jid', 'like', "%{$this->search}%");
+                    });
+                })
                     ->orderByDesc('created_at')
                     ->limit(50) // Limit to 50 recent chats for performance
                     ->get();
@@ -539,7 +556,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 $msg->update(['attachment_path' => $path . '/' . $filename]);
 
                 $this->refreshMessages();
-                Notification::make()->title('Berhasil')->body('Media berhasil didownload.')->success()->send();
+                Notification::make()->title(__('messages.success'))->body(__('messages.download_success'))->success()->send();
             } else {
                 // Detailed Error for Debugging
                 $errorBody = $response->body();
@@ -550,7 +567,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 Log::error("Manual Download Failed: Status {$response->status()} | URL: $url | Body: $errorBody");
 
                 Notification::make()
-                    ->title('Gagal Download')
+                    ->title(__('messages.download_failed'))
                     ->body("Gateway Error ({$response->status()}): " . Str::limit($errorMessage, 100))
                     ->danger()
                     ->send();
@@ -714,6 +731,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
             // Attempt to call gateway logout
             // We use a short timeout because if the node is dead, we still want to proceed with local cleanup
+            /** @var \Illuminate\Http\Client\Response $response */
             $response = Http::timeout(3)->post($this->getGatewayUrl() . '/logout');
 
             if ($response->successful()) {
@@ -744,8 +762,8 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
         // 4. Notify User
         Notification::make()
-            ->title('Logged Out & Storage Cleared')
-            ->body('Sesi telah direset dan folder media local telah dikosongkan.')
+            ->title(__('messages.logged_out_cleared'))
+            ->body(__('messages.logout_confirmation_desc')) // Reuse desc or simplified one
             ->success()
             ->send();
 

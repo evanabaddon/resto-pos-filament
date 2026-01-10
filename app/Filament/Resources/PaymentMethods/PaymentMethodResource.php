@@ -22,11 +22,19 @@ class PaymentMethodResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-credit-card';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Master Data';
-
     public static function getNavigationLabel(): string
     {
         return __('messages.payment_method_resource');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.payment_method_resource');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.payment_method_resource'); // Or plural key if different
     }
 
     public static function getNavigationGroup(): ?string

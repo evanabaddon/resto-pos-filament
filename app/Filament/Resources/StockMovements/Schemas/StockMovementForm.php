@@ -30,11 +30,6 @@ class StockMovementForm
                 Select::make('type')
                     ->label(__('messages.type'))
                     ->options([
-                        'increase' => __('messages.stock_in'), // Assuming 'stock_in' exists or add new key? Let's check keys. I'll add keys if missing. 'stock_increase' is better?
-                        // Let's use generic 'increase'/'decrease' translation or reuse existing if any.
-                        // I will add 'stock_in' and 'stock_out' keys in next step if needed, or use hardcoded translation logic in controller.
-                        // Wait, form options need keys.
-                        // Let's refer to 'increase' => 'Penambahan (+)'
                         'increase' => __('messages.stock_in') . ' (+)',
                         'decrease' => __('messages.stock_out') . ' (-)',
                     ])

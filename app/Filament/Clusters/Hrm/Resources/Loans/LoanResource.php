@@ -23,13 +23,31 @@ class LoanResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-credit-card';
 
-    protected static ?string $navigationLabel = 'Pinjaman';
-
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+    protected static string|UnitEnum|null $navigationGroup = null;
 
     protected static ?int $navigationSort = 6;
 
     protected static ?string $cluster = HrmCluster::class;
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.loans_resource');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.loan_resource');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.loans_resource');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.hrm_cluster');
+    }
 
     public static function shouldRegisterNavigation(): bool
     {

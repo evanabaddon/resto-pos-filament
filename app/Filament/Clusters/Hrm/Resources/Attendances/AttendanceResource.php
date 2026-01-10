@@ -21,16 +21,29 @@ class AttendanceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clock';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return app(\App\Settings\GeneralSettings::class)->enable_hrm;
-    }
+    protected static string|UnitEnum|null $navigationGroup = null;
 
     protected static ?string $cluster = HrmCluster::class;
 
-    protected static ?string $navigationLabel = 'Absensi';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.hrm_cluster');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.attendance_resource');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.attendances_resource');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.attendances_resource');
+    }
 
     // RBAC: super_admin, admin, accountant
     public static function canViewAny(): bool

@@ -30,9 +30,23 @@ class FiscalReport extends Page implements HasForms, HasTable
     use InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-chart-bar';
-    protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
-    protected static ?string $title = 'Laporan Pajak (Fiskal)';
-    protected static ?string $navigationLabel = 'Laporan Pajak (Fiskal)';
+    protected static ?string $title = null;
+    protected static ?string $navigationLabel = null;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.reports_analytics');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.fiscal_report');
+    }
+
+    public function getTitle(): string
+    {
+        return __('messages.fiscal_report');
+    }
 
     public static function canAccess(): bool
     {
@@ -62,23 +76,23 @@ class FiscalReport extends Page implements HasForms, HasTable
 
         return $schema
             ->schema([
-                Section::make('Filter Laporan')
+                Section::make(__('messages.filter_report'))
                     ->columns(3)
                     ->schema([
                         DatePicker::make('date_start')
-                            ->label('Tanggal Mulai')
+                            ->label(__('messages.start_date'))
                             ->required()
                             ->live(),
                         DatePicker::make('date_end')
-                            ->label('Tanggal Akhir')
+                            ->label(__('messages.end_date'))
                             ->required()
                             ->live(),
                         TextInput::make('target_daily_revenue')
-                            ->label('Target Omzet Harian (Rp)')
+                            ->label(__('messages.target_daily_revenue'))
                             ->numeric()
                             ->prefix('Rp')
                             ->placeholder('2000000')
-                            ->helperText('Sistem akan memilih transaksi secara acak untuk mendekati angka ini per hari.')
+                            ->helperText(__('messages.target_revenue_helper'))
                             ->visible($settings->enable_fiscal_planning),
                     ]),
             ]);
@@ -99,7 +113,7 @@ class FiscalReport extends Page implements HasForms, HasTable
             })
             ->columns([
                 TextColumn::make('created_at')
-                    ->label('Waktu')
+                    ->label(__('messages.time'))
                     ->dateTime(),
                 TextColumn::make('invoice_number')
                     ->label('Invoice'),
@@ -107,31 +121,32 @@ class FiscalReport extends Page implements HasForms, HasTable
                     ->label('Total')
                     ->money('IDR'),
                 TextColumn::make('is_tax_reported')
-                    ->label('Lapor Pajak')
+                    ->label(__('messages.tax_reported'))
                     ->badge()
                     ->color(fn(bool $state): string => $state ? 'success' : 'danger')
-                    ->formatStateUsing(fn(bool $state): string => $state ? 'Ya' : 'Tidak')
+                    ->formatStateUsing(fn(bool $state): string => $state ? __('messages.yes_reported') : __('messages.no_internal'))
                     ->visible($settings->enable_fiscal_planning),
             ])
             ->actions([
                 Action::make('toggle_tax')
                     ->icon(fn(Sale $record) => $record->is_tax_reported ? 'heroicon-o-x-mark' : 'heroicon-o-check')
                     ->color(fn(Sale $record) => $record->is_tax_reported ? 'danger' : 'success')
-                    ->tooltip(fn(Sale $record) => $record->is_tax_reported ? 'Hapus dari Laporan' : 'Masukkan ke Laporan')
+                    ->tooltip(fn(Sale $record) => $record->is_tax_reported ? __('messages.remove_from_report') : __('messages.add_to_report'))
                     ->action(function (Sale $record) {
                         $record->update(['is_tax_reported' => !$record->is_tax_reported]);
                     })
                     ->requiresConfirmation()
                     ->modalIcon('heroicon-o-arrow-path')
-                    ->modalDescription('Apakah anda yakin ingin mengubah status laporan pajak transaksi ini?')
+                    ->modalHeading(__('messages.toggle_tax_status'))
+                    ->modalDescription(__('messages.confirm_toggle_tax'))
                     ->visible($settings->enable_fiscal_planning),
             ])
             ->filters([
                 SelectFilter::make('is_tax_reported')
-                    ->label('Status Lapor Pajak')
+                    ->label(__('messages.report_tax'))
                     ->options([
-                        1 => 'Ya (Dilaporkan)',
-                        0 => 'Tidak (Internal)',
+                        1 => __('messages.yes_reported'),
+                        0 => __('messages.no_internal'),
                     ])
                     ->default($settings->enable_fiscal_planning ? 1 : null)
                     ->visible($settings->enable_fiscal_planning),
@@ -144,7 +159,7 @@ class FiscalReport extends Page implements HasForms, HasTable
 
         return [
             Action::make('export_recap')
-                ->label('Export Rekap Harian (PDF)')
+                ->label(__('messages.export_daily_recap'))
                 ->color('warning')
                 ->icon('heroicon-o-document-chart-bar')
                 ->action(function () use ($settings) {
@@ -166,8 +181,8 @@ class FiscalReport extends Page implements HasForms, HasTable
 
                     $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.daily-fiscal-recap', [
                         'data' => $data,
-                        'startDate' => Carbon::parse($this->date_start)->format('d F Y'),
-                        'endDate' => Carbon::parse($this->date_end)->format('d F Y'),
+                        'startDate' => Carbon::parse($this->date_start)->translatedFormat('d F Y'),
+                        'endDate' => Carbon::parse($this->date_end)->translatedFormat('d F Y'),
                     ]);
 
                     return response()->streamDownload(
@@ -177,19 +192,19 @@ class FiscalReport extends Page implements HasForms, HasTable
                 }),
 
             Action::make('export_template')
-                ->label('Export Excel (Template)')
+                ->label(__('messages.export_excel_template'))
                 ->color('success')
                 ->icon('heroicon-o-table-cells')
                 ->visible($settings->enable_fiscal_planning)
                 ->action(function () use ($settings) {
                     if (!$settings->template_path) {
-                        Notification::make()->title('Template belum diupload di Pengaturan Pajak')->danger()->send();
+                        Notification::make()->title(__('messages.template_not_uploaded'))->danger()->send();
                         return;
                     }
 
                     $templatePath = storage_path('app/public/' . $settings->template_path);
                     if (!file_exists($templatePath)) {
-                        Notification::make()->title('File template tidak ditemukan')->danger()->send();
+                        Notification::make()->title(__('messages.template_not_found'))->danger()->send();
                         return;
                     }
 
@@ -233,13 +248,13 @@ class FiscalReport extends Page implements HasForms, HasTable
                 }),
 
             FilamentExportHeaderAction::make('export')
-                ->label('Export Proposal (Detail)')
+                ->label(__('messages.export_proposal'))
                 ->color('success')
                 ->icon('heroicon-o-document-arrow-down')
                 ->visible($settings->enable_fiscal_planning),
 
             Action::make('generate_proposal')
-                ->label('Generate Proposal')
+                ->label(__('messages.generate_proposal'))
                 ->color('primary')
                 ->icon('heroicon-o-cpu-chip')
                 ->requiresConfirmation()
@@ -249,7 +264,7 @@ class FiscalReport extends Page implements HasForms, HasTable
                 }),
 
             Action::make('reset_all')
-                ->label('Reset Semua')
+                ->label(__('messages.reset_all'))
                 ->color('danger')
                 ->icon('heroicon-o-trash')
                 ->requiresConfirmation()
@@ -264,7 +279,7 @@ class FiscalReport extends Page implements HasForms, HasTable
     {
         $target = (float) $this->target_daily_revenue;
         if (!$target || $target <= 0) {
-            Notification::make()->title('Target omzet harus diisi')->danger()->send();
+            Notification::make()->title(__('messages.target_required'))->danger()->send();
             return;
         }
 
@@ -301,7 +316,7 @@ class FiscalReport extends Page implements HasForms, HasTable
             }
         }
 
-        Notification::make()->title('Proposal Laporan Pajak Dibuat (Randomized)')->success()->send();
+        Notification::make()->title(__('messages.proposal_generated'))->success()->send();
     }
 
     public function resetProposal()
@@ -311,6 +326,6 @@ class FiscalReport extends Page implements HasForms, HasTable
             Carbon::parse($this->date_end)->endOfDay()
         ])->update(['is_tax_reported' => true]);
 
-        Notification::make()->title('Semua transaksi dikembalikan ke Lapor Pajak')->success()->send();
+        Notification::make()->title(__('messages.all_reset'))->success()->send();
     }
 }

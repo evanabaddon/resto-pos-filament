@@ -21,7 +21,7 @@ class ContractResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+    protected static string|UnitEnum|null $navigationGroup = null;
 
     protected static ?int $navigationSort = 2;
 
@@ -32,7 +32,25 @@ class ContractResource extends Resource
         return app(\App\Settings\GeneralSettings::class)->enable_hrm;
     }
 
-    protected static ?string $navigationLabel = 'Kontrak Kerja';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.contracts_resource');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.contract_resource');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.contracts_resource');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.hrm_cluster');
+    }
 
     public static function canDelete(Model $record): bool
     {

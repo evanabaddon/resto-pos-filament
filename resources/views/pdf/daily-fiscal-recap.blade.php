@@ -18,16 +18,16 @@
 </head>
 <body>
     <div class="header">
-        <h2>REKAP LAPORAN PAJAK HARIAN</h2>
-        <p>Periode: {{ $startDate }} - {{ $endDate }}</p>
+        <h2>{{ __('messages.recap_title') }}</h2>
+        <p>{{ __('messages.period') }}: {{ $startDate }} - {{ $endDate }}</p>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th class="text-center">Tanggal</th>
-                <th class="text-right">Total Omzet</th>
-                <th class="text-right">Pajak (10%)</th>
+                <th class="text-center">{{ __('messages.date') }}</th>
+                <th class="text-right">{{ __('messages.total_sales_fiscal') }}</th>
+                <th class="text-right">{{ __('messages.tax_10_percent') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -43,7 +43,7 @@
                     $grandTax += $tax;
                 @endphp
                 <tr>
-                    <td class="text-center">{{ \Carbon\Carbon::parse($row->date)->format('d/m/Y') }}</td>
+                    <td class="text-center">{{ \Carbon\Carbon::parse($row->date)->translatedFormat('d/m/Y') }}</td>
                     <td class="text-right">{{ number_format($final, 0, ',', '.') }}</td>
                     <td class="text-right">{{ number_format($tax, 0, ',', '.') }}</td>
                 </tr>
@@ -51,7 +51,7 @@
         </tbody>
         <tfoot>
             <tr>
-                <th class="text-right">Total Periode Ini</th>
+                <th class="text-right">{{ __('messages.total_period') }}</th>
                 <th class="text-right">{{ number_format($grandTotal, 0, ',', '.') }}</th>
                 <th class="text-right">{{ number_format($grandTax, 0, ',', '.') }}</th>
             </tr>
@@ -62,8 +62,8 @@
         <tr>
             <td style="border: none;"></td>
             <td style="border: none; width: 40%; text-align: center;">
-                <p style="margin-bottom: 5px;">Diketahui Oleh,</p>
-                <p>Admin / Staff Keuangan</p>
+                <p style="margin-bottom: 5px;">{{ __('messages.known_by') }}</p>
+                <p>{{ __('messages.finance_admin') }}</p>
                 <br><br><br><br>
                 <p style="border-bottom: 1px solid black; width: 80%; margin: 0 auto;"></p>
             </td>
@@ -71,7 +71,7 @@
     </table>
 
     <div class="footer">
-        <p>Dicetak pada: {{ now()->format('d/m/Y H:i') }}</p>
+        <p>{{ __('messages.printed_at') }}: {{ now()->translatedFormat('d/m/Y H:i') }}</p>
     </div>
 </body>
 </html>

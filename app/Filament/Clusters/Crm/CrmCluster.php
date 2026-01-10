@@ -10,9 +10,15 @@ use UnitEnum;
 class CrmCluster extends Cluster
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
-    protected static ?string $navigationLabel = 'CRM';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.crm_cluster');
+    }
 
-    protected static string|UnitEnum|null $navigationGroup = 'Kemitraan CRM';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.crm_cluster');
+    }
 
     protected static ?string $slug = 'crm';
 

@@ -23,7 +23,7 @@ class LeaveRequestResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::CalendarDays;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+    protected static string|UnitEnum|null $navigationGroup = null;
 
     protected static ?string $cluster = HrmCluster::class;
 
@@ -39,7 +39,25 @@ class LeaveRequestResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
-    protected static ?string $navigationLabel = 'Pengajuan Izin/Cuti';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.leave_requests_resource');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.leave_request_resource');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.leave_requests_resource');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.hrm_cluster');
+    }
 
     public static function form(Schema $schema): Schema
     {

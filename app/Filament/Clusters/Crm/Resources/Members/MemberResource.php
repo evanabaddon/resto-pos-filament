@@ -30,13 +30,30 @@ class MemberResource extends Resource
 {
     protected static ?string $model = Member::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Kemitraan (CRM)';
+    protected static string|UnitEnum|null $navigationGroup = null; // Defined in getNavigationGroup or overriding string property not supported for translation well without method.
+    // Actually navigationGroup property does not support closure/method directly, but we can override getNavigationGroup().
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.crm_cluster');
+    }
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
-    protected static ?string $modelLabel = 'Member';
+    public static function getModelLabel(): string
+    {
+        return __('messages.member_resource');
+    }
 
-    protected static ?string $navigationLabel = 'Member / Pelanggan';
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.members_resource');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.members_nav_label');
+    }
 
     protected static ?string $cluster = CrmCluster::class;
 

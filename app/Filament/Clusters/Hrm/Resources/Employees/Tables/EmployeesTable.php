@@ -17,19 +17,19 @@ class EmployeesTable
         return $table
             ->columns([
                 ImageColumn::make('photo_path')
-                    ->label('Foto')
+                    ->label(__('messages.photo_profile'))
                     ->circular(),
                 TextColumn::make('name')
-                    ->label('Nama')
+                    ->label(__('messages.name'))
                     ->searchable(),
                 TextColumn::make('position')
-                    ->label('Jabatan')
+                    ->label(__('messages.position'))
                     ->searchable(),
                 TextColumn::make('department')
-                    ->label('Departemen')
+                    ->label(__('messages.department'))
                     ->searchable(),
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label(__('messages.status'))
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'active' => 'success',
@@ -42,15 +42,15 @@ class EmployeesTable
                         default => $state,
                     }),
                 TextColumn::make('phone')
-                    ->label('Telepon')
+                    ->label(__('messages.phone'))
                     ->searchable(),
                 TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
+                    ->label(__('messages.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->label('Diperbarui Pada')
+                    ->label(__('messages.updated_at') ?? 'Updated At') // Add updated_at key later
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

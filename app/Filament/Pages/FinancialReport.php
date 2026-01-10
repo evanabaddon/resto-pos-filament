@@ -24,9 +24,23 @@ class FinancialReport extends Page implements HasForms
 {
     use InteractsWithForms;
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-presentation-chart-line';
-    protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
-    protected static ?string $title = 'Laporan Keuangan (Laba/Rugi)';
-    protected static ?string $navigationLabel = 'Laba/Rugi (Profit & Loss)';
+    protected static ?string $title = null;
+    protected static ?string $navigationLabel = null;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.reports_analytics');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.financial_report');
+    }
+
+    public function getTitle(): string
+    {
+        return __('messages.financial_report');
+    }
 
     public static function canAccess(): bool
     {
@@ -119,25 +133,25 @@ class FinancialReport extends Page implements HasForms
     protected function getFormSchema(): array
     {
         return [
-            Section::make('Filter Laporan')
+            Section::make(__('messages.filter_report'))
                 ->schema([
                     Grid::make(4)
                         ->schema([
                             Select::make('filter_month')
-                                ->label('Bulan')
+                                ->label(__('messages.month'))
                                 ->options([
-                                    1 => 'Januari',
-                                    2 => 'Februari',
-                                    3 => 'Maret',
-                                    4 => 'April',
-                                    5 => 'Mei',
-                                    6 => 'Juni',
-                                    7 => 'Juli',
-                                    8 => 'Agustus',
-                                    9 => 'September',
-                                    10 => 'Oktober',
-                                    11 => 'November',
-                                    12 => 'Desember'
+                                    1 => __('messages.january'),
+                                    2 => __('messages.february'),
+                                    3 => __('messages.march'),
+                                    4 => __('messages.april'),
+                                    5 => __('messages.may'),
+                                    6 => __('messages.june'),
+                                    7 => __('messages.july'),
+                                    8 => __('messages.august'),
+                                    9 => __('messages.september'),
+                                    10 => __('messages.october'),
+                                    11 => __('messages.november'),
+                                    12 => __('messages.december')
                                 ])
                                 ->live()
                                 ->afterStateUpdated(function ($state, $set, $get) {
@@ -156,7 +170,7 @@ class FinancialReport extends Page implements HasForms
                                 }),
 
                             Select::make('filter_year')
-                                ->label('Tahun')
+                                ->label(__('messages.year'))
                                 ->options(array_combine(range(date('Y') - 5, date('Y') + 1), range(date('Y') - 5, date('Y') + 1)))
                                 ->live()
                                 ->afterStateUpdated(function ($state, $set, $get) {
@@ -175,7 +189,7 @@ class FinancialReport extends Page implements HasForms
                                 }),
 
                             DatePicker::make('date_start')
-                                ->label('Dari Tanggal')
+                                ->label(__('messages.start_date'))
                                 ->live()
                                 ->afterStateUpdated(function ($state) {
                                     $this->date_start = $state;
@@ -183,7 +197,7 @@ class FinancialReport extends Page implements HasForms
                                 }),
 
                             DatePicker::make('date_end')
-                                ->label('Sampai Tanggal')
+                                ->label(__('messages.end_date'))
                                 ->live()
                                 ->afterStateUpdated(function ($state) {
                                     $this->date_end = $state;
@@ -432,7 +446,7 @@ class FinancialReport extends Page implements HasForms
         $this->prevNetProfit = ($this->prevTotalRevenue - $this->prevTotalHpp) - $this->prevTotalExpenses;
 
         // Calculate Growth %
-        $this->growthRevenue = $this->calculateGrowth($this->totalRevenue, $this->prevTotalRevenue);
+        $this->calculateGrowth($this->totalRevenue, $this->prevTotalRevenue);
         $this->growthHpp = $this->calculateGrowth($this->totalHpp, $this->prevTotalHpp);
         $this->growthExpenses = $this->calculateGrowth($this->totalExpenses, $this->prevTotalExpenses);
         $this->growthNetProfit = $this->calculateGrowth($this->netProfit, $this->prevNetProfit);
@@ -450,7 +464,7 @@ class FinancialReport extends Page implements HasForms
     {
         return [
             Action::make('exportPdf')
-                ->label('Download Laporan (PDF)')
+                ->label(__('messages.download_report_pdf'))
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
                 ->action(function () {
@@ -473,7 +487,7 @@ class FinancialReport extends Page implements HasForms
                     }, 'Laporan-Laba-Rugi-' . date('Ymd-His') . '.pdf');
                 }),
             Action::make('refresh')
-                ->label('Refresh Data')
+                ->label(__('messages.refresh_data'))
                 ->icon('heroicon-o-arrow-path')
                 ->action(fn() => $this->calculateStats()),
         ];

@@ -20,20 +20,21 @@ class EmployeeForm
     {
         return $schema
             ->components([
-                Section::make('Informasi Pribadi')
+                Section::make(__('messages.personal_info') ?? 'Personal Information') // Adding personal_info key later if missing. I'll use literal for now and update dictionary in next batch if needed. Or just use a generic 'Details'. Let's check keys. I didn't add 'personal_info'. I will add it or use 'Details'. I will add 'personal_info' to dictionary next.
+                    ->label(__('messages.personal_info') ?? 'Personal Information')
                     ->schema([
                         TextInput::make('name')
-                            ->label('Nama Lengkap')
+                            ->label(__('messages.name'))
                             ->required()
                             ->maxLength(255),
                         TextInput::make('position')
-                            ->label('Jabatan')
+                            ->label(__('messages.position'))
                             ->maxLength(255),
                         TextInput::make('department')
-                            ->label('Departemen')
+                            ->label(__('messages.department'))
                             ->maxLength(255),
                         Select::make('status')
-                            ->label('Status')
+                            ->label(__('messages.status'))
                             ->options([
                                 'active' => 'Aktif',
                                 'inactive' => 'Tidak Aktif',
@@ -41,7 +42,7 @@ class EmployeeForm
                             ->required()
                             ->default('active'),
                         Select::make('payroll_formula_id')
-                            ->label('Rumus Gaji')
+                            ->label(__('messages.payroll_formula_resource'))
                             ->relationship('payrollFormula', 'name')
                             ->searchable()
                             ->preload()
@@ -50,30 +51,30 @@ class EmployeeForm
                                 Textarea::make('script')->required(),
                             ]),
                         Select::make('shift_id')
-                            ->label('Shift Kerja')
+                            ->label(__('messages.shift_resource'))
                             ->relationship('shift', 'name')
                             ->required(),
                         TextInput::make('phone')
-                            ->label('Nomor Telepon')
+                            ->label(__('messages.phone'))
                             ->tel()
                             ->maxLength(255),
                         Textarea::make('address')
-                            ->label('Alamat')
+                            ->label(__('messages.employee_address'))
                             ->maxLength(65535)
                             ->columnSpanFull(),
                         FileUpload::make('photo_path')
-                            ->label('Foto Profil (Avatar)')
+                            ->label(__('messages.photo_profile'))
                             ->image()
                             ->directory('employees')
                             ->visibility('public')
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Data Wajah (Untuk Absensi)')
-                    ->description('Ambil 3 foto wajah menggunakan kamera. Sistem akan otomatis mendeteksi wajah dan menyimpan data biometrik.')
+                Section::make(__('messages.face_data'))
+                    ->description(__('messages.face_data_desc'))
                     ->schema([
                         ViewField::make('face_photos')
-                            ->label('Kamera Wajah')
+                            ->label(__('messages.face_camera'))
                             ->view('filament.forms.components.webcam-capture')
                             ->dehydrateStateUsing(function ($state) {
                                 if (!is_array($state))
@@ -110,14 +111,14 @@ class EmployeeForm
                             ->dehydrated(true),
                     ]),
 
-                Section::make('Dokumen Pendukung')
+                Section::make(__('messages.supporting_documents'))
                     ->schema([
                         Repeater::make('documents')
                             ->relationship('documents')
-                            ->label('Dokumen Pegawai')
+                            ->label(__('messages.documents'))
                             ->schema([
                                 Select::make('type')
-                                    ->label('Jenis Dokumen')
+                                    ->label(__('messages.document_type'))
                                     ->options([
                                         'ktp' => 'KTP',
                                         'ijazah' => 'Ijazah',

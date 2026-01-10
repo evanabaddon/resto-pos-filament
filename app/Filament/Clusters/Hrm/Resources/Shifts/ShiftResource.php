@@ -22,9 +22,14 @@ class ShiftResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
-
     protected static ?string $cluster = HrmCluster::class;
+
+    protected static ?int $navigationSort = 4;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return app(\App\Settings\GeneralSettings::class)->enable_hrm;
+    }
 
     // RBAC: super_admin, admin
     public static function canViewAny(): bool
@@ -42,30 +47,39 @@ class ShiftResource extends Resource
         return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 
-    public static function shouldRegisterNavigation(): bool
+    public static function getNavigationLabel(): string
     {
-        return app(\App\Settings\GeneralSettings::class)->enable_hrm;
+        return __('messages.shifts_resource');
     }
 
-    protected static ?int $navigationSort = 4;
+    public static function getModelLabel(): string
+    {
+        return __('messages.shift_resource');
+    }
 
-    protected static ?string $navigationLabel = 'Jadwal Shift';
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.shifts_resource');
+    }
 
-    protected static ?string $modelLabel = 'Shift Kerja';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.hrm_cluster');
+    }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 Forms\Components\TextInput::make('name')
-                    ->label('Nama Shift')
+                    ->label(__('messages.shift_name'))
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TimePicker::make('start_time')
-                    ->label('Jam Masuk')
+                    ->label(__('messages.start_time'))
                     ->required(),
                 Forms\Components\TimePicker::make('end_time')
-                    ->label('Jam Pulang')
+                    ->label(__('messages.end_time'))
                     ->required(),
             ]);
     }
@@ -75,13 +89,13 @@ class ShiftResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nama Shift')
+                    ->label(__('messages.shift_name'))
                     ->searchable(),
                 Tables\Columns\TextColumn::make('start_time')
-                    ->label('Jam Masuk')
+                    ->label(__('messages.start_time'))
                     ->time('H:i'),
                 Tables\Columns\TextColumn::make('end_time')
-                    ->label('Jam Pulang')
+                    ->label(__('messages.end_time'))
                     ->time('H:i'),
             ])
             ->filters([

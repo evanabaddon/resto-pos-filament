@@ -19,21 +19,21 @@ class LoansTable
                 TextColumn::make('employee.name')
                     ->searchable()
                     ->sortable()
-                    ->label('Pegawai'),
+                    ->label(__('messages.employee_resource')),
                 TextColumn::make('amount')
                     ->money('IDR')
                     ->sortable()
-                    ->label('Total Pinjaman'),
+                    ->label(__('messages.loan_amount')),
                 TextColumn::make('remaining_amount')
                     ->money('IDR')
                     ->sortable()
                     ->state(fn(Loan $record) => $record->remaining_amount ?? $record->amount)
-                    ->label('Sisa Tagihan'),
+                    ->label(__('messages.remaining_amount')),
                 TextColumn::make('installment_amount')
                     ->money('IDR')
-                    ->label('Cicilan'),
+                    ->label(__('messages.installment')),
                 TextColumn::make('start_month_year')
-                    ->label('Mulai'),
+                    ->label(__('messages.start_date')),
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
@@ -46,10 +46,10 @@ class LoansTable
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Pending',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
-                        'paid' => 'Lunas',
+                        'pending' => __('messages.pending'),
+                        'approved' => __('messages.approved'),
+                        'rejected' => __('messages.rejected'),
+                        'paid' => __('messages.paid'),
                     ]),
             ])
             ->recordActions([

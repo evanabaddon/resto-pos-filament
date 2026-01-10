@@ -207,108 +207,110 @@
 
 <body>
     <div class="header">
-        <h1>Menu Engineering Analysis</h1>
-        <p>Laporan Profitabilitas & Popularitas Produk (30 Hari Terakhir)</p>
-        <p>Analisa per: <strong>{{ $lastGeneratedAt }}</strong></p>
+        <h1>{{ __('messages.menu_engineering_title') }}</h1>
+        <p>{{ __('messages.menu_engineering_desc') }}</p>
+        <p>{{ __('messages.analyzed_at') }}: <strong>{{ $lastGeneratedAt }}</strong></p>
     </div>
 
     @if($aiAdvice)
-    <div class="ai-box">
-        <h3>AI Strategic Insights</h3>
-        <p>"{{ $aiAdvice['overall_analysis'] ?? '' }}"</p>
+        <div class="ai-box">
+            <h3>{{ __('messages.ai_strategic_insights') }}</h3>
+            <p>"{{ $aiAdvice['overall_analysis'] ?? '' }}"</p>
 
-        @if(isset($aiAdvice['top_priorities']))
-        <div style="margin-top: 10px;">
-            @foreach($aiAdvice['top_priorities'] as $priority)
-            <span class="priority-badge">- {{ $priority }}</span>
-            @endforeach
+            @if(isset($aiAdvice['top_priorities']))
+                <div style="margin-top: 10px;">
+                    @foreach($aiAdvice['top_priorities'] as $priority)
+                        <span class="priority-badge">- {{ $priority }}</span>
+                    @endforeach
+                </div>
+            @endif
         </div>
-        @endif
-    </div>
     @endif
 
-    <div class="section-title">Ringkasan Matriks</div>
+    <div class="section-title">{{ __('messages.matrix_summary') }}</div>
     <table style="width: 100%; border: none;">
         <tr>
             @php
-            $grouped = collect($matrixData['items'])->groupBy('category');
+                $grouped = collect($matrixData['items'])->groupBy('category');
             @endphp
             <td style="width: 25%; border: none; padding: 0 5px 0 0;">
                 <div class="summary-card" style="border-left: 4px solid #10b981;">
-                    <h4>Unit Unggulan</h4>
+                    <h4>{{ __('messages.star_title') }}</h4>
                     <div class="value">{{ $grouped->get('UNIT UNGGULAN')?->count() ?: 0 }}</div>
-                    <div class="desc">Kinerja & Potensi Tinggi</div>
+                    <div class="desc">{{ __('messages.performance_potential_high') }}</div>
                 </div>
             </td>
             <td style="width: 25%; border: none; padding: 0 5px;">
                 <div class="summary-card" style="border-left: 4px solid #f59e0b;">
-                    <h4>Unit Andalan</h4>
+                    <h4>{{ __('messages.plowhorse_title') }}</h4>
                     <div class="value">{{ $grouped->get('UNIT ANDALAN')?->count() ?: 0 }}</div>
-                    <div class="desc">Kinerja Tinggi, Potensi Rendah</div>
+                    <div class="desc">{{ __('messages.performance_high_potential_low') }}</div>
                 </div>
             </td>
             <td style="width: 25%; border: none; padding: 0 5px;">
                 <div class="summary-card" style="border-left: 4px solid #6366f1;">
-                    <h4>Unit Potensial</h4>
+                    <h4>{{ __('messages.puzzle_title') }}</h4>
                     <div class="value">{{ $grouped->get('UNIT POTENSIAL')?->count() ?: 0 }}</div>
-                    <div class="desc">Potensi Tinggi, Kinerja Rendah</div>
+                    <div class="desc">{{ __('messages.potential_high_performance_low') }}</div>
                 </div>
             </td>
             <td style="width: 25%; border: none; padding: 0 0 0 5px;">
                 <div class="summary-card" style="border-left: 4px solid #ef4444;">
-                    <h4>Kurang Berkembang</h4>
+                    <h4>{{ __('messages.dog_title') }}</h4>
                     <div class="value">{{ $grouped->get('UNIT KURANG BERKEMBANG')?->count() ?: 0 }}</div>
-                    <div class="desc">Kinerja & Potensi Rendah</div>
+                    <div class="desc">{{ __('messages.performance_potential_low') }}</div>
                 </div>
             </td>
         </tr>
     </table>
 
-    <div class="section-title">Detail Performa Produk</div>
+    <div class="section-title">{{ __('messages.product_performance_detail') }}</div>
     <table>
         <thead>
             <tr>
-                <th style="width: 30%;">Produk</th>
-                <th style="width: 15%;">Klasifikasi</th>
-                <th style="width: 15%;">Popularitas (Qty)</th>
-                <th style="width: 20%;">Margin (Keuntungan)</th>
-                <th style="width: 20%;">HPP & Harga Jual</th>
+                <th style="width: 30%;">{{ __('messages.product') }}</th>
+                <th style="width: 15%;">{{ __('messages.classification') }}</th>
+                <th style="width: 15%;">{{ __('messages.popularity_qty') }}</th>
+                <th style="width: 20%;">{{ __('messages.margin_benefit') }}</th>
+                <th style="width: 20%;">{{ __('messages.hpp_sell') }}</th>
             </tr>
         </thead>
         <tbody>
             @foreach(collect($matrixData['items'])->sortByDesc('popularity') as $item)
-            <tr>
-                <td>
-                    <span class="font-bold">{{ $item['name'] }}</span><br>
-                    <span style="color:#9ca3af; font-size: 8px; text-transform: uppercase;">{{ $item['type'] }}</span>
-                </td>
-                <td>
-                    <span class="badge 
-                        {{ match($item['category']) {
-                            'UNIT UNGGULAN' => 'badge-star',
-                            'UNIT ANDALAN' => 'badge-plowhorse',
-                            'UNIT POTENSIAL' => 'badge-puzzle',
-                            default => 'badge-dog'
-                        } }}">
-                        {{ $item['category'] }}
-                    </span>
-                </td>
-                <td style="text-align: center;"><strong>{{ number_format($item['popularity'], 0) }}</strong></td>
-                <td>
-                    <span class="text-emerald font-bold">Rp {{ number_format($item['margin'], 0, ',', '.') }}</span>
-                </td>
-                <td>
-                    <span style="color: #6b7280; font-size: 8px;">HPP: Rp{{ number_format($item['cogs'], 0, ',', '.') }}</span><br>
-                    <strong>Rp{{ number_format($item['sell_price'], 0, ',', '.') }}</strong>
-                </td>
-            </tr>
+                        <tr>
+                            <td>
+                                <span class="font-bold">{{ $item['name'] }}</span><br>
+                                <span style="color:#9ca3af; font-size: 8px; text-transform: uppercase;">{{ $item['type'] }}</span>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {{ match ($item['category']) {
+                    'UNIT UNGGULAN' => 'badge-star',
+                    'UNIT ANDALAN' => 'badge-plowhorse',
+                    'UNIT POTENSIAL' => 'badge-puzzle',
+                    default => 'badge-dog'
+                } }}">
+                                    {{ $item['category'] }}
+                                </span>
+                            </td>
+                            <td style="text-align: center;"><strong>{{ number_format($item['popularity'], 0) }}</strong></td>
+                            <td>
+                                <span class="text-emerald font-bold">Rp {{ number_format($item['margin'], 0, ',', '.') }}</span>
+                            </td>
+                            <td>
+                                <span style="color: #6b7280; font-size: 8px;">HPP:
+                                    Rp{{ number_format($item['cogs'], 0, ',', '.') }}</span><br>
+                                <strong>Rp{{ number_format($item['sell_price'], 0, ',', '.') }}</strong>
+                            </td>
+                        </tr>
             @endforeach
         </tbody>
     </table>
 
     <div class="footer">
-        Dicetak otomatis oleh Sistem AI Intelligence {{ app(\App\Settings\GeneralSettings::class)->ai_assistant_name }} - {{ app(\App\Settings\GeneralSettings::class)->app_name }}
-        | Halaman <span class="page-number"></span>
+        {{ __('messages.printed_by_ai') }} {{ app(\App\Settings\GeneralSettings::class)->ai_assistant_name }} -
+        {{ app(\App\Settings\GeneralSettings::class)->app_name }}
+        | {{ __('messages.page') }} <span class="page-number"></span>
     </div>
 </body>
 

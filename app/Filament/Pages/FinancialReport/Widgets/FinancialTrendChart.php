@@ -10,7 +10,12 @@ use Illuminate\Support\Carbon;
 
 class FinancialTrendChart extends ChartWidget
 {
-    protected ?string $heading = 'Trend Keuangan (Revenue vs Expenses)';
+    protected ?string $heading = null;
+
+    public function getHeading(): string
+    {
+        return __('messages.financial_trend');
+    }
     protected static ?int $sort = 1;
     protected int|string|array $columnSpan = 'full';
     protected ?string $maxHeight = '300px';

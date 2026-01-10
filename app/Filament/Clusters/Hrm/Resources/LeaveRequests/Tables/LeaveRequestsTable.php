@@ -19,17 +19,18 @@ class LeaveRequestsTable
         return $table
             ->columns([
                 TextColumn::make('employee.name')
-                    ->label('Pegawai')
+                    ->label(__('messages.employee_resource'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('type')
-                    ->label('Jenis')
+                    ->label(__('messages.type'))
                     ->badge()
                     ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'sakit' => 'Sakit',
-                        'izin' => 'Izin',
-                        'cuti_tahunan' => 'Cuti Tahunan',
-                        'cuti_khusus' => 'Cuti Khusus',
+                        'sakit' => __('messages.sick_leave'),
+                        'izin' => __('messages.permission'),
+                        'cuti_tahunan' => __('messages.annual_leave'),
+                        'cuti_khusus' => __('messages.special_leave'),
+                        default => $state,
                     })
                     ->color(fn(string $state): string => match ($state) {
                         'sakit' => 'warning',
@@ -38,11 +39,11 @@ class LeaveRequestsTable
                         'cuti_khusus' => 'primary',
                     }),
                 TextColumn::make('start_date')
-                    ->label('Mulai')
+                    ->label(__('messages.start_date'))
                     ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('end_date')
-                    ->label('Sampai')
+                    ->label(__('messages.end_date'))
                     ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('status')
@@ -51,12 +52,18 @@ class LeaveRequestsTable
                         'pending' => 'gray',
                         'approved' => 'success',
                         'rejected' => 'danger',
+                    })
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'pending' => __('messages.pending'),
+                        'approved' => __('messages.approved'),
+                        'rejected' => __('messages.rejected'),
+                        default => $state,
                     }),
                 TextColumn::make('approver.name')
-                    ->label('Disetujui Oleh')
+                    ->label(__('messages.approved_by'))
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('reason')
-                    ->label('Alasan')
+                    ->label(__('messages.reason'))
                     ->limit(30),
                 TextColumn::make('created_at')
                     ->dateTime()
@@ -69,7 +76,7 @@ class LeaveRequestsTable
             ->recordActions([
                 EditAction::make(),
                 Action::make('approve')
-                    ->label('Setujui')
+                    ->label(__('messages.approve'))
                     ->icon('heroicon-o-check')
                     ->color('success')
                     ->requiresConfirmation()
@@ -79,15 +86,15 @@ class LeaveRequestsTable
                             'status' => 'approved',
                             'approved_by' => auth()->id(),
                         ]);
-                        Notification::make()->title('Pengajuan Disetujui')->success()->send();
+                        Notification::make()->title(__('messages.approval_notification'))->success()->send();
                     }),
                 Action::make('reject')
-                    ->label('Tolak')
+                    ->label(__('messages.reject'))
                     ->icon('heroicon-o-x-mark')
                     ->color('danger')
                     ->requiresConfirmation()
                     ->form([
-                        Textarea::make('rejection_reason')->label('Alasan')->required()
+                        Textarea::make('rejection_reason')->label(__('messages.rejection_reason'))->required()
                     ])
                     ->visible(fn($record) => $record->status === 'pending')
                     ->action(function ($record, array $data) {
@@ -96,7 +103,7 @@ class LeaveRequestsTable
                             'rejection_reason' => $data['rejection_reason'],
                             'approved_by' => auth()->id(),
                         ]);
-                        Notification::make()->title('Pengajuan Ditolak')->danger()->send();
+                        Notification::make()->title(__('messages.rejection_notification'))->danger()->send();
                     }),
             ])
             ->toolbarActions([

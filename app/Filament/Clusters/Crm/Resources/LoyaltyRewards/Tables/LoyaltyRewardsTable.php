@@ -19,14 +19,14 @@ class LoyaltyRewardsTable
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('points_required')
-                    ->label('Poin')
+                    ->label(__('messages.points'))
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('product.name')
-                    ->label('Menu Terkait')
+                    ->label(__('messages.related_product'))
                     ->sortable(),
                 IconColumn::make('is_active')
-                    ->label('Aktif')
+                    ->label(__('messages.is_active'))
                     ->boolean(),
                 TextColumn::make('created_at')
                     ->dateTime()

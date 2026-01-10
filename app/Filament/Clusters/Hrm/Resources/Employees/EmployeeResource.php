@@ -21,11 +21,29 @@ class EmployeeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
-
-    protected static ?string $navigationLabel = 'Karyawan';
+    protected static string|UnitEnum|null $navigationGroup = null;
 
     protected static ?string $cluster = HrmCluster::class;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.hrm_cluster');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.employee_resource');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.employees_resource');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.employees_resource');
+    }
 
     // RBAC: super_admin, admin, accountant
     public static function canViewAny(): bool

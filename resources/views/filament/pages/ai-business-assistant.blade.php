@@ -9,10 +9,10 @@
                         <x-heroicon-s-sparkles class="w-5 h-5 text-white" />
                     </div>
                     <div>
-                        <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100">Tanya Bos (AI)</h2>
+                        <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100">{{ __('messages.ai_nav_label') }}</h2>
                         <div class="flex items-center space-x-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            <span class="text-[10px] text-gray-500">Online & Siap Analisis</span>
+                            <span class="text-[10px] text-gray-500">{{ __('messages.online_status') }}</span>
                         </div>
                     </div>
                 </div>
@@ -69,7 +69,7 @@
                 <div wire:loading wire:target="sendMessage" class="flex justify-start animate-in fade-in slide-in-from-left-4 duration-300">
                     <div class="flex flex-col items-start max-w-[80%]">
                         <div class="flex items-center space-x-2 mb-1.5 px-2">
-                            <span class="text-[10px] font-bold text-gray-400 animate-pulse uppercase tracking-widest">Berpikir...</span>
+                            <span class="text-[10px] font-bold text-gray-400 animate-pulse uppercase tracking-widest">{{ __('messages.thinking') }}</span>
                         </div>
                         <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-[1.5rem] rounded-tl-none px-6 py-4 border border-gray-100 dark:border-gray-700/50 shadow-sm">
                             <div class="flex space-x-2 items-center">
@@ -90,10 +90,10 @@
                     <div class="flex overflow-x-auto pb-1 gap-3 no-scrollbar touch-pan-x">
                         @php
                         $quickActions = [
-                        ['icon' => '📊', 'label' => 'Analisis Penjualan', 'msg' => 'Bagaimana performa penjualan 30 hari terakhir?'],
-                        ['icon' => '🔥', 'label' => 'Menu Terlaris', 'msg' => 'Tampilkan top 5 menu terlaris dan berikan strategi peningkatannya.'],
-                        ['icon' => '⚠️', 'label' => 'Cek Stok', 'msg' => 'Item apa saja yang stoknya kritis hari ini?'],
-                        ['icon' => '💡', 'label' => 'Ide Promo', 'msg' => 'Berikan ide promo pendek untuk jam sepi restoran.'],
+                        ['icon' => '📊', 'label' => __('messages.analyze_sales'), 'msg' => __('messages.analyze_sales_msg')],
+                        ['icon' => '🔥', 'label' => __('messages.best_selling_menu'), 'msg' => __('messages.best_selling_menu_msg')],
+                        ['icon' => '⚠️', 'label' => __('messages.check_stock'), 'msg' => __('messages.check_stock_msg')],
+                        ['icon' => '💡', 'label' => __('messages.promo_ideas'), 'msg' => __('messages.promo_ideas_msg')],
                         ];
                         @endphp
                         @foreach($quickActions as $action)
@@ -125,7 +125,7 @@
                                     @input="resize()"
                                     wire:model="userMessage"
                                     wire:keydown.enter.prevent="sendMessage"
-                                    placeholder="Tanya Bos di sini..."
+                                    placeholder="{{ __('messages.type_placeholder') }}"
                                     class="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none outline-none text-[15px] py-4 px-6 text-gray-800 dark:text-gray-100 placeholder-gray-400 resize-none max-h-32 sm:max-h-48 scrollbar-hide rounded-[1.5rem]"
                                     wire:loading.attr="disabled"></textarea>
 
@@ -133,7 +133,7 @@
                                 <button
                                     wire:click="clearChat"
                                     class="pr-4 py-4 text-gray-300 hover:text-danger-500 transition-colors"
-                                    title="Clear Chat">
+                                    title="{{ __('messages.clear_chat') }}">
                                     <x-heroicon-s-trash class="w-5 h-5" />
                                 </button>
                                 @endif

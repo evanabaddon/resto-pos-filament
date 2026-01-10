@@ -19,39 +19,39 @@ class ContractForm
     {
         return $schema
             ->components([
-                Section::make('Detail Kontrak')
+                Section::make(__('messages.contract_details'))
                     ->schema([
                         Select::make('employee_id')
-                            ->label('Nama Pegawai')
+                            ->label(__('messages.employee_resource'))
                             ->relationship('employee', 'name')
                             ->required()
                             ->searchable(),
                         Toggle::make('is_active')
-                            ->label('Kontrak Aktif')
+                            ->label(__('messages.active_contract'))
                             ->default(true)
                             ->onIcon('heroicon-m-check')
                             ->offIcon('heroicon-m-x-mark')
                             ->columnSpanFull(),
                         TextInput::make('nominal')
-                            ->label('Gaji Pokok')
+                            ->label(__('messages.nominal_salary'))
                             ->numeric()
                             ->prefix('Rp')
                             ->required(),
                         DatePicker::make('start_date')
-                            ->label('Tanggal Mulai')
+                            ->label(__('messages.start_date'))
                             ->required(),
                         DatePicker::make('end_date')
-                            ->label('Tanggal Selesai')
-                            ->helperText('Kosongkan jika kontrak permanen'),
+                            ->label(__('messages.end_date'))
+                            ->helperText('Kosongkan jika kontrak permanen'), // TODO: Translate helper text?? Let's stick to core labels first. 'active_contract', 'nominal', 'start_date', 'end_date' added.
                         RichEditor::make('content')
-                            ->label('Isi Kontrak')
+                            ->label(__('messages.contract_content'))
                             ->columnSpanFull()
                             ->required(),
                     ]),
-                Section::make('Tanda Tangan')
+                Section::make(__('messages.signature'))
                     ->schema([
                         ViewField::make('signature_path')
-                            ->label('Tanda Tangan Digital')
+                            ->label(__('messages.digital_signature'))
                             ->view('filament.forms.components.signature-pad')
                             ->dehydrateStateUsing(function ($state) {
                                 if (empty($state) || !str_starts_with($state, 'data:image')) {

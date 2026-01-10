@@ -15,9 +15,21 @@ use UnitEnum;
 class AiBusinessAssistant extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-sparkles';
-    protected static ?string $navigationLabel = 'Tanya Bos (AI)';
-    protected static ?string $title = 'AI Business Assistant';
-    protected static string|UnitEnum|null $navigationGroup = 'AI Intelligence';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.ai_nav_label');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.ai_intelligence');
+    }
+
+    public function getTitle(): string
+    {
+        return __('messages.ai_title');
+    }
 
     protected string $view = 'filament.pages.ai-business-assistant';
 
@@ -32,7 +44,7 @@ class AiBusinessAssistant extends Page
 
         $this->messages[] = [
             'role' => 'assistant',
-            'content' => "Halo Bos! Saya {$aiName}. Saya memiliki akses ke data penjualan, stok, dan performa restoran Anda. Ada yang bisa saya bantu analisis hari ini?"
+            'content' => __('messages.ai_welcome', ['name' => $aiName])
         ];
     }
 
@@ -61,11 +73,11 @@ class AiBusinessAssistant extends Page
 
             $response = $service->analyzeBusiness($recentMessages, $context);
 
-            $content = $response['choices'][0]['message']['content'] ?? 'Maaf Bos, saya sedang mengalami gangguan koneksi ke otak pusat.';
+            $content = $response['choices'][0]['message']['content'] ?? __('messages.ai_connection_error');
 
             $this->messages[] = ['role' => 'assistant', 'content' => $content];
         } catch (\Exception $e) {
-            $this->messages[] = ['role' => 'assistant', 'content' => 'Maaf Bos, ada error: ' . $e->getMessage()];
+            $this->messages[] = ['role' => 'assistant', 'content' => __('messages.ai_error_prefix') . $e->getMessage()];
         } finally {
             $this->isTyping = false;
         }

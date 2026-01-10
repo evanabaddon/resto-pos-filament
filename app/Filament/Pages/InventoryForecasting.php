@@ -16,13 +16,26 @@ class InventoryForecasting extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar';
     protected static string|UnitEnum|null $navigationGroup = 'Laporan & Analisis';
-    protected static ?string $navigationLabel = 'Forecasting Stok (AI)';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.inventory_forecasting');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.reports_analytics');
+    }
 
     public static function canAccess(): bool
     {
         return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
-    protected static ?string $title = 'AI Smart Inventory';
+    protected static ?string $title = null;
+
+    public function getTitle(): string
+    {
+        return __('messages.forecasting_title');
+    }
     protected static ?int $navigationSort = 1;
 
     public static function shouldRegisterNavigation(): bool
@@ -42,7 +55,7 @@ class InventoryForecasting extends Page
     public function mount(InventoryService $inventoryService)
     {
         if (!app(\App\Settings\GeneralSettings::class)->enable_ai_forecasting) {
-            abort(403, 'Akses Modul AI Forecasting ditolak. Silakan aktifkan di Pengaturan.');
+            abort(403, __('messages.access_denied_ai'));
         }
 
         $this->historyData = $inventoryService->getForecastingData(30);
@@ -79,7 +92,7 @@ class InventoryForecasting extends Page
                 ], now()->addHours(24));
 
                 Notification::make()
-                    ->title('Prediksi Berhasil')
+                    ->title(__('messages.prediction_success'))
                     ->success()
                     ->send();
             } else {
@@ -87,7 +100,7 @@ class InventoryForecasting extends Page
             }
         } catch (\Exception $e) {
             Notification::make()
-                ->title('Gagal generate prediksi')
+                ->title(__('messages.prediction_failed'))
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
@@ -100,7 +113,7 @@ class InventoryForecasting extends Page
     {
         if (!$this->aiResults) {
             Notification::make()
-                ->title('Belum ada data untuk diexport')
+                ->title(__('messages.no_data_export'))
                 ->warning()
                 ->send();
             return;
@@ -119,7 +132,7 @@ class InventoryForecasting extends Page
             );
         } catch (\Exception $e) {
             Notification::make()
-                ->title('Gagal export PDF')
+                ->title(__('messages.export_failed'))
                 ->body($e->getMessage())
                 ->danger()
                 ->send();

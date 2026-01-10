@@ -22,9 +22,25 @@ class ExpenseCategoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-tag';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Master Data';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.expense_categories');
+    }
 
-    protected static ?string $navigationLabel = 'Kategori Pengeluaran';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.master_data');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('messages.expense_category');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('messages.expense_categories');
+    }
 
     // RBAC: super_admin, admin, accountant
     public static function canViewAny(): bool

@@ -10,9 +10,15 @@ use UnitEnum;
 class HrmCluster extends Cluster
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
-    protected static ?string $navigationLabel = 'HRM';
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.hrm_cluster');
+    }
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen SDM';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.hrm_cluster');
+    }
 
     public static function shouldRegisterNavigation(): bool
     {

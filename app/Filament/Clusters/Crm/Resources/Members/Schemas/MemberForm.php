@@ -16,11 +16,11 @@ class MemberForm
     {
         return $schema->components([
             TextInput::make('name')
-                ->label('Nama Lengkap')
+                ->label(__('messages.name'))
                 ->required()
                 ->maxLength(255),
             PhoneInput::make('phone')
-                ->label('Nomor HP')
+                ->label(__('messages.phone'))
                 ->required()
                 ->unique(ignoreRecord: true)
                 ->defaultCountry('ID')
@@ -32,7 +32,7 @@ class MemberForm
                 ->email()
                 ->maxLength(255),
             Select::make('tier_id')
-                ->label('Level')
+                ->label(__('messages.tier'))
                 ->relationship('tier', 'name')
                 ->default(1)
                 ->required(),

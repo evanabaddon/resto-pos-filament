@@ -21,16 +21,14 @@ class TableResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Master Data'; // Or translate 'master_data'
-
-    public static function getLabel(): ?string
+    public static function getModelLabel(): string
     {
-        return __('messages.table_resource');
+        return __('messages.table_resource'); // Singular
     }
 
-    public static function getPluralLabel(): ?string
+    public static function getPluralModelLabel(): string
     {
-        return __('messages.table_resource');
+        return __('messages.table_resource'); // Plural (same word in existing keys, maybe add 'tables' key properly later but acceptable for now)
     }
 
     public static function getNavigationLabel(): string

@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Crm\Resources\LoyaltyRewards\Pages;
 
 use App\Filament\Clusters\Crm\Resources\LoyaltyRewards\LoyaltyRewardResource;
 use Filament\Actions;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListLoyaltyRewards extends ListRecords
@@ -13,7 +14,7 @@ class ListLoyaltyRewards extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 }

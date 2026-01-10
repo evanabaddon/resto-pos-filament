@@ -27,9 +27,24 @@ class AttendanceMachine extends Page
         return app(\App\Settings\GeneralSettings::class)->enable_hrm;
     }
 
-    protected static ?string $navigationLabel = 'Mesin Absensi';
+    protected static ?string $navigationLabel = null;
 
-    protected static ?string $title = 'Mesin Absensi Wajah';
+    protected static ?string $title = null;
+
+    public static function getNavigationLabel(): string
+    {
+        return __('messages.attendance_machine');
+    }
+
+    public function getTitle(): string
+    {
+        return __('messages.face_recognition_machine');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.hrm_cluster');
+    }
 
     // Disable navigation if needed, or keep it for admin access
     // protected static bool $shouldRegisterNavigation = true;
@@ -83,9 +98,9 @@ class AttendanceMachine extends Page
             ->first();
 
         if ($existing) {
-            $msg = "Halo {$employee->name}, Anda sudah melakukan absen hari ini pukul " . $existing->clock_in->format('H:i');
+            $msg = __('messages.already_clocked_in', ['name' => $employee->name, 'time' => $existing->clock_in->format('H:i')]);
             $this->dispatch('attendance-error', message: $msg);
-            Notification::make()->title('Gagal Clock In')->body($msg)->warning()->send();
+            Notification::make()->title(__('messages.clock_in_failed'))->body($msg)->warning()->send();
             return;
         }
 
@@ -107,9 +122,9 @@ class AttendanceMachine extends Page
 
                 if (now()->gt($lateThreshold)) {
                     $isLate = true;
-                    $statusMessage = ' (Terlambat - Shift: ' . $employee->shift->name . ')';
+                    $statusMessage = ' ' . __('messages.clock_status_late', ['shift' => $employee->shift->name]);
                 } else {
-                    $statusMessage = ' (Tepat Waktu - Shift: ' . $employee->shift->name . ')';
+                    $statusMessage = ' ' . __('messages.clock_status_on_time', ['shift' => $employee->shift->name]);
                 }
             } catch (\Exception $e) {
                 // Time parsing error fallback
@@ -132,9 +147,9 @@ class AttendanceMachine extends Page
             'snapshot_path' => $fileName,
         ]);
 
-        $msg = "Berhasil Clock In: {$employee->name}{$statusMessage}";
+        $msg = __('messages.success_clock_in', ['name' => $employee->name, 'status' => $statusMessage]);
         $this->dispatch('attendance-success', message: $msg);
-        Notification::make()->title('Clock In Berhasil')->body($msg)->success()->send();
+        Notification::make()->title(__('messages.clock_in_success'))->body($msg)->success()->send();
     }
 
     public function clockOut($faceDescriptor, $snapshot)
@@ -154,8 +169,8 @@ class AttendanceMachine extends Page
             ->first();
 
         if (!$attendance) {
-            $this->dispatch('attendance-error', message: 'Anda belum Clock In atau sudah Clock Out!');
-            Notification::make()->title('Gagal Clock Out')->body('Anda belum Clock In atau sudah Clock Out!')->danger()->send();
+            $this->dispatch('attendance-error', message: __('messages.not_clocked_in_or_already_out'));
+            Notification::make()->title(__('messages.clock_out_failed'))->body(__('messages.not_clocked_in_or_already_out'))->danger()->send();
             return;
         }
 
@@ -173,11 +188,11 @@ class AttendanceMachine extends Page
 
                 if (now()->lessThan($shiftEndDateTime)) {
                     $isEarlyLeave = true;
-                    $statusMessage = ' (Pulang Cepat)';
+                    $statusMessage = ' ' . __('messages.clock_status_early_leave');
                 } else {
                     $overtimeMinutes = now()->diffInMinutes($shiftEndDateTime);
                     if ($overtimeMinutes > 60) {
-                        $statusMessage = ' (Overtime)';
+                        $statusMessage = ' ' . __('messages.clock_status_overtime');
                     }
                 }
             } catch (\Exception $e) {
@@ -191,9 +206,9 @@ class AttendanceMachine extends Page
             'overtime_minutes' => $overtimeMinutes,
         ]);
 
-        $msg = "Berhasil Clock Out: {$employee->name}{$statusMessage}";
+        $msg = __('messages.success_clock_out', ['name' => $employee->name, 'status' => $statusMessage]);
         $this->dispatch('attendance-success', message: $msg);
-        Notification::make()->title('Clock Out Berhasil')->body($msg)->success()->send();
+        Notification::make()->title(__('messages.clock_out_success'))->body($msg)->success()->send();
     }
 
     protected function findEmployeeByFace($descriptor)
