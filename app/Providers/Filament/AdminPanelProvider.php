@@ -11,6 +11,7 @@ use Filament\Support\Colors\Color;
 use Illuminate\Support\Facades\Storage;
 use Filament\Http\Middleware\Authenticate;
 use App\Filament\Widgets\LowStockAlertWidget;
+use App\Http\Middleware\ApplyNavigationSortMiddleware;
 use App\Filament\Widgets\BestSellingFoodChart;
 use App\Filament\Widgets\BestSellingDrinkChart;
 use App\Filament\Widgets\RevenueOverviewWidget;
@@ -33,6 +34,24 @@ use App\Filament\Widgets\CriticalStockWidget;
 
 class AdminPanelProvider extends PanelProvider
 {
+    public function boot(): void
+    {
+        // Enforce navigation sorting dynamically based on active locale
+        \Filament\Facades\Filament::serving(function () {
+            \Filament\Facades\Filament::getCurrentPanel()->navigationGroups([
+                __('messages.transactions'),
+                __('messages.menu_product'),
+                __('messages.master_data'),
+                __('messages.human_resource'),
+                __('messages.crm'),
+                __('messages.ai_intelligence'),
+                __('messages.super_chat'),
+                __('messages.reports_analytics'),
+                __('messages.settings'),
+            ]);
+        });
+    }
+
     public function panel(Panel $panel): Panel
     {
         try {
@@ -89,7 +108,6 @@ class AdminPanelProvider extends PanelProvider
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
-                DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
             ->resourceCreatePageRedirect('index')
@@ -100,19 +118,6 @@ class AdminPanelProvider extends PanelProvider
             ->maxContentWidth(Width::Full)
             ->plugins([
                 FilamentApexChartsPlugin::make(),
-                // FilamentAwinTheme::make()
-                // ->primaryColor('#CF8B00'),
-            ])
-            ->navigationGroups([
-                __('messages.transactions'),
-                __('messages.menu_product'),
-                __('messages.master_data'),
-                __('messages.human_resource'),
-                __('messages.crm'),
-                __('messages.ai_intelligence'),
-                __('messages.super_chat'),
-                __('messages.reports_analytics'),
-                __('messages.settings')
             ]);
     }
 }
