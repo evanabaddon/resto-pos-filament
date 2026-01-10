@@ -150,7 +150,7 @@
 
                                     <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium shadow-sm select-none"
                                         style="background-color: {{ '#' . substr(md5($chat->remote_jid), 0, 6) }}"
-                                        x-show="showFallback">
+                                        x-show="{{ $avatarExists ? 'showFallback' : 'true' }}">
                                         {{ strtoupper(substr($chat->effective_name ?? $chat->push_name ?? $chat->remote_jid, 0, 1)) }}
                                     </div>
                                 </div>
