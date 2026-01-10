@@ -63,6 +63,10 @@
 
                     <div class="flex gap-2">
                         @if($status === 'connected')
+                            <button wire:click="mountAction('syncAvatars')" title="Sync All Avatars"
+                                class="p-2 rounded-full text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition">
+                                <x-heroicon-o-arrow-path class="w-5 h-5" />
+                            </button>
                             <button wire:click="mountAction('logout')" title="Disconnect & Clear Data"
                                 class="p-2 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
                                 <x-heroicon-o-power class="w-5 h-5" />
@@ -120,7 +124,7 @@
                                     }
                                 }">
                                     <template x-if="!showFallback">
-                                        <img src="{{ route('whatsapp.avatar', $chat->remote_jid) }}?v=3"
+                                        <img src="/storage/avatars/{{ str_replace(['@', '.'], '_', $chat->remote_jid) }}.jpg"
                                             class="w-12 h-12 rounded-full object-cover bg-gray-200 dark:bg-gray-700" loading="lazy"
                                             x-on:error="handleError()">
                                     </template>

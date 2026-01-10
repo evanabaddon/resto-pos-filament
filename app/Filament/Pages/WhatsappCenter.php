@@ -10,6 +10,7 @@ use UnitEnum;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Filament\Notifications\Notification;
 
@@ -211,6 +212,21 @@ class WhatsappCenter extends Page implements HasActions, HasForms
             });
     }
 
+    public function syncAvatarsAction(): Action
+    {
+        return Action::make('syncAvatars')
+            ->label('Sync All Avatars')
+            ->icon('heroicon-o-arrow-path')
+            ->color('info')
+            ->requiresConfirmation()
+            ->modalHeading('Sync All Contact Avatars')
+            ->modalDescription('This will fetch and store avatars for all contacts from the WhatsApp gateway. This may take a few moments.')
+            ->modalSubmitActionLabel('Sync Now')
+            ->action(function () {
+                $this->syncAllAvatars();
+            });
+    }
+
 
     // HELPERS -----------------------------------------------------------------
 
@@ -248,6 +264,71 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         }
     }
 
+    public function syncAllAvatars()
+    {
+        try {
+            $chats = $this->getChatsProperty();
+            $successCount = 0;
+            $failCount = 0;
+            $gatewayUrl = $this->getGatewayUrl();
+
+            foreach ($chats as $chat) {
+                $jid = $chat->remote_jid;
+
+                try {
+                    // Fetch avatar from gateway
+                    $response = Http::timeout(10)->get("{$gatewayUrl}/avatar/{$jid}");
+
+                    if ($response->successful()) {
+                        $body = $response->body();
+
+                        // Check if it's a redirect text
+                        if (str_starts_with($body, 'Found. Redirecting to ')) {
+                            $redirectUrl = trim(str_replace('Found. Redirecting to ', '', $body));
+                            $imageResponse = Http::timeout(10)->get($redirectUrl);
+                            if ($imageResponse->successful()) {
+                                $body = $imageResponse->body();
+                            } else {
+                                $failCount++;
+                                continue;
+                            }
+                        }
+
+                        // Skip if "No profile picture" or too small
+                        if (trim($body) === 'No profile picture' || strlen($body) < 100) {
+                            $failCount++;
+                            continue;
+                        }
+
+                        // Save to storage
+                        $filename = str_replace(['@', '.'], '_', $jid) . '.jpg';
+                        Storage::disk('public')->put("avatars/{$filename}", $body);
+                        $successCount++;
+
+                    } else {
+                        $failCount++;
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Failed to sync avatar for {$jid}: " . $e->getMessage());
+                    $failCount++;
+                }
+            }
+
+            Notification::make()
+                ->title('Avatar Sync Completed')
+                ->body("Successfully synced {$successCount} avatars. {$failCount} failed or unavailable.")
+                ->success()
+                ->send();
+
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Avatar Sync Failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
     protected function getGatewayUrl()
     {
         return rtrim(env('WA_GATEWAY_URL', 'http://127.0.0.1:3000'), '/');
@@ -282,9 +363,10 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
                 if (isset($data['user'])) {
                     $this->userName = $data['user']['name'] ?? null;
-                    // Use Laravel proxy route for avatar instead of direct gateway URL
+                    // Use storage path for avatar instead of route
                     $userJid = $data['user']['id'] ?? null;
-                    $this->userAvatar = $userJid ? route('whatsapp.avatar', $userJid) : null;
+                    $filename = $userJid ? str_replace(['@', '.'], '_', $userJid) . '.jpg' : null;
+                    $this->userAvatar = $filename ? "/storage/avatars/{$filename}" : null;
                 }
             } else {
                 // HTTP Error

@@ -214,7 +214,6 @@ Route::get('/sales/{sale}/print', function (\App\Models\Sale $sale) {
 })->name('sales.print');
 
 // WhatsApp Avatar Proxy (To fix local logging issue in production)
-// WhatsApp Avatar Proxy (To fix local logging issue in production)
 Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
     // Auth check removed - <img> tags don't send session cookies
     // Avatar images are public profile pictures, not sensitive data
