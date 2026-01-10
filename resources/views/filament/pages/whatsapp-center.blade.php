@@ -1,5 +1,16 @@
 <x-filament-panels::page class="h-full">
-    <div wire:poll.5s="pollState" class="flex flex-col h-[calc(100vh-8rem)] -m-6">
+    <div wire:poll.5s="pollState" class="flex flex-col h-[calc(100vh-8rem)] -m-6 relative">
+        {{-- Loading Indicator --}}
+        <div wire:loading.delay class="absolute top-2 right-2 z-50">
+            <div class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs flex items-center gap-2 shadow-lg animate-fade-in">
+                <svg class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Syncing...</span>
+            </div>
+        </div>
+
 
         {{-- MAIN LAYOUT --}}
         <div
@@ -120,13 +131,14 @@
                                         this.showFallback = true;
                                         if (!window.failedAvatars) window.failedAvatars = new Set();
                                         window.failedAvatars.add(this.jid);
-                                        console.log('Avatar failed permanently:', this.jid);
+                                        // Silently handle missing avatars
                                     }
                                 }">
                                     <template x-if="!showFallback">
                                         <img src="/storage/avatars/{{ str_replace(['@', '.'], '_', $chat->remote_jid) }}.jpg"
                                             class="w-12 h-12 rounded-full object-cover bg-gray-200 dark:bg-gray-700" loading="lazy"
-                                            x-on:error="handleError()">
+                                            x-on:error="handleError(); $event.target.style.display='none'; return false;"
+                                            onerror="return false;">
                                     </template>
 
                                     <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium shadow-sm select-none"
@@ -760,10 +772,35 @@
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background-color: rgba(156, 163, 175, 0.5);
             border-radius: 20px;
+            transition: background-color 0.2s ease;
         }
 
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(156, 163, 175, 0.7);
+        }
+
+        /* Smooth transitions for all interactive elements */
+        .group {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Loading skeleton animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Slide up animation for messages */
         .animate-slide-up {
-            animation: slideUp 0.2s ease-out;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         @keyframes slideUp {
@@ -776,6 +813,62 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+
+        /* Fade in animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Smooth hover effects */
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Wire loading indicator */
+        [wire\:loading] {
+            opacity: 0.6;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+
+        /* Smooth color transitions */
+        * {
+            transition-property: background-color, border-color, color, fill, stroke;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+
+        /* Override for elements that shouldn't transition */
+        input, textarea, select, button, a, [role="button"] {
+            transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+        }
+
+        /* Spin animation for loading spinner */
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .animate-spin {
+            animation: spin 1s linear infinite;
         }
     </style>
 </x-filament-panels::page>
