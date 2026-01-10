@@ -228,13 +228,15 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
     if ($cachedData) {
         // If cached value is 'missing', return 404 immediately
         if ($cachedData === 'missing') {
-            return response()->noContent(404)->header('Cache-Control', 'public, max-age=600');
+            return response()->noContent(404)->header('Cache-Control', 'public, max-age=10');
         }
 
-        // Return cached image
-        return response($cachedData)
-            ->header('Content-Type', 'image/jpeg')
-            ->header('Cache-Control', 'public, max-age=3600');
+        // Load image from storage file
+        if (Storage::exists("avatars/{$cachedData}")) {
+            return response(Storage::get("avatars/{$cachedData}"))
+                ->header('Content-Type', 'image/jpeg')
+                ->header('Cache-Control', 'public, max-age=3600');
+        }
     }
 
     // 2. Fetch from Gateway
@@ -243,13 +245,18 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
 
     try {
         // Timeout 5s to allow slower gateway responses
+        // IMPORTANT: Follow redirects because gateway returns 302 to WhatsApp CDN
         Log::info("Avatar Debug: Fetching $url");
-        $response = Http::timeout(5)->get($url);
+        $response = Http::timeout(5)->withOptions(['allow_redirects' => true])->get($url);
 
         if ($response->successful()) {
             $body = $response->body();
-            // Cache successful image for 1 hour
-            Cache::put($cacheKey, $body, 3600);
+            // Store image in storage/app/avatars instead of cache (binary data issue)
+            $filename = str_replace(['@', '.'], '_', $jid) . '.jpg';
+            Storage::put("avatars/{$filename}", $body);
+
+            // Cache the filename for 1 hour
+            Cache::put($cacheKey, $filename, 3600);
 
             return response($body)
                 ->header('Content-Type', $response->header('Content-Type', 'image/jpeg'))
