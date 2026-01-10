@@ -251,6 +251,14 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
 
         if ($response->successful()) {
             $body = $response->body();
+
+            // Check if gateway returned "No profile picture" text instead of image
+            if (trim($body) === 'No profile picture' || strlen($body) < 100) {
+                Log::warning("Avatar Debug: Gateway returned 'No profile picture' for $url");
+                Cache::put($cacheKey, 'missing', 600);
+                return response()->noContent(404)->header('Cache-Control', 'public, max-age=10');
+            }
+
             // Store image in storage/app/public/avatars (accessible via public disk)
             $filename = str_replace(['@', '.'], '_', $jid) . '.jpg';
             Storage::disk('public')->put("avatars/{$filename}", $body);
