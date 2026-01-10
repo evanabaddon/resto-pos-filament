@@ -253,6 +253,8 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         return rtrim(env('WA_GATEWAY_URL', 'http://127.0.0.1:3000'), '/');
     }
 
+    public $consecutiveFailures = 0;
+
     public function checkConnection()
     {
         try {
@@ -262,9 +264,20 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
             if ($response->successful()) {
                 $data = $response->json();
-                // Debuging status fluctuation
-                Log::info("WA Status Check Response: " . json_encode($data));
-                $this->status = $data['status'] ?? 'offline';
+
+                // FILTERING: Check for transient 'disconnected' blips
+                // If the Gateway says 'disconnected' but we were 'connected', ignore it once.
+                // The gateway often returns disconnected briefly during heavy load (QR generation, message fetch).
+                $newStatus = $data['status'] ?? 'offline';
+
+                if ($newStatus === 'disconnected' && $this->status === 'connected' && $this->consecutiveFailures < 2) {
+                    $this->consecutiveFailures++;
+                    return; // Ignore this blip, keep showing connected
+                }
+
+                // If we are here, either status is connected OR we have failed multiple times
+                $this->consecutiveFailures = 0; // Reset on any non-ignored response
+                $this->status = $newStatus;
                 $this->qrCode = $data['qr'] ?? null;
 
                 if (isset($data['user'])) {
@@ -274,15 +287,28 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                     $this->userAvatar = $userJid ? route('whatsapp.avatar', $userJid) : null;
                 }
             } else {
-                $this->status = 'offline';
+                // HTTP Error
+                $this->handleFailure();
             }
         } catch (\Exception $e) {
-            // Gateway is offline or unreachable
-            $this->status = 'offline';
-            $this->qrCode = null;
-            $this->userName = null;
-            $this->userAvatar = null;
+            // Exception
+            $this->handleFailure();
         }
+    }
+
+    protected function handleFailure()
+    {
+        // If we were connected, give it a grace period
+        if ($this->status === 'connected' && $this->consecutiveFailures < 2) {
+            $this->consecutiveFailures++;
+            Log::info("Connection check failed/timeout. Ignoring... ({$this->consecutiveFailures}/2)");
+            return;
+        }
+
+        $this->status = 'offline';
+        $this->qrCode = null;
+        $this->userName = null;
+        $this->userAvatar = null;
     }
 
     public function getChatsProperty()

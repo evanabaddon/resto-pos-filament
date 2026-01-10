@@ -240,8 +240,8 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
     $url = "$gatewayUrl/avatar/$jid";
 
     try {
-        // Timeout 2s - balance between speed and reliability
-        $response = Http::timeout(2)->get($url);
+        // Timeout 5s to allow slower gateway responses
+        $response = Http::timeout(5)->get($url);
 
         if ($response->successful()) {
             $body = $response->body();
@@ -251,17 +251,15 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
             return response($body)
                 ->header('Content-Type', $response->header('Content-Type', 'image/jpeg'))
                 ->header('Cache-Control', 'public, max-age=3600');
+        } elseif ($response->status() === 404) {
+            // 3. Cache Negative Result (Only if explicit 404)
+            // Mark as missing for 10 minutes
+            Cache::put($cacheKey, 'missing', 600);
         }
     } catch (\Exception $e) {
         // Gateway offline or timeout
-        // Don't log every single timeout to avoid log flooding, only meaningful errors
-        // Log::debug("WhatsApp avatar fetch failed for {$jid}");
+        // DO NOT CACHE 'missing' here. Just fail temporarily.
     }
-
-    // 3. Cache Negative Result
-    // If we failed to get it (404 or timeout), mark as missing for 10 minutes
-    // This prevents flooding the gateway with requests for avatars that don't exist
-    Cache::put($cacheKey, 'missing', 600);
 
     return response()->noContent(404);
 })->name('whatsapp.avatar')->where('jid', '.*');
