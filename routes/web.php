@@ -261,5 +261,5 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
         // DO NOT CACHE 'missing' here. Just fail temporarily.
     }
 
-    return response()->noContent(404);
+    return response()->noContent(404)->header('Cache-Control', 'public, max-age=600');
 })->name('whatsapp.avatar')->where('jid', '.*');
