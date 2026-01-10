@@ -231,9 +231,9 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
             return response()->noContent(404)->header('Cache-Control', 'public, max-age=10');
         }
 
-        // Load image from storage file
-        if (Storage::exists("avatars/{$cachedData}")) {
-            return response(Storage::get("avatars/{$cachedData}"))
+        // Load image from storage file (public disk)
+        if (Storage::disk('public')->exists("avatars/{$cachedData}")) {
+            return response(Storage::disk('public')->get("avatars/{$cachedData}"))
                 ->header('Content-Type', 'image/jpeg')
                 ->header('Cache-Control', 'public, max-age=3600');
         }
@@ -251,9 +251,9 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
 
         if ($response->successful()) {
             $body = $response->body();
-            // Store image in storage/app/avatars instead of cache (binary data issue)
+            // Store image in storage/app/public/avatars (accessible via public disk)
             $filename = str_replace(['@', '.'], '_', $jid) . '.jpg';
-            Storage::put("avatars/{$filename}", $body);
+            Storage::disk('public')->put("avatars/{$filename}", $body);
 
             // Cache the filename for 1 hour
             Cache::put($cacheKey, $filename, 3600);
