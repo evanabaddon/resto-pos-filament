@@ -258,7 +258,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         try {
             // Use very short timeout (1 second) to prevent slow page loads
             /** @var \Illuminate\Http\Client\Response $response */
-            $response = Http::timeout(1)->get($this->getGatewayUrl() . '/status');
+            $response = Http::timeout(5)->get($this->getGatewayUrl() . '/status');
 
             if ($response->successful()) {
                 $data = $response->json();
