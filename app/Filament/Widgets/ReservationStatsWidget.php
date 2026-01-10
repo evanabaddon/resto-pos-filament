@@ -20,18 +20,18 @@ class ReservationStatsWidget extends StatsOverviewWidget
             $confirmed = Reservation::where('status', 'confirmed')->count();
 
             return [
-                Stat::make('Reservasi Hari Ini', $today)
-                    ->description('Total booking hari ini')
+                Stat::make(__('messages.today_reservations'), $today)
+                    ->description(__('messages.today_booking_total'))
                     ->descriptionIcon('heroicon-o-calendar')
                     ->color($today > 0 ? 'success' : 'gray'),
 
-                Stat::make('Menunggu Konfirmasi', $pending)
-                    ->description('Perlu tindakan')
+                Stat::make(__('messages.waiting_confirmation'), $pending)
+                    ->description(__('messages.needs_action'))
                     ->descriptionIcon($pending > 0 ? 'heroicon-o-exclamation-triangle' : 'heroicon-o-check-circle')
                     ->color($pending > 0 ? 'warning' : 'success'),
 
-                Stat::make('Sudah Dikonfirmasi', $confirmed)
-                    ->description('Siap dilayani')
+                Stat::make(__('messages.confirmed'), $confirmed)
+                    ->description(__('messages.ready_to_serve'))
                     ->descriptionIcon('heroicon-o-check-badge')
                     ->color('info'),
             ];

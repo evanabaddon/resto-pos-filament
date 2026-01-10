@@ -22,12 +22,22 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
     /**
      * Widget Title
      */
-    protected static ?string $heading = 'Heatmap Jam Sibuk Restoran';
+    protected static ?string $heading = null;
 
     /**
      * Widget Description
      */
-    protected static ?string $description = 'Distribusi transaksi berdasarkan hari dan jam dalam 30 hari terakhir';
+    protected static ?string $description = null;
+
+    public function getHeading(): ?string
+    {
+        return __('messages.peak_hours_heatmap');
+    }
+
+    public function getDescription(): ?string
+    {
+        return __('messages.peak_hours_desc');
+    }
 
     /**
      * Make widget full width
@@ -65,7 +75,15 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
 
         $series = [];
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        $dayLabels = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+        $dayLabels = [
+            __('messages.day_monday'),
+            __('messages.day_tuesday'),
+            __('messages.day_wednesday'),
+            __('messages.day_thursday'),
+            __('messages.day_friday'),
+            __('messages.day_saturday'),
+            __('messages.day_sunday')
+        ];
 
         foreach ($days as $index => $day) {
             $dayData = [];
@@ -137,7 +155,7 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
                     ]
                 ],
                 'title' => [
-                    'text' => 'Jam Operasional',
+                    'text' => __('messages.operational_hours'),
                     'style' => [
                         'fontSize' => '14px',
                         'fontWeight' => 'bold',
@@ -153,7 +171,7 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
                     ]
                 ],
                 'title' => [
-                    'text' => 'Hari',
+                    'text' => __('messages.day_label'),
                     'style' => [
                         'fontSize' => '14px',
                         'fontWeight' => 'bold',
@@ -302,19 +320,19 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
             [
                 'from' => 0,
                 'to' => ceil($maxTransaction * 0.25),
-                'name' => 'Sepi',
+                'name' => __('messages.quiet'),
                 'color' => '#DCFCE7' // green-100
             ],
             [
                 'from' => ceil($maxTransaction * 0.25) + 1,
                 'to' => ceil($maxTransaction * 0.5),
-                'name' => 'Normal',
+                'name' => __('messages.normal'),
                 'color' => '#4ADE80' // green-400
             ],
             [
                 'from' => ceil($maxTransaction * 0.5) + 1,
                 'to' => ceil($maxTransaction * 0.75),
-                'name' => 'Ramai',
+                'name' => __('messages.busy'),
                 'color' => '#FBBF24' // yellow-400
             ]
         ];
@@ -324,7 +342,7 @@ class PeakHoursHeatmapWidget extends ApexChartWidget
             $ranges[] = [
                 'from' => ceil($maxTransaction * 0.75) + 1,
                 'to' => $maxTransaction,
-                'name' => 'Sibuk',
+                'name' => __('messages.very_busy'),
                 'color' => '#EF4444' // red-500
             ];
         }

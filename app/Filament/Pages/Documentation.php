@@ -13,7 +13,10 @@ class Documentation extends Page
 
     protected string $view = 'filament.pages.documentation';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Pengaturan';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.settings');
+    }
 
     protected static ?int $navigationSort = 100;
 

@@ -22,13 +22,16 @@ class TvConfigResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTv;
 
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.settings');
+    }
+
     protected static ?string $navigationLabel = 'TV Display Config';
 
     protected static ?string $modelLabel = 'TV Configuration';
 
     protected static ?string $pluralModelLabel = 'TV Configurations';
-
-    protected static string|UnitEnum|null $navigationGroup = 'Pengaturan';
 
     protected static ?int $navigationSort = 10;
 

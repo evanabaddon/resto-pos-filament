@@ -38,12 +38,12 @@ class LowStockAlertWidget extends BaseWidget
             })
             ->columns([
                 TextColumn::make('name')
-                    ->label('NAMA BAHAN BAKU')
+                    ->label(__('messages.raw_material_name'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('stock')
-                    ->label('STOK')
+                    ->label(__('messages.stock'))
                     ->sortable()
                     ->badge()
                     ->color(fn(int $state): string => match (true) {
@@ -53,22 +53,22 @@ class LowStockAlertWidget extends BaseWidget
                         default => 'gray',
                     })
                     ->formatStateUsing(fn(int $state): string => match (true) {
-                        $state <= 0 => 'HABIS',
-                        $state <= 5 => $state . ' (KRITIS)',
-                        $state <= 10 => $state . ' (RENDAH)',
+                        $state <= 0 => __('messages.out_of_stock_text'),
+                        $state <= 5 => $state . __('messages.level_critical_suffix'),
+                        $state <= 10 => $state . __('messages.level_low_suffix'),
                         default => (string) $state,
                     })
                     ->alignCenter()
                     ->size('sm'),
 
                 TextColumn::make('unit.name')
-                    ->label('UNIT')
+                    ->label(__('messages.unit'))
                     ->sortable()
                     ->alignCenter()
                     ->size('sm'),
 
                 TextColumn::make('base_price')
-                    ->label('HARGA/UNIT')
+                    ->label(__('messages.price_per_unit'))
                     ->money('IDR')
                     ->sortable()
                     ->alignRight()
@@ -77,7 +77,7 @@ class LowStockAlertWidget extends BaseWidget
                     ->size('sm'),
 
                 TextColumn::make('total_stock_value')
-                    ->label('NILAI STOK')
+                    ->label(__('messages.stock_value'))
                     ->getStateUsing(fn(Product $record): float => $record->stock * $record->base_price)
                     ->money('IDR')
                     ->alignRight()
@@ -114,13 +114,13 @@ class LowStockAlertWidget extends BaseWidget
             ])
             ->filters([
                 Filter::make('stock_level')
-                    ->label('Level Stok')
+                    ->label(__('messages.stock_level'))
                     ->schema([
                         Select::make('level')
                             ->options([
-                                'critical' => 'Kritis (≤5)',
-                                'low' => 'Rendah (6-10)',
-                                'out' => 'Habis (0)',
+                                'critical' => __('messages.level_critical'),
+                                'low' => __('messages.level_low'),
+                                'out' => __('messages.level_out'),
                             ])
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -141,12 +141,12 @@ class LowStockAlertWidget extends BaseWidget
                         $this->dispatch('refreshTable');
                     }),
             ])
-            ->emptyStateHeading('✅ Stok bahan baku aman')
-            ->emptyStateDescription('Semua bahan baku memiliki stok yang cukup (lebih dari 10 unit)')
+            ->emptyStateHeading(__('messages.all_stock_safe_title'))
+            ->emptyStateDescription(__('messages.all_stock_safe_desc'))
             ->emptyStateIcon('heroicon-o-check-circle')
             ->emptyStateActions([
                 Action::make('view_all_raw_materials')
-                    ->label('Lihat semua bahan baku')
+                    ->label(__('messages.view_all_raw_materials'))
                     ->icon('heroicon-o-list-bullet')
                     ->url(fn(): string => ProductResource::getUrl('index', [
                         'tableFilters' => [
@@ -159,7 +159,7 @@ class LowStockAlertWidget extends BaseWidget
 
     protected function getTableHeading(): ?string
     {
-        return '⚠️ Alert Stok Bahan Baku Rendah';
+        return __('messages.low_stock_alert_title');
     }
 
     protected function getTableDescription(): ?string
@@ -170,8 +170,8 @@ class LowStockAlertWidget extends BaseWidget
             ->count();
 
         return $lowStockCount > 0
-            ? "{$lowStockCount} bahan baku dengan stok ≤ 10 unit"
-            : 'Semua stok aman';
+            ? __('messages.low_stock_count_desc', ['count' => $lowStockCount])
+            : __('messages.all_stock_safe');
     }
 
     public function refreshTable(): void

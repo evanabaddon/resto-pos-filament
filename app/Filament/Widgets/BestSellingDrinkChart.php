@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\Cache;
 class BestSellingDrinkChart extends ApexChartWidget
 {
     protected static ?string $chartId = 'bestSellingDrinkChart';
-    protected static ?string $heading = 'Minuman Terlaris (7 Hari Terakhir)';
-    protected static ?string $description = 'Top 10 minuman dengan penjualan tertinggi';
+    protected static ?string $heading = null;
+    protected static ?string $description = null;
     protected static ?int $sort = 2;
 
     // Enable lazy loading for better performance
@@ -69,12 +69,14 @@ class BestSellingDrinkChart extends ApexChartWidget
                 'series' => [['data' => []]],
                 'xaxis' => ['categories' => []],
                 'annotations' => [
-                    'texts' => [[
-                        'x' => '50%',
-                        'y' => '50%',
-                        'text' => 'Tidak ada data',
-                        'foreColor' => '#9CA3AF'
-                    ]]
+                    'texts' => [
+                        [
+                            'x' => '50%',
+                            'y' => '50%',
+                            'text' => __('messages.no_data_chart'),
+                            'foreColor' => '#9CA3AF'
+                        ]
+                    ]
                 ],
             ];
         }
@@ -114,7 +116,7 @@ class BestSellingDrinkChart extends ApexChartWidget
             ],
             'series' => [
                 [
-                    'name' => 'Jumlah Terjual',
+                    'name' => __('messages.sold_quantity'),
                     'data' => $quantities
                 ]
             ],
@@ -129,7 +131,7 @@ class BestSellingDrinkChart extends ApexChartWidget
             ],
             'yaxis' => [
                 'title' => [
-                    'text' => 'Jumlah Terjual',
+                    'text' => __('messages.sold_quantity'),
                 ]
             ],
             'colors' => $colors,
@@ -154,11 +156,11 @@ class BestSellingDrinkChart extends ApexChartWidget
     protected function getHeadingByFilter(): string
     {
         return match ($this->filter) {
-            'today' => 'Minuman Terlaris (Hari Ini)',
-            'yesterday' => 'Minuman Terlaris (Kemarin)',
-            '7days' => 'Minuman Terlaris (7 Hari Terakhir)',
-            '30days' => 'Minuman Terlaris (30 Hari Terakhir)',
-            default => 'Minuman Terlaris (7 Hari Terakhir)',
+            'today' => __('messages.best_selling_drink') . ' (' . __('messages.today') . ')',
+            'yesterday' => __('messages.best_selling_drink') . ' (' . __('messages.yesterday') . ')',
+            '7days' => __('messages.best_selling_drink') . ' (' . __('messages.last_7_days') . ')',
+            '30days' => __('messages.best_selling_drink') . ' (' . __('messages.last_30_days') . ')',
+            default => __('messages.best_selling_drink') . ' (' . __('messages.last_7_days') . ')',
         };
     }
 
@@ -166,10 +168,10 @@ class BestSellingDrinkChart extends ApexChartWidget
     protected function getFilters(): ?array
     {
         return [
-            'today' => 'Hari Ini',
-            'yesterday' => 'Kemarin',
-            '7days' => '7 Hari Terakhir',
-            '30days' => '30 Hari Terakhir',
+            'today' => __('messages.today'),
+            'yesterday' => __('messages.yesterday'),
+            '7days' => __('messages.last_7_days'),
+            '30days' => __('messages.last_30_days'),
         ];
     }
 }

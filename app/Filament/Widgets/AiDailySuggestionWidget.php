@@ -40,14 +40,14 @@ class AiDailySuggestionWidget extends Widget
                 $service = new DeepSeekService();
 
                 $history = [
-                    ['role' => 'user', 'content' => "Berdasarkan data berikut, berikan 1 saran bisnis harian DAN (jika ada) peringatan stok kritis. Pastikan keduanya muncul meski singkat. Maksimal 25 kata.\n\n{$context}"]
+                    ['role' => 'user', 'content' => __('messages.ai_prompt_user', ['context' => $context])]
                 ];
 
-                $response = $service->analyzeBusiness($history, "Berikan kombinasi saran strategi bisnis dan info stok singkat.");
+                $response = $service->analyzeBusiness($history, __('messages.ai_prompt_system'));
 
-                return $response['choices'][0]['message']['content'] ?? "Semangat jualan hari ini, Bos! Pastikan pelayanan maksimal.";
+                return $response['choices'][0]['message']['content'] ?? __('messages.ai_default_advice');
             } catch (\Exception $e) {
-                return "Fokus pada pelayanan terbaik hari ini. Pelanggan puas, rejeki lancar!";
+                return __('messages.ai_error_advice');
             }
         });
     }
@@ -84,18 +84,21 @@ class AiDailySuggestionWidget extends Widget
             ->whereDoesntHave('recipes')
             ->count();
 
-        $context = "Pendapatan Hari Ini: Rp" . number_format($todayRevenue, 0, ',', '.') . ". Total retail kritis: {$lowStockCount}. ";
+        $context = __('messages.ai_daily_revenue_context', [
+            'amount' => 'Rp' . number_format($todayRevenue, 0, ',', '.'),
+            'count' => $lowStockCount
+        ]) . ' ';
 
         if ($lowStockItems->isNotEmpty()) {
-            $context .= "Produk Retail Kritis: " . $lowStockItems->map(fn($p) => "{$p->name} ({$p->stock})")->implode(', ') . ". ";
+            $context .= __('messages.ai_critical_retail', ['list' => $lowStockItems->map(fn($p) => "{$p->name} ({$p->stock})")->implode(', ')]) . ' ';
         }
 
         if ($lowStockItemsWithIngredients->isNotEmpty()) {
-            $context .= "Produk Kritis" . $lowStockItemsWithIngredients->map(fn($p) => "{$p->name} ({$p->stock})")->implode(', ') . ". ";
+            $context .= __('messages.ai_critical_products', ['list' => $lowStockItemsWithIngredients->map(fn($p) => "{$p->name} ({$p->stock})")->implode(', ')]) . ' ';
         }
 
         if ($lowStockIngredients->isNotEmpty()) {
-            $context .= "BAHAN BAKU KRITIS (Wajib Restock): " . $lowStockIngredients->map(fn($p) => "{$p->name} (Sisa {$p->stock})")->implode(', ') . ".";
+            $context .= __('messages.ai_critical_ingredients', ['list' => $lowStockIngredients->map(fn($p) => "{$p->name} (Sisa {$p->stock})")->implode(', ')]) . '.';
         }
 
         return $context;

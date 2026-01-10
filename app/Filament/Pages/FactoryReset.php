@@ -18,7 +18,10 @@ class FactoryReset extends Page
 
     protected string $view = 'filament.pages.factory-reset';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Pengaturan';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('messages.settings');
+    }
 
     protected static ?string $navigationLabel = 'Factory Reset';
 

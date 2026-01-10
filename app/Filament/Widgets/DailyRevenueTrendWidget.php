@@ -11,9 +11,19 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 class DailyRevenueTrendWidget extends ApexChartWidget
 {
     protected static ?string $chartId = 'dailyRevenueTrendChart';
-    protected static ?string $heading = 'Trend Pendapatan 30 Hari Terakhir';
-    protected static ?string $description = 'Pendapatan dan jumlah transaksi harian';
+    protected static ?string $heading = null;
+    protected static ?string $description = null;
     protected static ?int $sort = 4;
+
+    public function getHeading(): ?string
+    {
+        return __('messages.revenue_trend');
+    }
+
+    public function getDescription(): ?string
+    {
+        return __('messages.revenue_and_transactions');
+    }
 
     // Enable lazy loading for better performance
     protected static bool $isLazy = true;
@@ -42,23 +52,25 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                     'toolbar' => ['show' => false]
                 ],
                 'series' => [
-                    ['name' => 'Pendapatan', 'data' => []],
-                    ['name' => 'Transaksi', 'data' => []]
+                    ['name' => __('messages.revenue'), 'data' => []],
+                    ['name' => __('messages.transaction_count'), 'data' => []]
                 ],
                 'xaxis' => ['categories' => []],
                 'annotations' => [
-                    'texts' => [[
-                        'x' => '50%',
-                        'y' => '50%',
-                        'text' => 'Tidak ada data pendapatan 30 hari terakhir',
-                        'foreColor' => '#9CA3AF'
-                    ]]
+                    'texts' => [
+                        [
+                            'x' => '50%',
+                            'y' => '50%',
+                            'text' => __('messages.no_data_chart'),
+                            'foreColor' => '#9CA3AF'
+                        ]
+                    ]
                 ],
             ];
         }
 
         $dates = $revenueData->pluck('date')->map(function ($date) {
-            return Carbon::parse($date)->format('d M');
+            return Carbon::parse($date)->translatedFormat('d M');
         })->toArray();
 
         $revenues = $revenueData->pluck('total_revenue')->map(fn($r) => (int) $r)->toArray();
@@ -84,12 +96,12 @@ class DailyRevenueTrendWidget extends ApexChartWidget
             ],
             'series' => [
                 [
-                    'name' => 'Pendapatan',
+                    'name' => __('messages.revenue'),
                     'type' => 'area',
                     'data' => $revenues,
                 ],
                 [
-                    'name' => 'Jumlah Transaksi',
+                    'name' => __('messages.transaction_count'),
                     'type' => 'area', // UBAH INI dari 'line' ke 'area'
                     'data' => $transactions,
                 ]
@@ -102,7 +114,7 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                     ]
                 ],
                 'title' => [
-                    'text' => 'Tanggal',
+                    'text' => __('messages.date_label'),
                     'style' => [
                         'fontSize' => '14px',
                         'fontWeight' => 'bold',
@@ -112,7 +124,7 @@ class DailyRevenueTrendWidget extends ApexChartWidget
             ],
             'yaxis' => [
                 [
-                    'seriesName' => 'Pendapatan',
+                    'seriesName' => __('messages.revenue'),
                     'axisTicks' => ['show' => true],
                     'axisBorder' => [
                         'show' => true,
@@ -122,7 +134,7 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                         'style' => ['colors' => '#4F46E5'],
                     ],
                     'title' => [
-                        'text' => 'Pendapatan (Rp)',
+                        'text' => __('messages.revenue') . ' (Rp)',
                         'style' => [
                             'color' => '#4F46E5',
                             'fontSize' => '12px',
@@ -131,7 +143,7 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                     ],
                 ],
                 [
-                    'seriesName' => 'Jumlah Transaksi',
+                    'seriesName' => __('messages.transaction_count'),
                     'opposite' => true,
                     'axisTicks' => ['show' => true],
                     'axisBorder' => [
@@ -142,7 +154,7 @@ class DailyRevenueTrendWidget extends ApexChartWidget
                         'style' => ['colors' => '#10B981']
                     ],
                     'title' => [
-                        'text' => 'Jumlah Transaksi',
+                        'text' => __('messages.transaction_count'),
                         'style' => [
                             'color' => '#10B981',
                             'fontSize' => '12px',

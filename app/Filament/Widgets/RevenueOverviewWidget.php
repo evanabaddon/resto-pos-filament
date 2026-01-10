@@ -45,18 +45,18 @@ class RevenueOverviewWidget extends StatsOverviewWidget
                 ->count();
 
             return [
-                Stat::make('Pendapatan Hari Ini', 'Rp ' . number_format($todayRevenue, 0, ',', '.'))
-                    ->description($revenueChange > 0 ? "↑ " . number_format($revenueChange, 1) . '% dari kemarin' : "↓ " . number_format(abs($revenueChange), 1) . '% dari kemarin')
+                Stat::make(__('messages.today_revenue'), 'Rp ' . number_format($todayRevenue, 0, ',', '.'))
+                    ->description($revenueChange > 0 ? "↑ " . number_format($revenueChange, 1) . __('messages.from_yesterday') : "↓ " . number_format(abs($revenueChange), 1) . __('messages.from_yesterday'))
                     ->descriptionIcon($revenueChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                     ->color($revenueChange > 0 ? 'success' : 'danger'),
 
-                Stat::make('Total Transaksi', $transactionCount)
-                    ->description('Rata-rata: Rp ' . number_format($avgTransaction ?? 0, 0, ',', '.'))
+                Stat::make(__('messages.total_transactions'), $transactionCount)
+                    ->description(__('messages.average_value', ['value' => number_format($avgTransaction ?? 0, 0, ',', '.')]))
                     ->descriptionIcon('heroicon-m-shopping-cart')
                     ->color('info'),
 
-                Stat::make('Pembayaran Terpopuler', $this->getPopularPaymentMethod())
-                    ->description('Paling banyak')
+                Stat::make(__('messages.popular_payment'), $this->getPopularPaymentMethod())
+                    ->description(__('messages.most_frequent'))
                     ->descriptionIcon('heroicon-m-credit-card')
                     ->color('warning'),
             ];

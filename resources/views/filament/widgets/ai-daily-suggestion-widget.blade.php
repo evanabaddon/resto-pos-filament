@@ -12,10 +12,10 @@
             <div class="flex-1">
                 <div class="flex items-center justify-between mb-1">
                     <h3 class="text-xs font-bold uppercase tracking-widest text-primary-600 dark:text-primary-400">
-                        Saran Pintar Bos
+                        {{ __('messages.ai_suggestion_title') }}
                     </h3>
                     <span class="text-[10px] text-gray-400 dark:text-gray-500 italic">
-                        Realtime AI Insight
+                        {{ __('messages.ai_suggestion_subtitle') }}
                     </span>
                 </div>
 
@@ -26,7 +26,8 @@
 
             {{-- Refresh Button (Optional/Subtle) --}}
             <div class="flex-shrink-0">
-                <button wire:click="refreshSuggestion" wire:loading.attr="disabled" class="text-gray-400 hover:text-primary-500 transition-colors">
+                <button wire:click="refreshSuggestion" wire:loading.attr="disabled"
+                    class="text-gray-400 hover:text-primary-500 transition-colors">
                     <x-heroicon-o-arrow-path class="w-4 h-4" wire:loading.class="animate-spin" />
                 </button>
             </div>

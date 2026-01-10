@@ -39,7 +39,12 @@ class ReservationCalendarWidget extends CalendarWidget
 
     protected ?string $locale = 'id';
 
-    protected string|HtmlString|bool|null $heading = 'Kalender Reservasi';
+    protected string|HtmlString|bool|null $heading = null;
+
+    public function getHeading(): string|HtmlString|null
+    {
+        return __('messages.reservation_calendar');
+    }
 
     protected function getEventClickContextMenuActions(): array
     {
@@ -60,7 +65,10 @@ class ReservationCalendarWidget extends CalendarWidget
                         return 'Reservasi tidak ditemukan';
                     }
 
-                    return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Pending'?";
+                    return __('messages.confirm_status_change_desc', [
+                        'old' => $this->getStatusLabel($reservation->status),
+                        'new' => __('messages.status_pending')
+                    ]);
                 })
                 ->modalSubmitActionLabel('Ya, Ubah Status')
                 ->modalCancelActionLabel('Batal')
@@ -82,7 +90,10 @@ class ReservationCalendarWidget extends CalendarWidget
                         return 'Reservasi tidak ditemukan';
                     }
 
-                    return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Dikonfirmasi'?";
+                    return __('messages.confirm_status_change_desc', [
+                        'old' => $this->getStatusLabel($reservation->status),
+                        'new' => __('messages.status_confirmed')
+                    ]);
                 })
                 ->modalSubmitActionLabel('Ya, Ubah Status')
                 ->modalCancelActionLabel('Batal')
@@ -104,7 +115,10 @@ class ReservationCalendarWidget extends CalendarWidget
                         return 'Reservasi tidak ditemukan';
                     }
 
-                    return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Sudah Duduk'?";
+                    return __('messages.confirm_status_change_desc', [
+                        'old' => $this->getStatusLabel($reservation->status),
+                        'new' => __('messages.status_seated')
+                    ]);
                 })
                 ->modalSubmitActionLabel('Ya, Ubah Status')
                 ->modalCancelActionLabel('Batal')
@@ -126,7 +140,10 @@ class ReservationCalendarWidget extends CalendarWidget
                         return 'Reservasi tidak ditemukan';
                     }
 
-                    return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Selesai'?";
+                    return __('messages.confirm_status_change_desc', [
+                        'old' => $this->getStatusLabel($reservation->status),
+                        'new' => __('messages.status_completed')
+                    ]);
                 })
                 ->modalSubmitActionLabel('Ya, Ubah Status')
                 ->modalCancelActionLabel('Batal')
@@ -227,7 +244,10 @@ class ReservationCalendarWidget extends CalendarWidget
                         return 'Reservasi tidak ditemukan';
                     }
 
-                    return "Apakah Anda yakin ingin mengubah status dari '{$this->getStatusLabel($reservation->status)}' menjadi 'Dibatalkan'?";
+                    return __('messages.confirm_status_change_desc', [
+                        'old' => $this->getStatusLabel($reservation->status),
+                        'new' => __('messages.status_cancelled')
+                    ]);
                 })
                 ->modalSubmitActionLabel('Ya, Ubah Status')
                 ->modalCancelActionLabel('Batal')
@@ -257,7 +277,7 @@ class ReservationCalendarWidget extends CalendarWidget
         if (!$reservation) {
             Notification::make()
                 ->title('Error')
-                ->body('Reservasi tidak ditemukan')
+                ->body(__('messages.reservation_not_found'))
                 ->danger()
                 ->send();
             return;
@@ -267,8 +287,8 @@ class ReservationCalendarWidget extends CalendarWidget
         $reservation->update(['status' => $newStatus]);
 
         Notification::make()
-            ->title('Status berhasil diubah')
-            ->body("Status berubah dari {$this->getStatusLabel($oldStatus)} ke {$this->getStatusLabel($newStatus)}")
+            ->title(__('messages.status_changed_success'))
+            ->body(__('messages.status_changed_desc', ['old' => $this->getStatusLabel($oldStatus), 'new' => $this->getStatusLabel($newStatus)]))
             ->success()
             ->send();
 
@@ -294,11 +314,11 @@ class ReservationCalendarWidget extends CalendarWidget
     private function getStatusLabel(string $status): string
     {
         return match ($status) {
-            'pending' => 'Pending',
-            'confirmed' => 'Dikonfirmasi',
-            'seated' => 'Sudah Duduk',
-            'completed' => 'Selesai',
-            'cancelled' => 'Dibatalkan',
+            'pending' => __('messages.status_pending'),
+            'confirmed' => __('messages.status_confirmed'),
+            'seated' => __('messages.status_seated'),
+            'completed' => __('messages.status_completed'),
+            'cancelled' => __('messages.status_cancelled'),
             default => $status,
         };
     }
@@ -366,9 +386,9 @@ class ReservationCalendarWidget extends CalendarWidget
     {
         return ViewAction::make()
             ->model(Reservation::class)
-            ->modalHeading('Detail Reservasi')
+            ->modalHeading(__('messages.detail_reservation'))
             ->schema([
-                Section::make('Informasi Customer')
+                Section::make(__('messages.customer_info'))
                     ->schema([
                         TextInput::make('customer_name')
                             ->label('Nama Customer')
@@ -394,8 +414,8 @@ class ReservationCalendarWidget extends CalendarWidget
                                     ->color('success')
                                     ->tooltip('Konfirmasi & Kirim WA')
                                     ->requiresConfirmation()
-                                    ->modalHeading('Konfirmasi Reservasi')
-                                    ->modalDescription('Status akan diubah menjadi "Confirmed" dan pesan konfirmasi WhatsApp akan dikirim ke pelanggan.')
+                                    ->modalHeading(__('messages.confirm_reservation_modal'))
+                                    ->modalDescription(__('messages.confirm_reservation_desc'))
                                     ->action(function ($record) {
                                         if (!$record)
                                             return;
@@ -436,7 +456,7 @@ class ReservationCalendarWidget extends CalendarWidget
 
 
                                         Notification::make()
-                                            ->title('Reservasi Dikonfirmasi')
+                                            ->title(__('messages.reservation_confirmed'))
                                             ->success()
                                             ->send();
 
@@ -504,7 +524,7 @@ class ReservationCalendarWidget extends CalendarWidget
                 Section::make('Tambahan')
                     ->schema([
                         Textarea::make('special_requests')
-                            ->label('Permintaan Khusus')
+                            ->label(__('messages.special_requests'))
                             ->disabled()
                             ->rows(3),
                     ]),
@@ -577,7 +597,7 @@ class ReservationCalendarWidget extends CalendarWidget
                         ]);
 
                         $record->increment('deposit_amount', $data['amount']);
-                        Notification::make()->title('Deposit Berhasil')->success()->send();
+                        Notification::make()->title(__('messages.deposit_success'))->success()->send();
                         $this->refreshRecords();
                     }),
                 Action::make('convert_to_sale')
@@ -586,8 +606,8 @@ class ReservationCalendarWidget extends CalendarWidget
                     ->color('success')
                     ->visible(fn($record) => in_array($record?->status, ['pending', 'confirmed']))
                     ->requiresConfirmation()
-                    ->modalHeading('Konversi ke Transaksi POS')
-                    ->modalDescription('Reservasi ini akan dikonversi menjadi transaksi aktif.')
+                    ->modalHeading(__('messages.convert_to_pos_transaction'))
+                    ->modalDescription(__('messages.convert_to_pos_desc'))
                     ->action(function (Reservation $record) {
                         // 0. Check Active Session
                         $activeSession = \App\Models\CashSession::where('user_id', auth()->id())
@@ -661,8 +681,8 @@ class ReservationCalendarWidget extends CalendarWidget
                         $record->update(['status' => 'seated']);
 
                         Notification::make()
-                            ->title('Transaksi Berhasil Dibuat')
-                            ->body("Sale #{$sale->invoice_number} telah dibuat.")
+                            ->title(__('messages.transaction_created_success'))
+                            ->body(__('messages.transaction_created_body', ['invoice' => $sale->invoice_number]))
                             ->success()
                             ->send();
 
@@ -677,7 +697,7 @@ class ReservationCalendarWidget extends CalendarWidget
     public function editAction(): EditAction
     {
         return EditAction::make()
-            ->modalHeading('Edit Reservasi')
+            ->modalHeading(__('messages.edit_reservation'))
             ->model(Reservation::class)
             ->schema([
                 Section::make('Informasi Customer')
@@ -782,7 +802,7 @@ class ReservationCalendarWidget extends CalendarWidget
     public function createReservationAction(): CreateAction
     {
         return CreateAction::make('createReservation')
-            ->modalHeading('Buat Reservasi Baru')
+            ->modalHeading(__('messages.create_new_reservation'))
             ->model(Reservation::class)
             ->schema([
                 Section::make('Informasi Customer')

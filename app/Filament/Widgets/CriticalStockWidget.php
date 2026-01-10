@@ -52,12 +52,13 @@ class CriticalStockWidget extends Widget
                     'product_id' => $productId,
                     'user_id' => auth()->id(),
                     'quantity' => $quantity,
-                    'notes' => 'Quick cook via Dashboard',
+                    'notes' => __('messages.production_note_db'),
                 ]);
                 $production->save();
 
                 $product = $production->product;
-                if (!$product) throw new \Exception("Product not found");
+                if (!$product)
+                    throw new \Exception("Product not found");
 
                 // 2. Increase Prepared Stock (Output)
                 // Polymorphic link
@@ -66,7 +67,7 @@ class CriticalStockWidget extends Widget
                     'quantity' => $quantity,
                     'type' => 'increase',
                     'reason' => 'production_output',
-                    'notes' => 'Hasil produksi (Quick Cook)',
+                    'notes' => __('messages.production_movement_note_db'),
                 ]);
 
                 // 3. Deduct Ingredients (Input)
@@ -75,7 +76,8 @@ class CriticalStockWidget extends Widget
 
                 foreach ($product->recipes as $recipe) {
                     $ingredient = $recipe->ingredient;
-                    if (!$ingredient) continue;
+                    if (!$ingredient)
+                        continue;
 
                     $requiredPerPortion = $conversionService->convert(
                         $recipe->quantity,
@@ -97,7 +99,12 @@ class CriticalStockWidget extends Widget
                         }
 
                         if ($currentStock < $totalRequired) {
-                            throw new \Exception("Stok bahan '{$ingredient->name}' tidak cukup! Butuh: {$totalRequired} {$ingredient->unit->symbol}, Ada: {$currentStock}");
+                            throw new \Exception(__('messages.insufficient_stock_error', [
+                                'ingredient' => $ingredient->name,
+                                'required' => $totalRequired,
+                                'unit' => $ingredient->unit->symbol,
+                                'current' => $currentStock
+                            ]));
                         }
 
                         // Create Stock Movement for Ingredient
@@ -107,7 +114,7 @@ class CriticalStockWidget extends Widget
                             'quantity' => $totalRequired,
                             'type' => 'decrease',
                             'reason' => 'production_ingredient',
-                            'notes' => "Bahan baku untuk produksi {$quantity} {$product->name} (Quick Cook)",
+                            'notes' => __('messages.ingredient_movement_note_db', ['quantity' => $quantity, 'product' => $product->name]),
                         ]);
                     }
                 }
@@ -115,8 +122,8 @@ class CriticalStockWidget extends Widget
 
             Notification::make()
                 ->success()
-                ->title('Production Recorded')
-                ->body("Berhasil masak {$quantity} porsi. History produksi tercatat.")
+                ->title(__('messages.production_recorded_title'))
+                ->body(__('messages.production_success_body', ['quantity' => $quantity]))
                 ->send();
 
             $this->dispatch('close-modal', id: "record-production-{$productId}");
@@ -125,7 +132,7 @@ class CriticalStockWidget extends Widget
             \Illuminate\Support\Facades\Log::error('Record Production Error: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
             Notification::make()
                 ->danger()
-                ->title('Gagal Masak')
+                ->title(__('messages.production_failed_title'))
                 ->body("Error: " . $e->getMessage())
                 ->send();
         }
@@ -138,7 +145,7 @@ class CriticalStockWidget extends Widget
             $oldStock = $product->prepared_stock ?? 0;
 
             if ($oldStock <= 0) {
-                Notification::make()->warning()->title('Stok Kosong')->body('Stok sudah 0')->send();
+                Notification::make()->warning()->title(__('messages.stock_empty_title'))->body(__('messages.stock_empty_body'))->send();
                 return;
             }
 
@@ -152,7 +159,7 @@ class CriticalStockWidget extends Widget
                     'quantity' => $oldStock,
                     'type' => 'decrease',
                     'reason' => 'waste',
-                    'notes' => 'Reset stok harian (Prepared Stock) - Sisa dibuang',
+                    'notes' => __('messages.reset_stock_note_db'),
                 ]);
 
                 // Manually update prepared_stock to 0 (observer won't handle this for prepared items)
@@ -161,8 +168,8 @@ class CriticalStockWidget extends Widget
 
             Notification::make()
                 ->success()
-                ->title('Stok Direset')
-                ->body("Sisa {$oldStock} porsi {$product->name} telah dibuang (Waste).")
+                ->title(__('messages.stock_reset_title'))
+                ->body(__('messages.stock_reset_body', ['stock' => $oldStock, 'product' => $product->name]))
                 ->send();
 
             $this->dispatch('close-modal', id: "record-production-{$productId}");
