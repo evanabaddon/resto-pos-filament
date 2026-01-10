@@ -40,7 +40,6 @@ class AdminPanelProvider extends PanelProvider
                 __('messages.transactions'),
                 __('messages.menu_product'),
                 __('messages.master_data'),
-                __('messages.master_data'),
                 __('messages.hrm_cluster'),
                 __('messages.crm_cluster'),
                 __('messages.ai_intelligence'),
