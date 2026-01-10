@@ -5,6 +5,7 @@ return [
     'menu_product' => 'Menu Produk',
     'category' => 'Kategori',
     'reload_product' => 'Reload Produk',
+    'products_refreshed' => 'Data produk berhasil diperbarui!',
     'search_product' => 'Cari Produk...',
     'all_categories' => 'Semua',
     'search_member' => 'Cari Member...',

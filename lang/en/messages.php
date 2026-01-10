@@ -5,6 +5,7 @@ return [
     'menu_product' => 'Product Menu',
     'category' => 'Category',
     'reload_product' => 'Reload Products',
+    'products_refreshed' => 'Product data successfully refreshed!',
     'search_product' => 'Search Product...',
     'all_categories' => 'All',
     'search_member' => 'Search Member...',

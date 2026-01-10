@@ -600,7 +600,7 @@ class Pos extends Page
         $this->cacheVersion++;
         $this->resetPage(); // Reset pagination to page 1
 
-        $this->dispatch('show-notification', message: 'Data produk berhasil diperbarui!', type: 'success');
+        $this->dispatch('show-notification', message: __('messages.products_refreshed'), type: 'success');
     }
 
     /**
