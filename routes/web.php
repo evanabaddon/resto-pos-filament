@@ -219,6 +219,10 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
     if (!Auth::check())
         abort(403);
 
+    // IMPORTANT: Release session lock immediately so this request doesn't block
+    // others (like the status check polling) while waiting for the Gateway.
+    session()->save();
+
     // 1. Check if we have positive cache (Image Data)
     $cacheKey = "wa_avatar_{$jid}";
     $cachedData = Cache::get($cacheKey);
@@ -226,7 +230,7 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
     if ($cachedData) {
         // If cached value is 'missing', return 404 immediately
         if ($cachedData === 'missing') {
-            return response()->noContent(404);
+            return response()->noContent(404)->header('Cache-Control', 'public, max-age=600');
         }
 
         // Return cached image
@@ -258,7 +262,8 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
         }
     } catch (\Exception $e) {
         // Gateway offline or timeout
-        // DO NOT CACHE 'missing' here. Just fail temporarily.
+        // Cache as missing for 60 seconds to prevent immediate retry hammering
+        Cache::put($cacheKey, 'missing', 60);
     }
 
     return response()->noContent(404)->header('Cache-Control', 'public, max-age=600');
