@@ -29,7 +29,8 @@ class StockMovementsTable
                 TextColumn::make('reason')
                     ->label(__('messages.reason'))
                     ->badge()
-                    ->color('gray'),
+                    ->color('gray')
+                    ->formatStateUsing(fn($state) => __('messages.' . $state) ?? $state),
 
                 TextColumn::make('notes')->label(__('messages.notes'))->limit(30),
 
@@ -46,9 +47,7 @@ class StockMovementsTable
                         'production_output' => __('messages.production_output'),
                         'production_ingredient' => __('messages.production_ingredient'),
                         'waste' => __('messages.waste'),
-                        'sale' => __('messages.sale'), // 'sale' key probably exists or needs adding? 'sale' => 'Penjualan' exists? Let's check. Assuming 'sale' or 'sales' exists. Actually 'sale_info' exists. 'sales' key might not exist alone.
-                        // I'll add 'sale' => 'Sale' / 'Penjualan' key just in case or use 'transaction_history' context?
-                        // 'sale' key is safe to add.
+                        'sale' => __('messages.sale'),
                         'void_sale' => __('messages.void_sale'),
                     ])
                     ->multiple(),
@@ -80,10 +79,10 @@ class StockMovementsTable
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['created_from'] ?? null) {
-                            $indicators[] = 'Dari: ' . \Carbon\Carbon::parse($data['created_from'])->format('d M Y');
+                            $indicators[] = __('messages.date_from') . ': ' . \Carbon\Carbon::parse($data['created_from'])->format('d M Y');
                         }
                         if ($data['created_until'] ?? null) {
-                            $indicators[] = 'Sampai: ' . \Carbon\Carbon::parse($data['created_until'])->format('d M Y');
+                            $indicators[] = __('messages.date_until') . ': ' . \Carbon\Carbon::parse($data['created_until'])->format('d M Y');
                         }
                         return $indicators;
                     }),

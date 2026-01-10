@@ -186,7 +186,7 @@ class FiscalReport extends Page implements HasForms, HasTable
                     ]);
 
                     return response()->streamDownload(
-                        fn() => print ($pdf->output()),
+                        fn() => print($pdf->output()),
                         'rekap-pajak-' . now()->timestamp . '.pdf'
                     );
                 }),

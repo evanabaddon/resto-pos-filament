@@ -17,17 +17,17 @@ class ExpenseCategoriesTable
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->label('Nama Kategori')
+                    ->label(__('messages.category_name'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('description')
-                    ->label('Deskripsi')
+                    ->label(__('messages.description'))
                     ->limit(50)
                     ->searchable(),
 
                 IconColumn::make('is_active')
-                    ->label('Status')
+                    ->label(__('messages.status'))
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
@@ -35,22 +35,22 @@ class ExpenseCategoriesTable
                     ->falseColor('danger'),
 
                 TextColumn::make('expenses_count')
-                    ->label('Jumlah Pengeluaran')
+                    ->label(__('messages.expense_count'))
                     ->counts('expenses')
                     ->sortable(),
 
                 TextColumn::make('created_at')
-                    ->label('Dibuat')
+                    ->label(__('messages.created_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('is_active')
-                    ->label('Status Aktif')
+                    ->label(__('messages.is_active'))
                     ->options([
-                        true => 'Aktif',
-                        false => 'Tidak Aktif',
+                        true => __('messages.active'),
+                        false => __('messages.inactive'),
                     ]),
             ])
             ->recordActions([

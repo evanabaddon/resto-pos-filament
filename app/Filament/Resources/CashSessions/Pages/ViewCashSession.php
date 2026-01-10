@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources\CashSessions\Pages;
+
 use App\Filament\Resources\CashSessions\CashSessionResource;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ViewRecord;
@@ -12,7 +13,7 @@ class ViewCashSession extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'Detail Sesi Kasir';
+        return __('messages.cash_session_detail');
     }
 
     public function getHeaderActions(): array
@@ -20,7 +21,7 @@ class ViewCashSession extends ViewRecord
         return [
             // Tombol kembali
             Action::make('back')
-                ->label('Kembali')
+                ->label(__('messages.back'))
                 ->icon('heroicon-o-arrow-left')
                 ->url(ListCashSessions::getUrl()),
         ];

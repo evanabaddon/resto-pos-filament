@@ -25,29 +25,29 @@ class ExpensesTable
         return $table
             ->columns([
                 TextColumn::make('date')
-                    ->label('Tanggal')
+                    ->label(__('messages.date'))
                     ->formatStateUsing(fn($state) => Carbon::parse($state)->isoFormat('D MMMM Y'))
                     ->sortable(),
 
                 TextColumn::make('reference')
-                    ->label('Referensi')
+                    ->label(__('messages.reference'))
                     ->searchable()
                     ->sortable()
                     ->copyable()
-                    ->copyMessage('Referensi disalin!'),
+                    ->copyMessage(__('messages.copy_reference_message')),
 
                 TextColumn::make('category.name')
-                    ->label('Kategori')
+                    ->label(__('messages.expense_category'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('description')
-                    ->label('Deskripsi')
+                    ->label(__('messages.description'))
                     ->limit(50)
                     ->searchable(),
 
                 TextColumn::make('fund_source')
-                    ->label('Sumber Dana')
+                    ->label(__('messages.fund_source'))
                     ->formatStateUsing(fn($state) => Expense::getFundSources()[$state] ?? $state)
                     ->badge()
                     ->color(fn($state) => match ($state) {
@@ -58,23 +58,23 @@ class ExpensesTable
                     }),
 
                 TextColumn::make('amount')
-                    ->label('Jumlah')
+                    ->label(__('messages.amount'))
                     ->money('IDR')
                     ->sortable()
                     ->color('danger'),
 
                 TextColumn::make('paymentMethod.name')
-                    ->label('Metode Bayar')
+                    ->label(__('messages.payment_method'))
                     ->badge()
                     ->color('gray'),
 
                 TextColumn::make('recipient')
-                    ->label('Penerima')
+                    ->label(__('messages.recipient'))
                     ->searchable()
                     ->toggleable(),
 
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label(__('messages.status'))
                     ->badge()
                     ->colors([
                         'warning' => 'pending',
@@ -88,12 +88,12 @@ class ExpensesTable
                     ]),
 
                 TextColumn::make('user.name')
-                    ->label('Dibuat Oleh')
+                    ->label(__('messages.created_by'))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
-                    ->label('Dibuat')
+                    ->label(__('messages.created_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -101,34 +101,34 @@ class ExpensesTable
                 TextColumn::make('amount')
                     ->summarize(Sum::make()->hidden(fn(Builder $query): bool => !$query->exists())
                         ->money('IDR')
-                        ->label('Total Pengeluaran')),
+                        ->label(__('messages.total_expenses'))),
             ])
             ->filters([
                 SelectFilter::make('fund_source')
-                    ->label('Sumber Dana')
+                    ->label(__('messages.fund_source'))
                     ->options(Expense::getFundSources()),
 
                 SelectFilter::make('expense_category_id')
-                    ->label('Kategori')
+                    ->label(__('messages.expense_category'))
                     ->relationship('category', 'name')
                     ->searchable()
                     ->preload(),
 
                 SelectFilter::make('payment_method_id')
-                    ->label('Metode Pembayaran')
+                    ->label(__('messages.payment_method'))
                     ->relationship('paymentMethod', 'name')
                     ->searchable()
                     ->preload(),
 
                 SelectFilter::make('status')
-                    ->label('Status')
+                    ->label(__('messages.status'))
                     ->options([
-                        'pending' => 'Pending',
-                        'approved' => 'Disetujui',
-                        'rejected' => 'Ditolak',
+                        'pending' => __('messages.status_pending'),
+                        'approved' => __('messages.status_approved') ?? 'Approved',
+                        'rejected' => __('messages.status_rejected') ?? 'Rejected',
                     ]),
 
-                DateRangeFilter::make('created_at')->label('Tanggal Transaksi'),
+                DateRangeFilter::make('created_at')->label(__('messages.transaction_date')),
             ])
             ->recordActions([
                 EditAction::make(),

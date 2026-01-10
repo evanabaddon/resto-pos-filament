@@ -32,11 +32,11 @@ class ProductsTable
                     ->disk('public'),
 
                 ToggleColumn::make('is_sellable')
-                    ->label('Jual') // Short label might be better kept as is or translated short
+                    ->label(__('messages.sell'))
                     ->sortable(),
 
                 ToggleColumn::make('is_favorite')
-                    ->label('Fav')
+                    ->label(__('messages.fav'))
                     ->sortable(),
 
                 TextColumn::make('name')
@@ -110,7 +110,7 @@ class ProductsTable
                     ->getStateUsing(function ($record) {
                         if (!$record->is_sellable)
                             return null; // Hide for ingredients
-            
+
                         $basePrice = $record->base_price ?? 0;
                         $sellPrice = $record->sell_price ?? 0;
 
@@ -128,7 +128,7 @@ class ProductsTable
                     })
                     ->description(function ($record) {
                         if (!$record->is_sellable)
-                            return 'Not for sale';
+                            return __('messages.not_for_sale');
 
                         $basePrice = $record->base_price ?? 0;
                         $sellPrice = $record->sell_price ?? 0;
@@ -168,8 +168,8 @@ class ProductsTable
                     ->label(__('messages.recalculate_hpp'))
                     ->icon('heroicon-o-calculator')
                     ->requiresConfirmation()
-                    ->modalHeading('Hitung Ulang HPP?')
-                    ->modalDescription('Proses ini akan menghitung ulang HPP untuk semua produk (Produced & Bar) berdasarkan harga bahan baku terbaru. Proses ini mungkin memakan waktu.')
+                    ->modalHeading(__('messages.recalculate_hpp_modal_heading'))
+                    ->modalDescription(__('messages.recalculate_hpp_modal_desc'))
                     ->action(function () {
                         $converter = app(\App\Services\UnitConversionService::class);
 
@@ -218,8 +218,8 @@ class ProductsTable
                         }
 
                         \Filament\Notifications\Notification::make()
-                            ->title('Perbaikan HPP Selesai')
-                            ->body("Fixed Raw: {$fixedRawCount}, Recalculated Menu: {$recalcCount}. Laporan Anda sekarang seharusnya sudah normal.")
+                            ->title(__('messages.hpp_recalc_success_title'))
+                            ->body(__('messages.hpp_recalc_success_body', ['fixed_count' => $fixedRawCount, 'recalc_count' => $recalcCount]))
                             ->success()
                             ->send();
                     }),

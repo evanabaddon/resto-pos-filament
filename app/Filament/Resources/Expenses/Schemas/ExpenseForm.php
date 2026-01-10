@@ -16,16 +16,16 @@ class ExpenseForm
     {
         return $schema
             ->components([
-                Section::make('Informasi Pengeluaran')
+                Section::make(__('messages.expense_info'))
                     ->schema([
                         DatePicker::make('date')
-                            ->label('Tanggal')
+                            ->label(__('messages.date'))
                             ->required()
                             ->default(now())
                             ->maxDate(now()),
 
                         TextInput::make('reference')
-                            ->label('Referensi')
+                            ->label(__('messages.reference'))
                             ->default(fn() => Expense::generateReference())
                             ->required()
                             ->maxLength(255)
@@ -34,36 +34,36 @@ class ExpenseForm
                     ])
                     ->columns(2),
 
-                Section::make('Sumber Dana & Penerima')
+                Section::make(__('messages.fund_source_recipient'))
                     ->schema([
                         Select::make('fund_source')
-                            ->label('Sumber Dana')
+                            ->label(__('messages.fund_source'))
                             ->required()
                             ->options(Expense::getFundSources())
                             ->default(Expense::FUND_SOURCE_CASHIER)
                             ->reactive(),
 
                         Select::make('payment_method_id')
-                            ->label('Metode Pembayaran')
+                            ->label(__('messages.payment_method'))
                             ->relationship('paymentMethod', 'name', fn($query) => $query->active())
                             ->searchable()
                             ->preload()
                             ->required(fn(callable $get) => $get('fund_source') !== Expense::FUND_SOURCE_PETTY_CASH)
                             ->visible(fn(callable $get) => $get('fund_source') !== Expense::FUND_SOURCE_PETTY_CASH)
-                            ->helperText('Pilih akun/metode pembayaran yang digunakan (misal: Cash, Transfer Bank)'),
+                            ->helperText(__('messages.payment_method_helper')),
 
                         TextInput::make('recipient')
-                            ->label('Penerima')
+                            ->label(__('messages.recipient'))
                             ->maxLength(255)
-                            ->placeholder('Nama penerima pembayaran')
+                            ->placeholder(__('messages.recipient_placeholder'))
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
 
-                Section::make('Detail Pengeluaran')
+                Section::make(__('messages.expense_details'))
                     ->schema([
                         Select::make('expense_category_id')
-                            ->label('Kategori')
+                            ->label(__('messages.expense_category'))
                             ->required()
                             ->relationship('category', 'name')
                             ->searchable()
@@ -77,38 +77,38 @@ class ExpenseForm
                             ]),
 
                         Textarea::make('description')
-                            ->label('Deskripsi Pengeluaran')
+                            ->label(__('messages.expense_description'))
                             ->required()
                             ->rows(3)
                             ->maxLength(500)
                             ->columnSpanFull(),
 
                         TextInput::make('amount')
-                            ->label('Jumlah')
+                            ->label(__('messages.amount'))
                             ->required()
                             ->numeric()
                             ->prefix('Rp'),
                     ])->columnSpanFull(),
 
-                Section::make('Status & Catatan')
+                Section::make(__('messages.status_notes'))
                     ->schema([
                         Select::make('status')
-                            ->label('Status')
+                            ->label(__('messages.status'))
                             ->required()
                             ->searchable()
                             ->options([
-                                'pending' => 'Pending',
-                                'approved' => 'Disetujui',
-                                'rejected' => 'Ditolak',
+                                'pending' => __('messages.status_pending'),
+                                'approved' => __('messages.status_approved') ?? 'Approved', // Fallback or add to common/expense
+                                'rejected' => __('messages.status_rejected') ?? 'Rejected',
                             ])
                             ->default('pending')
                             ->reactive(),
 
                         Textarea::make('notes')
-                            ->label('Catatan')
+                            ->label(__('messages.notes'))
                             ->rows(3)
                             ->maxLength(1000)
-                            ->placeholder('Catatan tambahan...')
+                            ->placeholder(__('messages.notes_placeholder'))
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),

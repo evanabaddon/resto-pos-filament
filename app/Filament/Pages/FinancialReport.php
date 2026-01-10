@@ -290,7 +290,7 @@ class FinancialReport extends Page implements HasForms
         // Prepare Breakdown Expenses
         $this->breakdownExpenses = $expenses->map(fn($e) => [
             'date' => $e->date,
-            'category' => $e->category ? $e->category->name : 'Umum',
+            'category' => $e->category ? $e->category->name : __('messages.general'),
             'description' => $e->description,
             'amount' => $e->amount
         ])->sortBy('date')->values()->toArray();
@@ -311,7 +311,7 @@ class FinancialReport extends Page implements HasForms
         $productPurchases = [];
         foreach ($purchases as $purchase) {
             foreach ($purchase->items as $item) {
-                $productName = $item->product_name ?? ($item->product->name ?? 'Unknown Product');
+                $productName = $item->product_name ?? ($item->product->name ?? __('messages.unknown_product'));
                 if (!isset($productPurchases[$productName])) {
                     $productPurchases[$productName] = 0;
                 }
@@ -347,11 +347,11 @@ class FinancialReport extends Page implements HasForms
             ->toArray();
 
         if ($this->totalPayroll > 0) {
-            $this->expenseBreakdown['Gaji & Tunjangan'] = $this->totalPayroll;
+            $this->expenseBreakdown[__('messages.salary_allowance')] = $this->totalPayroll;
         }
 
         if ($this->totalWastage > 0) {
-            $this->expenseBreakdown['Barang Rusak (Wastage)'] = $this->totalWastage;
+            $this->expenseBreakdown[__('messages.wastage')] = $this->totalWastage;
         }
 
         // 8. Current Asset Value (Nilai Aset Stok Saat Ini)

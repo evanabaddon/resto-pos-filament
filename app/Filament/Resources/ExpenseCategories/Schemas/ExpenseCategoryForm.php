@@ -14,22 +14,22 @@ class ExpenseCategoryForm
     {
         return $schema
             ->components([
-                Section::make('Informasi Kategori')
+                Section::make(__('messages.category_info'))
                     ->schema([
                         TextInput::make('name')
-                            ->label('Nama Kategori')
+                            ->label(__('messages.category_name'))
                             ->required()
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
-                        
+
                         Textarea::make('description')
-                            ->label('Deskripsi')
+                            ->label(__('messages.description'))
                             ->rows(3)
                             ->maxLength(500)
                             ->columnSpanFull(),
-                        
+
                         Toggle::make('is_active')
-                            ->label('Status Aktif')
+                            ->label(__('messages.is_active'))
                             ->default(true)
                             ->required(),
                     ])

@@ -195,7 +195,7 @@ class StockOpname extends Page implements HasTable
                     ->color('success')
                     ->requiresConfirmation()
                     ->modalHeading(__('messages.submit_all'))
-                    ->modalDescription(fn() => sprintf(__('messages.submit_confirmation_desc') ?? 'Simpan stock opname untuk %d produk yang diubah?', count($this->physicalCounts)))
+                    ->modalDescription(fn() => __('messages.submit_confirmation_desc', ['count' => count($this->physicalCounts)]))
                     ->visible(fn() => count($this->physicalCounts) > 0)
                     ->action(function () {
                         // Get all edited products
@@ -252,7 +252,12 @@ class StockOpname extends Page implements HasTable
 
                     $product->update(['prepared_stock' => $physicalCount]);
 
-                    \Illuminate\Support\Facades\Log::info("Stock Opname (Prepared): {$product->name} updated from {$systemStock} to {$physicalCount}. Variance: {$variance}");
+                    \Illuminate\Support\Facades\Log::info(__('messages.log_prepared_update', [
+                        'product' => $product->name,
+                        'system' => $systemStock,
+                        'physical' => $physicalCount,
+                        'variance' => $variance
+                    ]));
                 } else {
                     // For Raw/Retail Stock: Use StockMovement (Standard Flow)
                     StockMovement::create([
@@ -260,12 +265,11 @@ class StockOpname extends Page implements HasTable
                         'quantity' => abs($variance),
                         'type' => $variance > 0 ? 'increase' : 'decrease',
                         'reason' => 'stock_opname',
-                        'notes' => sprintf(
-                            'Stock Opname - System: %s, Physical: %s, Variance: %s',
-                            number_format($systemStock, 2),
-                            number_format($physicalCount, 2),
-                            number_format($variance, 2)
-                        ),
+                        'notes' => __('messages.notes_raw_retail', [
+                            'system' => number_format($systemStock, 2),
+                            'physical' => number_format($physicalCount, 2),
+                            'variance' => number_format($variance, 2)
+                        ]),
                     ]);
                 }
 
@@ -292,12 +296,11 @@ class StockOpname extends Page implements HasTable
 
         Notification::make()
             ->title(__('messages.opname_completed'))
-            ->body(sprintf(
-                '%d items adjusted. Total variance: %s. Total loss: Rp %s',
-                $itemsAdjusted,
-                number_format($totalVariance, 2),
-                number_format($totalLoss, 0)
-            ))
+            ->body(__('messages.opname_completed_body', [
+                'count' => $itemsAdjusted,
+                'variance' => number_format($totalVariance, 2),
+                'loss' => 'Rp ' . number_format($totalLoss, 0)
+            ]))
             ->success()
             ->send();
 

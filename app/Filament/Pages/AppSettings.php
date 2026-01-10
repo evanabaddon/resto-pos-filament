@@ -360,21 +360,14 @@ class AppSettings extends SettingsPage
                                                     ])
                                             ]),
 
-                                        Section::make('Konfigurasi Reservasi')
+                                        Section::make(__('messages.reservation_config'))
                                             ->columnSpan(2)
                                             ->schema([
                                                 Textarea::make('wa_template_reservation_confirmation')
-                                                    ->label('Template Konfirmasi Reservasi Pro (WhatsApp)')
-                                                    ->rows(4),
-                                                Section::make(__('messages.reservation_config'))
-                                                    ->columnSpan(2)
-                                                    ->schema([
-                                                        Textarea::make('wa_template_reservation_confirmation')
-                                                            ->label(__('messages.wa_template_reservation'))
-                                                            ->rows(4)
-                                                            ->helperText(__('messages.wa_template_reservation_helper')),
-                                                    ]),
-                                            ])
+                                                    ->label(__('messages.wa_template_reservation'))
+                                                    ->rows(4)
+                                                    ->helperText(__('messages.wa_template_reservation_helper')),
+                                            ]),
                                     ]),
                             ]),
 
@@ -430,13 +423,6 @@ class AppSettings extends SettingsPage
                                             ->required(),
 
                                         TextInput::make('loyalty_point_exchange_rate')
-                                            ->label('Nilai Belanja per 1 Poin')
-                                            ->numeric()
-                                            ->prefix('Rp')
-                                            ->default(10000)
-                                            ->required(),
-
-                                        TextInput::make('loyalty_point_exchange_rate')
                                             ->label(__('messages.point_exchange_rate'))
                                             ->numeric()
                                             ->prefix('Rp')
@@ -444,11 +430,11 @@ class AppSettings extends SettingsPage
                                             ->helperText(__('messages.point_exchange_helper')),
 
                                         TextInput::make('loyalty_point_value')
-                                            ->label('Nilai 1 Poin dalam Rupiah')
+                                            ->label(__('messages.point_value'))
                                             ->numeric()
                                             ->prefix('Rp')
                                             ->default(1)
-                                            ->helperText('Contoh: 1 Poin bernilai Rp 1 saat ditukarkan.'),
+                                            ->helperText(__('messages.point_value_helper')),
                                     ]),
 
                                 Section::make(__('messages.wa_sop_templates'))
@@ -458,13 +444,7 @@ class AppSettings extends SettingsPage
                                             ->label(__('messages.phase_1'))
                                             ->rows(4)
                                             ->helperText(__('messages.phase_1_helper')),
-                                        Textarea::make('wa_template_phase_2')
-                                            ->label('Fase 2: Mulai Repeat (Visit >= 2)')
-                                            ->rows(4),
-                                        Textarea::make('wa_template_phase_3')
-                                            ->label('Fase 3: Naik Tier (Sedulur Tinetes)')
-                                            ->rows(4)
-                                            ->helperText('Variabel: {name}'),
+
 
                                         Textarea::make('wa_template_phase_2')
                                             ->label(__('messages.phase_2'))
@@ -592,9 +572,7 @@ class AppSettings extends SettingsPage
                                             ->label(__('messages.license_key'))
                                             ->password() // Hide characters
                                             ->revealable()
-                                            ->revealable()
                                             ->helperText(__('messages.enter_license_key', ['format' => 'HRM-PRO-XXXX']))
-                                            ->live(onBlur: true) // Validate on blur
                                             ->live(onBlur: true) // Validate on blur
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 // Simple Logic: Key must start with HRM-PRO-
@@ -616,8 +594,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_hrm_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_hrm_desc')
                                             ),
                                     ]),
 
@@ -628,9 +606,7 @@ class AppSettings extends SettingsPage
                                             ->label(__('messages.license_key'))
                                             ->password() // Hide characters
                                             ->revealable()
-                                            ->revealable()
                                             ->helperText(__('messages.enter_license_key', ['format' => 'KDS-PRO-XXXX']))
-                                            ->live(onBlur: true) // Validate on blur
                                             ->live(onBlur: true) // Validate on blur
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 // Simple Logic: Key must start with KDS-PRO-
@@ -652,8 +628,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_kds_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_kds_desc')
                                             ),
                                     ]),
 
@@ -664,9 +640,7 @@ class AppSettings extends SettingsPage
                                             ->label(__('messages.license_key'))
                                             ->password()
                                             ->revealable()
-                                            ->revealable()
                                             ->helperText(__('messages.enter_license_key', ['format' => 'FISCAL-PRO-XXXX']))
-                                            ->live(onBlur: true)
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 if ($state && str_starts_with($state, 'FISCAL-PRO-')) {
@@ -686,8 +660,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('fiscal_license_key') ?? '', 'FISCAL-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_fiscal_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_fiscal_desc')
                                             ),
                                     ]),
 
@@ -698,9 +672,7 @@ class AppSettings extends SettingsPage
                                             ->label(__('messages.license_key'))
                                             ->password()
                                             ->revealable()
-                                            ->revealable()
                                             ->helperText(__('messages.enter_license_key', ['format' => 'CRM-PRO-XXXX']))
-                                            ->live(onBlur: true)
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 if ($state && str_starts_with($state, 'CRM-PRO-')) {
@@ -720,8 +692,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('crm_license_key') ?? '', 'CRM-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_crm_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_crm_desc')
                                             ),
                                     ]),
 
@@ -732,9 +704,7 @@ class AppSettings extends SettingsPage
                                             ->label(__('messages.license_key'))
                                             ->password()
                                             ->revealable()
-                                            ->revealable()
                                             ->helperText(__('messages.enter_license_key', ['format' => 'WA-PRO-XXXX']))
-                                            ->live(onBlur: true)
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 if ($state && str_starts_with($state, 'WA-PRO-')) {
@@ -754,8 +724,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('wa_license_key') ?? '', 'WA-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_wa_center_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_wa_center_desc')
                                             ),
 
                                         Toggle::make('wa_auto_download_media')
@@ -772,9 +742,7 @@ class AppSettings extends SettingsPage
                                             ->label(__('messages.license_key'))
                                             ->password()
                                             ->revealable()
-                                            ->revealable()
                                             ->helperText(__('messages.enter_license_key', ['format' => 'AI-PRO-XXXX']))
-                                            ->live(onBlur: true)
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set) {
                                                 if ($state && str_starts_with($state, 'AI-PRO-')) {
@@ -794,8 +762,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('ai_forecasting_license_key') ?? '', 'AI-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_ai_forecasting_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_ai_forecasting_desc')
                                             ),
                                     ]),
 
@@ -828,8 +796,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('menu_engineering_license_key') ?? '', 'MENU-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_menu_engineering_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_menu_engineering_desc')
                                             ),
                                     ]),
 
@@ -862,8 +830,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('self_order_license_key') ?? '', 'ORDER-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_self_order_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_self_order_desc')
                                             ),
                                     ]),
                             ]),
@@ -941,7 +909,5 @@ class AppSettings extends SettingsPage
                             ]),
                     ])
             ]);
-
     }
-
 }

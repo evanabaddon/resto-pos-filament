@@ -19,67 +19,67 @@ class CashSessionInfolist
                         Grid::make(4)
                             ->schema([
                                 TextEntry::make('user.name')
-                                    ->label('Kasir')
+                                    ->label(__('messages.cashier_name'))
                                     ->icon('heroicon-o-user')
                                     ->weight('bold'),
 
                                 TextEntry::make('status')
-                                    ->label('Status Sesi')
+                                    ->label(__('messages.session_status'))
                                     ->badge()
                                     ->color(fn($record) => $record->cash_out ? 'danger' : 'success')
-                                    ->formatStateUsing(fn($record) => $record->cash_out ? 'Selesai (Closed)' : 'Aktif (Open)'),
+                                    ->formatStateUsing(fn($record) => $record->cash_out ? __('messages.closed') : __('messages.open')),
 
                                 TextEntry::make('opened_at')
-                                    ->label('Waktu Buka')
+                                    ->label(__('messages.opened_at'))
                                     ->dateTime('d M Y, H:i')
                                     ->icon('heroicon-o-clock'),
 
                                 TextEntry::make('closed_at')
-                                    ->label('Waktu Tutup')
+                                    ->label(__('messages.closed_at'))
                                     ->dateTime('d M Y, H:i')
-                                    ->placeholder('Masih Berlangsung')
+                                    ->placeholder(__('messages.still_active'))
                                     ->icon('heroicon-o-check-circle'),
                             ]),
                     ])->columnSpanFull(),
 
-                Section::make('Arus Kas (Cash Flow)')
+                Section::make(__('messages.cash_flow'))
                     ->icon('heroicon-o-banknotes')
                     ->schema([
                         Grid::make(2)
                             ->schema([
                                 TextEntry::make('cash_in_hand')
-                                    ->label('Modal Awal (Cash In Hand)')
+                                    ->label(__('messages.starting_cash'))
                                     ->money('IDR'),
 
                                 TextEntry::make('total_cash_sales')
-                                    ->label('(+) Penjualan Tunai')
+                                    ->label(__('messages.cash_sales_add'))
                                     ->money('IDR')
                                     ->color('success'),
 
                                 TextEntry::make('total_cash_expenses')
-                                    ->label('(-) Pengeluaran Tunai')
+                                    ->label(__('messages.cash_expenses_sub'))
                                     ->money('IDR')
                                     ->color('danger'),
 
                                 TextEntry::make('total_cash_purchases')
-                                    ->label('(-) Pembelian Tunai')
+                                    ->label(__('messages.cash_purchases_sub'))
                                     ->money('IDR')
                                     ->color('danger'),
 
                                 TextEntry::make('expected_cash')
-                                    ->label('(=) Total Uang Seharusnya')
+                                    ->label(__('messages.expected_cash_equals'))
                                     ->money('IDR')
                                     ->weight('bold')
                                     ->columnSpanFull()
                                     ->separator(),
 
                                 TextEntry::make('cash_out')
-                                    ->label('Total Uang Fisik (Aktual)')
+                                    ->label(__('messages.actual_cash'))
                                     ->money('IDR')
                                     ->hidden(fn($record) => $record->cash_out === null),
 
                                 TextEntry::make('cash_difference')
-                                    ->label('Selisih (Diff)')
+                                    ->label(__('messages.difference'))
                                     ->money('IDR')
                                     ->badge()
                                     ->color(fn($state) => $state >= 0 ? 'success' : 'danger')
@@ -87,18 +87,18 @@ class CashSessionInfolist
                             ]),
                     ]),
                 Grid::make(1)->schema([
-                    Section::make('Rincian Pembayaran')
+                    Section::make(__('messages.payment_details'))
                         ->icon('heroicon-o-chart-pie')
                         ->schema([
                             \Filament\Infolists\Components\ViewEntry::make('breakdown')
                                 ->view('filament.infolists.cash-session-breakdown')
                                 ->hiddenLabel(),
                             TextEntry::make('transaction_count')
-                                ->label('Total Transaksi')
+                                ->label(__('messages.total_transactions'))
                                 ->inlineLabel(),
 
                             TextEntry::make('average_transaction')
-                                ->label('Rata-rata Order')
+                                ->label(__('messages.average_order'))
                                 ->money('IDR')
                                 ->inlineLabel(),
                         ])->columnSpan(1),

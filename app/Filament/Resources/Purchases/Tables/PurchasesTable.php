@@ -17,19 +17,21 @@ class PurchasesTable
     {
         return $table
             ->columns([
-                TextColumn::make('date')->label('Tanggal')->formatStateUsing(fn($state) => Carbon::parse($state)->isoFormat('D MMMM Y')),
+                TextColumn::make('date')->label(__('messages.date'))->formatStateUsing(fn($state) => Carbon::parse($state)->isoFormat('D MMMM Y')),
                 TextColumn::make('invoice_number')
-                    ->label('Nomor Nota')
+                    ->label(__('messages.invoice_number'))
                     ->searchable()
                     ->sortable()
                     ->copyable()
-                    ->copyMessage('Referensi disalin!'),
-                TextColumn::make('supplier_name'),
+                    ->copyMessage(__('messages.copy_reference_message')),
+                TextColumn::make('supplier_name')
+                    ->label(__('messages.supplier_name')),
                 TextColumn::make('status')
                     ->badge()
-                    ->colors(['warning' => 'draft', 'success' => 'received']),
+                    ->colors(['warning' => 'draft', 'success' => 'received'])
+                    ->formatStateUsing(fn($state) => $state === 'draft' ? __('messages.status_draft') : __('messages.status_received')),
                 TextColumn::make('fund_source')
-                    ->label('Sumber Dana')
+                    ->label(__('messages.fund_source'))
                     ->formatStateUsing(fn($state) => \App\Models\Purchase::getFundSources()[$state] ?? $state)
                     ->badge()
                     ->color(fn($state) => match ($state) {
@@ -38,10 +40,10 @@ class PurchasesTable
                         \App\Models\Purchase::FUND_SOURCE_TRANSFER => 'warning',
                         default => 'gray',
                     }),
-                TextColumn::make('total')->money('IDR')->summarize(Sum::make()->money('IDR')->label('Total Pembelian')),
+                TextColumn::make('total')->money('IDR')->summarize(Sum::make()->money('IDR')->label(__('messages.total_purchases'))),
             ])
             ->filters([
-                DateRangeFilter::make('created_at')->label('Tanggal Transaksi'),
+                DateRangeFilter::make('created_at')->label(__('messages.transaction_date')),
             ])
             ->recordActions([
                 EditAction::make(),

@@ -32,18 +32,18 @@ class PurchaseForm
                     ->default(now()),
 
                 TextInput::make('supplier_name')
-                    ->label('Supplier'),
+                    ->label(__('messages.supplier_name')),
 
                 Select::make('status')
                     ->options([
-                        'draft' => 'Draft',
-                        'received' => 'Diterima',
+                        'draft' => __('messages.status_draft'),
+                        'received' => __('messages.status_received'),
                     ])
                     ->default('draft')
                     ->required(),
 
                 Select::make('fund_source')
-                    ->label('Sumber Dana')
+                    ->label(__('messages.fund_source'))
                     ->options(Purchase::getFundSources())
                     ->default(Purchase::FUND_SOURCE_CASHIER)
                     ->required()
@@ -52,11 +52,11 @@ class PurchaseForm
                 Repeater::make('items')
                     ->relationship()
                     ->table([
-                        TableColumn::make('Nama Produk'),
-                        TableColumn::make('Unit'),
-                        TableColumn::make('QTY'),
-                        TableColumn::make('Harga'),
-                        TableColumn::make('Subtotal'),
+                        TableColumn::make(__('messages.product_name')),
+                        TableColumn::make(__('messages.unit')),
+                        TableColumn::make(__('messages.quantity')),
+                        TableColumn::make(__('messages.price')),
+                        TableColumn::make(__('messages.subtotal')),
                     ])
                     ->schema([
                         Select::make('product_id')
@@ -99,7 +99,7 @@ class PurchaseForm
                             }),
 
                         Select::make('unit_id')
-                            ->label('Unit')
+                            ->label(__('messages.unit'))
                             ->options(function (callable $get, $state) {
                                 // Dapatkan product_id dari state repeater
                                 $productId = $get('product_id');
@@ -167,5 +167,4 @@ class PurchaseForm
                     ->columnSpanFull(),
             ]);
     }
-
 }
