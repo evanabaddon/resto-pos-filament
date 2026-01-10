@@ -13,16 +13,31 @@
                 <div
                     class="h-16 px-4 flex items-center justify-between bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shrink-0">
                     <div class="flex items-center gap-3">
-                        <div class="relative" x-data="{ showFallback: false }">
+                        <div class="relative" x-data="{ 
+                            jid: '{{ $userName }}', 
+                            showFallback: false,
+                            init() {
+                                if (window.failedAvatars && window.failedAvatars.has(this.jid)) {
+                                    this.showFallback = true;
+                                }
+                            },
+                            handleError() {
+                                this.showFallback = true;
+                                if (!window.failedAvatars) window.failedAvatars = new Set();
+                                window.failedAvatars.add(this.jid);
+                            }
+                        }">
                             <div
                                 class="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center overflow-hidden">
                                 @if($userAvatar && $status === 'connected')
-                                    <img src="{{ $userAvatar }}" class="w-full h-full object-cover" x-show="!showFallback"
-                                        x-on:error="showFallback = true">
+                                    <template x-if="!showFallback">
+                                        <img src="{{ $userAvatar }}?v=3" class="w-full h-full object-cover"
+                                            x-on:error="handleError()">
+                                    </template>
 
                                     <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-medium"
                                         style="background-color: {{ '#' . substr(md5($userName ?? 'user'), 0, 6) }}"
-                                        x-show="showFallback" x-cloak>
+                                        x-show="showFallback">
                                         {{ strtoupper(substr($userName ?? 'U', 0, 1)) }}
                                     </div>
                                 @else
@@ -41,7 +56,7 @@
                                 {{ $userName ?? str_replace('_', ' ', $status) }}
                             </span>
                             @if($userName && $status === 'connected')
-                                <span class="text-[10px] text-gray-500">Online</span>
+                                <span class="text-[10px] text-gray-500">Online v2</span>
                             @endif
                         </div>
                     </div>
@@ -88,14 +103,31 @@
                                 class="group flex items-center gap-3 p-3 cursor-pointer transition border-b border-gray-100 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 {{ $selectedJid === $chat->remote_jid ? 'bg-gray-100 dark:bg-gray-800' : '' }}">
 
                                 {{-- Avatar --}}
-                                <div class="relative shrink-0" x-data="{ showFallback: false }">
-                                    <img src="{{ route('whatsapp.avatar', $chat->remote_jid) }}"
-                                        class="w-12 h-12 rounded-full object-cover bg-gray-200 dark:bg-gray-700" loading="lazy"
-                                        x-show="!showFallback" x-on:error="showFallback = true">
+                                <div class="relative shrink-0" x-data="{ 
+                                    jid: '{{ $chat->remote_jid }}',
+                                    showFallback: false,
+                                    init() {
+                                        if (!window.failedAvatars) window.failedAvatars = new Set();
+                                        if (window.failedAvatars.has(this.jid)) {
+                                            this.showFallback = true;
+                                        }
+                                    },
+                                    handleError() {
+                                        this.showFallback = true;
+                                        if (!window.failedAvatars) window.failedAvatars = new Set();
+                                        window.failedAvatars.add(this.jid);
+                                        console.log('Avatar failed permanently:', this.jid);
+                                    }
+                                }">
+                                    <template x-if="!showFallback">
+                                        <img src="{{ route('whatsapp.avatar', $chat->remote_jid) }}?v=3"
+                                            class="w-12 h-12 rounded-full object-cover bg-gray-200 dark:bg-gray-700" loading="lazy"
+                                            x-on:error="handleError()">
+                                    </template>
 
                                     <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium shadow-sm select-none"
                                         style="background-color: {{ '#' . substr(md5($chat->remote_jid), 0, 6) }}"
-                                        x-show="showFallback" x-cloak>
+                                        x-show="showFallback">
                                         {{ strtoupper(substr($chat->effective_name ?? $chat->push_name ?? $chat->remote_jid, 0, 1)) }}
                                     </div>
                                 </div>

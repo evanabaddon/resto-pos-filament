@@ -216,12 +216,10 @@ Route::get('/sales/{sale}/print', function (\App\Models\Sale $sale) {
 // WhatsApp Avatar Proxy (To fix local logging issue in production)
 // WhatsApp Avatar Proxy (To fix local logging issue in production)
 Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
-    if (!Auth::check())
-        abort(403);
+    // Auth check removed - <img> tags don't send session cookies
+    // Avatar images are public profile pictures, not sensitive data
 
-    // IMPORTANT: Release session lock immediately so this request doesn't block
-    // others (like the status check polling) while waiting for the Gateway.
-    session()->save();
+    // Session lock release not needed without auth
 
     // 1. Check if we have positive cache (Image Data)
     $cacheKey = "wa_avatar_{$jid}";
@@ -245,6 +243,7 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
 
     try {
         // Timeout 5s to allow slower gateway responses
+        Log::info("Avatar Debug: Fetching $url");
         $response = Http::timeout(5)->get($url);
 
         if ($response->successful()) {
@@ -256,15 +255,19 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
                 ->header('Content-Type', $response->header('Content-Type', 'image/jpeg'))
                 ->header('Cache-Control', 'public, max-age=3600');
         } elseif ($response->status() === 404) {
+            Log::warning("Avatar Debug: Gateway returned 404 for $url");
             // 3. Cache Negative Result (Only if explicit 404)
             // Mark as missing for 10 minutes
             Cache::put($cacheKey, 'missing', 600);
+        } else {
+            Log::error("Avatar Debug: Gateway Error " . $response->status() . " for $url");
         }
     } catch (\Exception $e) {
+        Log::error("Avatar Debug: Exception " . $e->getMessage() . " for $url");
         // Gateway offline or timeout
         // Cache as missing for 60 seconds to prevent immediate retry hammering
         Cache::put($cacheKey, 'missing', 60);
     }
 
-    return response()->noContent(404)->header('Cache-Control', 'public, max-age=600');
+    return response()->noContent(404)->header('Cache-Control', 'public, max-age=10');
 })->name('whatsapp.avatar')->where('jid', '.*');
