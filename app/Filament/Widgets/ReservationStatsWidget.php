@@ -14,7 +14,8 @@ class ReservationStatsWidget extends StatsOverviewWidget
     protected function getStats(): array
     {
         // Cache for 5 minutes
-        return Cache::remember('reservation_stats', 300, function () {
+        // Cache for 5 minutes, specific to locale
+        return Cache::remember('reservation_stats_' . app()->getLocale(), 300, function () {
             $today = Reservation::whereDate('reservation_date', today())->count();
             $pending = Reservation::where('status', 'pending')->count();
             $confirmed = Reservation::where('status', 'confirmed')->count();

@@ -15,7 +15,8 @@ class RevenueOverviewWidget extends StatsOverviewWidget
     protected function getStats(): array
     {
         // Cache for 5 minutes (data needs to be relatively fresh)
-        return Cache::remember('revenue_overview_stats', 300, function () {
+        // Cache for 5 minutes (data needs to be relatively fresh), specific to locale
+        return Cache::remember('revenue_overview_stats_' . app()->getLocale(), 300, function () {
             $today = now()->startOfDay();
             $yesterday = now()->subDay()->startOfDay();
 

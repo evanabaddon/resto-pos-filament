@@ -18,6 +18,8 @@ $inventory_forecasting = require __DIR__ . '/partials/inventory_forecasting.php'
 $menu_engineering = require __DIR__ . '/partials/menu_engineering.php';
 $fiscal_report = require __DIR__ . '/partials/fiscal_report.php';
 $financial_report = require __DIR__ . '/partials/financial_report.php';
+$dashboard = require __DIR__ . '/partials/dashboard.php';
+$reservation = require __DIR__ . '/partials/reservation.php';
 
 return array_merge(
     $common,
@@ -37,5 +39,7 @@ return array_merge(
     $inventory_forecasting,
     $menu_engineering,
     $fiscal_report,
-    $financial_report
+    $financial_report,
+    $dashboard,
+    $reservation
 );

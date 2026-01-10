@@ -72,7 +72,7 @@ class LowStockAlertWidget extends BaseWidget
                     ->money('IDR')
                     ->sortable()
                     ->alignRight()
-                    ->tooltip('Harga beli per unit')
+                    ->tooltip(__('messages.price_per_unit_tooltip'))
                     ->description(fn(Product $record): string => $record->unit ? "per {$record->unit->name}" : '')
                     ->size('sm'),
 
@@ -82,7 +82,7 @@ class LowStockAlertWidget extends BaseWidget
                     ->money('IDR')
                     ->alignRight()
                     ->weight('semibold')
-                    ->tooltip('Stok × Harga/Unit')
+                    ->tooltip(__('messages.stock_value_tooltip'))
                     ->color(function (Product $record): string {
                         $totalValue = $record->stock * $record->base_price;
                         return $totalValue <= 0 ? 'danger' : 'success';
@@ -95,14 +95,14 @@ class LowStockAlertWidget extends BaseWidget
                 Action::make('edit')
                     ->label('')
                     ->icon('heroicon-o-pencil')
-                    ->tooltip('Edit produk')
+                    ->tooltip(__('messages.edit'))
                     ->url(fn(Product $record): string => ProductResource::getUrl('edit', ['record' => $record->id])),
                 // quick purchase action
                 Action::make('quick_purchase')
                     ->label('')
                     ->icon('heroicon-o-shopping-cart')
                     ->color('warning')
-                    ->tooltip('Buat pembelian')
+                    ->tooltip(__('messages.create_purchase'))
                     ->visible(fn(Product $record): bool => $record->stock <= 10)
                     ->action(function (Product $record) {
                         // Logic untuk redirect ke purchase creation dengan product_id

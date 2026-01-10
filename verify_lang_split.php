@@ -6,16 +6,14 @@ require __DIR__ . '/vendor/autoload.php';
 $app = require __DIR__ . '/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
-// Test Settings keys
+// Test Dashboard keys
 $keys = [
-    'ai_system_prompt_helper',
-    'ai_api_config',
-    'auto_download_media_helper',
-    'enable_ai_forecasting_desc',
-    'enable_menu_engineering_desc',
-    'ai_api_config_desc',
-    'wa_template_reservation',
-    'point_value_helper'
+    'critical_stock_title',
+    'today_revenue',
+    'create_new_reservation',
+    'customer_info',
+    'confirm_status_change_modal',
+    'no_reservation_selected',
 ];
 
 foreach (['en', 'id'] as $locale) {

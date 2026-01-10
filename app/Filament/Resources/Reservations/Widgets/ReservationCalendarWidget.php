@@ -52,17 +52,17 @@ class ReservationCalendarWidget extends CalendarWidget
             $this->viewAction(),
             $this->editAction(),
             Action::make('change_status_pending')
-                ->label('Ubah ke Pending')
+                ->label(__('messages.change_to_pending'))
                 ->icon('heroicon-o-clock')
                 ->color('warning')
                 ->requiresConfirmation()
-                ->modalHeading('Konfirmasi Perubahan Status')
+                ->modalHeading(__('messages.confirm_status_change_modal'))
                 ->modalDescription(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $reservation = $reservationId ? Reservation::find($reservationId) : null;
 
                     if (!$reservation) {
-                        return 'Reservasi tidak ditemukan';
+                        return __('messages.reservation_not_found');
                     }
 
                     return __('messages.confirm_status_change_desc', [
@@ -70,24 +70,24 @@ class ReservationCalendarWidget extends CalendarWidget
                         'new' => __('messages.status_pending')
                     ]);
                 })
-                ->modalSubmitActionLabel('Ya, Ubah Status')
-                ->modalCancelActionLabel('Batal')
+                ->modalSubmitActionLabel(__('messages.confirm_status_change_btn'))
+                ->modalCancelActionLabel(__('messages.cancel'))
                 ->action(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $this->updateReservationStatus('pending', $reservationId);
                 }),
             Action::make('change_status_confirmed')
-                ->label('Ubah ke Dikonfirmasi')
+                ->label(__('messages.change_to_confirmed'))
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->requiresConfirmation()
-                ->modalHeading('Konfirmasi Perubahan Status')
+                ->modalHeading(__('messages.confirm_status_change_modal'))
                 ->modalDescription(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $reservation = $reservationId ? Reservation::find($reservationId) : null;
 
                     if (!$reservation) {
-                        return 'Reservasi tidak ditemukan';
+                        return __('messages.reservation_not_found');
                     }
 
                     return __('messages.confirm_status_change_desc', [
@@ -95,24 +95,24 @@ class ReservationCalendarWidget extends CalendarWidget
                         'new' => __('messages.status_confirmed')
                     ]);
                 })
-                ->modalSubmitActionLabel('Ya, Ubah Status')
-                ->modalCancelActionLabel('Batal')
+                ->modalSubmitActionLabel(__('messages.confirm_status_change_btn'))
+                ->modalCancelActionLabel(__('messages.cancel'))
                 ->action(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $this->updateReservationStatus('confirmed', $reservationId);
                 }),
             Action::make('change_status_seated')
-                ->label('Ubah ke Sudah Duduk')
+                ->label(__('messages.change_to_seated'))
                 ->icon('heroicon-o-user-group')
                 ->color('info')
                 ->requiresConfirmation()
-                ->modalHeading('Konfirmasi Perubahan Status')
+                ->modalHeading(__('messages.confirm_status_change_modal'))
                 ->modalDescription(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $reservation = $reservationId ? Reservation::find($reservationId) : null;
 
                     if (!$reservation) {
-                        return 'Reservasi tidak ditemukan';
+                        return __('messages.reservation_not_found');
                     }
 
                     return __('messages.confirm_status_change_desc', [
@@ -120,24 +120,24 @@ class ReservationCalendarWidget extends CalendarWidget
                         'new' => __('messages.status_seated')
                     ]);
                 })
-                ->modalSubmitActionLabel('Ya, Ubah Status')
-                ->modalCancelActionLabel('Batal')
+                ->modalSubmitActionLabel(__('messages.confirm_status_change_btn'))
+                ->modalCancelActionLabel(__('messages.cancel'))
                 ->action(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $this->updateReservationStatus('seated', $reservationId);
                 }),
             Action::make('change_status_completed')
-                ->label('Ubah ke Selesai')
+                ->label(__('messages.change_to_completed'))
                 ->icon('heroicon-o-check')
                 ->color('gray')
                 ->requiresConfirmation()
-                ->modalHeading('Konfirmasi Perubahan Status')
+                ->modalHeading(__('messages.confirm_status_change_modal'))
                 ->modalDescription(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $reservation = $reservationId ? Reservation::find($reservationId) : null;
 
                     if (!$reservation) {
-                        return 'Reservasi tidak ditemukan';
+                        return __('messages.reservation_not_found');
                     }
 
                     return __('messages.confirm_status_change_desc', [
@@ -145,14 +145,14 @@ class ReservationCalendarWidget extends CalendarWidget
                         'new' => __('messages.status_completed')
                     ]);
                 })
-                ->modalSubmitActionLabel('Ya, Ubah Status')
-                ->modalCancelActionLabel('Batal')
+                ->modalSubmitActionLabel(__('messages.confirm_status_change_btn'))
+                ->modalCancelActionLabel(__('messages.cancel'))
                 ->action(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $this->updateReservationStatus('completed', $reservationId);
                 }),
             Action::make('pay_deposit')
-                ->label('Bayar DP')
+                ->label(__('messages.pay_deposit'))
                 ->icon('heroicon-o-credit-card')
                 ->color('info')
                 ->visible(function (array $arguments) {
@@ -162,16 +162,16 @@ class ReservationCalendarWidget extends CalendarWidget
                 })
                 ->schema([
                     Select::make('payment_method_id')
-                        ->label('Metode Pembayaran')
+                        ->label(__('messages.payment_method'))
                         ->options(\App\Models\PaymentMethod::pluck('name', 'id'))
                         ->required(),
                     TextInput::make('amount')
-                        ->label('Jumlah DP')
+                        ->label(__('messages.deposit_amount'))
                         ->numeric()
                         ->required()
                         ->prefix('Rp'),
                     Textarea::make('notes')
-                        ->label('Catatan'),
+                        ->label(__('messages.deposit_notes')),
                 ])
                 ->action(function (array $arguments, array $data) {
                     $reservationId = $this->extractReservationId($arguments);
@@ -231,17 +231,17 @@ class ReservationCalendarWidget extends CalendarWidget
                     $this->refreshRecords();
                 }),
             Action::make('change_status_cancelled')
-                ->label('Ubah ke Dibatalkan')
+                ->label(__('messages.change_to_cancelled'))
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->requiresConfirmation()
-                ->modalHeading('Konfirmasi Perubahan Status')
+                ->modalHeading(__('messages.confirm_status_change_modal'))
                 ->modalDescription(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $reservation = $reservationId ? Reservation::find($reservationId) : null;
 
                     if (!$reservation) {
-                        return 'Reservasi tidak ditemukan';
+                        return __('messages.reservation_not_found');
                     }
 
                     return __('messages.confirm_status_change_desc', [
@@ -249,8 +249,8 @@ class ReservationCalendarWidget extends CalendarWidget
                         'new' => __('messages.status_cancelled')
                     ]);
                 })
-                ->modalSubmitActionLabel('Ya, Ubah Status')
-                ->modalCancelActionLabel('Batal')
+                ->modalSubmitActionLabel(__('messages.confirm_status_change_btn'))
+                ->modalCancelActionLabel(__('messages.cancel'))
                 ->action(function (array $arguments) {
                     $reservationId = $this->extractReservationId($arguments);
                     $this->updateReservationStatus('cancelled', $reservationId);
@@ -266,7 +266,7 @@ class ReservationCalendarWidget extends CalendarWidget
         if (!$reservationId) {
             Notification::make()
                 ->title('Error')
-                ->body('Tidak ada reservasi yang dipilih')
+                ->body(__('messages.no_reservation_selected'))
                 ->danger()
                 ->send();
             return;
@@ -391,17 +391,17 @@ class ReservationCalendarWidget extends CalendarWidget
                 Section::make(__('messages.customer_info'))
                     ->schema([
                         TextInput::make('customer_name')
-                            ->label('Nama Customer')
+                            ->label(__('messages.customer_name'))
                             ->disabled(),
                         TextInput::make('customer_phone')
-                            ->label('Telepon')
+                            ->label(__('messages.customer_phone'))
                             ->disabled()
                             ->suffixActions([
                                 Action::make('whatsapp_chat')
                                     ->icon('heroicon-o-chat-bubble-left-right')
                                     ->iconButton()
                                     ->color('gray')
-                                    ->tooltip('Chat WhatsApp')
+                                    ->tooltip(__('messages.whatsapp_chat'))
                                     ->url(function ($get, $record) {
                                         $phoneNumber = $get('customer_phone') ?? $record?->customer_phone;
                                         return $this->getWhatsAppUrl($phoneNumber);
@@ -412,7 +412,7 @@ class ReservationCalendarWidget extends CalendarWidget
                                     ->icon('heroicon-o-check-circle')
                                     ->iconButton()
                                     ->color('success')
-                                    ->tooltip('Konfirmasi & Kirim WA')
+                                    ->tooltip(__('messages.confirm_and_send_wa'))
                                     ->requiresConfirmation()
                                     ->modalHeading(__('messages.confirm_reservation_modal'))
                                     ->modalDescription(__('messages.confirm_reservation_desc'))
@@ -474,7 +474,7 @@ class ReservationCalendarWidget extends CalendarWidget
                 Section::make('Detail Reservasi')
                     ->schema([
                         DateTimePicker::make('reservation_date')
-                            ->label('Tanggal & Waktu Reservasi')
+                            ->label(__('messages.reservation_date'))
                             ->disabled(),
                         TextInput::make('party_size')
                             ->label('Jumlah Orang')
@@ -504,14 +504,14 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->schema([
                                 Select::make('product_id')
                                     ->relationship('product', 'name')
-                                    ->label('Menu')
+                                    ->label(__('messages.menu'))
                                     ->disabled(),
                                 TextInput::make('quantity')
                                     ->label('Qty')
                                     ->numeric()
                                     ->disabled(),
                                 TextInput::make('note')
-                                    ->label('Catatan')
+                                    ->label(__('messages.notes'))
                                     ->disabled(),
                             ])
                             ->columns(3)
@@ -531,22 +531,22 @@ class ReservationCalendarWidget extends CalendarWidget
             ])
             ->extraModalFooterActions([
                 Action::make('pay_deposit')
-                    ->label('Bayar DP')
+                    ->label(__('messages.pay_deposit'))
                     ->icon('heroicon-o-credit-card')
                     ->color('info')
                     ->visible(fn($record) => in_array($record?->status, ['pending', 'confirmed']))
                     ->schema([
                         Select::make('payment_method_id')
-                            ->label('Metode Pembayaran')
+                            ->label(__('messages.payment_method'))
                             ->options(\App\Models\PaymentMethod::pluck('name', 'id'))
                             ->required(),
                         TextInput::make('amount')
-                            ->label('Jumlah DP')
+                            ->label(__('messages.deposit_amount'))
                             ->numeric()
                             ->required()
                             ->prefix('Rp'),
                         Textarea::make('notes')
-                            ->label('Catatan'),
+                            ->label(__('messages.deposit_notes')),
                     ])
                     ->action(function (array $data, Reservation $record) {
                         $activeSession = \App\Models\CashSession::where('user_id', auth()->id())
@@ -601,7 +601,7 @@ class ReservationCalendarWidget extends CalendarWidget
                         $this->refreshRecords();
                     }),
                 Action::make('convert_to_sale')
-                    ->label('Proses ke Kasir')
+                    ->label(__('messages.convert_to_pos_transaction'))
                     ->icon('heroicon-o-shopping-cart')
                     ->color('success')
                     ->visible(fn($record) => in_array($record?->status, ['pending', 'confirmed']))
@@ -700,35 +700,35 @@ class ReservationCalendarWidget extends CalendarWidget
             ->modalHeading(__('messages.edit_reservation'))
             ->model(Reservation::class)
             ->schema([
-                Section::make('Informasi Customer')
+                Section::make(__('messages.customer_info'))
                     ->schema([
                         TextInput::make('customer_name')
-                            ->label('Nama Customer')
+                            ->label(__('messages.customer_name'))
                             ->required()
                             ->maxLength(255),
                         TextInput::make('customer_phone')
-                            ->label('Telepon')
+                            ->label(__('messages.customer_phone'))
                             ->required(),
                     ])->columns(2),
 
-                Section::make('Detail Reservasi')
+                Section::make(__('messages.detail_reservation'))
                     ->schema([
                         DateTimePicker::make('reservation_date')
-                            ->label('Tanggal & Waktu Reservasi')
+                            ->label(__('messages.reservation_date'))
                             ->required()
                             ->seconds(false),
                         TextInput::make('party_size')
-                            ->label('Jumlah Orang')
+                            ->label(__('messages.party_size'))
                             ->numeric()
                             ->required()
                             ->minValue(1),
                         TextInput::make('deposit_amount')
-                            ->label('Down Payment (DP)')
+                            ->label(__('messages.deposit_amount'))
                             ->numeric()
                             ->prefix('Rp')
                             ->default(0),
                         Select::make('status')
-                            ->label('Status')
+                            ->label(__('messages.status'))
                             ->options([
                                 'pending' => 'Pending',
                                 'confirmed' => 'Confirmed',
@@ -739,14 +739,14 @@ class ReservationCalendarWidget extends CalendarWidget
                             ->required(),
                     ])->columns(3),
 
-                Section::make('Pre-Order Menu')
+                Section::make(__('messages.pre_order_menu'))
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->relationship()
                             ->schema([
                                 Select::make('product_id')
                                     ->relationship('product', 'name', fn(Builder $query) => $query->where('is_sellable', true))
-                                    ->label('Menu')
+                                    ->label(__('messages.menu'))
                                     ->required()
                                     ->searchable()
                                     ->preload()
@@ -758,7 +758,7 @@ class ReservationCalendarWidget extends CalendarWidget
                                         $set('total_price', $price * (int) ($get('quantity') ?? 1));
                                     }),
                                 TextInput::make('quantity')
-                                    ->label('Qty')
+                                    ->label(__('messages.qty'))
                                     ->numeric()
                                     ->default(1)
                                     ->required()
@@ -768,29 +768,29 @@ class ReservationCalendarWidget extends CalendarWidget
                                         $set('total_price', $price * (int) $state);
                                     }),
                                 TextInput::make('unit_price')
-                                    ->label('Harga')
+                                    ->label(__('messages.price'))
                                     ->disabled()
                                     ->dehydrated()
                                     ->numeric()
                                     ->prefix('Rp'),
                                 TextInput::make('total_price')
-                                    ->label('Total')
+                                    ->label(__('messages.total'))
                                     ->disabled()
                                     ->dehydrated()
                                     ->numeric()
                                     ->prefix('Rp'),
                                 TextInput::make('note')
-                                    ->label('Catatan'),
+                                    ->label(__('messages.notes')),
                             ])
                             ->columns(3)
                             ->collapsed(),
                     ])
                     ->collapsed(),
 
-                Section::make('Tambahan')
+                Section::make(__('messages.additional_info'))
                     ->schema([
                         Textarea::make('special_requests')
-                            ->label('Permintaan Khusus')
+                            ->label(__('messages.special_requests'))
                             ->rows(3),
                     ]),
             ]);
@@ -805,40 +805,40 @@ class ReservationCalendarWidget extends CalendarWidget
             ->modalHeading(__('messages.create_new_reservation'))
             ->model(Reservation::class)
             ->schema([
-                Section::make('Informasi Customer')
+                Section::make(__('messages.customer_info'))
                     ->schema([
                         TextInput::make('customer_name')
-                            ->label('Nama Customer')
+                            ->label(__('messages.customer_name'))
                             ->required()
                             ->maxLength(255),
                         TextInput::make('customer_phone')
-                            ->label('Telepon')
+                            ->label(__('messages.customer_phone'))
                             ->required()
                             ->tel(),
                     ])->columns(2),
 
-                Section::make('Detail Reservasi')
+                Section::make(__('messages.detail_reservation'))
                     ->schema([
                         DateTimePicker::make('reservation_date')
-                            ->label('Tanggal & Waktu Reservasi')
+                            ->label(__('messages.reservation_date'))
                             ->required()
                             ->seconds(false),
                         TextInput::make('party_size')
-                            ->label('Jumlah Orang')
+                            ->label(__('messages.party_size'))
                             ->numeric()
                             ->required()
                             ->required()
                             ->minValue(1),
                     ])->columns(2),
 
-                Section::make('Pre-Order Menu')
+                Section::make(__('messages.pre_order_menu'))
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->relationship()
                             ->schema([
                                 Select::make('product_id')
                                     ->relationship('product', 'name', fn(Builder $query) => $query->where('is_sellable', true))
-                                    ->label('Menu')
+                                    ->label(__('messages.menu'))
                                     ->required()
                                     ->searchable()
                                     ->preload()
@@ -850,7 +850,7 @@ class ReservationCalendarWidget extends CalendarWidget
                                         $set('total_price', $price * (int) ($get('quantity') ?? 1));
                                     }),
                                 TextInput::make('quantity')
-                                    ->label('Qty')
+                                    ->label(__('messages.qty'))
                                     ->numeric()
                                     ->default(1)
                                     ->required()
@@ -860,29 +860,29 @@ class ReservationCalendarWidget extends CalendarWidget
                                         $set('total_price', $price * (int) $state);
                                     }),
                                 TextInput::make('unit_price')
-                                    ->label('Harga')
+                                    ->label(__('messages.price'))
                                     ->disabled()
                                     ->dehydrated()
                                     ->numeric()
                                     ->prefix('Rp'),
                                 TextInput::make('total_price')
-                                    ->label('Total')
+                                    ->label(__('messages.total'))
                                     ->disabled()
                                     ->dehydrated()
                                     ->numeric()
                                     ->prefix('Rp'),
                                 TextInput::make('note')
-                                    ->label('Catatan'),
+                                    ->label(__('messages.notes')),
                             ])
                             ->columns(3)
                             ->collapsed(),
                     ])
                     ->collapsed(),
 
-                Section::make('Tambahan')
+                Section::make(__('messages.additional_info'))
                     ->schema([
                         Textarea::make('special_requests')
-                            ->label('Permintaan Khusus')
+                            ->label(__('messages.special_requests'))
                             ->rows(3),
                     ]),
             ])
