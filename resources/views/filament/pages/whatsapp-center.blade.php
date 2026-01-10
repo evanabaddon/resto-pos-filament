@@ -81,7 +81,7 @@
                 </div>
 
                 {{-- CHAT LIST --}}
-                <div class="flex-1 overflow-y-auto custom-scrollbar" wire:poll.3s="pollState">
+                <div class="flex-1 overflow-y-auto custom-scrollbar">
                     @if($this->chats->count() > 0)
                         @foreach($this->chats as $chat)
                             <div wire:click="selectChat('{{ $chat->remote_jid }}')"
