@@ -262,6 +262,8 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
             if ($response->successful()) {
                 $data = $response->json();
+                // Debuging status fluctuation
+                Log::info("WA Status Check Response: " . json_encode($data));
                 $this->status = $data['status'] ?? 'offline';
                 $this->qrCode = $data['qr'] ?? null;
 
