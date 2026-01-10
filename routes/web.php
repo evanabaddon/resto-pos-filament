@@ -252,6 +252,22 @@ Route::get('/filament/whatsapp/avatar/{jid}', function ($jid) {
         if ($response->successful()) {
             $body = $response->body();
 
+            // Check if gateway returned HTML redirect text (e.g., "Found. Redirecting to https://...")
+            if (str_starts_with($body, 'Found. Redirecting to ')) {
+                $redirectUrl = trim(str_replace('Found. Redirecting to ', '', $body));
+                Log::info("Avatar Debug: Following redirect to $redirectUrl");
+
+                // Fetch actual image from WhatsApp CDN
+                $imageResponse = Http::timeout(10)->get($redirectUrl);
+                if ($imageResponse->successful()) {
+                    $body = $imageResponse->body();
+                } else {
+                    Log::error("Avatar Debug: Failed to fetch from CDN: " . $imageResponse->status());
+                    Cache::put($cacheKey, 'missing', 600);
+                    return response()->noContent(404)->header('Cache-Control', 'public, max-age=10');
+                }
+            }
+
             // Check if gateway returned "No profile picture" text instead of image
             if (trim($body) === 'No profile picture' || strlen($body) < 100) {
                 Log::warning("Avatar Debug: Gateway returned 'No profile picture' for $url");
