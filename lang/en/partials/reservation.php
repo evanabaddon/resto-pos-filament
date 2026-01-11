@@ -21,6 +21,7 @@ return [
     'additional_info' => 'Additional Info',
     'special_requests' => 'Special Requests',
     'deposit_amount' => 'Down Payment (DP)',
+    'deposit_amount_helper' => 'Recommended to fill this via "Pay Deposit" button to record in financial reports.',
 
     // Statuses
     'status_pending' => 'Pending',

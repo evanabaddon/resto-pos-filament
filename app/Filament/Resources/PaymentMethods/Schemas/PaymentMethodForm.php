@@ -13,23 +13,24 @@ class PaymentMethodForm
     {
         return $schema
             ->components([
-                Section::make('Informasi Metode Pembayaran')
+                Section::make(__('messages.payment_info'))
                     ->schema([
                         TextInput::make('name')
-                            ->label('Nama Metode')
+                            ->label(__('messages.method_name'))
                             ->required()
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
-                        
+
                         TextInput::make('code')
-                            ->label('Kode')
+                            ->label(__('messages.payment_code'))
                             ->required()
                             ->maxLength(50)
                             ->unique(ignoreRecord: true)
-                            ->helperText('Kode unik untuk identifikasi internal (contoh: cash, transfer)'),
-                        
+                            ->readOnly(fn($record) => $record?->code === 'cash')
+                            ->helperText(__('messages.payment_code_helper')),
+
                         Toggle::make('is_active')
-                            ->label('Status Aktif')
+                            ->label(__('messages.is_active'))
                             ->default(true)
                             ->required(),
                     ])

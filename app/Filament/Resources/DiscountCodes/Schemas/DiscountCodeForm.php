@@ -15,67 +15,67 @@ class DiscountCodeForm
     {
         return $schema
             ->components([
-                Section::make('Informasi Utama')
-                    ->description('Data utama untuk kode diskon yang digunakan di POS.')
+                Section::make(__('messages.discount_info'))
+                    ->description(__('messages.discount_info_desc'))
                     ->schema([
                         TextInput::make('code')
-                            ->label('Kode Diskon')
+                            ->label(__('messages.discount_code'))
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->maxLength(50)
-                            ->helperText('Kode yang dimasukkan pelanggan di POS'),
+                            ->helperText(__('messages.discount_code_helper')),
 
                         TextInput::make('name')
-                            ->label('Nama Promo')
+                            ->label(__('messages.promo_name'))
                             ->required(),
 
                         Select::make('type')
-                            ->label('Jenis Diskon')
+                            ->label(__('messages.discount_type'))
                             ->options([
-                                'percentage' => 'Persentase (%)',
-                                'fixed' => 'Nominal (Rp)',
+                                'percentage' => __('messages.percentage'),
+                                'fixed' => __('messages.fixed_amount'),
                             ])
                             ->required()
                             ->reactive(),
 
                         TextInput::make('value')
-                            ->label('Nilai Diskon')
+                            ->label(__('messages.discount_value'))
                             ->numeric()
                             ->required(),
                     ])
                     ->columns(2),
 
-                Section::make('Syarat & Batasan')
-                    ->description('Atur batas dan ketentuan penggunaan kode diskon.')
+                Section::make(__('messages.conditions_limits'))
+                    ->description(__('messages.conditions_limits_desc'))
                     ->schema([
                         TextInput::make('min_purchase')
-                            ->label('Min. Pembelian')
+                            ->label(__('messages.min_purchase'))
                             ->numeric()
-                            ->helperText('Opsional — transaksi minimal agar diskon aktif'),
+                            ->helperText(__('messages.min_purchase_helper')),
 
                         TextInput::make('max_discount')
-                            ->label('Maks. Diskon')
+                            ->label(__('messages.max_discount'))
                             ->numeric()
-                            ->helperText('Opsional — batas maksimum nilai diskon'),
+                            ->helperText(__('messages.max_discount_helper')),
 
                         TextInput::make('usage_limit')
-                            ->label('Batas Pemakaian')
+                            ->label(__('messages.usage_limit'))
                             ->numeric()
-                            ->helperText('Kosongkan jika tanpa batas'),
+                            ->helperText(__('messages.usage_limit_helper')),
                     ])
                     ->columns(3),
 
-                Section::make('Periode Berlaku')
-                    ->description('Waktu aktif dan status dari promo.')
+                Section::make(__('messages.validity_period'))
+                    ->description(__('messages.validity_period_desc'))
                     ->schema([
                         DatePicker::make('valid_from')
-                            ->label('Berlaku Dari'),
+                            ->label(__('messages.valid_from')),
 
                         DatePicker::make('valid_until')
-                            ->label('Berlaku Sampai'),
+                            ->label(__('messages.valid_until')),
 
                         Toggle::make('is_active')
-                            ->label('Aktif')
+                            ->label(__('messages.is_active'))
                             ->default(true),
                     ])
                     ->columns(2),

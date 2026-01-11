@@ -21,6 +21,7 @@ return [
     'additional_info' => 'Tambahan',
     'special_requests' => 'Permintaan Khusus',
     'deposit_amount' => 'Down Payment (DP)',
+    'deposit_amount_helper' => 'Disarankan mengisi nilai ini melalui tombol "Bayar DP" agar tercatat di laporan keuangan.',
 
     // Statuses
     'status_pending' => 'Pending',

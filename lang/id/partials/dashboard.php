@@ -109,6 +109,7 @@ return [
     'stock_reset_body' => 'Stok untuk :product telah direset dari :stock menjadi 0',
     'create_purchase' => 'Buat Pembelian',
     'ai_suggestion_title' => 'Saran Harian AI',
+    'ai_suggestion_subtitle' => 'Diperbarui tiap 2 jam',
 
     // Revenue Overview Widget
     'today_revenue' => 'Pendapatan Hari Ini',

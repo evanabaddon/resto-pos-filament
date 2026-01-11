@@ -20,6 +20,9 @@ $fiscal_report = require __DIR__ . '/partials/fiscal_report.php';
 $financial_report = require __DIR__ . '/partials/financial_report.php';
 $dashboard = require __DIR__ . '/partials/dashboard.php';
 $reservation = require __DIR__ . '/partials/reservation.php';
+$ai_assistant = require __DIR__ . '/partials/ai_assistant.php';
+$discount = require __DIR__ . '/partials/discount.php';
+$payment = require __DIR__ . '/partials/payment.php';
 
 return array_merge(
     $common,
@@ -41,5 +44,8 @@ return array_merge(
     $fiscal_report,
     $financial_report,
     $dashboard,
-    $reservation
+    $reservation,
+    $ai_assistant,
+    $discount,
+    $payment
 );

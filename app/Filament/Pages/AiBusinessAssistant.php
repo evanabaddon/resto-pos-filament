@@ -137,31 +137,31 @@ class AiBusinessAssistant extends Page
             ->count();
 
         // Bangun String Konteks
-        $context = "DATA ANALISIS " . strtoupper($days . " Hari Terakhir") . ":\n";
-        $context .= "- Total Order: {$salesSummary->total_orders}\n";
-        $context .= "- Total Pendapatan: Rp " . number_format($salesSummary->total_revenue, 0, ',', '.') . "\n";
-        $context .= "- Rata-rata per Transaksi: Rp " . number_format($salesSummary->avg_ticket, 0, ',', '.') . "\n\n";
+        $context = __('messages.context_analysis_header', ['days' => $days]) . "\n";
+        $context .= "- " . __('messages.context_total_orders') . ": {$salesSummary->total_orders}\n";
+        $context .= "- " . __('messages.context_total_revenue') . ": Rp " . number_format($salesSummary->total_revenue, 0, ',', '.') . "\n";
+        $context .= "- " . __('messages.context_avg_transaction') . ": Rp " . number_format($salesSummary->avg_ticket, 0, ',', '.') . "\n\n";
 
-        $context .= "TOP 5 MENU TERLARIS:\n";
+        $context .= __('messages.context_top_menu_header') . "\n";
         if ($topItems->isEmpty()) {
-            $context .= "- Belum ada data penjualan.\n";
+            $context .= "- " . __('messages.context_no_sales_data') . "\n";
         }
         foreach ($topItems as $item) {
             $context .= "- {$item->final_name}: {$item->total_qty} unit (Rp " . number_format($item->total_sales, 0, ',', '.') . ")\n";
         }
 
-        $context .= "\nINVENTORI & STOK:\n";
-        $context .= "- Jumlah Item Retail Kritis (< 10): {$lowStockCount} item\n";
+        $context .= "\n" . __('messages.context_inventory_header') . "\n";
+        $context .= "- " . __('messages.context_critical_retail_count', ['count' => $lowStockCount]) . "\n";
 
         if ($lowStockProducts->isNotEmpty()) {
-            $context .= "- Retail Kritis: ";
+            $context .= "- " . __('messages.context_critical_retail_list') . ": ";
             $context .= $lowStockProducts->map(fn($p) => "{$p->name} ({$p->stock})")->implode(', ');
             $context .= "\n";
         }
 
         if ($lowStockIngredients->isNotEmpty()) {
-            $context .= "- BAHAN BAKU KRITIS: ";
-            $context .= $lowStockIngredients->map(fn($p) => "{$p->name} (Sisa {$p->stock})")->implode(', ');
+            $context .= "- " . __('messages.context_critical_ingredient_list') . ": ";
+            $context .= $lowStockIngredients->map(fn($p) => "{$p->name} (" . __('messages.context_remaining') . " {$p->stock})")->implode(', ');
             $context .= "\n";
         }
 

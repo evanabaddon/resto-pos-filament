@@ -42,6 +42,7 @@ return [
     'parent_category' => 'Parent Category',
     'color' => 'Color',
     'icon' => 'Icon',
+    'slug' => 'Slug',
 
     // Unit Resources
     'unit_name' => 'Unit Name',
@@ -129,4 +130,24 @@ return [
     'production_quantity' => 'Production Quantity',
     'by' => 'By',
     'portion' => 'portion',
+
+    // Product Form Helpers & Notifications
+    'track_stock_helper' => 'Enable automatic notification when stock runs low',
+    'min_stock_helper' => 'Alert appears when stock <= this threshold',
+    'ready_stock_helper' => 'Stock that is cooked and ready to sell',
+    'ready_stock_alert_helper' => 'Enable notification when ready stock runs low',
+    'min_ready_stock_helper' => 'Alert appears when ready stock <= this threshold',
+    'update_hpp_tooltip' => 'Update Cost from last purchase',
+    'hpp_updated_title' => 'Cost Updated',
+    'hpp_updated_body' => 'Cost successfully updated: :price',
+    'data_not_found_title' => 'Data Not Found',
+    'purchase_not_found_body' => 'No received purchase found for this product.',
+    'recalc_hpp_tooltip' => 'Recalculate Cost from recipe',
+    'hpp_recalculated_title' => 'Cost Recalculated',
+    'hpp_recalculated_body' => 'Cost successfully calculated from recipe composition',
+    'selling_price_must_be_higher' => 'Selling price must be higher than Cost: :price',
+    'margin_label' => 'Margin: :percent%',
+    'margin_low' => 'Low Margin',
+    'margin_loss' => 'Loss',
+    'favorite_helper' => 'This product will appear in "Recommendations" section on Waiter Order.',
 ];

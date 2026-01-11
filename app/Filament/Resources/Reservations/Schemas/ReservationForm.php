@@ -15,33 +15,33 @@ class ReservationForm
     {
         return $schema
             ->components([
-                Section::make('Informasi Pelanggan')
+                Section::make(__('messages.customer_info'))
                     ->schema([
                         TextInput::make('customer_name')
-                            ->label('Nama Pelanggan')
+                            ->label(__('messages.customer_name'))
                             ->required()
                             ->maxLength(255),
 
                         TextInput::make('customer_phone')
-                            ->label('Nomor Telepon')
+                            ->label(__('messages.customer_phone'))
                             ->tel()
                             ->maxLength(20),
 
                         TextInput::make('party_size')
-                            ->label('Jumlah Orang')
+                            ->label(__('messages.party_size'))
                             ->numeric()
                             ->required()
                             ->minValue(1),
 
                         Textarea::make('special_requests')
-                            ->label('Permintaan Khusus')
+                            ->label(__('messages.special_requests'))
                             ->rows(3),
                     ])->columnSpanFull(),
 
-                Section::make('Detail Reservasi')
+                Section::make(__('messages.reservation_details'))
                     ->schema([
                         DateTimePicker::make('reservation_date')
-                            ->label('Tanggal & Jam Reservasi')
+                            ->label(__('messages.reservation_date'))
                             ->required()
                             ->native(false)
                             ->minutesStep(15)
@@ -49,20 +49,20 @@ class ReservationForm
                             ->weekStartsOnMonday(),
 
                         TextInput::make('deposit_amount')
-                            ->label('Down Payment (DP)')
+                            ->label(__('messages.deposit_amount'))
                             ->numeric()
                             ->prefix('Rp')
                             ->default(0)
-                            ->helperText('Disarankan mengisi nilai ini melalui tombol "Bayar DP" agar tercatat di laporan keuangan.'),
+                            ->helperText(__('messages.deposit_amount_helper')),
 
                         Select::make('status')
-                            ->label('Status')
+                            ->label(__('messages.status'))
                             ->options([
-                                'pending' => 'Pending',
-                                'confirmed' => 'Dikonfirmasi',
-                                'seated' => 'Sudah Duduk',
-                                'completed' => 'Selesai',
-                                'cancelled' => 'Dibatalkan',
+                                'pending' => __('messages.status_pending'),
+                                'confirmed' => __('messages.status_confirmed'),
+                                'seated' => __('messages.status_seated'),
+                                'completed' => __('messages.status_completed'),
+                                'cancelled' => __('messages.status_cancelled'),
                             ])
                             ->default('pending')
                             ->required(),

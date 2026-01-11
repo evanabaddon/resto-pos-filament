@@ -109,6 +109,7 @@ return [
     'stock_reset_body' => 'Stock for :product has been reset from :stock to 0',
     'create_purchase' => 'Create Purchase',
     'ai_suggestion_title' => 'AI Daily Suggestions',
+    'ai_suggestion_subtitle' => 'Updated every 2 hours',
 
     // Revenue Overview Widget
     'today_revenue' => 'Today\'s Revenue',

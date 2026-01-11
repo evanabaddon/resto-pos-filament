@@ -17,19 +17,19 @@ class PaymentMethodsTable
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->label('Nama Metode')
+                    ->label(__('messages.method_name'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('code')
-                    ->label('Kode')
+                    ->label(__('messages.payment_code'))
                     ->searchable()
                     ->sortable()
                     ->badge()
                     ->color('gray'),
 
                 IconColumn::make('is_active')
-                    ->label('Status')
+                    ->label(__('messages.status'))
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
@@ -37,27 +37,27 @@ class PaymentMethodsTable
                     ->falseColor('danger'),
 
                 TextColumn::make('expenses_count')
-                    ->label('Pengeluaran')
+                    ->label(__('messages.expenses_count'))
                     ->counts('expenses')
                     ->sortable(),
 
                 TextColumn::make('sales_count')
-                    ->label('Penjualan')
+                    ->label(__('messages.sales_count'))
                     ->counts('sales')
                     ->sortable(),
 
                 TextColumn::make('created_at')
-                    ->label('Dibuat')
+                    ->label(__('messages.created_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('is_active')
-                    ->label('Status Aktif')
+                    ->label(__('messages.is_active'))
                     ->options([
-                        true => 'Aktif',
-                        false => 'Tidak Aktif',
+                        true => __('messages.active'),
+                        false => __('messages.inactive'),
                     ]),
             ])
             ->recordActions([

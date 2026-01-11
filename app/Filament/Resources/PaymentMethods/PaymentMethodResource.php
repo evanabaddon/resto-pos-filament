@@ -60,6 +60,10 @@ class PaymentMethodResource extends Resource
 
     public static function canDelete(Model $record): bool
     {
+        if ($record->code === 'cash') {
+            return false;
+        }
+
         return auth()->user()->role === \App\Enums\UserRole::SuperAdmin || auth()->user()->role === \App\Enums\UserRole::Admin;
     }
 

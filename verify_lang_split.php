@@ -8,12 +8,15 @@ $app->make(Kernel::class)->bootstrap();
 
 // Test Dashboard keys
 $keys = [
-    'critical_stock_title',
-    'today_revenue',
-    'create_new_reservation',
-    'customer_info',
-    'confirm_status_change_modal',
-    'no_reservation_selected',
+    'ai_nav_label',
+    'context_analysis_header',
+    'thinking',
+    'slug',
+    'track_stock_helper',
+    'min_stock_helper',
+    'hpp_updated_title',
+    'discount_code',
+    'payment_code_helper',
 ];
 
 foreach (['en', 'id'] as $locale) {

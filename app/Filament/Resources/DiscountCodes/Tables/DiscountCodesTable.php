@@ -16,24 +16,25 @@ class DiscountCodesTable
     {
         return $table
             ->columns([
-                TextColumn::make('code')->label('Kode')->searchable(),
-                TextColumn::make('name')->label('Nama'),
-                BadgeColumn::make('type')
-                    ->label('Tipe')
+                TextColumn::make('code')->label(__('messages.discount_code'))->searchable(),
+                TextColumn::make('name')->label(__('messages.promo_name')),
+                TextColumn::make('type')
+                    ->label(__('messages.discount_type'))
+                    ->badge()
                     ->colors([
-                        'success' => 'percentage',
-                        'info' => 'fixed',
+                        'success' => 'Percentage',
+                        'info' => 'Fixed',
                     ]),
                 TextColumn::make('value')
-                    ->label('Nilai')
+                    ->label(__('messages.discount_value'))
                     ->formatStateUsing(
                         fn($record) =>
-                        $record->type === 'percentage'
-                        ? "{$record->value}%"
-                        : 'Rp ' . number_format($record->value, 0, ',', '.')
+                        $record->type === 'Percentage'
+                            ? "{$record->value}%"
+                            : 'Rp ' . number_format($record->value, 0, ',', '.')
                     ),
-                TextColumn::make('valid_until')->label('Berlaku Sampai'),
-                IconColumn::make('is_active')->boolean()->label('Aktif'),
+                TextColumn::make('valid_until')->label(__('messages.valid_until')),
+                IconColumn::make('is_active')->boolean()->label(__('messages.is_active')),
             ])
             ->defaultSort('id', 'desc')
             ->filters([

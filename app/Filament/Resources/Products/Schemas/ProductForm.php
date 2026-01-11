@@ -74,7 +74,7 @@ class ProductForm
                 // ⚠️ Stock Alert Settings
                 Toggle::make('enable_stock_alert')
                     ->label(__('messages.min_stock_alert'))
-                    ->helperText('Aktifkan notifikasi otomatis saat stok menipis')
+                    ->helperText(__('messages.track_stock_helper'))
                     ->default(false)
                     ->reactive()
                     ->hidden(fn(callable $get) => in_array($get('type'), ['produced', 'bar'])),
@@ -82,7 +82,7 @@ class ProductForm
                 TextInput::make('minimum_stock')
                     ->numeric()
                     ->label(__('messages.min_stock_threshold'))
-                    ->helperText('Alert akan muncul saat stok <= threshold ini')
+                    ->helperText(__('messages.min_stock_helper'))
                     ->suffix(fn(callable $get) => Product::find($get('id'))?->unit?->name ?? 'unit')
                     ->visible(fn(callable $get) => $get('enable_stock_alert') === true)
                     ->hidden(fn(callable $get) => in_array($get('type'), ['produced', 'bar'])),
@@ -91,14 +91,14 @@ class ProductForm
                 TextInput::make('prepared_stock')
                     ->numeric()
                     ->label(__('messages.ready_stock'))
-                    ->helperText('Stok yang sudah dimasak dan siap dijual')
+                    ->helperText(__('messages.ready_stock_helper'))
                     ->suffix(fn(callable $get) => Product::find($get('id'))?->unit?->name ?? 'porsi')
                     ->default(0)
                     ->visible(fn(callable $get) => in_array($get('type'), ['produced', 'bar'])),
 
                 Toggle::make('enable_stock_alert')
                     ->label(__('messages.ready_stock_alert'))
-                    ->helperText('Aktifkan notifikasi saat ready stock menipis')
+                    ->helperText(__('messages.ready_stock_alert_helper'))
                     ->default(false)
                     ->reactive()
                     ->visible(fn(callable $get) => in_array($get('type'), ['produced', 'bar'])),
@@ -106,7 +106,7 @@ class ProductForm
                 TextInput::make('minimum_prepared_stock')
                     ->numeric()
                     ->label(__('messages.min_ready_stock'))
-                    ->helperText('Alert akan muncul saat ready stock <= threshold ini')
+                    ->helperText(__('messages.min_ready_stock_helper'))
                     ->suffix(fn(callable $get) => Product::find($get('id'))?->unit?->name ?? 'porsi')
                     ->visible(fn(callable $get) => $get('enable_stock_alert') === true && in_array($get('type'), ['produced', 'bar'])),
 
@@ -226,7 +226,7 @@ class ProductForm
                     ->suffixActions([
                         Action::make('updateFromPurchase')
                             ->icon('heroicon-o-arrow-path')
-                            ->tooltip('Update HPP dari pembelian terakhir')
+                            ->tooltip(__('messages.update_hpp_tooltip'))
                             ->action(function ($livewire, $get, $set) {
                                 $productId = $get('id');
 
@@ -250,14 +250,14 @@ class ProductForm
                                         $set('sell_price', $product->base_price);
 
                                         Notification::make()
-                                            ->title('HPP Updated')
-                                            ->body('HPP berhasil diupdate: Rp ' . number_format($product->base_price, 0, ',', '.'))
+                                            ->title(__('messages.hpp_updated_title'))
+                                            ->body(__('messages.hpp_updated_body', ['price' => number_format($product->base_price, 0, ',', '.')]))
                                             ->success()
                                             ->send();
                                     } else {
                                         Notification::make()
-                                            ->title('Data tidak ditemukan')
-                                            ->body('Tidak ada pembelian dengan status received untuk produk ini.')
+                                            ->title(__('messages.data_not_found_title'))
+                                            ->body(__('messages.purchase_not_found_body'))
                                             ->warning()
                                             ->send();
                                     }
@@ -267,13 +267,13 @@ class ProductForm
 
                         Action::make('recalculateHpp')
                             ->icon('heroicon-o-calculator')
-                            ->tooltip('Hitung ulang HPP dari resep')
+                            ->tooltip(__('messages.recalc_hpp_tooltip'))
                             ->action(function ($livewire, $get, $set) {
                                 self::updateHpp($set, $get);
 
                                 Notification::make()
-                                    ->title('HPP Dihitung Ulang')
-                                    ->body('HPP berhasil dihitung dari komposisi resep')
+                                    ->title(__('messages.hpp_recalculated_title'))
+                                    ->body(__('messages.hpp_recalculated_body'))
                                     ->success()
                                     ->send();
                             })
@@ -300,7 +300,7 @@ class ProductForm
                     ->hidden(fn() => auth()->user()->role === 'inventory') // Hide for inventory
                     ->helperText(function ($get) {
                         $basePrice = $get('base_price') ?? 0;
-                        return "Harga jual harus lebih besar dari HPP: Rp " . number_format($basePrice, 0, ',', '.');
+                        return __('messages.selling_price_must_be_higher', ['price' => number_format($basePrice, 0, ',', '.')]);
                     })
                     ->afterStateHydrated(function ($set, $get, $state) {
                         if (blank($state)) {
@@ -339,8 +339,8 @@ class ProductForm
 
                         if ($basePrice > 0) {
                             $margin = ($profit / $basePrice) * 100;
-                            return "Margin: " . number_format($margin, 1) . "%" .
-                                ($margin < 0 ? " ⚠️ Rugi" : ($margin < 10 ? " ⚠️ Margin rendah" : " ✅"));
+                            return __('messages.margin_label', ['percent' => number_format($margin, 1)]) .
+                                ($margin < 0 ? " ⚠️ " . __('messages.margin_loss') : ($margin < 10 ? " ⚠️ " . __('messages.margin_low') : " ✅"));
                         }
 
                         return "Margin: 0%";
@@ -357,7 +357,7 @@ class ProductForm
                 Toggle::make('is_favorite')
                     ->inline()
                     ->label(__('messages.is_favorite'))
-                    ->helperText('Produk ini akan muncul di bagian "Rekomendasi" pada Waiter Order.')
+                    ->helperText(__('messages.favorite_helper'))
                     ->default(false),
             ]);
     }

@@ -13,7 +13,8 @@ class EditPaymentMethod extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->hidden(fn($record) => $record?->code === 'cash'),
         ];
     }
 }
