@@ -13,8 +13,9 @@ class OpenWeatherService
 
     public function __construct()
     {
-        // Get API key from .env or settings
-        $this->apiKey = config('services.openweather.api_key', env('OPENWEATHER_API_KEY', ''));
+        // Get API key from Settings (DB) first, then .env
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $this->apiKey = $settings->openweather_api_key ?? config('services.openweather.api_key', env('OPENWEATHER_API_KEY', ''));
     }
 
     /**
@@ -22,25 +23,33 @@ class OpenWeatherService
      *
      * @param float $lat Latitude
      * @param float $lon Longitude
+     * @param string|null $apiKey Optional API key override
+     * @param bool $forceRefresh Force refresh from API (bypass cache)
      * @return array|null
      */
-    public function getWeatherByCoordinates(float $lat, float $lon): ?array
+    public function getWeatherByCoordinates(float $lat, float $lon, ?string $apiKey = null, bool $forceRefresh = false): ?array
     {
-        if (empty($this->apiKey)) {
+        $key = $apiKey ?? $this->apiKey;
+
+        if (empty($key)) {
             Log::warning('OpenWeather API key not configured');
             return null;
         }
 
         $cacheKey = "openweather_{$lat}_{$lon}_" . app()->getLocale();
 
-        return Cache::remember($cacheKey, 1800, function () use ($lat, $lon) {
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
+        }
+
+        return Cache::remember($cacheKey, 1800, function () use ($lat, $lon, $key) {
             try {
                 $lang = app()->getLocale(); // 'en' or 'id'
 
-                $response = Http::timeout(5)->get("{$this->baseUrl}/weather", [
+                $response = Http::withoutVerifying()->timeout(5)->get("{$this->baseUrl}/weather", [
                     'lat' => $lat,
                     'lon' => $lon,
-                    'appid' => $this->apiKey,
+                    'appid' => $key,
                     'units' => 'metric', // Celsius
                     'lang' => $lang,
                 ]);
@@ -84,7 +93,7 @@ class OpenWeatherService
                 $lang = app()->getLocale();
 
                 // Use 5-day forecast API (free tier)
-                $response = Http::timeout(5)->get("{$this->baseUrl}/forecast", [
+                $response = Http::withoutVerifying()->timeout(5)->get("{$this->baseUrl}/forecast", [
                     'lat' => $lat,
                     'lon' => $lon,
                     'appid' => $this->apiKey,

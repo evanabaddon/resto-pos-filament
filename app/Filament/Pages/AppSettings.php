@@ -341,6 +341,7 @@ class AppSettings extends SettingsPage
                                                                     ->action(function (Get $get) {
                                                                         $lat = $get('latitude');
                                                                         $lon = $get('longitude');
+                                                                        $apiKey = $get('openweather_api_key');
 
                                                                         if (!$lat || !$lon) {
                                                                             \Filament\Notifications\Notification::make()
@@ -353,7 +354,8 @@ class AppSettings extends SettingsPage
 
                                                                         try {
                                                                             $service = app(\App\Services\OpenWeatherService::class);
-                                                                            $weather = $service->getWeatherByCoordinates($lat, $lon);
+                                                                            // Pass API key from input (if any) and force refresh
+                                                                            $weather = $service->getWeatherByCoordinates($lat, $lon, $apiKey, true);
 
                                                                             if ($weather) {
                                                                                 \Filament\Notifications\Notification::make()
@@ -711,8 +713,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_hrm_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_hrm_desc')
                                             ),
                                     ]),
 
@@ -745,8 +747,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_kds_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_kds_desc')
                                             ),
                                     ]),
 
@@ -777,8 +779,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('fiscal_license_key') ?? '', 'FISCAL-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_fiscal_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_fiscal_desc')
                                             ),
                                     ]),
 
@@ -809,8 +811,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('crm_license_key') ?? '', 'CRM-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_crm_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_crm_desc')
                                             ),
                                     ]),
 
@@ -841,8 +843,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('wa_license_key') ?? '', 'WA-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_wa_center_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_wa_center_desc')
                                             ),
 
                                         Toggle::make('wa_auto_download_media')
@@ -879,8 +881,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('ai_forecasting_license_key') ?? '', 'AI-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_ai_forecasting_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_ai_forecasting_desc')
                                             ),
                                     ]),
 
@@ -913,8 +915,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('menu_engineering_license_key') ?? '', 'MENU-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_menu_engineering_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_menu_engineering_desc')
                                             ),
                                     ]),
 
@@ -947,8 +949,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('self_order_license_key') ?? '', 'ORDER-PRO-')
-                                                ? __('messages.license_invalid')
-                                                : __('messages.enable_self_order_desc')
+                                                    ? __('messages.license_invalid')
+                                                    : __('messages.enable_self_order_desc')
                                             ),
                                     ]),
                             ]),
