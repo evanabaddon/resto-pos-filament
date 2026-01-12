@@ -208,10 +208,6 @@ class AppSettings extends SettingsPage
                                                                         }
                                                                     } catch (\Exception $e) {
                                                                     }
-
-                                                                    // Auto Set BMKG Code
-                                                                    // BMKG usually uses ADM4 code (Village Code)
-                                                                    $set('bmkg_location_code', $state);
                                                                 }
                                                             }),
 
@@ -219,44 +215,165 @@ class AppSettings extends SettingsPage
                                                             ->label(__('messages.postal_code'))
                                                             ->numeric(),
 
-                                                        TextInput::make('bmkg_location_code')
-                                                            ->label(__('messages.bmkg_code_auto'))
-                                                            ->readOnly()
+                                                        Grid::make(2)
+                                                            ->schema([
+                                                                TextInput::make('latitude')
+                                                                    ->label('Latitude')
+                                                                    ->numeric()
+                                                                    ->helperText('Click button to get coordinates')
+                                                                    ->suffixAction(
+                                                                        Action::make('get_coordinates')
+                                                                            ->icon('heroicon-o-map-pin')
+                                                                            ->label('Get Coordinates')
+                                                                            ->action(function (Get $get, Set $set) {
+                                                                                $provinceCode = $get('province_code');
+                                                                                $regencyCode = $get('regency_code');
+                                                                                $districtCode = $get('district_code');
+                                                                                $villageCode = $get('village_code');
+
+                                                                                if (!$provinceCode || !$regencyCode || !$districtCode || !$villageCode) {
+                                                                                    \Filament\Notifications\Notification::make()
+                                                                                        ->title('Location Required')
+                                                                                        ->body('Please select Province, Regency, District, and Village first.')
+                                                                                        ->warning()
+                                                                                        ->send();
+                                                                                    return;
+                                                                                }
+
+                                                                                try {
+                                                                                    // Fetch location names from Wilayah.id API
+                                                                                    $provinceName = null;
+                                                                                    $regencyName = null;
+                                                                                    $districtName = null;
+                                                                                    $villageName = null;
+
+                                                                                    // Get Province Name
+                                                                                    $provResponse = \Illuminate\Support\Facades\Http::withoutVerifying()->get('https://wilayah.id/api/provinces.json');
+                                                                                    if ($provResponse->successful()) {
+                                                                                        $provinceName = collect($provResponse->json('data'))->where('code', $provinceCode)->first()['name'] ?? null;
+                                                                                    }
+
+                                                                                    // Get Regency Name
+                                                                                    $regResponse = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/regencies/{$provinceCode}.json");
+                                                                                    if ($regResponse->successful()) {
+                                                                                        $regencyName = collect($regResponse->json('data'))->where('code', $regencyCode)->first()['name'] ?? null;
+                                                                                    }
+
+                                                                                    // Get District Name
+                                                                                    $distResponse = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/districts/{$regencyCode}.json");
+                                                                                    if ($distResponse->successful()) {
+                                                                                        $districtName = collect($distResponse->json('data'))->where('code', $districtCode)->first()['name'] ?? null;
+                                                                                    }
+
+                                                                                    // Get Village Name
+                                                                                    $villResponse = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://wilayah.id/api/villages/{$districtCode}.json");
+                                                                                    if ($villResponse->successful()) {
+                                                                                        $villageName = collect($villResponse->json('data'))->where('code', $villageCode)->first()['name'] ?? null;
+                                                                                    }
+
+                                                                                    if (!$villageName || !$regencyName || !$provinceName) {
+                                                                                        throw new \Exception('Failed to fetch location names');
+                                                                                    }
+
+                                                                                    // Build search query for geocoding
+                                                                                    // Use simpler query: District, Regency, Province (skip village for better results)
+                                                                                    $searchQuery = "{$districtName}, {$regencyName}, {$provinceName}, Indonesia";
+
+                                                                                    /** @var \Illuminate\Http\Client\Response $geoResponse */
+                                                                                    $geoResponse = \Illuminate\Support\Facades\Http::withoutVerifying()
+                                                                                        ->timeout(20)
+                                                                                        ->withHeaders([
+                                                                                            'User-Agent' => 'RestoPOS/1.0 (Laravel Application)',
+                                                                                        ])
+                                                                                        ->get('https://nominatim.openstreetmap.org/search', [
+                                                                                            'q' => $searchQuery,
+                                                                                            'format' => 'json',
+                                                                                            'limit' => 1,
+                                                                                        ]);
+
+                                                                                    if ($geoResponse->successful()) {
+                                                                                        $results = $geoResponse->json();
+                                                                                        if (!empty($results) && isset($results[0]['lat'], $results[0]['lon'])) {
+                                                                                            $set('latitude', (float) $results[0]['lat']);
+                                                                                            $set('longitude', (float) $results[0]['lon']);
+
+                                                                                            \Filament\Notifications\Notification::make()
+                                                                                                ->title('Coordinates Found!')
+                                                                                                ->body("Location: {$results[0]['display_name']}")
+                                                                                                ->success()
+                                                                                                ->send();
+                                                                                        } else {
+                                                                                            \Filament\Notifications\Notification::make()
+                                                                                                ->title('Location Not Found')
+                                                                                                ->body('Try selecting a different village or enter coordinates manually.')
+                                                                                                ->warning()
+                                                                                                ->send();
+                                                                                        }
+                                                                                    } else {
+                                                                                        throw new \Exception('Geocoding service unavailable');
+                                                                                    }
+                                                                                } catch (\Exception $e) {
+                                                                                    \Filament\Notifications\Notification::make()
+                                                                                        ->title('Geocoding Failed')
+                                                                                        ->body($e->getMessage())
+                                                                                        ->danger()
+                                                                                        ->send();
+                                                                                }
+                                                                            })
+                                                                    ),
+
+                                                                TextInput::make('longitude')
+                                                                    ->label('Longitude')
+                                                                    ->numeric()
+                                                                    ->helperText('Auto-filled when you click Get Coordinates'),
+                                                            ]),
+
+                                                        TextInput::make('openweather_api_key')
+                                                            ->label('OpenWeather API Key (Optional)')
+                                                            ->password()
+                                                            ->revealable()
                                                             ->columnSpan(2)
-                                                            ->helperText(__('messages.bmkg_code_helper'))
+                                                            ->helperText('Get free API key from openweathermap.org. Leave empty to use .env key.')
                                                             ->suffixAction(
-                                                                Action::make('test_bmkg')
+                                                                Action::make('test_weather')
                                                                     ->icon('heroicon-o-beaker')
                                                                     ->label(__('messages.test'))
-                                                                    ->action(function ($state) {
-                                                                        if (!$state) {
-                                                                            \Filament\Notifications\Notification::make()->title(__('messages.code_not_filled'))->warning()->send();
+                                                                    ->action(function (Get $get) {
+                                                                        $lat = $get('latitude');
+                                                                        $lon = $get('longitude');
+
+                                                                        if (!$lat || !$lon) {
+                                                                            \Filament\Notifications\Notification::make()
+                                                                                ->title('Coordinates Required')
+                                                                                ->body('Please select a village to auto-fill coordinates.')
+                                                                                ->warning()
+                                                                                ->send();
                                                                             return;
                                                                         }
 
                                                                         try {
-                                                                            /** @var \Illuminate\Http\Client\Response $response */
-                                                                            $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={$state}");
+                                                                            $service = app(\App\Services\OpenWeatherService::class);
+                                                                            $weather = $service->getWeatherByCoordinates($lat, $lon);
 
-                                                                            if (!$response) {
-                                                                                throw new \Exception(__('messages.failed_fetch_data'));
-                                                                            }
-
-                                                                            if ($response->successful()) {
-                                                                                $data = $response->json();
-                                                                                $lokasi = $data['lokasi'] ?? [];
-                                                                                $nama = "{$lokasi['desa']}, {$lokasi['kecamatan']}, {$lokasi['kotkab']}";
-
+                                                                            if ($weather) {
                                                                                 \Filament\Notifications\Notification::make()
-                                                                                    ->title(__('messages.code_valid'))
-                                                                                    ->body(__('messages.location_found', ['name' => $nama]))
+                                                                                    ->title('Weather API Working!')
+                                                                                    ->body("{$weather['location']}: {$weather['temperature']}°C, {$weather['description']}")
                                                                                     ->success()
                                                                                     ->send();
                                                                             } else {
-                                                                                \Filament\Notifications\Notification::make()->title(__('messages.failed_fetch_data'))->body(__('messages.check_code_server'))->danger()->send();
+                                                                                \Filament\Notifications\Notification::make()
+                                                                                    ->title('API Error')
+                                                                                    ->body('Failed to fetch weather. Check API key or coordinates.')
+                                                                                    ->danger()
+                                                                                    ->send();
                                                                             }
                                                                         } catch (\Exception $e) {
-                                                                            \Filament\Notifications\Notification::make()->title(__('messages.connection_error'))->body($e->getMessage())->danger()->send();
+                                                                            \Filament\Notifications\Notification::make()
+                                                                                ->title('Connection Error')
+                                                                                ->body($e->getMessage())
+                                                                                ->danger()
+                                                                                ->send();
                                                                         }
                                                                     })
                                                             ),
@@ -594,8 +711,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('hrm_license_key') ?? '', 'HRM-PRO-')
-                                                    ? __('messages.license_invalid')
-                                                    : __('messages.enable_hrm_desc')
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_hrm_desc')
                                             ),
                                     ]),
 
@@ -628,8 +745,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('kds_license_key') ?? '', 'KDS-PRO-')
-                                                    ? __('messages.license_invalid')
-                                                    : __('messages.enable_kds_desc')
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_kds_desc')
                                             ),
                                     ]),
 
@@ -660,8 +777,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('fiscal_license_key') ?? '', 'FISCAL-PRO-')
-                                                    ? __('messages.license_invalid')
-                                                    : __('messages.enable_fiscal_desc')
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_fiscal_desc')
                                             ),
                                     ]),
 
@@ -692,8 +809,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('crm_license_key') ?? '', 'CRM-PRO-')
-                                                    ? __('messages.license_invalid')
-                                                    : __('messages.enable_crm_desc')
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_crm_desc')
                                             ),
                                     ]),
 
@@ -724,8 +841,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('wa_license_key') ?? '', 'WA-PRO-')
-                                                    ? __('messages.license_invalid')
-                                                    : __('messages.enable_wa_center_desc')
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_wa_center_desc')
                                             ),
 
                                         Toggle::make('wa_auto_download_media')
@@ -762,8 +879,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('ai_forecasting_license_key') ?? '', 'AI-PRO-')
-                                                    ? __('messages.license_invalid')
-                                                    : __('messages.enable_ai_forecasting_desc')
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_ai_forecasting_desc')
                                             ),
                                     ]),
 
@@ -796,8 +913,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('menu_engineering_license_key') ?? '', 'MENU-PRO-')
-                                                    ? __('messages.license_invalid')
-                                                    : __('messages.enable_menu_engineering_desc')
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_menu_engineering_desc')
                                             ),
                                     ]),
 
@@ -830,8 +947,8 @@ class AppSettings extends SettingsPage
                                             ->helperText(
                                                 fn(Get $get) =>
                                                 !str_starts_with($get('self_order_license_key') ?? '', 'ORDER-PRO-')
-                                                    ? __('messages.license_invalid')
-                                                    : __('messages.enable_self_order_desc')
+                                                ? __('messages.license_invalid')
+                                                : __('messages.enable_self_order_desc')
                                             ),
                                     ]),
                             ]),

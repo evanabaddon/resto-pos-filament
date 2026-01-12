@@ -44,4 +44,8 @@ return [
         'url' => env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
         'verify' => (bool) env('DEEPSEEK_VERIFY_SSL', true),
     ],
+
+    'openweather' => [
+        'api_key' => env('OPENWEATHER_API_KEY'),
+    ],
 ];

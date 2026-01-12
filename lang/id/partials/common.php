@@ -48,6 +48,14 @@ return [
     'info' => 'Info', // Implicit
     'action_cannot_undo' => '⚠️ Tindakan ini TIDAK BISA dibatalkan',
 
+    // Weather
+    'weather_forecast' => 'Prakiraan Cuaca',
+    'last_update' => 'Update Terakhir',
+    'weather_not_configured' => 'Cuaca Belum Dikonfigurasi',
+    'weather_configure_hint' => 'Silakan pilih kelurahan di Pengaturan untuk mengaktifkan prakiraan cuaca.',
+    'go_to_settings' => 'Ke Pengaturan',
+    'weather_api_error' => 'Gagal memuat data cuaca',
+
     // Navigation Groups (General)
     'settings' => 'Pengaturan', // line 249/1033
     'human_resource' => 'Manajemen SDM',

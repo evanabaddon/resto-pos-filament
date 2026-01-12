@@ -92,8 +92,10 @@ class GeneralSettings extends Settings
     public string $ai_base_url = 'https://api.deepseek.com';
     public ?string $ai_api_key = null;
 
-    // BMKG Weather Settings
-    public ?string $bmkg_location_code;
+    // Weather Settings (OpenWeatherMap)
+    public ?float $latitude;
+    public ?float $longitude;
+    public ?string $openweather_api_key;
 
     // Operational Hours
     public int $operational_start_hour;
@@ -134,7 +136,9 @@ class GeneralSettings extends Settings
             'ai_api_key' => null,
             'printer_width' => '58mm',
             'enable_table_number' => false,
-            'bmkg_location_code' => null, // Default null
+            'latitude' => null,
+            'longitude' => null,
+            'openweather_api_key' => null,
             'province_code' => null,
             'province_name' => null,
             'regency_code' => null,

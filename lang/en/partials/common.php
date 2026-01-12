@@ -48,6 +48,14 @@ return [
     'info' => 'Info',
     'action_cannot_undo' => '⚠️ This action CANNOT be undone',
 
+    // Weather
+    'weather_forecast' => 'Weather Forecast',
+    'last_update' => 'Last Update',
+    'weather_not_configured' => 'Weather Not Configured',
+    'weather_configure_hint' => 'Please select your village in Settings to enable weather forecast.',
+    'go_to_settings' => 'Go to Settings',
+    'weather_api_error' => 'Failed to load weather data',
+
     // Navigation Groups (General)
     'settings' => 'Settings',
     'human_resource' => 'Human Resources',
