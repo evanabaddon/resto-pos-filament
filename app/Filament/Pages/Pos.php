@@ -1218,7 +1218,7 @@ class Pos extends Page
 
         // Reset Search & Pagination
         $this->searchQuery = '';
-        $this->selectedCategory = 'SEMUA';
+        $this->selectedCategory = 'all';
         // $this->resetPage(); // Disabled to prevent Alpine/dom-morph error
 
         // jangan ubah $showCashInModal agar modal hanya dikontrol saat mount/cek session
