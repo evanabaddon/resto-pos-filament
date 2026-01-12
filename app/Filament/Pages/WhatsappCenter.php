@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\WhatsappMessage;
 use Filament\Pages\Page;
 
 use BackedEnum;
@@ -409,7 +410,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
             function () {
                 // Fetch the latest message for each remote_jid
                 // logical efficient query for chat list
-                return \App\Models\WhatsappMessage::query()
+                return WhatsappMessage::query()
                     ->select('whatsapp_messages.*')
                     ->selectRaw('members.name as member_name')
                     ->selectRaw('(SELECT COUNT(*) FROM whatsapp_messages as wm2 WHERE wm2.remote_jid = whatsapp_messages.remote_jid AND wm2.from_me = 0 AND wm2.status = "received") as unread_count')
@@ -525,7 +526,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         $this->newMessage = '';
 
         // Mark messages as read
-        \App\Models\WhatsappMessage::where('remote_jid', $jid)
+        WhatsappMessage::where('remote_jid', $jid)
             ->where('from_me', false)
             ->where('status', 'received')
             ->update(['status' => 'read']);
@@ -548,7 +549,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
     {
         if ($this->selectedJid) {
             // Optimasi: Ambil 50 pesan terakhir saja untuk performa awal
-            $messages = \App\Models\WhatsappMessage::where('remote_jid', $this->selectedJid)
+            $messages = WhatsappMessage::where('remote_jid', $this->selectedJid)
                 ->latest() // Order by created_at DESC
                 ->take(50)
                 ->get()
@@ -605,7 +606,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
     public function setReplyTo($messageId)
     {
-        $this->replyToMessage = \App\Models\WhatsappMessage::find($messageId);
+        $this->replyToMessage = WhatsappMessage::find($messageId);
         $this->dispatch('focus-input');
     }
 
@@ -616,7 +617,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
     public function downloadMedia($messageId)
     {
-        $msg = \App\Models\WhatsappMessage::find($messageId);
+        $msg = WhatsappMessage::find($messageId);
         if (!$msg || !$msg->full_message) {
             Notification::make()->title('Gagal')->body('Data pesan tidak ditemukan.')->danger()->send();
             return;
@@ -664,11 +665,11 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                 $filename = 'wa_manual_' . time() . '_' . Str::random(5) . '.' . $extension;
                 $path = 'whatsapp-media/' . date('Y-m-d');
 
-                if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
-                    \Illuminate\Support\Facades\Storage::disk('public')->makeDirectory($path);
+                if (!Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->makeDirectory($path);
                 }
 
-                \Illuminate\Support\Facades\Storage::disk('public')->put($path . '/' . $filename, $decoded);
+                Storage::disk('public')->put($path . '/' . $filename, $decoded);
 
                 $msg->update(['attachment_path' => $path . '/' . $filename]);
 
@@ -780,7 +781,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
             if ($response->successful()) {
                 // Find recipient name to preserve chat title in the list
-                $recipientName = \App\Models\WhatsappMessage::where('remote_jid', $this->selectedJid)
+                $recipientName = WhatsappMessage::where('remote_jid', $this->selectedJid)
                     ->where('from_me', false)
                     ->whereNotNull('push_name')
                     ->latest()
@@ -792,7 +793,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
                     $localAttachmentPath = $this->attachment->store('whatsapp-media/' . date('Y-m-d'), 'public');
                 }
 
-                \App\Models\WhatsappMessage::create([
+                WhatsappMessage::create([
                     'remote_jid' => $this->selectedJid,
                     'from_me' => true,
                     'message' => $this->newMessage,
@@ -829,7 +830,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
         if (!$this->selectedJid)
             return;
 
-        \App\Models\WhatsappMessage::where('remote_jid', $this->selectedJid)->delete();
+        WhatsappMessage::where('remote_jid', $this->selectedJid)->delete();
 
         $this->selectedJid = null;
         $this->activeChatMessages = [];
@@ -863,10 +864,10 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
         // FORCE CLEANUP: Session & Media
         // 1. Delete all downloaded media to save storage
-        \Illuminate\Support\Facades\Storage::disk('public')->deleteDirectory('whatsapp-media');
+        Storage::disk('public')->deleteDirectory('whatsapp-media');
 
         // 2. Clear all messages from database
-        \App\Models\WhatsappMessage::truncate();
+        WhatsappMessage::truncate();
 
         // 3. Reset Local State
         $this->status = 'disconnected';
@@ -897,7 +898,7 @@ class WhatsappCenter extends Page implements HasActions, HasForms
 
         try {
             // Get last 10 messages for context
-            $recentMessages = \App\Models\WhatsappMessage::where('remote_jid', $this->selectedJid)
+            $recentMessages = WhatsappMessage::where('remote_jid', $this->selectedJid)
                 ->orderBy('created_at', 'desc')
                 ->take(10)
                 ->get()
