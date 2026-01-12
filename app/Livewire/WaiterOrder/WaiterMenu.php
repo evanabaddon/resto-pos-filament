@@ -14,6 +14,9 @@ class WaiterMenu extends Component
     public $search = '';
     public $perPage = 12; // Initial load count
 
+    // 🚀 OPTIMIZATION: Cache key versioning for instant invalidation
+    public $stockVersion;
+
     // 🚀 OPTIMIZATION: Per-request caching (safe - no stale data)
     protected $productCache = [];
     protected $availabilityCache = [];
@@ -25,6 +28,20 @@ class WaiterMenu extends Component
         $userId = auth()->id();
         $cacheKey = 'waiter_cart_' . $userId;
         $this->cart = \Illuminate\Support\Facades\Cache::get($cacheKey, []);
+
+        // Load current stock version
+        $this->stockVersion = \Illuminate\Support\Facades\Cache::get('global_stock_version', time());
+    }
+
+    #[\Livewire\Attributes\On('echo:products,ProductStockUpdated')]
+    public function handleStockUpdate($event)
+    {
+        // Update local version to trigger cache refresh
+        $this->stockVersion = time();
+        \Illuminate\Support\Facades\Cache::put('global_stock_version', $this->stockVersion, now()->addDays(1));
+
+        // Also clear availability cache since it's specific to products
+        $this->availabilityCache = [];
     }
 
     public function loadMore()
@@ -60,16 +77,11 @@ class WaiterMenu extends Component
             }
 
             // 🚀 OPTIMIZATION: Use memoized availability check (per-request only)
+            // Note: Availability check always hits DB/Service, which is good for accuracy at "Add" time
             $availability = $this->checkStockAvailability($product, $requestedQty, $cartForCheck);
 
             if (!$availability['available']) {
                 $maxPortions = $availability['max_portions'];
-
-                // If we can add SOME, but not all? 
-                // For simplicity, failing if total requested exceeds max.
-                // Or: Add only what's left? 
-                // Let's strict fail to avoid confusion, or notify max.
-
                 $this->dispatch('notify', message: "⚠️ Stok tidak cukup. Maksimal: {$maxPortions}", type: 'warning');
                 return;
             }
@@ -97,10 +109,6 @@ class WaiterMenu extends Component
         \Illuminate\Support\Facades\Cache::put($cacheKey, $this->cart, now()->addHours(12));
 
         $this->dispatch('cart-updated');
-
-        // Don't refresh whole component if possible, but badges might need it. 
-        // Pagination state must be preserved.
-        // $this->dispatch('$refresh'); 
     }
 
     // Keep original single add for fallback or other calls
@@ -144,8 +152,9 @@ class WaiterMenu extends Component
     public function render()
     {
         // 🚀 OPTIMIZATION: Cache featured products (5 minutes - changes rarely)
+        // Add stockVersion to key to invalidate on update
         $featuredProducts = \Illuminate\Support\Facades\Cache::remember(
-            'waiter_featured_products',
+            'waiter_featured_products_' . $this->stockVersion,
             300,
             function () {
                 return Product::select([
@@ -176,13 +185,15 @@ class WaiterMenu extends Component
         );
 
         // 🚀 OPTIMIZATION: Cache product list (5 minutes - safe for display)
+        // KEY CHANGE: Included $this->stockVersion in cache key
         $cacheKey = 'waiter_products_' .
             $this->selectedCategoryId . '_' .
             md5($this->search) . '_' .
-            $this->perPage;
+            $this->perPage . '_' .
+            $this->stockVersion;
 
         $products = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
-            return Product::select([
+            $query = Product::select([
                 'id',
                 'name',
                 'sell_price',
@@ -208,11 +219,28 @@ class WaiterMenu extends Component
                 ->with([
                     'category:id,name',
                     'unit:id,symbol,name'
-                    // 🚀 OPTIMIZATION: Don't eager load recipes - load on demand in addToCart
                 ])
                 ->orderBy('name')
-                ->take($this->perPage)
-                ->get();
+                ->take($this->perPage);
+
+            $fetchedProducts = $query->get();
+
+            // 🚀 OPTIMIZATION: Batch Calculate Max Portions (Avoid N+1)
+            $productIds = $fetchedProducts->pluck('id')->toArray();
+            if (!empty($productIds)) {
+                $stockChecker = app(\App\Services\RecipeStockChecker::class);
+                // Check without cart items to get absolute max portions available
+                $availabilityMap = $stockChecker->batchCheckAvailability($productIds, []);
+
+                foreach ($fetchedProducts as $product) {
+                    if (isset($availabilityMap[$product->id])) {
+                        // Manually set the attribute to avoid re-querying property access
+                        $product->setAttribute('max_portions', $availabilityMap[$product->id]['max_portions']);
+                    }
+                }
+            }
+
+            return $fetchedProducts;
         });
 
         // 🚀 OPTIMIZATION: Use collection count instead of separate query

@@ -101,6 +101,11 @@ class Product extends Model
                     }
                 }
             }
+
+            // Real-time Stock Update (Reverb)
+            if ($product->isDirty('stock')) {
+                \App\Events\ProductStockUpdated::dispatch($product->id, $product->stock);
+            }
         });
     }
 

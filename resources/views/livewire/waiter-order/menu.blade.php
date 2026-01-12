@@ -82,9 +82,9 @@
     @endif
 
     <!-- Product Grid -->
-    <!-- Poll every 30s for realtime stock updates (longer interval to reduce server load) -->
-    <div wire:poll.30s class="px-5 py-4 grid grid-cols-2 gap-4 relative">
-        <!-- Loading Overlay for Category Changes (NOT for polling) -->
+    <!-- REALTIME: Updates via Reverb Listener (No Polling) -->
+    <div class="px-5 py-4 grid grid-cols-2 gap-4 relative">
+        <!-- Loading Overlay for Category Changes -->
         <div wire:loading wire:target="selectedCategoryId,search"
             class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white/60 backdrop-blur-sm flex items-center justify-center">
             <div class="bg-white p-4 rounded-xl shadow-lg flex items-center gap-3">
@@ -109,24 +109,7 @@
             @endphp
             <div wire:key="product-{{ $product->id }}"
             @if(!$isOutOfStock)
-            x-data="{
-                    clickCount: 0,
-                    timeout: null,
-                    addToCart() {
-                        this.clickCount++;
-                        
-                        // Visual Pop (vibro if mobile)
-                        if(navigator.vibrate) navigator.vibrate(50);
-
-                        clearTimeout(this.timeout);
-                        this.timeout = setTimeout(() => {
-                            if (this.clickCount > 0) {
-                                $wire.addToCartBatch({{ $product->id }}, this.clickCount);
-                                this.clickCount = 0;
-                            }
-                        }, 300); // 300ms buffer
-                    }
-                }"
+            x-data="menuProductItem({{ $product->id }})"
             @endif
             class="bg-white rounded-3xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 group flex flex-col h-full border border-gray-100/50 relative
                     {{ $isOutOfStock ? 'opacity-60 grayscale' : 'hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]' }}">
@@ -228,4 +211,29 @@
 </div>
 @endif
 
+
+
+{{-- Script Optimization --}}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('menuProductItem', (productId) => ({
+            clickCount: 0,
+            timeout: null,
+            addToCart() {
+                this.clickCount++;
+
+                // Visual Pop (vibro if mobile)
+                if (navigator.vibrate) navigator.vibrate(50);
+
+                clearTimeout(this.timeout);
+                this.timeout = setTimeout(() => {
+                    if (this.clickCount > 0) {
+                        this.$wire.addToCartBatch(productId, this.clickCount);
+                        this.clickCount = 0;
+                    }
+                }, 300); // 300ms buffer
+            }
+        }));
+    });
+</script>
 </div>

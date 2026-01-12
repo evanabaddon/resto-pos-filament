@@ -86,7 +86,25 @@ class Pos extends Page
         'mergeCancelled' => 'handleMergeCancelled',
         'refreshSalesList' => 'refreshSalesList',
         'applyManualDiscount' => 'applyManualDiscount',
+        'echo:pos-updates,ProductStockUpdated' => 'handleStockUpdate',
     ];
+
+    /**
+     * Handle Real-time Stock Updates
+     */
+    public function handleStockUpdate($event)
+    {
+        // Increment version to invalidate cache
+        $this->cacheVersion++;
+
+        // Log info (optional)
+        // \Log::info("Stock update received for product {$event['productId']}: {$event['newStock']}");
+
+        // Trigger re-render
+        // Note: Livewire will automatically re-render when a public property changes, 
+        // but here we just need to ensure the product grid reflects new stock.
+        // $this->resetPage(); // Optional: stay on current page
+    }
 
     /**
      * Override handlePaymentRequested to block Waiter
@@ -394,6 +412,11 @@ class Pos extends Page
      */
     public function updatePerPage($count)
     {
+        // Prevent redundant updates
+        if ($this->perPage === $count) {
+            return;
+        }
+
         $this->perPage = $count;
         $this->resetPage();
     }
@@ -422,56 +445,64 @@ class Pos extends Page
         // Get current page from Livewire pagination (default to 1 if not set)
         $currentPage = $this->paginators['page'] ?? 1;
 
+        if (!empty($this->searchQuery)) {
+            // DO NOT CACHE Search Results (Prevents cache pollution)
+            return $this->buildProductQuery()->paginate($this->perPage);
+        }
+
+        // Cache only browsable pages (Category view)
         // Include perPage in cache key to handle different screen sizes
         $cacheKey = 'pos_products_' .
             $this->selectedCategory . '_' .
-            md5($this->searchQuery) . '_' .
             $currentPage . '_' .
             $this->perPage . '_' .
             $this->cacheVersion; // Add cacheVersion to force refresh
 
         return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
-            // MEMORY OPTIMIZATION: Select specific columns only
-            $query = Product::select([
-                'id',
-                'name',
-                'sell_price',
-                'stock',
-                'type',
-                'category_id',
-                'image',
-                'is_sellable',
-                'unit_id'
-            ])
-                ->where('is_sellable', true)
-                ->where('name', '!=', 'Down Payment (DP)')
-                ->with([
-                    // Optimize eager loading: select specific columns for relations too
-                    'recipes:id,product_id,ingredient_id,quantity,unit_id',
-                    'recipes.ingredient:id,name,stock,unit_id',
-                    'recipes.ingredient.unit:id,symbol,name',
-                    'recipes.unit:id,symbol,name',
-                    'unit:id,symbol,name'
-                ])
-                ->where(function ($q) {
-                    $q->where('stock', '>', 0)
-                        ->orWhereIn('type', ['produced', 'bar'])
-                        ->orWhereNull('stock');
-                });
-
-            // 🔍 Filter Search - Use full wildcard search for better UX
-            if (!empty($this->searchQuery)) {
-                $query->where('name', 'like', '%' . $this->searchQuery . '%');
-            }
-
-            // Filter Kategori
-            if ($this->selectedCategory !== 'all') {
-                $query->where('category_id', $this->selectedCategory);
-            }
-
-            // Use DB Pagination (Optimized)
-            return $query->orderBy('name', 'asc')->paginate($this->perPage);
+            return $this->buildProductQuery()->paginate($this->perPage);
         });
+    }
+
+    private function buildProductQuery()
+    {
+        $query = Product::select([
+            'id',
+            'name',
+            'sell_price',
+            'stock',
+            'type',
+            'category_id',
+            'image',
+            'is_sellable',
+            'unit_id'
+        ])
+            ->where('is_sellable', true)
+            ->where('name', '!=', 'Down Payment (DP)')
+            ->with([
+                // Optimize eager loading: select specific columns for relations too
+                'recipes:id,product_id,ingredient_id,quantity,unit_id',
+                'recipes.ingredient:id,name,stock,unit_id',
+                'recipes.ingredient.unit:id,symbol,name',
+                'recipes.unit:id,symbol,name',
+                'unit:id,symbol,name'
+            ])
+            ->where(function ($q) {
+                $q->where('stock', '>', 0)
+                    ->orWhereIn('type', ['produced', 'bar'])
+                    ->orWhereNull('stock');
+            });
+
+        // 🔍 Filter Search - Use full wildcard search for better UX
+        if (!empty($this->searchQuery)) {
+            $query->where('name', 'like', '%' . $this->searchQuery . '%');
+        }
+
+        // Filter Kategori
+        if ($this->selectedCategory !== 'all') {
+            $query->where('category_id', $this->selectedCategory);
+        }
+
+        return $query->orderBy('name', 'asc');
     }
 
     /**

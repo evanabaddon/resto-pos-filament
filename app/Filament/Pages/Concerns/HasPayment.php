@@ -22,6 +22,13 @@ trait HasPayment
     // Handler untuk payment processed
     public function handlePaymentProcessed($saleId, $paymentMethodId, $amountPaid)
     {
+        // 🛡️ ATOMIC LOCK: Prevent Double Payment
+        $lock = \Illuminate\Support\Facades\Cache::lock('pos_pay_sale_' . $saleId, 5);
+
+        if (!$lock->get()) {
+            return;
+        }
+
         try {
             Log::info('HasPayment: handlePaymentProcessed received', [
                 'sale_id' => $saleId,
@@ -44,6 +51,8 @@ trait HasPayment
             $this->resetPos();
         } catch (\Exception $e) {
             $this->dispatch('show-notification', message: 'Error: ' . $e->getMessage(), type: 'error');
+        } finally {
+            $lock->release();
         }
     }
 
@@ -135,6 +144,13 @@ trait HasPayment
             return;
         }
 
+        // 🛡️ ATOMIC LOCK: Prevent Double Click / Race Condition
+        $lock = \Illuminate\Support\Facades\Cache::lock('pos_save_sale_' . auth()->id(), 5);
+
+        if (!$lock->get()) {
+            return;
+        }
+
         try {
             $subtotal = $this->total ?? 0;
             $tax = $this->tax ?? 0;
@@ -172,7 +188,7 @@ trait HasPayment
                 $this->saleId = $sale->id;
             }
 
-            // � PHASE 2: Show success notification IMMEDIATELY
+            // 🚀 PHASE 2: Show success notification IMMEDIATELY
             $invoiceNumber = $sale->invoice_number;
             if ($isUpdate) {
                 $this->dispatch('show-notification', message: "✅ Order #{$invoiceNumber} berhasil diupdate!", type: 'success');
@@ -225,10 +241,11 @@ trait HasPayment
             // 🚀 PHASE 2: Reset POS AFTER printing logic
             $this->resetPos();
             $this->dispatch('refreshSalesList');
-
         } catch (\Exception $e) {
             \Log::error('💥 Gagal menyimpan penjualan: ' . $e->getMessage());
             $this->dispatch('show-notification', message: 'Gagal menyimpan penjualan: ' . $e->getMessage(), type: 'error');
+        } finally {
+            $lock->release();
         }
     }
 

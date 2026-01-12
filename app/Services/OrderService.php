@@ -16,7 +16,7 @@ class OrderService
      */
     public function processOrder(array $data, array $items, bool $isUpdate, ?Sale $existingSale = null): Sale
     {
-        return DB::transaction(function () use ($data, $items, $isUpdate, $existingSale) {
+        $sale = DB::transaction(function () use ($data, $items, $isUpdate, $existingSale) {
             $sale = $existingSale;
 
             // 1. Create or Update Sale Header
@@ -155,6 +155,15 @@ class OrderService
 
             return $sale;
         });
+
+        // 🚀 REAL-TIME UPDATE: Notify all waiters that stock/drafts have changed
+        // This forces WaiterMenu to invalidate cache and re-check RecipeStockChecker
+        $affectedProductIds = collect($items)->pluck('product_id')->unique();
+        foreach ($affectedProductIds as $pid) {
+            \App\Events\ProductStockUpdated::dispatch($pid, 0);
+        }
+
+        return $sale;
     }
 
     /**

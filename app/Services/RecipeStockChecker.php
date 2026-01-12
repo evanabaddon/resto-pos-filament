@@ -324,61 +324,60 @@ class RecipeStockChecker
     /**
      * Get detailed list of draft usages per ingredient with timestamps
      * Returns [ingredient_id => [['quantity' => float, 'created_at' => Carbon], ...]]
+     * Cached for 10 seconds to prevent DB slamming during busy periods
      */
     private function getAllReservedDrafts(?int $excludeSaleId = null): array
     {
-        // 1. Get all draft items created TODAY and YESTERDAY (to be safe if midnight crossover)
-        // Actually, just get pending/drafts. If they are very old, they might be irrelevant provided updated_at is newer.
-        // But for performance, limit to last 24h.
+        $cacheKey = 'reserved_drafts_v1_' . ($excludeSaleId ?? 'all');
 
-        $query = \App\Models\SaleItem::whereHas('sale', function ($q) use ($excludeSaleId) {
-            $q->whereIn('status', ['draft', 'pending'])
-                ->whereNotIn('status', ['split', 'merge']);
-            // ->whereDate('created_at', '>=', today()->subDay()); // Optional perf optimization
+        return Cache::remember($cacheKey, 10, function () use ($excludeSaleId) {
+            // 1. Get all draft items created TODAY and YESTERDAY
+            $query = \App\Models\SaleItem::whereHas('sale', function ($q) use ($excludeSaleId) {
+                $q->whereIn('status', ['draft', 'pending'])
+                    ->whereNotIn('status', ['split', 'merge']);
 
-            if ($excludeSaleId) {
-                $q->where('id', '!=', $excludeSaleId);
-            }
-        })
-            ->with(['product.recipes', 'sale:id,created_at']); // Eager load sale created_at
+                if ($excludeSaleId) {
+                    $q->where('id', '!=', $excludeSaleId);
+                }
+            })
+                ->with(['product.recipes', 'sale:id,created_at']);
 
-        $items = $query->get();
-        $reserved = []; // [ingredient_id => [ {qty, created_at}, ... ]]
-        $conversionService = app(\App\Services\UnitConversionService::class);
+            $items = $query->get();
+            $reserved = []; // [ingredient_id => [ {qty, created_at}, ... ]]
+            $conversionService = app(\App\Services\UnitConversionService::class);
 
-        foreach ($items as $item) {
-            if (!$item->product || $item->product->recipes->isEmpty())
-                continue;
-
-            // Use item created_at or sale created_at? Sale created_at is safer for the "order time".
-            // SaleItem created_at should be same as sale usually, or when item added.
-            $draftTime = $item->created_at;
-
-            foreach ($item->product->recipes as $recipe) {
-                if (!$recipe->ingredient)
+            foreach ($items as $item) {
+                if (!$item->product || $item->product->recipes->isEmpty())
                     continue;
 
-                // Calculate total ingredient usage: Item Qty * Recipe Qty (converted)
-                $perUnitUsage = $conversionService->convert(
-                    $recipe->quantity,
-                    $recipe->unit_id,
-                    $recipe->ingredient->unit_id
-                );
+                $draftTime = $item->created_at;
 
-                $totalUsage = $perUnitUsage * $item->quantity;
+                foreach ($item->product->recipes as $recipe) {
+                    if (!$recipe->ingredient)
+                        continue;
 
-                if (!isset($reserved[$recipe->ingredient_id])) {
-                    $reserved[$recipe->ingredient_id] = [];
+                    // Calculate total ingredient usage: Item Qty * Recipe Qty (converted)
+                    $perUnitUsage = $conversionService->convert(
+                        $recipe->quantity,
+                        $recipe->unit_id,
+                        $recipe->ingredient->unit_id
+                    );
+
+                    $totalUsage = $perUnitUsage * $item->quantity;
+
+                    if (!isset($reserved[$recipe->ingredient_id])) {
+                        $reserved[$recipe->ingredient_id] = [];
+                    }
+
+                    $reserved[$recipe->ingredient_id][] = [
+                        'quantity' => $totalUsage,
+                        'created_at' => $draftTime
+                    ];
                 }
-
-                $reserved[$recipe->ingredient_id][] = [
-                    'quantity' => $totalUsage,
-                    'created_at' => $draftTime
-                ];
             }
-        }
 
-        return $reserved;
+            return $reserved;
+        });
     }
 
     public function batchCheckAvailability(array $productIds, array $cartItems, ?int $excludeSaleId = null): array
