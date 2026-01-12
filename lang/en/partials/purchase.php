@@ -5,6 +5,7 @@ return [
     'purchase_resource' => 'Purchase',
     'purchases_resource' => 'Purchases',
     'purchases' => 'Purchases',
+    'purchase' => 'Purchase',
 
     // Fields
     'invoice_number' => 'Invoice Number',

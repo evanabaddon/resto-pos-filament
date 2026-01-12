@@ -5,6 +5,7 @@ return [
     'purchase_resource' => 'Pembelian',
     'purchases_resource' => 'Pembelian',
     'purchases' => 'Pembelian',
+    'purchase' => 'Pembelian',
 
     // Fields
     'invoice_number' => 'Nomor Nota',
