@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Product;
 use App\Models\StockMovement;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -13,6 +14,8 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Collection;
 use BackedEnum;
@@ -189,6 +192,51 @@ class StockOpname extends Page implements HasTable
                     }),
             ])
             ->headerActions([
+                Action::make('print_form')
+                    ->label('Print Form')
+                    ->icon('heroicon-o-printer')
+                    ->color('primary')
+                    ->form([
+                        DatePicker::make('opname_date')
+                            ->label('Tanggal Opname')
+                            ->default(now())
+                            ->required(),
+
+                        TextInput::make('shift')
+                            ->label('Shift')
+                            ->placeholder('e.g., Closing, Morning')
+                            ->default('Closing'),
+
+                        Select::make('filter_type')
+                            ->label('Filter By')
+                            ->options([
+                                'all' => 'All Products',
+                                'category' => 'By Category',
+                                'type' => 'By Product Type',
+                            ])
+                            ->default('all')
+                            ->reactive()
+                            ->required(),
+
+                        Select::make('category_id')
+                            ->label('Category')
+                            ->relationship('category', 'name')
+                            ->visible(fn(Get $get) => $get('filter_type') === 'category'),
+
+                        Select::make('product_type')
+                            ->label('Product Type')
+                            ->options([
+                                'raw' => 'Raw Material (Bahan Baku)',
+                                'produced' => 'Produced (Kitchen)',
+                                'bar' => 'Bar/Beverage',
+                                'retail' => 'Retail',
+                            ])
+                            ->visible(fn(Get $get) => $get('filter_type') === 'type'),
+                    ])
+                    ->action(function (array $data) {
+                        return redirect()->route('stock-opname.print', $data);
+                    }),
+
                 Action::make('submit_all_edited')
                     ->label(__('messages.submit_all'))
                     ->icon('heroicon-o-check-circle')

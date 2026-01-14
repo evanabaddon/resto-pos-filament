@@ -39,6 +39,12 @@ Route::middleware(['web', \Filament\Http\Middleware\Authenticate::class])->prefi
 
 Route::get('/kiosk', App\Livewire\AttendanceKiosk::class);
 
+// Stock Opname Print Form
+Route::middleware(['web', \Filament\Http\Middleware\Authenticate::class])->group(function () {
+    Route::get('/stock-opname/print', [App\Http\Controllers\StockOpnameController::class, 'printForm'])
+        ->name('stock-opname.print');
+});
+
 
 // routes/api.php atau routes/web.php
 Route::get('/test-webhook-debug', function () {
