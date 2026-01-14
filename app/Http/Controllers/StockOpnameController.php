@@ -12,13 +12,6 @@ class StockOpnameController extends Controller
     public function printForm(Request $request)
     {
         $query = Product::query()
-            ->where(function ($q) {
-                $q->whereIn('type', ['raw', 'retail'])
-                    ->orWhere(function ($sub) {
-                        $sub->whereIn('type', ['produced', 'bar'])
-                            ->where('enable_stock_alert', true);
-                    });
-            })
             ->with(['unit', 'category'])
             ->orderBy('category_id')
             ->orderBy('name');
@@ -26,15 +19,38 @@ class StockOpnameController extends Controller
         // Apply filters based on filter_type
         $filterType = $request->filter_type ?? 'all';
 
+        // 1. Base Logic: Which items are "Stockable"?
+        // If ALL/Default: Show Raw/Retail OR (Produced+Alert)
+        if ($filterType === 'all') {
+            $query->where(function ($q) {
+                $q->whereIn('type', ['raw', 'retail'])
+                    ->orWhere(function ($sub) {
+                        $sub->whereIn('type', ['produced', 'bar'])
+                            ->where('enable_stock_alert', true);
+                    });
+            });
+        }
+
+        // 2. Specific Category: Show ALL items in that category (regardless of alert setting)
+        // User explicitly asked for this category, so we show what's in it.
         if ($filterType === 'category' && $request->category_id) {
             $query->where('category_id', $request->category_id);
         }
 
+        // 3. Specific Type: Apply the type filter
         if ($filterType === 'type' && $request->product_type) {
             $query->where('type', $request->product_type);
+            // Optionally enforce stock alert for produced?
+            // If user asks for "Prepared (Kitchen)", they expect to see them.
+            if (in_array($request->product_type, ['produced', 'bar'])) {
+                $query->where('enable_stock_alert', true);
+            }
         }
 
+        \Illuminate\Support\Facades\Log::info('StockOpname Print Request:', $request->all());
+
         $products = $query->get();
+        \Illuminate\Support\Facades\Log::info('StockOpname Print Results:', ['count' => $products->count()]);
 
         $data = [
             'products' => $products,

@@ -5,7 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Product;
 use App\Models\StockMovement;
 use Filament\Pages\Page;
-use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Get;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -196,7 +196,7 @@ class StockOpname extends Page implements HasTable
                     ->label('Print Form')
                     ->icon('heroicon-o-printer')
                     ->color('primary')
-                    ->form([
+                    ->schema([
                         DatePicker::make('opname_date')
                             ->label('Tanggal Opname')
                             ->default(now())
@@ -221,7 +221,9 @@ class StockOpname extends Page implements HasTable
                         Select::make('category_id')
                             ->label('Category')
                             ->relationship('category', 'name')
-                            ->visible(fn(Get $get) => $get('filter_type') === 'category'),
+                            ->searchable()
+                            ->preload()
+                            ->visible(fn($get) => $get('filter_type') === 'category'),
 
                         Select::make('product_type')
                             ->label('Product Type')
@@ -231,11 +233,12 @@ class StockOpname extends Page implements HasTable
                                 'bar' => 'Bar/Beverage',
                                 'retail' => 'Retail',
                             ])
-                            ->visible(fn(Get $get) => $get('filter_type') === 'type'),
+                            ->visible(fn($get) => $get('filter_type') === 'type'),
                     ])
-                    ->action(function (array $data) {
-                        return redirect()->route('stock-opname.print', $data);
-                    }),
+                    ->action(function (array $data, \Livewire\Component $livewire) {
+                        $url = route('stock-opname.print', $data);
+                        $livewire->js("window.open('$url', '_blank')");
+                    })->openUrlInNewTab(),
 
                 Action::make('submit_all_edited')
                     ->label(__('messages.submit_all'))
