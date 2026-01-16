@@ -23,6 +23,7 @@ $reservation = require __DIR__ . '/partials/reservation.php';
 $ai_assistant = require __DIR__ . '/partials/ai_assistant.php';
 $discount = require __DIR__ . '/partials/discount.php';
 $payment = require __DIR__ . '/partials/payment.php';
+$landing = require __DIR__ . '/partials/landing.php';
 
 return array_merge(
     $common,
@@ -47,5 +48,6 @@ return array_merge(
     $reservation,
     $ai_assistant,
     $discount,
-    $payment
+    $payment,
+    $landing
 );

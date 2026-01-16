@@ -6,7 +6,18 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-Route::get('/', function () {
+Route::get('/', [\App\Http\Controllers\LandingController::class, 'index'])->name('landing');
+Route::get('/menu', [\App\Http\Controllers\LandingController::class, 'menu'])->name('landing.menu');
+Route::post('/reservation', [\App\Http\Controllers\LandingController::class, 'storeReservation'])->name('landing.reservation.store');
+
+Route::get('/lang/{locale}', function ($locale) {
+    if (in_array($locale, ['en', 'id'])) {
+        session(['locale' => $locale]);
+    }
+    return redirect()->back();
+})->name('lang.switch');
+
+Route::get('/admin-redirect', function () {
     return redirect('/admin');
 });
 

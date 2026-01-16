@@ -21,4 +21,7 @@
     --color-primary-800: #166534;
     --color-primary-900: #14532d;
     --color-primary-950: #052e16;
+
+    --color-primary: var(--primary-color);
+    --color-secondary: var(--secondary-color);
 }

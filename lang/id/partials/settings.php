@@ -4,6 +4,40 @@ return [
     // App Settings
     'general_settings' => 'Pengaturan Umum',
     'app_settings_navigation' => 'Pengaturan',
+    'settings' => 'Pengaturan',
+    'manage_landing_page' => 'Kelola Landing Page',
+
+    // Landing Page Settings
+    'hero_section' => 'Bagian Hero (Banner Utama)',
+    'hero_section_desc' => 'Sesuaikan banner utama halaman landing.',
+    'hero_title' => 'Judul Hero',
+    'hero_description' => 'Deskripsi Hero',
+    'hero_image' => 'Gambar Hero',
+
+    'theme_section' => 'Tema & Kustomisasi',
+    'theme_section_desc' => 'Sesuaikan tampilan dan nuansa.',
+    'primary_color' => 'Warna Utama',
+    'secondary_color' => 'Warna Sekunder',
+
+    'content_section' => 'Konten',
+    'about_us_title' => 'Judul Tentang Kami',
+    'about_us_text' => 'Teks Tentang Kami',
+    'about_image_1' => 'Gambar 1 (Kiri Atas)',
+    'about_image_2' => 'Gambar 2 (Kiri Bawah)',
+    'about_image_3' => 'Gambar 3 (Kanan Atas)',
+    'about_image_4' => 'Gambar 4 (Kanan Bawah)',
+    'stats_years' => 'Tahun Pengalaman',
+    'stats_customers' => 'Pelanggan Puas',
+
+    'contact_section' => 'Bagian Kontak',
+    'contact_image' => 'Gambar Bagian Kontak',
+
+    'seo_section' => 'Konfigurasi SEO',
+    'seo_section_desc' => 'Optimalkan untuk mesin pencari.',
+    'seo_title' => 'Judul SEO',
+    'seo_description' => 'Meta Description',
+    'seo_keywords' => 'Meta Keywords',
+
     'general' => 'Umum',
     'fiscal_tax' => 'Fiskal / Pajak',
     'partnership' => 'Kemitraan',

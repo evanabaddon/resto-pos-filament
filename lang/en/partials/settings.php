@@ -4,6 +4,40 @@ return [
     // App Settings
     'general_settings' => 'General Settings',
     'app_settings_navigation' => 'Settings',
+    'settings' => 'Settings',
+    'manage_landing_page' => 'Manage Landing Page',
+
+    // Landing Page Settings
+    'hero_section' => 'Hero Section',
+    'hero_section_desc' => 'Customize the main banner of the landing page.',
+    'hero_title' => 'Hero Title',
+    'hero_description' => 'Hero Description',
+    'hero_image' => 'Hero Image',
+
+    'theme_section' => 'Theme & Customization',
+    'theme_section_desc' => 'Customize the look and feel.',
+    'primary_color' => 'Primary Color',
+    'secondary_color' => 'Secondary Color',
+
+    'content_section' => 'Content',
+    'about_us_title' => 'About Us Title',
+    'about_us_text' => 'About Us Text',
+    'about_image_1' => 'Image 1 (Top Left)',
+    'about_image_2' => 'Image 2 (Bottom Left)',
+    'about_image_3' => 'Image 3 (Top Right)',
+    'about_image_4' => 'Image 4 (Bottom Right)',
+    'stats_years' => 'Years of Experience',
+    'stats_customers' => 'Happy Customers',
+
+    'contact_section' => 'Contact Section',
+    'contact_image' => 'Contact Section Image',
+
+    'seo_section' => 'SEO Configuration',
+    'seo_section_desc' => 'Optimize for search engines.',
+    'seo_title' => 'SEO Title',
+    'seo_description' => 'Meta Description',
+    'seo_keywords' => 'Meta Keywords',
+
     'general' => 'General',
     'fiscal_tax' => 'Fiscal / Tax',
     'partnership' => 'Partnership',
