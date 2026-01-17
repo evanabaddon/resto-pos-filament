@@ -34,6 +34,9 @@
         href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700|playfair-display:400,500,600,700,800&display=swap"
         rel="stylesheet" />
 
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -362,30 +365,37 @@
                 <div class="w-24 h-1 bg-theme-primary mx-auto rounded-full opacity-50"></div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-                @foreach($featuredProducts as $product)
-                <div
-                    class="reveal group bg-white/5 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-theme-primary/20 transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-white/10">
-                    <div class="relative h-64 overflow-hidden">
-                        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition z-10"></div>
-                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="400" height="300"
-                            class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out">
+            <!-- Swiper Container -->
+            <div class="swiper menu-swiper pb-12 px-4">
+                <div class="swiper-wrapper">
+                    @foreach($featuredProducts as $product)
+                    <div class="swiper-slide h-auto">
                         <div
-                            class="absolute top-4 right-4 z-20 bg-theme-secondary/90 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold shadow-lg text-white border border-white/10">
-                            Rp {{ number_format($product->sell_price, 0, ',', '.') }}
+                            class="reveal group bg-white/5 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-theme-primary/20 transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-white/10 h-full flex flex-col">
+                            <div class="relative h-64 overflow-hidden shrink-0">
+                                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition z-10"></div>
+                                <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="400" height="300"
+                                    class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out">
+                                <div
+                                    class="absolute top-4 right-4 z-20 bg-theme-secondary/90 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold shadow-lg text-white border border-white/10">
+                                    Rp {{ number_format($product->sell_price, 0, ',', '.') }}
+                                </div>
+                            </div>
+                            <div class="p-8 flex-1 flex flex-col">
+                                <div class="text-xs font-bold text-theme-primary mb-2 uppercase tracking-wide">
+                                    {{ $product->category->name ?? __('messages.landing.menu.special') }}
+                                </div>
+                                <h3
+                                    class="font-heading font-bold text-2xl text-white mb-3 group-hover:text-theme-primary transition-colors line-clamp-2">
+                                    {{ $product->name }}
+                                </h3>
+                            </div>
                         </div>
                     </div>
-                    <div class="p-8">
-                        <div class="text-xs font-bold text-theme-primary mb-2 uppercase tracking-wide">
-                            {{ $product->category->name ?? __('messages.landing.menu.special') }}
-                        </div>
-                        <h3
-                            class="font-heading font-bold text-2xl text-white mb-3 group-hover:text-theme-primary transition-colors">
-                            {{ $product->name }}
-                        </h3>
-                    </div>
+                    @endforeach
                 </div>
-                @endforeach
+                <!-- Pagination -->
+                <div class="swiper-pagination !bottom-0"></div>
             </div>
 
             <div class="text-center mt-20 reveal">
@@ -809,6 +819,36 @@
                 btn.disabled = false;
                 btn.innerHTML = 'Confirm Reservation';
             }
+        });
+    </script>
+    <!-- Swiper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var swiper = new Swiper(".menu-swiper", {
+                slidesPerView: 1,
+                spaceBetween: 30,
+                loop: true,
+                autoplay: {
+                    delay: 3000,
+                    disableOnInteraction: false,
+                },
+                pagination: {
+                    el: ".swiper-pagination",
+                    clickable: true,
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                    },
+                    1280: {
+                        slidesPerView: 4,
+                    },
+                },
+            });
         });
     </script>
 </body>
