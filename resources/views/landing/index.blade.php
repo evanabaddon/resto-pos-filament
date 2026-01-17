@@ -172,10 +172,10 @@
                     </a>
 
                     <!-- Language Switcher -->
-                    <div class="flex items-center space-x-1 ml-2 border-l border-white/20 pl-4">
+                    <div class="flex items-center space-x-1 ml-2 border-l border-white/20 pl-4 transition-colors" id="lang-separator">
                         <a href="{{ route('lang.switch', 'en') }}"
                             class="lang-link text-xs font-bold {{ app()->getLocale() == 'en' ? 'text-theme-primary' : 'text-white/70 hover:text-white' }} transition-colors">EN</a>
-                        <span class="text-white/30">|</span>
+                        <span class="text-white/30 lang-divider transition-colors">|</span>
                         <a href="{{ route('lang.switch', 'id') }}"
                             class="lang-link text-xs font-bold {{ app()->getLocale() == 'id' ? 'text-theme-primary' : 'text-white/70 hover:text-white' }} transition-colors">ID</a>
                     </div>
@@ -673,9 +673,21 @@
                 langLinks.forEach(link => {
                     if (!link.classList.contains('text-theme-primary')) {
                         link.classList.remove('text-white/70', 'hover:text-white');
-                        link.classList.add('text-slate-400', 'hover:text-slate-600');
+                        link.classList.add('text-slate-500', 'hover:text-slate-800');
                     }
                 });
+
+                // Update divider and separator
+                const langDivider = document.querySelector('.lang-divider');
+                const langSeparator = document.getElementById('lang-separator');
+                if (langDivider) {
+                    langDivider.classList.remove('text-white/30');
+                    langDivider.classList.add('text-slate-300');
+                }
+                if (langSeparator) {
+                    langSeparator.classList.remove('border-white/20');
+                    langSeparator.classList.add('border-slate-200');
+                }
 
                 // Mobile button update
                 if (btn) {
@@ -701,9 +713,21 @@
                 langLinks.forEach(link => {
                     if (!link.classList.contains('text-theme-primary')) {
                         link.classList.add('text-white/70', 'hover:text-white');
-                        link.classList.remove('text-slate-400', 'hover:text-slate-600');
+                        link.classList.remove('text-slate-500', 'hover:text-slate-800');
                     }
                 });
+
+                // Update divider and separator
+                const langDivider = document.querySelector('.lang-divider');
+                const langSeparator = document.getElementById('lang-separator');
+                if (langDivider) {
+                    langDivider.classList.add('text-white/30');
+                    langDivider.classList.remove('text-slate-300');
+                }
+                if (langSeparator) {
+                    langSeparator.classList.add('border-white/20');
+                    langSeparator.classList.remove('border-slate-200');
+                }
 
                 // Mobile button update
                 if (btn) {

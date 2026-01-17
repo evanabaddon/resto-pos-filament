@@ -31,6 +31,7 @@ return [
 
     'contact_section' => 'Contact Section',
     'contact_image' => 'Contact Section Image',
+    'google_maps_url' => 'Google Maps URL',
 
     'seo_section' => 'SEO Configuration',
     'seo_section_desc' => 'Optimize for search engines.',

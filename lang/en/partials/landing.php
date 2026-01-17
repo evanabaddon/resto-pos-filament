@@ -42,6 +42,7 @@ return [
             'placeholder_request' => 'Allergies, occasion, etc.',
             'confirm_btn' => 'Confirm Reservation',
             'processing' => 'Processing...',
+            'image_label' => 'Reservation Section Image',
         ],
         'contact' => [
             'info_title' => 'Contact Info',

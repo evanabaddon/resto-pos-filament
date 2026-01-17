@@ -42,6 +42,7 @@ return [
             'placeholder_request' => 'Alergi, acara khusus, dll.',
             'confirm_btn' => 'Konfirmasi Reservasi',
             'processing' => 'Memproses...',
+            'image_label' => 'Gambar Bagian Reservasi',
         ],
         'contact' => [
             'info_title' => 'Info Kontak',

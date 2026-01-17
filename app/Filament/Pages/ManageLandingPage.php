@@ -201,7 +201,7 @@ class ManageLandingPage extends SettingsPage
                             ->downloadable()
                             ->fetchFileInformation(false),
                         FileUpload::make('reservation_image')
-                            ->label(__('messages.reservation_image'))
+                            ->label(__('messages.landing.reservation.image_label'))
                             ->image()
                             ->disk('public')
                             ->directory('landing-page')

@@ -31,6 +31,7 @@ return [
 
     'contact_section' => 'Bagian Kontak',
     'contact_image' => 'Gambar Bagian Kontak',
+    'google_maps_url' => 'Link Google Maps',
 
     'seo_section' => 'Konfigurasi SEO',
     'seo_section_desc' => 'Optimalkan untuk mesin pencari.',

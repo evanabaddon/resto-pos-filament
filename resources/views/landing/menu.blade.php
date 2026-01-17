@@ -107,10 +107,10 @@
                     <!-- Language Switcher -->
                     <div class="flex items-center space-x-1 ml-2 border-l border-slate-200 pl-4">
                         <a href="{{ route('lang.switch', 'en') }}"
-                            class="lang-link text-xs font-bold {{ app()->getLocale() == 'en' ? 'text-theme-secondary' : 'text-slate-400 hover:text-slate-600' }} transition-colors">EN</a>
-                        <span class="text-slate-300">|</span>
+                            class="lang-link text-xs font-bold {{ app()->getLocale() == 'en' ? 'text-theme-secondary' : 'text-slate-500 hover:text-slate-700' }} transition-colors">EN</a>
+                        <span class="text-slate-400">|</span>
                         <a href="{{ route('lang.switch', 'id') }}"
-                            class="lang-link text-xs font-bold {{ app()->getLocale() == 'id' ? 'text-theme-secondary' : 'text-slate-400 hover:text-slate-600' }} transition-colors">ID</a>
+                            class="lang-link text-xs font-bold {{ app()->getLocale() == 'id' ? 'text-theme-secondary' : 'text-slate-500 hover:text-slate-700' }} transition-colors">ID</a>
                     </div>
                 </div>
 
