@@ -34,6 +34,48 @@ class ManageLandingPage extends SettingsPage
         return __('messages.settings');
     }
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Fix escaped slashes in image paths (landing-page\/ -> landing-page/)
+        $imageFields = [
+            'hero_image',
+            'about_image_1',
+            'about_image_2',
+            'about_image_3',
+            'about_image_4',
+            'contact_image'
+        ];
+
+        foreach ($imageFields as $field) {
+            if (isset($data[$field]) && is_string($data[$field])) {
+                $data[$field] = str_replace('\\/', '/', $data[$field]);
+            }
+        }
+
+        return $data;
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Ensure no escaped slashes when saving
+        $imageFields = [
+            'hero_image',
+            'about_image_1',
+            'about_image_2',
+            'about_image_3',
+            'about_image_4',
+            'contact_image'
+        ];
+
+        foreach ($imageFields as $field) {
+            if (isset($data[$field]) && is_string($data[$field])) {
+                $data[$field] = str_replace('\\/', '/', $data[$field]);
+            }
+        }
+
+        return $data;
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema
