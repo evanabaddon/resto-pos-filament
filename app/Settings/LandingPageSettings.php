@@ -22,6 +22,8 @@ class LandingPageSettings extends Settings
     public ?string $about_image_4;
 
     public ?string $contact_image;
+    public ?string $reservation_image;
+    public ?string $google_maps_url;
 
     public string $stats_years;
     public string $stats_customers;
@@ -50,6 +52,8 @@ class LandingPageSettings extends Settings
             'about_image_3' => null,
             'about_image_4' => null,
             'contact_image' => null,
+            'reservation_image' => null,
+            'google_maps_url' => 'https://maps.google.com',
             'stats_years' => '15+',
             'stats_customers' => '10k+',
             'seo_title' => 'Best Restaurant in Town',

@@ -43,7 +43,9 @@ class ManageLandingPage extends SettingsPage
             'about_image_2',
             'about_image_3',
             'about_image_4',
-            'contact_image'
+            'about_image_4',
+            'contact_image',
+            'reservation_image'
         ];
 
         foreach ($imageFields as $field) {
@@ -64,7 +66,9 @@ class ManageLandingPage extends SettingsPage
             'about_image_2',
             'about_image_3',
             'about_image_4',
-            'contact_image'
+            'about_image_4',
+            'contact_image',
+            'reservation_image'
         ];
 
         foreach ($imageFields as $field) {
@@ -196,6 +200,22 @@ class ManageLandingPage extends SettingsPage
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
                             ->downloadable()
                             ->fetchFileInformation(false),
+                        FileUpload::make('reservation_image')
+                            ->label(__('messages.reservation_image'))
+                            ->image()
+                            ->disk('public')
+                            ->directory('landing-page')
+                            ->visibility('public')
+                            ->imagePreviewHeight('200')
+                            ->maxSize(2048)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
+                            ->downloadable()
+                            ->fetchFileInformation(false),
+                        TextInput::make('google_maps_url')
+                            ->label(__('messages.google_maps_url'))
+                            ->url()
+                            ->required()
+                            ->default('https://maps.google.com'),
                     ]),
 
                 Section::make(__('messages.seo_section'))

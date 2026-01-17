@@ -14,7 +14,12 @@
     <meta property="og:title" content="{{ $settings->seo_title }}">
     <meta property="og:description" content="{{ $settings->seo_description }}">
     @if($settings->hero_image)
-        <meta property="og:image" content="{{ asset('storage/' . $settings->hero_image) }}">
+    <meta property="og:image" content="{{ asset('storage/' . $settings->hero_image) }}">
+    @endif
+
+    <!-- Favicon -->
+    @if(app(\App\Settings\GeneralSettings::class)->app_favicon)
+    <link rel="icon" href="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_favicon) }}">
     @endif
 
     <!-- Fonts -->
@@ -136,19 +141,19 @@
     style="--primary-color: {{ !empty($settings->primary_color) ? $settings->primary_color : '#D4AF37' }}; --secondary-color: {{ !empty($settings->secondary_color) ? $settings->secondary_color : '#1A1A1A' }};">
 
     <!-- Navbar -->
-    <nav class="fixed w-full z-50 transition-all duration-300 glass-nav" id="navbar">
+    <nav class="fixed w-full z-50 transition-all duration-300 bg-transparent py-4" id="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
                 <a href="#" class="flex-shrink-0 flex items-center gap-3 group">
                     @if(app(\App\Settings\GeneralSettings::class)->app_logo)
-                        <img class="h-10 w-auto transform transition group-hover:scale-105"
-                            src="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_logo) }}"
-                            alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }}">
+                    <img class="h-10 w-auto transform transition group-hover:scale-105"
+                        src="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_logo) }}"
+                        alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }}">
                     @else
-                        <span
-                            class="font-heading font-bold text-2xl tracking-tight text-theme-secondary group-hover:text-theme-primary transition-colors">
-                            {{ app(\App\Settings\GeneralSettings::class)->app_name }}
-                        </span>
+                    <span
+                        class="logo-text font-heading font-bold text-2xl tracking-tight text-theme-primary group-hover:text-white transition-colors drop-shadow-md">
+                        {{ app(\App\Settings\GeneralSettings::class)->app_name }}
+                    </span>
                     @endif
                 </a>
 
@@ -156,30 +161,30 @@
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="#home"
-                        class="text-sm font-semibold uppercase tracking-wider text-slate-600 hover:text-primary transition-colors">{{ __('messages.landing.nav.home') }}</a>
+                        class="nav-link text-sm font-bold uppercase tracking-wider text-theme-primary hover:text-white transition-colors drop-shadow-sm">{{ __('messages.landing.nav.home') }}</a>
                     <a href="#about"
-                        class="text-sm font-semibold uppercase tracking-wider text-slate-600 hover:text-primary transition-colors">{{ __('messages.landing.nav.story') }}</a>
+                        class="nav-link text-sm font-bold uppercase tracking-wider text-theme-primary hover:text-white transition-colors drop-shadow-sm">{{ __('messages.landing.nav.story') }}</a>
                     <a href="#menu"
-                        class="text-sm font-semibold uppercase tracking-wider text-slate-600 hover:text-primary transition-colors">{{ __('messages.landing.nav.menu') }}</a>
+                        class="nav-link text-sm font-bold uppercase tracking-wider text-theme-primary hover:text-white transition-colors drop-shadow-sm">{{ __('messages.landing.nav.menu') }}</a>
                     <a href="#reservation"
-                        class="px-6 py-2.5 bg-theme-secondary text-white rounded-full font-medium hover:bg-theme-primary transition-all duration-300 shadow-lg shadow-black/20 hover:shadow-black/30 transform hover:-translate-y-0.5">
+                        class="px-6 py-2.5 bg-theme-primary text-white rounded-full font-medium hover:bg-white hover:text-theme-primary transition-all duration-300 shadow-lg shadow-black/20 hover:shadow-black/30 transform hover:-translate-y-0.5">
                         {{ __('messages.landing.nav.book_table') }}
                     </a>
 
                     <!-- Language Switcher -->
-                    <div class="flex items-center space-x-1 ml-2 border-l border-slate-200 pl-4">
+                    <div class="flex items-center space-x-1 ml-2 border-l border-white/20 pl-4">
                         <a href="{{ route('lang.switch', 'en') }}"
-                            class="text-xs font-bold {{ app()->getLocale() == 'en' ? 'text-theme-primary' : 'text-slate-400 hover:text-slate-600' }} transition-colors">EN</a>
-                        <span class="text-slate-300">|</span>
+                            class="lang-link text-xs font-bold {{ app()->getLocale() == 'en' ? 'text-theme-primary' : 'text-white/70 hover:text-white' }} transition-colors">EN</a>
+                        <span class="text-white/30">|</span>
                         <a href="{{ route('lang.switch', 'id') }}"
-                            class="text-xs font-bold {{ app()->getLocale() == 'id' ? 'text-theme-primary' : 'text-slate-400 hover:text-slate-600' }} transition-colors">ID</a>
+                            class="lang-link text-xs font-bold {{ app()->getLocale() == 'id' ? 'text-theme-primary' : 'text-white/70 hover:text-white' }} transition-colors">ID</a>
                     </div>
                 </div>
 
                 <!-- Mobile Menu Button -->
                 <div class="md:hidden flex items-center">
                     <button id="mobile-menu-btn"
-                        class="text-slate-900 focus:outline-none p-2 rounded-lg hover:bg-slate-100 transition">
+                        class="text-theme-primary focus:outline-none p-2 rounded-lg hover:bg-white/10 transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 6h16M4 12h16M4 18h16"></path>
@@ -218,11 +223,11 @@
         <!-- Parallax Background -->
         <div class="absolute inset-0 z-0">
             @if($settings->hero_image)
-                <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"
-                    style="background-image: url('{{ asset('storage/' . $settings->hero_image) }}'); transform: scale(1.1);">
-                </div>
+            <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"
+                style="background-image: url('{{ asset('storage/' . $settings->hero_image) }}'); transform: scale(1.1);">
+            </div>
             @else
-                <div class="absolute inset-0 bg-theme-secondary"></div>
+            <div class="absolute inset-0 bg-theme-secondary"></div>
             @endif
             <!-- Dynamic Gradient Overlay -->
             <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70"></div>
@@ -291,13 +296,16 @@
                             <h3 class="font-heading text-3xl font-bold text-slate-900 mb-2">{{ $settings->stats_years }}
                             </h3>
                             <p class="text-sm text-slate-500 uppercase tracking-wide">
-                                {{ __('messages.landing.about.years_experience') }}</p>
+                                {{ __('messages.landing.about.years_experience') }}
+                            </p>
                         </div>
                         <div>
                             <h3 class="font-heading text-3xl font-bold text-slate-900 mb-2">
-                                {{ $settings->stats_customers }}</h3>
+                                {{ $settings->stats_customers }}
+                            </h3>
                             <p class="text-sm text-slate-500 uppercase tracking-wide">
-                                {{ __('messages.landing.about.happy_customers') }}</p>
+                                {{ __('messages.landing.about.happy_customers') }}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -337,46 +345,46 @@
     </section>
 
     <!-- Menu Highlights -->
-    <section id="menu" class="py-32 bg-slate-50 relative">
-        <!-- Decoration -->
-        <div class="absolute top-0 left-0 w-full h-64 bg-white skew-y-3 origin-top-left -mt-32"></div>
-
+    <section id="menu" class="py-32 bg-theme-secondary relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center mb-20 reveal">
                 <span
                     class="text-theme-primary font-bold tracking-widest uppercase text-xs">{{ __('messages.landing.menu.kicker') }}</span>
-                <h2 class="font-heading text-5xl font-bold text-theme-secondary mt-3 mb-6">
-                    {{ __('messages.landing.menu.title') }}</h2>
+                <h2 class="font-heading text-5xl font-bold text-white mt-3 mb-6">
+                    {{ __('messages.landing.menu.title') }}
+                </h2>
                 <div class="w-24 h-1 bg-theme-primary mx-auto rounded-full opacity-50"></div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
                 @foreach($featuredProducts as $product)
-                    <div
-                        class="reveal group bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-slate-100">
-                        <div class="relative h-64 overflow-hidden">
-                            <div class="absolute inset-0 bg-slate-900/20 group-hover:bg-slate-900/0 transition z-10"></div>
-                            <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
-                                class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out">
-                            <div
-                                class="absolute top-4 right-4 z-20 bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold shadow-lg text-slate-900">
-                                Rp {{ number_format($product->sell_price, 0, ',', '.') }}
-                            </div>
-                        </div>
-                        <div class="p-8">
-                            <div class="text-xs font-bold text-primary mb-2 uppercase tracking-wide">
-                                {{ $product->category->name ?? __('messages.landing.menu.special') }}</div>
-                            <h3
-                                class="font-heading font-bold text-2xl text-slate-900 mb-3 group-hover:text-primary transition-colors">
-                                {{ $product->name }}</h3>
+                <div
+                    class="reveal group bg-white/5 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-theme-primary/20 transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-white/10">
+                    <div class="relative h-64 overflow-hidden">
+                        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition z-10"></div>
+                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                            class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out">
+                        <div
+                            class="absolute top-4 right-4 z-20 bg-theme-secondary/90 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold shadow-lg text-white border border-white/10">
+                            Rp {{ number_format($product->sell_price, 0, ',', '.') }}
                         </div>
                     </div>
+                    <div class="p-8">
+                        <div class="text-xs font-bold text-theme-primary mb-2 uppercase tracking-wide">
+                            {{ $product->category->name ?? __('messages.landing.menu.special') }}
+                        </div>
+                        <h3
+                            class="font-heading font-bold text-2xl text-white mb-3 group-hover:text-theme-primary transition-colors">
+                            {{ $product->name }}
+                        </h3>
+                    </div>
+                </div>
                 @endforeach
             </div>
 
             <div class="text-center mt-20 reveal">
                 <a href="{{ route('landing.menu') }}"
-                    class="inline-flex items-center justify-center px-8 py-4 border-2 border-theme-secondary text-theme-secondary text-lg font-bold rounded-full hover:bg-theme-secondary hover:text-white transition-all duration-300 group">
+                    class="inline-flex items-center justify-center px-8 py-4 border-2 border-theme-primary text-theme-primary text-lg font-bold rounded-full hover:bg-theme-primary hover:text-white transition-all duration-300 group">
                     <span>{{ __('messages.landing.menu.view_full') }}</span>
                     <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
@@ -392,9 +400,9 @@
     <section id="reservation" class="py-32 relative overflow-hidden">
         <!-- Background Image -->
         <div class="absolute inset-0 z-0">
-            <div class="absolute inset-0 bg-slate-900/90 z-10"></div>
-            <img src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80"
-                class="w-full h-full object-cover filter blur-sm opacity-50">
+            <div class="absolute inset-0 z-10"></div>
+            <img src="{{ !empty($settings->reservation_image) ? asset('storage/' . $settings->reservation_image) : 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80' }}"
+                class="w-full h-full object-cover">
         </div>
 
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
@@ -407,7 +415,8 @@
                             <span
                                 class="text-primary font-bold tracking-widest uppercase text-xs">{{ __('messages.landing.reservation.kicker') }}</span>
                             <h2 class="font-heading text-4xl font-bold text-slate-900 mt-2">
-                                {{ __('messages.landing.reservation.title') }}</h2>
+                                {{ __('messages.landing.reservation.title') }}
+                            </h2>
                             <p class="text-slate-500 mt-4">{{ __('messages.landing.reservation.description') }}</p>
                         </div>
 
@@ -435,8 +444,9 @@
                                     <select name="party_size"
                                         class="w-full px-5 py-4 rounded-xl bg-slate-50 border-slate-200 focus:border-primary focus:ring-primary transition shadow-sm">
                                         @foreach(range(1, 10) as $size)
-                                            <option value="{{ $size }}">{{ $size }}
-                                                {{ __('messages.landing.reservation.guest') }}</option>
+                                        <option value="{{ $size }}">{{ $size }}
+                                            {{ __('messages.landing.reservation.guest') }}
+                                        </option>
                                         @endforeach
                                         <option value="11">{{ __('messages.landing.reservation.more_than_10') }}
                                         </option>
@@ -473,7 +483,8 @@
                         class="hidden lg:flex flex-col justify-between h-full bg-slate-50 rounded-3xl p-10 border border-slate-100">
                         <div>
                             <h3 class="font-heading text-2xl font-bold text-slate-900 mb-6">
-                                {{ __('messages.landing.contact.info_title') }}</h3>
+                                {{ __('messages.landing.contact.info_title') }}
+                            </h3>
                             <div class="space-y-6">
                                 <div class="flex items-start">
                                     <div
@@ -490,7 +501,8 @@
                                         <p class="font-bold text-slate-900">{{ __('messages.landing.contact.address') }}
                                         </p>
                                         <p class="text-slate-500 text-sm mt-1">
-                                            {{ app(\App\Settings\GeneralSettings::class)->company_address }}</p>
+                                            {{ app(\App\Settings\GeneralSettings::class)->company_address }}
+                                        </p>
                                     </div>
                                 </div>
                                 <div class="flex items-start">
@@ -506,7 +518,8 @@
                                         <p class="font-bold text-slate-900">{{ __('messages.landing.contact.phone') }}
                                         </p>
                                         <p class="text-slate-500 text-sm mt-1">
-                                            {{ app(\App\Settings\GeneralSettings::class)->company_phone }}</p>
+                                            {{ app(\App\Settings\GeneralSettings::class)->company_phone }}
+                                        </p>
                                     </div>
                                 </div>
                                 <div class="flex items-start">
@@ -522,7 +535,8 @@
                                         <p class="font-bold text-slate-900">{{ __('messages.landing.contact.email') }}
                                         </p>
                                         <p class="text-slate-500 text-sm mt-1">
-                                            {{ app(\App\Settings\GeneralSettings::class)->company_email }}</p>
+                                            {{ app(\App\Settings\GeneralSettings::class)->company_email }}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -535,9 +549,11 @@
                                 <div class="text-center text-white">
                                     <p class="font-heading font-bold text-2xl">
                                         {{ app(\App\Settings\GeneralSettings::class)->operational_start_hour }}:00 -
-                                        {{ app(\App\Settings\GeneralSettings::class)->operational_end_hour }}:00</p>
+                                        {{ app(\App\Settings\GeneralSettings::class)->operational_end_hour }}:00
+                                    </p>
                                     <p class="text-sm uppercase tracking-widest mt-1 opacity-80">
-                                        {{ __('messages.landing.contact.opening_hours') }}</p>
+                                        {{ __('messages.landing.contact.opening_hours') }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -554,55 +570,65 @@
                 <div class="col-span-1 md:col-span-2">
                     <span
                         class="font-heading font-bold text-3xl mb-8 block text-white">{{ app(\App\Settings\GeneralSettings::class)->app_name }}</span>
-                    <p class="text-gray-400 mb-8 max-w-sm leading-relaxed text-lg">
+                    <p class="text-slate-300 mb-8 max-w-sm leading-relaxed text-lg">
                         {{ \Illuminate\Support\Str::limit($settings->about_us_text, 150) }}
                     </p>
                     <div class="flex space-x-5">
                         @if(app(\App\Settings\GeneralSettings::class)->app_instagram)
-                            <a href="https://instagram.com/{{ app(\App\Settings\GeneralSettings::class)->app_instagram }}"
-                                class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-primary transition duration-300">
-                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path fill-rule="evenodd"
-                                        d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.047-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.067-.06-1.407-.06-4.123v-.08c0-2.643.012-2.987.06-4.043.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772 4.902 4.902 0 011.772-1.153c.636-.247 1.363-.416 2.427-.465 1.067-.047 1.407-.06 4.123-.06h.08zm1.658 5.45c-2.69 0-4.87 2.18-4.87 4.87s2.18 4.87 4.87 4.87 4.87-2.18 4.87-4.87-2.18-4.87-4.87-4.87zm0 1.545c1.83 0 3.325 1.493 3.325 3.325 0 1.83-1.494 3.326-3.325 3.326-1.832 0-3.325-1.495-3.325-3.325 0-1.832 1.493-3.325 3.325-3.325zm5.727-.3c-.33 0-.597.26-.597.597 0 .33.267.597.597.597.33 0 .596-.264.596-.597 0-.332-.266-.597-.596-.597z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </a>
+                        <a href="https://instagram.com/{{ app(\App\Settings\GeneralSettings::class)->app_instagram }}"
+                            class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd"
+                                    d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.047-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.067-.06-1.407-.06-4.123v-.08c0-2.643.012-2.987.06-4.043.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772 4.902 4.902 0 011.772-1.153c.636-.247 1.363-.416 2.427-.465 1.067-.047 1.407-.06 4.123-.06h.08zm1.658 5.45c-2.69 0-4.87 2.18-4.87 4.87s2.18 4.87 4.87 4.87 4.87-2.18 4.87-4.87-2.18-4.87-4.87-4.87zm0 1.545c1.83 0 3.325 1.493 3.325 3.325 0 1.83-1.494 3.326-3.325 3.326-1.832 0-3.325-1.495-3.325-3.325 0-1.832 1.493-3.325 3.325-3.325zm5.727-.3c-.33 0-.597.26-.597.597 0 .33.267.597.597.597.33 0 .596-.264.596-.597 0-.332-.266-.597-.596-.597z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        @endif
+
+                        @if(app(\App\Settings\GeneralSettings::class)->app_tiktok)
+                        <a href="{{ 'https://tiktok.com/@' . app(\App\Settings\GeneralSettings::class)->app_tiktok }}"
+                            class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+                            </svg>
+                        </a>
                         @endif
                     </div>
                 </div>
 
                 <div>
                     <h4 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.footer.quick_links') }}</h4>
-                    <ul class="space-y-4 text-gray-400">
+                    <ul class="space-y-4 text-slate-300">
                         <li><a href="#home"
-                                class="hover:text-primary transition">{{ __('messages.landing.nav.home') }}</a></li>
+                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.home') }}</a></li>
                         <li><a href="#about"
-                                class="hover:text-primary transition">{{ __('messages.landing.nav.story') }}</a></li>
+                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.story') }}</a></li>
                         <li><a href="#menu"
-                                class="hover:text-primary transition">{{ __('messages.landing.nav.menu') }}</a></li>
+                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.menu') }}</a></li>
                         <li><a href="#reservation"
-                                class="hover:text-primary transition">{{ __('messages.landing.nav.reservations') }}</a>
+                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.reservations') }}</a>
                         </li>
                     </ul>
                 </div>
 
                 <div>
                     <h4 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.contact.visit_us') }}</h4>
-                    <p class="text-gray-400 leading-relaxed mb-4">
-                        {{ app(\App\Settings\GeneralSettings::class)->company_address }}</p>
-                    <a href="https://maps.google.com" target="_blank"
-                        class="text-primary hover:text-white transition text-sm font-bold uppercase tracking-widest">{{ __('messages.landing.contact.get_directions') }}
+                    <p class="text-slate-300 leading-relaxed mb-4">
+                        {{ app(\App\Settings\GeneralSettings::class)->company_address }}
+                    </p>
+                    <a href="{{ $settings->google_maps_url }}" target="_blank"
+                        class="text-theme-primary hover:text-white transition text-sm font-bold uppercase tracking-widest">{{ __('messages.landing.contact.get_directions') }}
                         &rarr;</a>
                 </div>
             </div>
 
             <div
-                class="border-t border-white/5 mt-20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center">
-                <p class="text-gray-400 text-sm">
+                class="border-t border-white/10 mt-20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center">
+                <p class="text-slate-400 text-sm">
                     &copy; {{ date('Y') }} {{ app(\App\Settings\GeneralSettings::class)->app_name }}.
                     {!! __('messages.landing.footer.crafted_by') !!}
                 </p>
-                <div class="flex space-x-6 text-sm text-gray-400">
+                <div class="flex space-x-6 text-sm text-slate-400">
                     <a href="#"
                         class="hover:text-white transition">{{ __('messages.landing.contact.privacy_policy') }}</a>
                     <a href="#"
@@ -625,6 +651,66 @@
         // Sticky Navbar & Scroll Reveal
         window.addEventListener('scroll', () => {
             const nav = document.getElementById('navbar');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const logoText = document.querySelector('.logo-text');
+            const langLinks = document.querySelectorAll('.lang-link');
+
+            if (window.scrollY > 50) {
+                nav.classList.add('glass-nav', 'shadow-sm');
+                nav.classList.remove('bg-transparent', 'py-4');
+
+                // Update text colors for sticky state (dark text)
+                navLinks.forEach(link => {
+                    link.classList.remove('text-theme-primary', 'hover:text-white', 'drop-shadow-sm');
+                    link.classList.add('text-theme-secondary', 'hover:text-theme-primary');
+                });
+
+                if (logoText) {
+                    logoText.classList.remove('text-theme-primary', 'hover:text-white', 'drop-shadow-md');
+                    logoText.classList.add('text-theme-secondary', 'hover:text-theme-primary');
+                }
+
+                langLinks.forEach(link => {
+                    if (!link.classList.contains('text-theme-primary')) {
+                        link.classList.remove('text-white/70', 'hover:text-white');
+                        link.classList.add('text-slate-400', 'hover:text-slate-600');
+                    }
+                });
+
+                // Mobile button update
+                if (btn) {
+                    btn.classList.remove('text-theme-primary', 'hover:bg-white/10');
+                    btn.classList.add('text-theme-secondary', 'hover:bg-slate-100');
+                }
+
+            } else {
+                nav.classList.remove('glass-nav', 'shadow-sm');
+                nav.classList.add('bg-transparent', 'py-4');
+
+                // Update text colors for transparent state (primary text)
+                navLinks.forEach(link => {
+                    link.classList.add('text-theme-primary', 'hover:text-white', 'drop-shadow-sm');
+                    link.classList.remove('text-theme-secondary', 'hover:text-theme-primary');
+                });
+
+                if (logoText) {
+                    logoText.classList.add('text-theme-primary', 'hover:text-white', 'drop-shadow-md');
+                    logoText.classList.remove('text-theme-secondary', 'hover:text-theme-primary');
+                }
+
+                langLinks.forEach(link => {
+                    if (!link.classList.contains('text-theme-primary')) {
+                        link.classList.add('text-white/70', 'hover:text-white');
+                        link.classList.remove('text-slate-400', 'hover:text-slate-600');
+                    }
+                });
+
+                // Mobile button update
+                if (btn) {
+                    btn.classList.add('text-theme-primary', 'hover:bg-white/10');
+                    btn.classList.remove('text-theme-secondary', 'hover:bg-slate-100');
+                }
+            }
 
             // Scroll Reveal Logic
             const reveals = document.querySelectorAll('.reveal');
@@ -644,7 +730,7 @@
         window.dispatchEvent(new Event('scroll'));
 
         // Reservation Form Handling
-        document.getElementById('reservationForm').addEventListener('submit', async function (e) {
+        document.getElementById('reservationForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const form = this;
             const btn = document.getElementById('btnSubmit');
