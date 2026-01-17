@@ -57,6 +57,11 @@
             }
 
             ;
+
+            /* Swiper Overrides */
+            --swiper-theme-color: var(--primary-color);
+            --swiper-pagination-bullet-inactive-color: #ffffff;
+            --swiper-pagination-bullet-inactive-opacity: 0.5;
         }
 
         body {
@@ -366,7 +371,7 @@
             </div>
 
             <!-- Swiper Container -->
-            <div class="swiper menu-swiper pb-12 px-4">
+            <div class="swiper menu-swiper pb-16 px-4">
                 <div class="swiper-wrapper">
                     @foreach($featuredProducts as $product)
                     <div class="swiper-slide h-auto">
