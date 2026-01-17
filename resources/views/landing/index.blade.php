@@ -371,36 +371,39 @@
             </div>
 
             <!-- Swiper Container -->
-            <div class="swiper menu-swiper pb-32 px-4">
-                <div class="swiper-wrapper">
-                    @foreach($featuredProducts as $product)
-                    <div class="swiper-slide h-auto">
-                        <div
-                            class="reveal group bg-white/5 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-theme-primary/20 transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-white/10 h-full flex flex-col">
-                            <div class="relative h-64 overflow-hidden shrink-0">
-                                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition z-10"></div>
-                                <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="400" height="300"
-                                    class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out">
-                                <div
-                                    class="absolute top-4 right-4 z-20 bg-theme-secondary/90 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold shadow-lg text-white border border-white/10">
-                                    Rp {{ number_format($product->sell_price, 0, ',', '.') }}
+            <div class="relative px-4">
+                <div class="swiper menu-swiper rounded-3xl overflow-hidden">
+                    <div class="swiper-wrapper">
+                        @foreach($featuredProducts as $product)
+                        <!-- h-auto + flex ensures all slides take height of tallest -->
+                        <div class="swiper-slide h-auto flex pb-2">
+                            <div
+                                class="reveal group bg-white/5 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-theme-primary/20 transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-white/10 w-full h-full flex flex-col">
+                                <div class="relative h-64 overflow-hidden shrink-0">
+                                    <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition z-10"></div>
+                                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="400" height="300"
+                                        class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out">
+                                    <div
+                                        class="absolute top-4 right-4 z-20 bg-theme-secondary/90 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold shadow-lg text-white border border-white/10">
+                                        Rp {{ number_format($product->sell_price, 0, ',', '.') }}
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="p-8 flex-1 flex flex-col">
-                                <div class="text-xs font-bold text-theme-primary mb-2 uppercase tracking-wide">
-                                    {{ $product->category->name ?? __('messages.landing.menu.special') }}
+                                <div class="p-8 flex-1 flex flex-col">
+                                    <div class="text-xs font-bold text-theme-primary mb-2 uppercase tracking-wide">
+                                        {{ $product->category->name ?? __('messages.landing.menu.special') }}
+                                    </div>
+                                    <h3
+                                        class="font-heading font-bold text-xl text-white mb-3 group-hover:text-theme-primary transition-colors line-clamp-2 min-h-[3.5rem] flex items-center">
+                                        {{ $product->name }}
+                                    </h3>
                                 </div>
-                                <h3
-                                    class="font-heading font-bold text-xl text-white mb-3 group-hover:text-theme-primary transition-colors line-clamp-2">
-                                    {{ $product->name }}
-                                </h3>
                             </div>
                         </div>
+                        @endforeach
                     </div>
-                    @endforeach
                 </div>
-                <!-- Pagination -->
-                <div class="swiper-pagination !bottom-0"></div>
+                <!-- Pagination Outside -->
+                <div class="swiper-pagination !static !mt-8"></div>
             </div>
 
             <div class="text-center mt-8 reveal">
