@@ -7,6 +7,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>Menu - {{ $settings->seo_title ?? config('app.name') }}</title>
+    <meta name="description" content="{{ $settings->seo_description ?? 'Explore our delicious menu.' }}">
+    <meta name="keywords" content="{{ $settings->seo_keywords ?? 'restaurant, menu, food' }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -15,8 +17,22 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="Menu - {{ $settings->seo_title ?? config('app.name') }}">
+    <meta property="og:description" content="{{ $settings->seo_description ?? 'Explore our delicious menu.' }}">
     @if($settings->hero_image)
     <meta property="og:image" content="{{ asset('storage/' . $settings->hero_image) }}">
+    @endif
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:title" content="Menu - {{ $settings->seo_title ?? config('app.name') }}">
+    <meta property="twitter:description" content="{{ $settings->seo_description ?? 'Explore our delicious menu.' }}">
+    @if($settings->hero_image)
+    <meta property="twitter:image" content="{{ asset('storage/' . $settings->hero_image) }}">
     @endif
 
     <!-- Favicon -->
