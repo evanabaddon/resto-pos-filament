@@ -26,9 +26,12 @@
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:title" content="Menu - {{ $settings->seo_title ?? config('app.name') }}">
     <meta property="og:description" content="{{ $settings->seo_description ?? 'Explore our delicious menu.' }}">
+    <!-- Preload Hero Image (LCP Optimization) -->
     @if($settings->hero_image)
+    <link rel="preload" as="image" href="{{ asset('storage/' . $settings->hero_image) }}">
     <meta property="og:image" content="{{ asset('storage/' . $settings->hero_image) }}">
     @endif
+
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
@@ -110,7 +113,7 @@
                     @if(app(\App\Settings\GeneralSettings::class)->app_logo)
                     <img class="h-10 w-auto transform transition group-hover:scale-110"
                         src="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_logo) }}"
-                        alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }}">
+                        alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }}" height="40" width="auto">
                     @else
                     <span
                         class="logo-text font-heading font-bold text-2xl tracking-tight text-theme-secondary group-hover:text-theme-primary transition-colors drop-shadow-[0_1px_1px_rgba(0,0,0,0.1)]">
@@ -126,17 +129,17 @@
 
                     <!-- Language Switcher -->
                     <div class="flex items-center space-x-1 ml-2 border-l border-slate-200 pl-4">
-                        <a href="{{ route('lang.switch', 'en') }}"
+                        <a href="{{ route('lang.switch', 'en') }}" aria-label="Switch to English"
                             class="lang-link text-xs font-bold {{ app()->getLocale() == 'en' ? 'text-theme-secondary' : 'text-slate-500 hover:text-slate-700' }} transition-colors">EN</a>
                         <span class="text-slate-400">|</span>
-                        <a href="{{ route('lang.switch', 'id') }}"
+                        <a href="{{ route('lang.switch', 'id') }}" aria-label="Switch to Indonesian"
                             class="lang-link text-xs font-bold {{ app()->getLocale() == 'id' ? 'text-theme-secondary' : 'text-slate-500 hover:text-slate-700' }} transition-colors">ID</a>
                     </div>
                 </div>
 
                 <!-- Mobile Menu Button -->
                 <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-btn"
+                    <button id="mobile-menu-btn" aria-label="Toggle navigation"
                         class="text-theme-secondary focus:outline-none p-2 rounded-lg hover:bg-slate-100 transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -181,7 +184,7 @@
                 @foreach($category->products as $product)
                 <div class="group flex gap-4">
                     <div class="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-slate-100 shadow-sm">
-                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="96" height="96" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
                     </div>
                     <div class="flex-grow">
                         <div class="flex justify-between items-baseline mb-1">
@@ -210,18 +213,18 @@
                     </p>
                     <div class="flex space-x-5">
                         @if(app(\App\Settings\GeneralSettings::class)->app_instagram)
-                        <a href="https://instagram.com/{{ app(\App\Settings\GeneralSettings::class)->app_instagram }}"
+                        <a href="https://instagram.com/{{ app(\App\Settings\GeneralSettings::class)->app_instagram }}" aria-label="Visit our Instagram"
                             class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
                             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path fill-rule="evenodd"
-                                    d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.047-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.067-.06-1.407-.06-4.123v-.08c0-2.643.012-2.987.06-4.043.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772 4.902 4.902 0 011.772-1.153c.636-.247 1.363-.416 2.427-.465 1.067-.047 1.407-.06 4.123-.06h.08zm1.658 5.45c-2.69 0-4.87 2.18-4.87 4.87s2.18 4.87 4.87 4.87 4.87-2.18 4.87-4.87-2.18-4.87-4.87-4.87zm0 1.545c1.83 0 3.325 1.493 3.325 3.325 0 1.83-1.494 3.326-3.325 3.326-1.832 0-3.325-1.495-3.325-3.325 0-1.832 1.493-3.325 3.325-3.325zm5.727-.3c-.33 0-.597.26-.597.597 0 .33.267.597.597.597.33 0 .596-.264.596-.597 0-.332-.266-.597-.596-.597z"
+                                    d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.153 1.772c-.636.247-1.363.416-2.427.465-1.067.047-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.067-.06-1.407-.06-4.123v-.08c0-2.643.012-2.987.06-4.043.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772 4.902 4.902 0 011.772-1.153c.636-.247 1.363-.416 2.427-.465 1.067-.047 1.407-.06 4.123-.06h.08zm1.658 5.45c-2.69 0-4.87 2.18-4.87 4.87s2.18 4.87 4.87 4.87 4.87-2.18 4.87-4.87-2.18-4.87-4.87-4.87zm0 1.545c1.83 0 3.325 1.493 3.325 3.325 0 1.83-1.494 3.326-3.325 3.326-1.832 0-3.325-1.495-3.325-3.325 0-1.832 1.493-3.325 3.325-3.325zm5.727-.3c-.33 0-.597.26-.597.597 0 .33.267.597.597.597.33 0 .596-.264.596-.597 0-.332-.266-.597-.596-.597z"
                                     clip-rule="evenodd" />
                             </svg>
                         </a>
                         @endif
 
                         @if(app(\App\Settings\GeneralSettings::class)->app_tiktok)
-                        <a href="{{ 'https://tiktok.com/@' . app(\App\Settings\GeneralSettings::class)->app_tiktok }}"
+                        <a href="{{ 'https://tiktok.com/@' . app(\App\Settings\GeneralSettings::class)->app_tiktok }}" aria-label="Visit our TikTok"
                             class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
                             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
@@ -232,7 +235,7 @@
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.footer.quick_links') }}</h4>
+                    <h3 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.footer.quick_links') }}</h3>
                     <ul class="space-y-4 text-slate-300">
                         <li><a href="{{ route('landing') }}#home"
                                 class="hover:text-theme-primary transition">{{ __('messages.landing.nav.home') }}</a></li>
@@ -247,13 +250,19 @@
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.contact.visit_us') }}</h4>
+                    <h3 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.contact.visit_us') }}</h3>
                     <p class="text-slate-300 leading-relaxed mb-4">
                         {{ app(\App\Settings\GeneralSettings::class)->company_address }}
                     </p>
                     <a href="{{ $settings->google_maps_url }}" target="_blank"
-                        class="text-theme-primary hover:text-white transition text-sm font-bold uppercase tracking-widest">{{ __('messages.landing.contact.get_directions') }}
+                        class="text-theme-primary hover:text-white transition text-sm font-bold uppercase tracking-widest block mb-4">{{ __('messages.landing.contact.get_directions') }}
                         &rarr;</a>
+
+                    <h4 class="text-white font-bold mt-6 mb-2">{{ __('messages.landing.contact.opening_hours') }}</h4>
+                    <p class="text-slate-300 leading-relaxed">
+                        {{ app(\App\Settings\GeneralSettings::class)->operational_start_hour }}:00 -
+                        {{ app(\App\Settings\GeneralSettings::class)->operational_end_hour }}:00
+                    </p>
                 </div>
             </div>
 

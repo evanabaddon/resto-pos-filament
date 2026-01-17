@@ -17,7 +17,9 @@
     <!-- Open Graph -->
     <meta property="og:title" content="{{ $settings->seo_title }}">
     <meta property="og:description" content="{{ $settings->seo_description }}">
+    <!-- Preload Hero Image (LCP Optimization) -->
     @if($settings->hero_image)
+    <link rel="preload" as="image" href="{{ asset('storage/' . $settings->hero_image) }}">
     <meta property="og:image" content="{{ asset('storage/' . $settings->hero_image) }}">
     @endif
 
@@ -152,7 +154,7 @@
                     @if(app(\App\Settings\GeneralSettings::class)->app_logo)
                     <img class="h-10 w-auto transform transition group-hover:scale-105"
                         src="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_logo) }}"
-                        alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }}">
+                        alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }}" height="40" width="auto">
                     @else
                     <span
                         class="logo-text font-heading font-bold text-2xl tracking-tight text-theme-primary group-hover:text-white transition-colors drop-shadow-md">
@@ -177,17 +179,17 @@
 
                     <!-- Language Switcher -->
                     <div class="flex items-center space-x-1 ml-2 border-l border-white/20 pl-4 transition-colors" id="lang-separator">
-                        <a href="{{ route('lang.switch', 'en') }}"
+                        <a href="{{ route('lang.switch', 'en') }}" aria-label="Switch to English"
                             class="lang-link text-xs font-bold {{ app()->getLocale() == 'en' ? 'text-theme-primary' : 'text-white/70 hover:text-white' }} transition-colors">EN</a>
                         <span class="text-white/30 lang-divider transition-colors">|</span>
-                        <a href="{{ route('lang.switch', 'id') }}"
+                        <a href="{{ route('lang.switch', 'id') }}" aria-label="Switch to Indonesian"
                             class="lang-link text-xs font-bold {{ app()->getLocale() == 'id' ? 'text-theme-primary' : 'text-white/70 hover:text-white' }} transition-colors">ID</a>
                     </div>
                 </div>
 
                 <!-- Mobile Menu Button -->
                 <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-btn"
+                    <button id="mobile-menu-btn" aria-label="Toggle navigation"
                         class="text-theme-primary focus:outline-none p-2 rounded-lg hover:bg-white/10 transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -271,7 +273,7 @@
         </div>
 
         <!-- Scroll Down Indicator -->
-        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce text-white/50">
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce text-white/50" aria-hidden="true">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3">
                 </path>
@@ -366,7 +368,7 @@
                     class="reveal group bg-white/5 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-theme-primary/20 transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-white/10">
                     <div class="relative h-64 overflow-hidden">
                         <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition z-10"></div>
-                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="400" height="300"
                             class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out">
                         <div
                             class="absolute top-4 right-4 z-20 bg-theme-secondary/90 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold shadow-lg text-white border border-white/10">
@@ -406,7 +408,7 @@
         <div class="absolute inset-0 z-0">
             <div class="absolute inset-0 z-10"></div>
             <img src="{{ !empty($settings->reservation_image) ? asset('storage/' . $settings->reservation_image) : 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80' }}"
-                class="w-full h-full object-cover">
+                class="w-full h-full object-cover" width="1280" height="800" alt="Restaurant Ambiance">
         </div>
 
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
@@ -427,25 +429,25 @@
                         <form id="reservationForm" class="space-y-6">
                             @csrf
                             <div>
-                                <label
+                                <label for="customer_name"
                                     class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{{ __('messages.landing.reservation.name') }}</label>
-                                <input type="text" name="customer_name" required
+                                <input type="text" id="customer_name" name="customer_name" required
                                     class="w-full px-5 py-4 rounded-xl bg-slate-50 border-slate-200 focus:border-primary focus:ring-primary transition shadow-sm"
                                     placeholder="John Doe">
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label
+                                    <label for="customer_phone"
                                         class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{{ __('messages.landing.reservation.phone') }}</label>
-                                    <input type="tel" name="customer_phone" required
+                                    <input type="tel" id="customer_phone" name="customer_phone" required
                                         class="w-full px-5 py-4 rounded-xl bg-slate-50 border-slate-200 focus:border-primary focus:ring-primary transition shadow-sm"
                                         placeholder="0812...">
                                 </div>
                                 <div>
-                                    <label
+                                    <label for="party_size"
                                         class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{{ __('messages.landing.reservation.guests') }}</label>
-                                    <select name="party_size"
+                                    <select name="party_size" id="party_size"
                                         class="w-full px-5 py-4 rounded-xl bg-slate-50 border-slate-200 focus:border-primary focus:ring-primary transition shadow-sm">
                                         @foreach(range(1, 10) as $size)
                                         <option value="{{ $size }}">{{ $size }}
@@ -459,16 +461,16 @@
                             </div>
 
                             <div>
-                                <label
+                                <label for="reservation_date"
                                     class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{{ __('messages.landing.reservation.date_time') }}</label>
-                                <input type="datetime-local" name="reservation_date" required
+                                <input type="datetime-local" id="reservation_date" name="reservation_date" required
                                     class="w-full px-5 py-4 rounded-xl bg-slate-50 border-slate-200 focus:border-primary focus:ring-primary transition shadow-sm">
                             </div>
 
                             <div>
-                                <label
+                                <label for="special_requests"
                                     class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{{ __('messages.landing.reservation.special_request') }}</label>
-                                <textarea name="special_requests" rows="3"
+                                <textarea name="special_requests" id="special_requests" rows="3"
                                     class="w-full px-5 py-4 rounded-xl bg-slate-50 border-slate-200 focus:border-primary focus:ring-primary transition shadow-sm"
                                     placeholder="{{ __('messages.landing.reservation.placeholder_request') }}"></textarea>
                             </div>
@@ -579,7 +581,7 @@
                     </p>
                     <div class="flex space-x-5">
                         @if(app(\App\Settings\GeneralSettings::class)->app_instagram)
-                        <a href="https://instagram.com/{{ app(\App\Settings\GeneralSettings::class)->app_instagram }}"
+                        <a href="https://instagram.com/{{ app(\App\Settings\GeneralSettings::class)->app_instagram }}" aria-label="Visit our Instagram"
                             class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
                             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path fill-rule="evenodd"
@@ -590,7 +592,7 @@
                         @endif
 
                         @if(app(\App\Settings\GeneralSettings::class)->app_tiktok)
-                        <a href="{{ 'https://tiktok.com/@' . app(\App\Settings\GeneralSettings::class)->app_tiktok }}"
+                        <a href="{{ 'https://tiktok.com/@' . app(\App\Settings\GeneralSettings::class)->app_tiktok }}" aria-label="Visit our TikTok"
                             class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
                             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
@@ -601,7 +603,7 @@
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.footer.quick_links') }}</h4>
+                    <h3 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.footer.quick_links') }}</h3>
                     <ul class="space-y-4 text-slate-300">
                         <li><a href="#home"
                                 class="hover:text-theme-primary transition">{{ __('messages.landing.nav.home') }}</a></li>
@@ -616,13 +618,19 @@
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.contact.visit_us') }}</h4>
+                    <h3 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.contact.visit_us') }}</h3>
                     <p class="text-slate-300 leading-relaxed mb-4">
                         {{ app(\App\Settings\GeneralSettings::class)->company_address }}
                     </p>
                     <a href="{{ $settings->google_maps_url }}" target="_blank"
-                        class="text-theme-primary hover:text-white transition text-sm font-bold uppercase tracking-widest">{{ __('messages.landing.contact.get_directions') }}
+                        class="text-theme-primary hover:text-white transition text-sm font-bold uppercase tracking-widest block mb-4">{{ __('messages.landing.contact.get_directions') }}
                         &rarr;</a>
+
+                    <h4 class="text-white font-bold mt-6 mb-2">{{ __('messages.landing.contact.opening_hours') }}</h4>
+                    <p class="text-slate-300 leading-relaxed">
+                        {{ app(\App\Settings\GeneralSettings::class)->operational_start_hour }}:00 -
+                        {{ app(\App\Settings\GeneralSettings::class)->operational_end_hour }}:00
+                    </p>
                 </div>
             </div>
 
