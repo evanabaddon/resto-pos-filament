@@ -38,7 +38,9 @@ return [
     'seo_section_desc' => 'Optimalkan untuk mesin pencari.',
     'seo_title' => 'Judul SEO',
     'seo_description' => 'Meta Description',
+    'seo_description' => 'Meta Description',
     'seo_keywords' => 'Meta Keywords',
+    'seo_google_verification' => 'Kode Verifikasi Google Site',
 
     'general' => 'Umum',
     'fiscal_tax' => 'Fiskal / Pajak',

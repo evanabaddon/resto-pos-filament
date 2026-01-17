@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    @if($settings->seo_google_verification)
+    <meta name="google-site-verification" content="{{ $settings->seo_google_verification }}" />
+    @endif
+
     <title>{{ $settings->seo_title ?? config('app.name') }}</title>
     <meta name="description" content="{{ $settings->seo_description }}">
     <meta name="keywords" content="{{ $settings->seo_keywords }}">

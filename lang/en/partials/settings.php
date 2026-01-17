@@ -38,7 +38,10 @@ return [
     'seo_section_desc' => 'Optimize for search engines.',
     'seo_title' => 'SEO Title',
     'seo_description' => 'Meta Description',
+    'seo_description' => 'Meta Description',
     'seo_keywords' => 'Meta Keywords',
+    'seo_google_verification' => 'Google Site Verification Code',
+
 
     'general' => 'General',
     'fiscal_tax' => 'Fiscal / Tax',

@@ -234,6 +234,9 @@ class ManageLandingPage extends SettingsPage
                         TextInput::make('seo_keywords')
                             ->label(__('messages.seo_keywords'))
                             ->placeholder('food, dining, restaurant'),
+                        TextInput::make('seo_google_verification')
+                            ->label(__('messages.seo_google_verification'))
+                            ->placeholder('Verification Code (e.g. K8kknF9...)'),
                     ]),
             ]);
     }
