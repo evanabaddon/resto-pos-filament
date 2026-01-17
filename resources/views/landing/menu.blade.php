@@ -142,9 +142,9 @@
     </nav>
 
     <!-- Header -->
-    <header class="pt-32 pb-16 bg-white text-center ml-4 mr-4">
-        <h1 class="font-heading text-5xl font-bold text-theme-secondary mb-4">{{ __('messages.landing.menu.our_menu') }}</h1>
-        <p class="text-slate-500 text-lg max-w-2xl mx-auto">{{ __('messages.landing.menu.explore_desc') }}</p>
+    <header class="pt-32 pb-16 bg-white text-center">
+        <h1 class="font-heading text-5xl font-bold text-theme-secondary mb-4 ml-4 mr-4">{{ __('messages.landing.menu.our_menu') }}</h1>
+        <p class="text-slate-500 text-lg max-w-2xl mx-auto ml-4 mr-4">{{ __('messages.landing.menu.explore_desc') }}</p>
     </header>
 
     <!-- Menu Content -->
