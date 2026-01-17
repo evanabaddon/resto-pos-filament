@@ -142,16 +142,16 @@
     </nav>
 
     <!-- Header -->
-    <header class="pt-32 pb-16 bg-white text-center">
-        <h1 class="font-heading text-5xl font-bold text-theme-secondary mb-4 ml-4 mr-4">{{ __('messages.landing.menu.our_menu') }}</h1>
-        <p class="text-slate-500 text-lg max-w-2xl mx-auto ml-4 mr-4">{{ __('messages.landing.menu.explore_desc') }}</p>
+    <header class="pt-32 pb-16 bg-theme-secondary text-center">
+        <h1 class="font-heading text-5xl font-bold text-white mb-4 px-4">{{ __('messages.landing.menu.our_menu') }}</h1>
+        <p class="text-slate-300 text-lg max-w-2xl mx-auto px-4">{{ __('messages.landing.menu.explore_desc') }}</p>
     </header>
 
     <!-- Menu Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
         @foreach($categories as $category)
         @if($category->products->isNotEmpty())
-        <div id="category-{{ $category->id }}" class="mb-16">
+        <div id="category-{{ $category->id }}" class="mb-8 mt-8">
             <div class="flex items-center mb-10">
                 <h2 class="font-heading text-3xl font-bold text-theme-secondary mr-6">{{ $category->name }}</h2>
                 <div class="flex-grow h-px bg-slate-200"></div>
