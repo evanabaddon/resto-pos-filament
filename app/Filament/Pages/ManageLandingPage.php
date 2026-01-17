@@ -53,7 +53,11 @@ class ManageLandingPage extends SettingsPage
                             ->image()
                             ->disk('public')
                             ->directory('landing-page')
-                            ->visibility('public'),
+                            ->visibility('public')
+                            ->imagePreviewHeight('250')
+                            ->maxSize(2048)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
+                            ->downloadable(),
                     ]),
 
                 Section::make(__('messages.theme_section'))
@@ -85,24 +89,40 @@ class ManageLandingPage extends SettingsPage
                                     ->disk('public')
                                     ->directory('landing-page')
                                     ->visibility('public')
+                                    ->imagePreviewHeight('200')
+                                    ->maxSize(2048)
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
+                                    ->downloadable()
                                     ->label(__('messages.about_image_1')),
                                 FileUpload::make('about_image_2')
                                     ->image()
                                     ->disk('public')
                                     ->directory('landing-page')
                                     ->visibility('public')
+                                    ->imagePreviewHeight('200')
+                                    ->maxSize(2048)
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
+                                    ->downloadable()
                                     ->label(__('messages.about_image_2')),
                                 FileUpload::make('about_image_3')
                                     ->image()
                                     ->disk('public')
                                     ->directory('landing-page')
                                     ->visibility('public')
+                                    ->imagePreviewHeight('200')
+                                    ->maxSize(2048)
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
+                                    ->downloadable()
                                     ->label(__('messages.about_image_3')),
                                 FileUpload::make('about_image_4')
                                     ->image()
                                     ->disk('public')
                                     ->directory('landing-page')
                                     ->visibility('public')
+                                    ->imagePreviewHeight('200')
+                                    ->maxSize(2048)
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
+                                    ->downloadable()
                                     ->label(__('messages.about_image_4')),
                             ]),
                         Grid::make(2)
@@ -123,7 +143,11 @@ class ManageLandingPage extends SettingsPage
                             ->image()
                             ->disk('public')
                             ->directory('landing-page')
-                            ->visibility('public'),
+                            ->visibility('public')
+                            ->imagePreviewHeight('200')
+                            ->maxSize(2048)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
+                            ->downloadable(),
                     ]),
 
                 Section::make(__('messages.seo_section'))

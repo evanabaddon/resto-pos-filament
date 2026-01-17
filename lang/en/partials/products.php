@@ -47,6 +47,9 @@ return [
     // Unit Resources
     'unit_name' => 'Unit Name',
     'unit_symbol' => 'Symbol',
+    'symbol' => 'Symbol',
+    'base_unit' => 'Base Unit',
+    'conversion_rate' => 'Conversion Rate (1 base = x unit)',
 
     // Production Fields
     'production_date' => 'Production Date',
