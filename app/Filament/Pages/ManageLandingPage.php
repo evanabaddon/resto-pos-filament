@@ -57,7 +57,8 @@ class ManageLandingPage extends SettingsPage
                             ->imagePreviewHeight('250')
                             ->maxSize(2048)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
-                            ->downloadable(),
+                            ->downloadable()
+                            ->fetchFileInformation(false),
                     ]),
 
                 Section::make(__('messages.theme_section'))
@@ -93,6 +94,7 @@ class ManageLandingPage extends SettingsPage
                                     ->maxSize(2048)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
                                     ->downloadable()
+                                    ->fetchFileInformation(false)
                                     ->label(__('messages.about_image_1')),
                                 FileUpload::make('about_image_2')
                                     ->image()
@@ -103,6 +105,7 @@ class ManageLandingPage extends SettingsPage
                                     ->maxSize(2048)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
                                     ->downloadable()
+                                    ->fetchFileInformation(false)
                                     ->label(__('messages.about_image_2')),
                                 FileUpload::make('about_image_3')
                                     ->image()
@@ -113,6 +116,7 @@ class ManageLandingPage extends SettingsPage
                                     ->maxSize(2048)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
                                     ->downloadable()
+                                    ->fetchFileInformation(false)
                                     ->label(__('messages.about_image_3')),
                                 FileUpload::make('about_image_4')
                                     ->image()
@@ -123,6 +127,7 @@ class ManageLandingPage extends SettingsPage
                                     ->maxSize(2048)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
                                     ->downloadable()
+                                    ->fetchFileInformation(false)
                                     ->label(__('messages.about_image_4')),
                             ]),
                         Grid::make(2)
@@ -147,7 +152,8 @@ class ManageLandingPage extends SettingsPage
                             ->imagePreviewHeight('200')
                             ->maxSize(2048)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
-                            ->downloadable(),
+                            ->downloadable()
+                            ->fetchFileInformation(false),
                     ]),
 
                 Section::make(__('messages.seo_section'))
