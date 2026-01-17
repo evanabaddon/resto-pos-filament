@@ -371,7 +371,7 @@
             </div>
 
             <!-- Swiper Container -->
-            <div class="swiper menu-swiper pb-16 px-4">
+            <div class="swiper menu-swiper pb-32 px-4">
                 <div class="swiper-wrapper">
                     @foreach($featuredProducts as $product)
                     <div class="swiper-slide h-auto">
@@ -391,7 +391,7 @@
                                     {{ $product->category->name ?? __('messages.landing.menu.special') }}
                                 </div>
                                 <h3
-                                    class="font-heading font-bold text-2xl text-white mb-3 group-hover:text-theme-primary transition-colors line-clamp-2">
+                                    class="font-heading font-bold text-xl text-white mb-3 group-hover:text-theme-primary transition-colors line-clamp-2">
                                     {{ $product->name }}
                                 </h3>
                             </div>
@@ -403,7 +403,7 @@
                 <div class="swiper-pagination !bottom-0"></div>
             </div>
 
-            <div class="text-center mt-20 reveal">
+            <div class="text-center mt-8 reveal">
                 <a href="{{ route('landing.menu') }}"
                     class="inline-flex items-center justify-center px-8 py-4 border-2 border-theme-primary text-theme-primary text-lg font-bold rounded-full hover:bg-theme-primary hover:text-white transition-all duration-300 group">
                     <span>{{ __('messages.landing.menu.view_full') }}</span>
