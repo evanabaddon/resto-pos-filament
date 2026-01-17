@@ -28,6 +28,7 @@ return [
     'about_image_4' => 'Image 4 (Bottom Right)',
     'stats_years' => 'Years of Experience',
     'stats_customers' => 'Happy Customers',
+    'footer_description' => 'Footer Short Description',
 
     'contact_section' => 'Contact Section',
     'contact_image' => 'Contact Section Image',

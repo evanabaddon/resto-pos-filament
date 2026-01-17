@@ -32,6 +32,8 @@ class LandingPageSettings extends Settings
     public ?string $seo_description;
     public ?string $seo_keywords;
 
+    public ?string $footer_description;
+
     public static function group(): string
     {
         return 'landing';
@@ -59,6 +61,7 @@ class LandingPageSettings extends Settings
             'seo_title' => 'Best Restaurant in Town',
             'seo_description' => 'Fine dining restaurant serving local and international cuisine.',
             'seo_keywords' => 'restaurant, food, dining',
+            'footer_description' => 'A short description about your restaurant for the footer.',
         ];
     }
 }

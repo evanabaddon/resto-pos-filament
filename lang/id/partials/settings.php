@@ -28,6 +28,7 @@ return [
     'about_image_4' => 'Gambar 4 (Kanan Bawah)',
     'stats_years' => 'Tahun Pengalaman',
     'stats_customers' => 'Pelanggan Puas',
+    'footer_description' => 'Deskripsi Singkat Footer',
 
     'contact_section' => 'Bagian Kontak',
     'contact_image' => 'Gambar Bagian Kontak',

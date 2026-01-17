@@ -184,6 +184,10 @@ class ManageLandingPage extends SettingsPage
                                 TextInput::make('stats_customers')
                                     ->label(__('messages.stats_customers'))
                                     ->default('10k+'),
+                                Textarea::make('footer_description')
+                                    ->label(__('messages.footer_description'))
+                                    ->rows(3)
+                                    ->columnSpanFull(),
                             ]),
                     ]),
 

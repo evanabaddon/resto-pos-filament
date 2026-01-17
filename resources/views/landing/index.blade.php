@@ -571,7 +571,7 @@
                     <span
                         class="font-heading font-bold text-3xl mb-8 block text-white">{{ app(\App\Settings\GeneralSettings::class)->app_name }}</span>
                     <p class="text-slate-300 mb-8 max-w-sm leading-relaxed text-lg">
-                        {{ \Illuminate\Support\Str::limit($settings->about_us_text, 150) }}
+                        {{ $settings->footer_description ?? \Illuminate\Support\Str::limit($settings->about_us_text, 150) }}
                     </p>
                     <div class="flex space-x-5">
                         @if(app(\App\Settings\GeneralSettings::class)->app_instagram)
