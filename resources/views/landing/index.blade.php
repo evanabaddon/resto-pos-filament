@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     @if($settings->seo_google_verification)
-    <meta name="google-site-verification" content="{{ $settings->seo_google_verification }}" />
+        <meta name="google-site-verification" content="{{ $settings->seo_google_verification }}" />
     @endif
 
     <title>{{ $settings->seo_title ?? config('app.name') }}</title>
@@ -19,13 +19,13 @@
     <meta property="og:description" content="{{ $settings->seo_description }}">
     <!-- Preload Hero Image (LCP Optimization) -->
     @if($settings->hero_image)
-    <link rel="preload" as="image" href="{{ asset('storage/' . $settings->hero_image) }}">
-    <meta property="og:image" content="{{ asset('storage/' . $settings->hero_image) }}">
+        <link rel="preload" as="image" href="{{ asset('storage/' . $settings->hero_image) }}">
+        <meta property="og:image" content="{{ asset('storage/' . $settings->hero_image) }}">
     @endif
 
     <!-- Favicon -->
     @if(app(\App\Settings\GeneralSettings::class)->app_favicon)
-    <link rel="icon" href="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_favicon) }}">
+        <link rel="icon" href="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_favicon) }}">
     @endif
 
     <!-- Fonts -->
@@ -160,14 +160,14 @@
             <div class="flex justify-between h-20 items-center">
                 <a href="#" class="flex-shrink-0 flex items-center gap-3 group">
                     @if(app(\App\Settings\GeneralSettings::class)->app_logo)
-                    <img class="h-10 w-auto transform transition group-hover:scale-105"
-                        src="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_logo) }}"
-                        alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }}" height="40" width="auto">
+                        <img class="h-10 w-auto transform transition group-hover:scale-105"
+                            src="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_logo) }}"
+                            alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }}" height="40" width="auto">
                     @else
-                    <span
-                        class="logo-text font-heading font-bold text-2xl tracking-tight text-theme-primary group-hover:text-white transition-colors drop-shadow-md">
-                        {{ app(\App\Settings\GeneralSettings::class)->app_name }}
-                    </span>
+                        <span
+                            class="logo-text font-heading font-bold text-2xl tracking-tight text-theme-primary group-hover:text-white transition-colors drop-shadow-md">
+                            {{ app(\App\Settings\GeneralSettings::class)->app_name }}
+                        </span>
                     @endif
                 </a>
 
@@ -186,7 +186,8 @@
                     </a>
 
                     <!-- Language Switcher -->
-                    <div class="flex items-center space-x-1 ml-2 border-l border-white/20 pl-4 transition-colors" id="lang-separator">
+                    <div class="flex items-center space-x-1 ml-2 border-l border-white/20 pl-4 transition-colors"
+                        id="lang-separator">
                         <a href="{{ route('lang.switch', 'en') }}" aria-label="Switch to English"
                             class="lang-link text-xs font-bold {{ app()->getLocale() == 'en' ? 'text-theme-primary' : 'text-white/70 hover:text-white' }} transition-colors">EN</a>
                         <span class="text-white/30 lang-divider transition-colors">|</span>
@@ -237,11 +238,11 @@
         <!-- Parallax Background -->
         <div class="absolute inset-0 z-0">
             @if($settings->hero_image)
-            <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"
-                style="background-image: url('{{ asset('storage/' . $settings->hero_image) }}'); transform: scale(1.1);">
-            </div>
+                <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"
+                    style="background-image: url('{{ asset('storage/' . $settings->hero_image) }}'); transform: scale(1.1);">
+                </div>
             @else
-            <div class="absolute inset-0 bg-theme-secondary"></div>
+                <div class="absolute inset-0 bg-theme-secondary"></div>
             @endif
             <!-- Dynamic Gradient Overlay -->
             <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70"></div>
@@ -267,21 +268,22 @@
 
             <div class="reveal flex flex-col sm:flex-row gap-5 justify-center">
                 <a href="#reservation"
-                    class="group relative px-8 py-4 bg-primary text-white text-lg font-semibold rounded-full overflow-hidden shadow-2xl transition hover:shadow-primary/50">
+                    class="group relative px-8 py-4 bg-theme-primary text-white text-lg font-semibold rounded-full overflow-hidden shadow-2xl transition hover:shadow-theme-primary/50 hover:bg-theme-primary/90">
                     <span class="relative z-10">{{ __('messages.landing.hero.reserve_table') }}</span>
                     <div
                         class="absolute inset-0 h-full w-full scale-0 rounded-full transition-all duration-300 group-hover:scale-100 group-hover:bg-white/20">
                     </div>
                 </a>
                 <a href="#menu"
-                    class="px-8 py-4 bg-white/5 backdrop-blur-sm border border-white/30 text-white text-lg font-semibold rounded-full hover:bg-white/10 transition hover:border-white/50">
+                    class="px-8 py-4 bg-theme-secondary text-white text-lg font-semibold rounded-full hover:bg-theme-secondary/90 transition shadow-xl">
                     {{ __('messages.landing.hero.explore_menu') }}
                 </a>
             </div>
         </div>
 
         <!-- Scroll Down Indicator -->
-        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce text-white/50" aria-hidden="true">
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce text-white/50"
+            aria-hidden="true">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3">
                 </path>
@@ -298,7 +300,8 @@
                     <span
                         class="text-theme-primary font-bold tracking-widest uppercase text-xs mb-2 block">{{ __('messages.landing.about.philosophy') }}</span>
                     <h2 class="font-heading text-5xl font-bold text-theme-secondary mb-8 leading-tight">
-                        {!! nl2br(e($settings->about_us_title)) !!}</h2>
+                        {!! nl2br(e($settings->about_us_title)) !!}
+                    </h2>
                     <div class="h-1 w-20 bg-theme-primary mb-8"></div>
 
                     <p class="text-slate-600 text-lg leading-relaxed mb-8">
@@ -375,30 +378,32 @@
                 <div class="swiper menu-swiper rounded-3xl overflow-hidden">
                     <div class="swiper-wrapper">
                         @foreach($featuredProducts as $product)
-                        <!-- h-auto + flex ensures all slides take height of tallest -->
-                        <div class="swiper-slide h-auto flex pb-2">
-                            <div
-                                class="reveal group bg-white/5 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-theme-primary/20 transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-white/10 w-full h-full flex flex-col">
-                                <div class="relative h-64 overflow-hidden shrink-0">
-                                    <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition z-10"></div>
-                                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="400" height="300"
-                                        class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out">
-                                    <div
-                                        class="absolute top-4 right-4 z-20 bg-theme-secondary/90 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold shadow-lg text-white border border-white/10">
-                                        Rp {{ number_format($product->sell_price, 0, ',', '.') }}
+                            <!-- h-auto + flex ensures all slides take height of tallest -->
+                            <div class="swiper-slide h-auto flex pb-2">
+                                <div
+                                    class="reveal group bg-white/5 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-theme-primary/20 transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-white/10 w-full h-full flex flex-col">
+                                    <div class="relative h-64 overflow-hidden shrink-0">
+                                        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition z-10">
+                                        </div>
+                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="400"
+                                            height="300"
+                                            class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out">
+                                        <div
+                                            class="absolute top-4 right-4 z-20 bg-theme-secondary/90 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold shadow-lg text-white border border-white/10">
+                                            Rp {{ number_format($product->sell_price, 0, ',', '.') }}
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="p-8 flex-1 flex flex-col">
-                                    <div class="text-xs font-bold text-theme-primary mb-2 uppercase tracking-wide">
-                                        {{ $product->category->name ?? __('messages.landing.menu.special') }}
+                                    <div class="p-8 flex-1 flex flex-col">
+                                        <div class="text-xs font-bold text-theme-primary mb-2 uppercase tracking-wide">
+                                            {{ $product->category->name ?? __('messages.landing.menu.special') }}
+                                        </div>
+                                        <h3
+                                            class="font-heading font-bold text-xl text-white mb-3 group-hover:text-theme-primary transition-colors line-clamp-2 min-h-[3.5rem] flex items-center">
+                                            {{ $product->name }}
+                                        </h3>
                                     </div>
-                                    <h3
-                                        class="font-heading font-bold text-xl text-white mb-3 group-hover:text-theme-primary transition-colors line-clamp-2 min-h-[3.5rem] flex items-center">
-                                        {{ $product->name }}
-                                    </h3>
                                 </div>
                             </div>
-                        </div>
                         @endforeach
                     </div>
                 </div>
@@ -468,9 +473,9 @@
                                     <select name="party_size" id="party_size"
                                         class="w-full px-5 py-4 rounded-xl bg-slate-50 border-slate-200 focus:border-primary focus:ring-primary transition shadow-sm">
                                         @foreach(range(1, 10) as $size)
-                                        <option value="{{ $size }}">{{ $size }}
-                                            {{ __('messages.landing.reservation.guest') }}
-                                        </option>
+                                            <option value="{{ $size }}">{{ $size }}
+                                                {{ __('messages.landing.reservation.guest') }}
+                                            </option>
                                         @endforeach
                                         <option value="11">{{ __('messages.landing.reservation.more_than_10') }}
                                         </option>
@@ -599,23 +604,26 @@
                     </p>
                     <div class="flex space-x-5">
                         @if(app(\App\Settings\GeneralSettings::class)->app_instagram)
-                        <a href="https://instagram.com/{{ app(\App\Settings\GeneralSettings::class)->app_instagram }}" aria-label="Visit our Instagram"
-                            class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
-                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd"
-                                    d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.047-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.067-.06-1.407-.06-4.123v-.08c0-2.643.012-2.987.06-4.043.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772 4.902 4.902 0 011.772-1.153c.636-.247 1.363-.416 2.427-.465 1.067-.047 1.407-.06 4.123-.06h.08zm1.658 5.45c-2.69 0-4.87 2.18-4.87 4.87s2.18 4.87 4.87 4.87 4.87-2.18 4.87-4.87-2.18-4.87-4.87-4.87zm0 1.545c1.83 0 3.325 1.493 3.325 3.325 0 1.83-1.494 3.326-3.325 3.326-1.832 0-3.325-1.495-3.325-3.325 0-1.832 1.493-3.325 3.325-3.325zm5.727-.3c-.33 0-.597.26-.597.597 0 .33.267.597.597.597.33 0 .596-.264.596-.597 0-.332-.266-.597-.596-.597z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </a>
+                            <a href="https://instagram.com/{{ app(\App\Settings\GeneralSettings::class)->app_instagram }}"
+                                aria-label="Visit our Instagram"
+                                class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd"
+                                        d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.047-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.067-.06-1.407-.06-4.123v-.08c0-2.643.012-2.987.06-4.043.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772 4.902 4.902 0 011.772-1.153c.636-.247 1.363-.416 2.427-.465 1.067-.047 1.407-.06 4.123-.06h.08zm1.658 5.45c-2.69 0-4.87 2.18-4.87 4.87s2.18 4.87 4.87 4.87 4.87-2.18 4.87-4.87-2.18-4.87-4.87-4.87zm0 1.545c1.83 0 3.325 1.493 3.325 3.325 0 1.83-1.494 3.326-3.325 3.326-1.832 0-3.325-1.495-3.325-3.325 0-1.832 1.493-3.325 3.325-3.325zm5.727-.3c-.33 0-.597.26-.597.597 0 .33.267.597.597.597.33 0 .596-.264.596-.597 0-.332-.266-.597-.596-.597z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </a>
                         @endif
 
                         @if(app(\App\Settings\GeneralSettings::class)->app_tiktok)
-                        <a href="{{ 'https://tiktok.com/@' . app(\App\Settings\GeneralSettings::class)->app_tiktok }}" aria-label="Visit our TikTok"
-                            class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
-                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
-                            </svg>
-                        </a>
+                            <a href="{{ 'https://tiktok.com/@' . app(\App\Settings\GeneralSettings::class)->app_tiktok }}"
+                                aria-label="Visit our TikTok"
+                                class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+                                </svg>
+                            </a>
                         @endif
                     </div>
                 </div>
@@ -624,11 +632,14 @@
                     <h3 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.footer.quick_links') }}</h3>
                     <ul class="space-y-4 text-slate-300">
                         <li><a href="#home"
-                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.home') }}</a></li>
+                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.home') }}</a>
+                        </li>
                         <li><a href="#about"
-                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.story') }}</a></li>
+                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.story') }}</a>
+                        </li>
                         <li><a href="#menu"
-                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.menu') }}</a></li>
+                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.menu') }}</a>
+                        </li>
                         <li><a href="#reservation"
                                 class="hover:text-theme-primary transition">{{ __('messages.landing.nav.reservations') }}</a>
                         </li>
@@ -784,7 +795,7 @@
         window.dispatchEvent(new Event('scroll'));
 
         // Reservation Form Handling
-        document.getElementById('reservationForm').addEventListener('submit', async function(e) {
+        document.getElementById('reservationForm').addEventListener('submit', async function (e) {
             e.preventDefault();
             const form = this;
             const btn = document.getElementById('btnSubmit');
@@ -832,7 +843,7 @@
     <!-- Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             var swiper = new Swiper(".menu-swiper", {
                 slidesPerView: 1,
                 spaceBetween: 30,
