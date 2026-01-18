@@ -13,6 +13,11 @@ Route::get('/', [\App\Http\Controllers\LandingController::class, 'index'])->name
 Route::get('/menu', [\App\Http\Controllers\LandingController::class, 'menu'])->name('landing.menu');
 Route::post('/reservation', [\App\Http\Controllers\LandingController::class, 'storeReservation'])->name('landing.reservation.store');
 
+// Pusher Test Page
+Route::get('/pusher-test', function () {
+    return view('pusher-test');
+});
+
 // Test Pusher Broadcasting
 Route::get('/test-pusher', function () {
     broadcast(new \App\Events\TestPusherEvent('Hello from Pusher! ' . now()->format('H:i:s')));
