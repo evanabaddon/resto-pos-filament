@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+// Sitemap - must be before other routes to avoid middleware
+Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index'])->name('sitemap');
+
 Route::get('/', [\App\Http\Controllers\LandingController::class, 'index'])->name('landing');
 Route::get('/menu', [\App\Http\Controllers\LandingController::class, 'menu'])->name('landing.menu');
 Route::post('/reservation', [\App\Http\Controllers\LandingController::class, 'storeReservation'])->name('landing.reservation.store');
