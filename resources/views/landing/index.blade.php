@@ -19,7 +19,7 @@
     <meta property="og:description" content="{{ $settings->seo_description }}">
     <!-- Preload Hero Image (LCP Optimization) -->
     @if($settings->hero_image)
-        <link rel="preload" as="image" href="{{ asset('storage/' . $settings->hero_image) }}">
+        <link rel="preload" as="image" href="{{ asset('storage/' . $settings->hero_image) }}" fetchpriority="high">
         <meta property="og:image" content="{{ asset('storage/' . $settings->hero_image) }}">
     @endif
 
@@ -29,13 +29,23 @@
     @endif
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.bunny.net">
     <link
         href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700|playfair-display:400,500,600,700,800&display=swap"
-        rel="stylesheet" />
+        rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript>
+        <link
+            href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700|playfair-display:400,500,600,700,800&display=swap"
+            rel="stylesheet">
+    </noscript>
 
     <!-- Swiper CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    </noscript>
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -238,9 +248,9 @@
         <!-- Parallax Background -->
         <div class="absolute inset-0 z-0">
             @if($settings->hero_image)
-                <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"
-                    style="background-image: url('{{ asset('storage/' . $settings->hero_image) }}'); transform: scale(1.1);">
-                </div>
+                <img src="{{ asset('storage/' . $settings->hero_image) }}" alt="{{ $settings->hero_title }}"
+                    class="absolute inset-0 w-full h-full object-cover scale-110" fetchpriority="high" width="1920"
+                    height="1080">
             @else
                 <div class="absolute inset-0 bg-theme-secondary"></div>
             @endif
@@ -849,7 +859,7 @@
         });
     </script>
     <!-- Swiper JS -->
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var swiper = new Swiper(".menu-swiper", {
