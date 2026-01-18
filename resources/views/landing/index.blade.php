@@ -335,24 +335,28 @@
                             <div class="h-64 rounded-2xl bg-slate-200 overflow-hidden shadow-lg">
                                 <img src="{{ $settings->about_image_1 ? asset('storage/' . $settings->about_image_1) : 'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80' }}"
                                     class="w-full h-full object-cover hover:scale-110 transition duration-700"
-                                    alt="Interior">
+                                    alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }} Restaurant Interior"
+                                    width="400" height="300" loading="lazy">
                             </div>
                             <div class="h-48 rounded-2xl bg-slate-200 overflow-hidden shadow-lg">
                                 <img src="{{ $settings->about_image_2 ? asset('storage/' . $settings->about_image_2) : 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&q=80' }}"
                                     class="w-full h-full object-cover hover:scale-110 transition duration-700"
-                                    alt="Chef">
+                                    alt="Professional Chef at {{ app(\App\Settings\GeneralSettings::class)->app_name }}"
+                                    width="400" height="300" loading="lazy">
                             </div>
                         </div>
                         <div class="space-y-4">
                             <div class="h-48 rounded-2xl bg-slate-200 overflow-hidden shadow-lg">
                                 <img src="{{ $settings->about_image_3 ? asset('storage/' . $settings->about_image_3) : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80' }}"
                                     class="w-full h-full object-cover hover:scale-110 transition duration-700"
-                                    alt="Food">
+                                    alt="Delicious Food at {{ app(\App\Settings\GeneralSettings::class)->app_name }}"
+                                    width="400" height="300" loading="lazy">
                             </div>
                             <div class="h-64 rounded-2xl bg-slate-200 overflow-hidden shadow-lg">
                                 <img src="{{ $settings->about_image_4 ? asset('storage/' . $settings->about_image_4) : 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80' }}"
                                     class="w-full h-full object-cover hover:scale-110 transition duration-700"
-                                    alt="Setting">
+                                    alt="Restaurant Dining Experience at {{ app(\App\Settings\GeneralSettings::class)->app_name }}"
+                                    width="400" height="300" loading="lazy">
                             </div>
                         </div>
                     </div>
@@ -431,7 +435,9 @@
         <div class="absolute inset-0 z-0">
             <div class="absolute inset-0 z-10"></div>
             <img src="{{ !empty($settings->reservation_image) ? asset('storage/' . $settings->reservation_image) : 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80' }}"
-                class="w-full h-full object-cover" width="1280" height="800" alt="Restaurant Ambiance">
+                class="w-full h-full object-cover" width="1280" height="800"
+                alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }} Restaurant Ambiance - Book Your Table"
+                loading="lazy">
         </div>
 
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
@@ -573,7 +579,9 @@
 
                         <div class="relative overflow-hidden rounded-2xl h-48 mt-10">
                             <img src="{{ $settings->contact_image ? asset('storage/' . $settings->contact_image) : 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80' }}"
-                                class="w-full h-full object-cover">
+                                class="w-full h-full object-cover"
+                                alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }} Contact Information"
+                                width="400" height="300" loading="lazy">
                             <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
                                 <div class="text-center text-white">
                                     <p class="font-heading font-bold text-2xl">
