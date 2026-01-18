@@ -13,6 +13,16 @@ Route::get('/', [\App\Http\Controllers\LandingController::class, 'index'])->name
 Route::get('/menu', [\App\Http\Controllers\LandingController::class, 'menu'])->name('landing.menu');
 Route::post('/reservation', [\App\Http\Controllers\LandingController::class, 'storeReservation'])->name('landing.reservation.store');
 
+// Test Pusher Broadcasting
+Route::get('/test-pusher', function () {
+    broadcast(new \App\Events\TestPusherEvent('Hello from Pusher! ' . now()->format('H:i:s')));
+    return response()->json([
+        'success' => true,
+        'message' => 'Event broadcasted! Check Pusher dashboard or browser console.',
+        'timestamp' => now()->toDateTimeString()
+    ]);
+});
+
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'id'])) {
         session(['locale' => $locale]);
