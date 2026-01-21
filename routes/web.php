@@ -29,21 +29,7 @@ Route::get('/test-pusher', function () {
 });
 
 // Customer Display
-Route::get('/customer-display', function () {
-    $settings = app(\App\Settings\GeneralSettings::class);
-
-    // Try to get landing page settings, fallback to null if not initialized
-    try {
-        $landingSettings = app(\App\Settings\LandingPageSettings::class);
-    } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
-        $landingSettings = null;
-    }
-
-    return view('customer-display', [
-        'settings' => $settings,
-        'landingSettings' => $landingSettings
-    ]);
-})->name('customer-display');
+Route::get('/customer-display', [\App\Http\Controllers\CustomerDisplayController::class, 'index'])->name('customer-display');
 
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'id'])) {
