@@ -339,6 +339,52 @@ Sistem manajemen konten digital untuk menampilkan slideshow di Smart TV atau lay
   - Konten berbeda untuk waktu berbeda (pagi/siang/malam)
 - **🔐 Access Control**: Hanya SuperAdmin yang dapat mengelola konfigurasi TV display.
 
+### 📺 Customer Display (Real-time Order Display) 🆕
+Sistem tampilan pelanggan yang menampilkan ringkasan pesanan secara real-time untuk meningkatkan transparansi dan kepercayaan pelanggan.
+
+- **🎯 Split-Screen Layout**: Desain modern dengan pembagian layar 30% (order summary) dan 70% (slideshow).
+  - **Dynamic Sidebar**: Sidebar order muncul otomatis saat ada transaksi aktif, tersembunyi saat idle.
+  - **Fullscreen Slideshow**: Slideshow mengambil seluruh layar saat tidak ada pesanan.
+  
+- **🎨 Customizable Branding**: 
+  - **Landing Page Colors**: Gradient sidebar menggunakan warna dari Landing Page Settings (`primary_color` & `secondary_color`).
+  - **Branding Overlay**: Logo dan nama aplikasi ditampilkan di background slideshow untuk branding yang konsisten.
+  
+- **📋 Compact Item Display**: 
+  - **Inline Format**: Tampilan item yang sangat ringkas dengan format `qty x nama item ...... Rp. harga`.
+  - **Dotted Leaders**: Garis putus-putus otomatis untuk memudahkan mata mengikuti dari nama ke harga.
+  - **No Cards**: Desain list sederhana tanpa card untuk efisiensi ruang maksimal.
+  
+- **🔄 Real-time Synchronization**:
+  - **Pusher Integration**: Update otomatis via WebSocket saat ada perubahan di POS.
+  - **Event-Driven**: Merespon event `loaded`, `updated`, `paid`, dan `idle` secara real-time.
+  - **Auto-Reset**: Kembali ke idle state otomatis saat sale dibatalkan atau setelah pembayaran berhasil.
+  
+- **💳 Payment Success Animation**: 
+  - **Fullscreen Overlay**: Tampilan "Pembayaran Berhasil" yang menarik dengan animasi.
+  - **Auto-Transition**: Kembali ke slideshow setelah 5 detik.
+  
+- **🖼️ Smart Slideshow**:
+  - **Object-Fit Contain**: Gambar tidak terpotong, ditampilkan utuh dengan rasio asli.
+  - **TV Config Integration**: Menggunakan konfigurasi yang sama dengan TV Display.
+  - **Smooth Transitions**: Animasi fade yang halus antar slide.
+
+- **📱 Access URL**: `/customer-display`
+  - Buka di browser layar kedua atau TV untuk tampilan pelanggan.
+  - Gunakan mode fullscreen (F11) untuk pengalaman terbaik.
+
+- **🎯 Use Cases**:
+  - Tampilkan ringkasan pesanan di layar menghadap pelanggan di kasir
+  - Meningkatkan transparansi transaksi dan kepercayaan pelanggan
+  - Mengurangi kesalahan komunikasi antara kasir dan pelanggan
+  - Memberikan pengalaman modern dan profesional
+
+- **⚙️ Setup**:
+  1. Pastikan TV Display sudah dikonfigurasi dengan gambar slideshow
+  2. Buka `/customer-display` di browser layar kedua
+  3. Tekan F11 untuk fullscreen
+  4. Mulai transaksi di POS - customer display akan update otomatis
+
 ---
 
 ## 🗺️ Roadmap Strategis 2026: Strategic Expansion
