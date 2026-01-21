@@ -28,6 +28,16 @@ Route::get('/test-pusher', function () {
     ]);
 });
 
+// Customer Display
+Route::get('/customer-display', function () {
+    $settings = app(\App\Settings\GeneralSettings::class);
+    $landingSettings = app(\App\Settings\LandingPageSettings::class);
+    return view('customer-display', [
+        'settings' => $settings,
+        'landingSettings' => $landingSettings
+    ]);
+})->name('customer-display');
+
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'id'])) {
         session(['locale' => $locale]);

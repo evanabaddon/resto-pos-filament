@@ -44,6 +44,20 @@ trait HasPayment
             // Auto print receipt setelah pembayaran berhasil
             $this->printReceipt($saleId, $amountPaid);
 
+            // 📺 Broadcast Payment Success to Customer Display
+            $sale->refresh();
+            broadcast(new \App\Events\CustomerDisplayUpdated('paid', $saleId, [
+                'customerName' => $sale->customer_name,
+                'total' => $sale->final_total,
+                'paymentMethod' => $sale->paymentMethod?->name ?? 'Cash',
+                'amountPaid' => $amountPaid,
+            ]));
+
+            // After 5 seconds, broadcast idle to reset display
+            dispatch(function () {
+                broadcast(new \App\Events\CustomerDisplayUpdated('idle'));
+            })->delay(now()->addSeconds(5));
+
             $this->dispatch('show-notification', message: 'Pembayaran berhasil diproses.', type: 'success');
             $this->showPaymentModal = false;
             $this->showLoadModal = false;
@@ -233,6 +247,17 @@ trait HasPayment
                 } catch (\Exception $e) {
                     \Log::warning('Client print handoff failed: ' . $e->getMessage());
                 }
+            }
+
+            // 📺 Broadcast Update to Customer Display (if sale is loaded)
+            if ($isUpdate && $this->saleId) {
+                broadcast(new \App\Events\CustomerDisplayUpdated('updated', $this->saleId, [
+                    'customerName' => $this->customerName,
+                    'items' => $this->items,
+                    'subtotal' => $this->total,
+                    'tax' => $this->tax,
+                    'total' => $this->finalTotal,
+                ]));
             }
 
             // 🔹 RESET previousItems

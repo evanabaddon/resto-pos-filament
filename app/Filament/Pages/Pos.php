@@ -367,6 +367,10 @@ class Pos extends Page
     public function cancelSale(): void
     {
         $this->resetPos();
+
+        // 📺 Broadcast to Customer Display to go idle
+        broadcast(new \App\Events\CustomerDisplayUpdated('idle'));
+
         $this->dispatch('show-notification', message: __('messages.transaction_cancelled'), type: 'info');
     }
 
@@ -1113,6 +1117,15 @@ class Pos extends Page
         $this->recalculateTotals();
         $this->showLoadModal = false;
         $this->dispatch('show-notification', message: __('messages.transaction_loaded'), type: 'success');
+
+        // 📺 Broadcast to Customer Display
+        broadcast(new \App\Events\CustomerDisplayUpdated('loaded', $this->saleId, [
+            'customerName' => $this->customerName,
+            'items' => $this->items,
+            'subtotal' => $this->total,
+            'tax' => $this->tax,
+            'total' => $this->finalTotal,
+        ]));
     }
 
 
