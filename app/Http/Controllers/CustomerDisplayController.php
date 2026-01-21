@@ -15,11 +15,11 @@ class CustomerDisplayController extends Controller
         try {
             $landingSettings = app(LandingPageSettings::class);
         } catch (\Exception $e) {
-            // If settings don't exist, create default object with default colors
-            $landingSettings = new class {
-                public $primary_color = '#667eea';
-                public $secondary_color = '#764ba2';
-            };
+            // If settings don't exist, create stdClass with default colors
+            $landingSettings = (object) [
+                'primary_color' => '#667eea',
+                'secondary_color' => '#764ba2'
+            ];
         }
 
         return view('customer-display', [

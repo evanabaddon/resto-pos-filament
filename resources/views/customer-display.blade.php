@@ -30,11 +30,10 @@
         .order-sidebar {
             width: 30%;
             background: linear-gradient(180deg,
-                    @if($landingSettings)
-                        {{ $landingSettings->primary_color }}
-                        0%,
-                        {{ $landingSettings->secondary_color }}
-                    100% @else #667eea 0%, #764ba2 100% @endif );
+                    {{ data_get($landingSettings, 'primary_color', '#667eea') }}
+                    0%,
+                    {{ data_get($landingSettings, 'secondary_color', '#764ba2') }}
+                    100%);
             display: flex;
             flex-direction: column;
             position: absolute;
@@ -164,13 +163,11 @@
             width: 100%;
             height: 100vh;
             position: relative;
-            background: linear-gradient(135deg, 
-                @if($landingSettings)
-                    {{ $landingSettings->primary_color }} 0%, {{ $landingSettings->secondary_color }} 100%
-                @else
-                    #667eea 0%, #764ba2 100%
-                @endif
-            );
+            background: linear-gradient(135deg,
+                    {{ data_get($landingSettings, 'primary_color', '#667eea') }}
+                    0%,
+                    {{ data_get($landingSettings, 'secondary_color', '#764ba2') }}
+                    100%);
             overflow: hidden;
             transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
@@ -301,13 +298,11 @@
             display: none;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, 
-                @if($landingSettings)
-                    {{ $landingSettings->primary_color }} 0%, {{ $landingSettings->secondary_color }} 100%
-                @else
-                    #667eea 0%, #764ba2 100%
-                @endif
-            );
+            background: linear-gradient(135deg,
+                    {{ data_get($landingSettings, 'primary_color', '#667eea') }}
+                    0%,
+                    {{ data_get($landingSettings, 'secondary_color', '#764ba2') }}
+                    100%);
             justify-content: center;
             align-items: center;
             text-align: center;
