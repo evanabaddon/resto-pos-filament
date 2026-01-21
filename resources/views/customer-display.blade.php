@@ -30,9 +30,9 @@
         .order-sidebar {
             width: 30%;
             background: linear-gradient(180deg,
-                    {{ $landingSettings->primary_color ?? '#667eea' }}
+                    {{ $landingSettings?->primary_color ?? '#667eea' }}
                     0%,
-                    {{ $landingSettings->secondary_color ?? '#764ba2' }}
+                    {{ $landingSettings?->secondary_color ?? '#764ba2' }}
                     100%);
             display: flex;
             flex-direction: column;
@@ -164,9 +164,9 @@
             height: 100vh;
             position: relative;
             background: linear-gradient(135deg,
-                    {{ $landingSettings->primary_color ?? '#667eea' }}
+                    {{ $landingSettings?->primary_color ?? '#667eea' }}
                     0%,
-                    {{ $landingSettings->secondary_color ?? '#764ba2' }}
+                    {{ $landingSettings?->secondary_color ?? '#764ba2' }}
                     100%);
             overflow: hidden;
             transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -299,9 +299,9 @@
             width: 100%;
             height: 100%;
             background: linear-gradient(135deg,
-                    {{ $landingSettings->primary_color ?? '#667eea' }}
+                    {{ $landingSettings?->primary_color ?? '#667eea' }}
                     0%,
-                    {{ $landingSettings->secondary_color ?? '#764ba2' }}
+                    {{ $landingSettings?->secondary_color ?? '#764ba2' }}
                     100%);
             justify-content: center;
             align-items: center;
