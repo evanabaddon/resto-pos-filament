@@ -14,7 +14,7 @@ class LandingPageSettings extends Settings
     public string $secondary_color;
 
     public string $about_us_title;
-    public string $about_us_text; // Kept as main text
+    public string $about_us_text;
 
     public ?string $about_image_1;
     public ?string $about_image_2;
