@@ -30,10 +30,11 @@
         .order-sidebar {
             width: 30%;
             background: linear-gradient(180deg,
-                    {{ $landingSettings?->primary_color ?? '#667eea' }}
-                    0%,
-                    {{ $landingSettings?->secondary_color ?? '#764ba2' }}
-                    100%);
+                    @if($landingSettings)
+                        {{ $landingSettings->primary_color }}
+                        0%,
+                        {{ $landingSettings->secondary_color }}
+                    100% @else #667eea 0%, #764ba2 100% @endif );
             display: flex;
             flex-direction: column;
             position: absolute;
@@ -163,11 +164,13 @@
             width: 100%;
             height: 100vh;
             position: relative;
-            background: linear-gradient(135deg,
-                    {{ $landingSettings?->primary_color ?? '#667eea' }}
-                    0%,
-                    {{ $landingSettings?->secondary_color ?? '#764ba2' }}
-                    100%);
+            background: linear-gradient(135deg, 
+                @if($landingSettings)
+                    {{ $landingSettings->primary_color }} 0%, {{ $landingSettings->secondary_color }} 100%
+                @else
+                    #667eea 0%, #764ba2 100%
+                @endif
+            );
             overflow: hidden;
             transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
@@ -298,11 +301,13 @@
             display: none;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg,
-                    {{ $landingSettings?->primary_color ?? '#667eea' }}
-                    0%,
-                    {{ $landingSettings?->secondary_color ?? '#764ba2' }}
-                    100%);
+            background: linear-gradient(135deg, 
+                @if($landingSettings)
+                    {{ $landingSettings->primary_color }} 0%, {{ $landingSettings->secondary_color }} 100%
+                @else
+                    #667eea 0%, #764ba2 100%
+                @endif
+            );
             justify-content: center;
             align-items: center;
             text-align: center;
