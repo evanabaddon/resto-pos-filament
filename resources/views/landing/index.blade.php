@@ -396,26 +396,42 @@
                             <div class="swiper-slide h-auto flex pb-2">
                                 <div
                                     class="reveal group bg-white/5 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-theme-primary/20 transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-white/10 w-full h-full flex flex-col">
-                                    <div class="relative h-64 overflow-hidden shrink-0">
-                                        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition z-10">
+                                    @if($settings->show_menu_images)
+                                        <div class="relative h-64 overflow-hidden shrink-0">
+                                            <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition z-10">
+                                            </div>
+                                            <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="400"
+                                                height="300"
+                                                class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out">
+                                            <div
+                                                class="absolute top-4 right-4 z-20 bg-theme-secondary/90 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold shadow-lg text-white border border-white/10">
+                                                Rp {{ number_format($product->sell_price, 0, ',', '.') }}
+                                            </div>
                                         </div>
-                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="400"
-                                            height="300"
-                                            class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out">
-                                        <div
-                                            class="absolute top-4 right-4 z-20 bg-theme-secondary/90 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold shadow-lg text-white border border-white/10">
-                                            Rp {{ number_format($product->sell_price, 0, ',', '.') }}
+                                        <div class="p-8 flex-1 flex flex-col">
+                                            <div class="text-xs font-bold text-theme-primary mb-2 uppercase tracking-wide">
+                                                {{ $product->category->name ?? __('messages.landing.menu.special') }}
+                                            </div>
+                                            <h3
+                                                class="font-heading font-bold text-xl text-white mb-3 group-hover:text-theme-primary transition-colors line-clamp-2 min-h-[3.5rem] flex items-center">
+                                                {{ $product->name }}
+                                            </h3>
                                         </div>
-                                    </div>
-                                    <div class="p-8 flex-1 flex flex-col">
-                                        <div class="text-xs font-bold text-theme-primary mb-2 uppercase tracking-wide">
-                                            {{ $product->category->name ?? __('messages.landing.menu.special') }}
+                                    @else
+                                        <div class="p-8 flex-1 flex flex-col justify-center items-center text-center min-h-[200px]">
+                                            <div class="text-xs font-bold text-theme-primary mb-3 uppercase tracking-wide">
+                                                {{ $product->category->name ?? __('messages.landing.menu.special') }}
+                                            </div>
+                                            <h3
+                                                class="font-heading font-bold text-2xl text-white mb-4 group-hover:text-theme-primary transition-colors">
+                                                {{ $product->name }}
+                                            </h3>
+                                            <div
+                                                class="bg-theme-secondary/90 backdrop-blur-md px-6 py-2 rounded-full text-base font-bold shadow-lg text-white border border-white/10">
+                                                Rp {{ number_format($product->sell_price, 0, ',', '.') }}
+                                            </div>
                                         </div>
-                                        <h3
-                                            class="font-heading font-bold text-xl text-white mb-3 group-hover:text-theme-primary transition-colors line-clamp-2 min-h-[3.5rem] flex items-center">
-                                            {{ $product->name }}
-                                        </h3>
-                                    </div>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach

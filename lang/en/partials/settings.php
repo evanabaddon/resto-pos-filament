@@ -18,6 +18,8 @@ return [
     'theme_section_desc' => 'Customize the look and feel.',
     'primary_color' => 'Primary Color',
     'secondary_color' => 'Secondary Color',
+    'show_menu_images' => 'Show Menu Images',
+    'show_menu_images_help' => 'If disabled, menus will be displayed without images (text only). Useful for menus without photos.',
 
     'content_section' => 'Content',
     'about_us_title' => 'About Us Title',
@@ -37,7 +39,6 @@ return [
     'seo_section' => 'SEO Configuration',
     'seo_section_desc' => 'Optimize for search engines.',
     'seo_title' => 'SEO Title',
-    'seo_description' => 'Meta Description',
     'seo_description' => 'Meta Description',
     'seo_keywords' => 'Meta Keywords',
     'seo_google_verification' => 'Google Site Verification Code',

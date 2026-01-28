@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     @if($settings->seo_google_verification)
-    <meta name="google-site-verification" content="{{ $settings->seo_google_verification }}" />
+        <meta name="google-site-verification" content="{{ $settings->seo_google_verification }}" />
     @endif
 
     <title>Menu - {{ $settings->seo_title ?? config('app.name') }}</title>
@@ -16,7 +16,9 @@
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700|playfair-display:400,500,600,700,800&display=swap" rel="stylesheet" />
+    <link
+        href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700|playfair-display:400,500,600,700,800&display=swap"
+        rel="stylesheet" />
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -28,8 +30,8 @@
     <meta property="og:description" content="{{ $settings->seo_description ?? 'Explore our delicious menu.' }}">
     <!-- Preload Hero Image (LCP Optimization) -->
     @if($settings->hero_image)
-    <link rel="preload" as="image" href="{{ asset('storage/' . $settings->hero_image) }}">
-    <meta property="og:image" content="{{ asset('storage/' . $settings->hero_image) }}">
+        <link rel="preload" as="image" href="{{ asset('storage/' . $settings->hero_image) }}">
+        <meta property="og:image" content="{{ asset('storage/' . $settings->hero_image) }}">
     @endif
 
 
@@ -39,12 +41,12 @@
     <meta property="twitter:title" content="Menu - {{ $settings->seo_title ?? config('app.name') }}">
     <meta property="twitter:description" content="{{ $settings->seo_description ?? 'Explore our delicious menu.' }}">
     @if($settings->hero_image)
-    <meta property="twitter:image" content="{{ asset('storage/' . $settings->hero_image) }}">
+        <meta property="twitter:image" content="{{ asset('storage/' . $settings->hero_image) }}">
     @endif
 
     <!-- Favicon -->
     @if(app(\App\Settings\GeneralSettings::class)->app_favicon)
-    <link rel="icon" href="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_favicon) }}">
+        <link rel="icon" href="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_favicon) }}">
     @endif
 
     <style>
@@ -111,14 +113,14 @@
             <div class="flex justify-between h-20 items-center">
                 <a href="{{ route('landing') }}" class="flex-shrink-0 flex items-center gap-3 group">
                     @if(app(\App\Settings\GeneralSettings::class)->app_logo)
-                    <img class="h-10 w-auto transform transition group-hover:scale-110"
-                        src="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_logo) }}"
-                        alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }}" height="40" width="auto">
+                        <img class="h-10 w-auto transform transition group-hover:scale-110"
+                            src="{{ asset('storage/' . app(\App\Settings\GeneralSettings::class)->app_logo) }}"
+                            alt="{{ app(\App\Settings\GeneralSettings::class)->app_name }}" height="40" width="auto">
                     @else
-                    <span
-                        class="logo-text font-heading font-bold text-2xl tracking-tight text-theme-secondary group-hover:text-theme-primary transition-colors drop-shadow-[0_1px_1px_rgba(0,0,0,0.1)]">
-                        {{ app(\App\Settings\GeneralSettings::class)->app_name }}
-                    </span>
+                        <span
+                            class="logo-text font-heading font-bold text-2xl tracking-tight text-theme-secondary group-hover:text-theme-primary transition-colors drop-shadow-[0_1px_1px_rgba(0,0,0,0.1)]">
+                            {{ app(\App\Settings\GeneralSettings::class)->app_name }}
+                        </span>
                     @endif
                 </a>
 
@@ -157,8 +159,10 @@
                     class="block px-3 py-3 rounded-xl text-base font-bold text-slate-800 hover:bg-slate-50 hover:text-theme-primary transition">{{ __('messages.landing.nav.back_to_home') }}</a>
 
                 <div class="flex justify-center items-center space-x-4 mt-4 pt-4 border-t border-slate-100">
-                    <a href="{{ route('lang.switch', 'en') }}" class="px-4 py-2 rounded-lg text-sm font-bold {{ app()->getLocale() == 'en' ? 'bg-slate-100 text-theme-primary' : 'text-slate-500 hover:bg-slate-50' }}">English</a>
-                    <a href="{{ route('lang.switch', 'id') }}" class="px-4 py-2 rounded-lg text-sm font-bold {{ app()->getLocale() == 'id' ? 'bg-slate-100 text-theme-primary' : 'text-slate-500 hover:bg-slate-50' }}">Indonesia</a>
+                    <a href="{{ route('lang.switch', 'en') }}"
+                        class="px-4 py-2 rounded-lg text-sm font-bold {{ app()->getLocale() == 'en' ? 'bg-slate-100 text-theme-primary' : 'text-slate-500 hover:bg-slate-50' }}">English</a>
+                    <a href="{{ route('lang.switch', 'id') }}"
+                        class="px-4 py-2 rounded-lg text-sm font-bold {{ app()->getLocale() == 'id' ? 'bg-slate-100 text-theme-primary' : 'text-slate-500 hover:bg-slate-50' }}">Indonesia</a>
                 </div>
             </div>
         </div>
@@ -173,31 +177,48 @@
     <!-- Menu Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
         @foreach($categories as $category)
-        @if($category->products->isNotEmpty())
-        <div id="category-{{ $category->id }}" class="mb-8 mt-8">
-            <div class="flex items-center mb-10">
-                <h2 class="font-heading text-3xl font-bold text-theme-secondary mr-6">{{ $category->name }}</h2>
-                <div class="flex-grow h-px bg-slate-200"></div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-                @foreach($category->products as $product)
-                <div class="group flex gap-4">
-                    <div class="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-slate-100 shadow-sm">
-                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="96" height="96" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+            @if($category->products->isNotEmpty())
+                <div id="category-{{ $category->id }}" class="mb-8 mt-8">
+                    <div class="flex items-center mb-10">
+                        <h2 class="font-heading text-3xl font-bold text-theme-secondary mr-6">{{ $category->name }}</h2>
+                        <div class="flex-grow h-px bg-slate-200"></div>
                     </div>
-                    <div class="flex-grow">
-                        <div class="flex justify-between items-baseline mb-1">
-                            <h3 class="font-bold text-lg text-theme-secondary group-hover:text-primary transition-colors">{{ $product->name }}</h3>
-                            <span class="font-bold text-primary ml-2">Rp {{ number_format($product->sell_price, 0, ',', '.') }}</span>
-                        </div>
-                        <!-- Description removed as per previous request -->
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+                        @foreach($category->products as $product)
+                            <div class="group flex gap-4">
+                                @if($settings->show_menu_images)
+                                    <div class="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-slate-100 shadow-sm">
+                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="96" height="96"
+                                            class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                                    </div>
+                                    <div class="flex-grow">
+                                        <div class="flex justify-between items-baseline mb-1">
+                                            <h3
+                                                class="font-bold text-lg text-theme-secondary group-hover:text-primary transition-colors">
+                                                {{ $product->name }}</h3>
+                                            <span class="font-bold text-primary ml-2">Rp
+                                                {{ number_format($product->sell_price, 0, ',', '.') }}</span>
+                                        </div>
+                                        <!-- Description removed as per previous request -->
+                                    </div>
+                                @else
+                                    <div class="flex-grow">
+                                        <div class="flex justify-between items-baseline mb-1">
+                                            <h3
+                                                class="font-bold text-lg text-theme-secondary group-hover:text-primary transition-colors">
+                                                {{ $product->name }}</h3>
+                                            <span class="font-bold text-primary ml-4 whitespace-nowrap">Rp
+                                                {{ number_format($product->sell_price, 0, ',', '.') }}</span>
+                                        </div>
+                                        <!-- Description removed as per previous request -->
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
                     </div>
                 </div>
-                @endforeach
-            </div>
-        </div>
-        @endif
+            @endif
         @endforeach
     </main>
 
@@ -213,23 +234,26 @@
                     </p>
                     <div class="flex space-x-5">
                         @if(app(\App\Settings\GeneralSettings::class)->app_instagram)
-                        <a href="https://instagram.com/{{ app(\App\Settings\GeneralSettings::class)->app_instagram }}" aria-label="Visit our Instagram"
-                            class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
-                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd"
-                                    d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.153 1.772c-.636.247-1.363.416-2.427.465-1.067.047-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.067-.06-1.407-.06-4.123v-.08c0-2.643.012-2.987.06-4.043.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772 4.902 4.902 0 011.772-1.153c.636-.247 1.363-.416 2.427-.465 1.067-.047 1.407-.06 4.123-.06h.08zm1.658 5.45c-2.69 0-4.87 2.18-4.87 4.87s2.18 4.87 4.87 4.87 4.87-2.18 4.87-4.87-2.18-4.87-4.87-4.87zm0 1.545c1.83 0 3.325 1.493 3.325 3.325 0 1.83-1.494 3.326-3.325 3.326-1.832 0-3.325-1.495-3.325-3.325 0-1.832 1.493-3.325 3.325-3.325zm5.727-.3c-.33 0-.597.26-.597.597 0 .33.267.597.597.597.33 0 .596-.264.596-.597 0-.332-.266-.597-.596-.597z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </a>
+                            <a href="https://instagram.com/{{ app(\App\Settings\GeneralSettings::class)->app_instagram }}"
+                                aria-label="Visit our Instagram"
+                                class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd"
+                                        d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.153 1.772c-.636.247-1.363.416-2.427.465-1.067.047-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.067-.06-1.407-.06-4.123v-.08c0-2.643.012-2.987.06-4.043.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772 4.902 4.902 0 011.772-1.153c.636-.247 1.363-.416 2.427-.465 1.067-.047 1.407-.06 4.123-.06h.08zm1.658 5.45c-2.69 0-4.87 2.18-4.87 4.87s2.18 4.87 4.87 4.87 4.87-2.18 4.87-4.87-2.18-4.87-4.87-4.87zm0 1.545c1.83 0 3.325 1.493 3.325 3.325 0 1.83-1.494 3.326-3.325 3.326-1.832 0-3.325-1.495-3.325-3.325 0-1.832 1.493-3.325 3.325-3.325zm5.727-.3c-.33 0-.597.26-.597.597 0 .33.267.597.597.597.33 0 .596-.264.596-.597 0-.332-.266-.597-.596-.597z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </a>
                         @endif
 
                         @if(app(\App\Settings\GeneralSettings::class)->app_tiktok)
-                        <a href="{{ 'https://tiktok.com/@' . app(\App\Settings\GeneralSettings::class)->app_tiktok }}" aria-label="Visit our TikTok"
-                            class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
-                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
-                            </svg>
-                        </a>
+                            <a href="{{ 'https://tiktok.com/@' . app(\App\Settings\GeneralSettings::class)->app_tiktok }}"
+                                aria-label="Visit our TikTok"
+                                class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-theme-primary transition duration-300">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+                                </svg>
+                            </a>
                         @endif
                     </div>
                 </div>
@@ -238,11 +262,14 @@
                     <h3 class="font-bold text-lg mb-6 text-white">{{ __('messages.landing.footer.quick_links') }}</h3>
                     <ul class="space-y-4 text-slate-300">
                         <li><a href="{{ route('landing') }}#home"
-                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.home') }}</a></li>
+                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.home') }}</a>
+                        </li>
                         <li><a href="{{ route('landing') }}#about"
-                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.story') }}</a></li>
+                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.story') }}</a>
+                        </li>
                         <li><a href="#"
-                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.menu') }}</a></li>
+                                class="hover:text-theme-primary transition">{{ __('messages.landing.nav.menu') }}</a>
+                        </li>
                         <li><a href="{{ route('landing') }}#reservation"
                                 class="hover:text-theme-primary transition">{{ __('messages.landing.nav.reservations') }}</a>
                         </li>

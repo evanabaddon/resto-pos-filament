@@ -18,6 +18,8 @@ return [
     'theme_section_desc' => 'Sesuaikan tampilan dan nuansa.',
     'primary_color' => 'Warna Utama',
     'secondary_color' => 'Warna Sekunder',
+    'show_menu_images' => 'Tampilkan Gambar Menu',
+    'show_menu_images_help' => 'Jika dinonaktifkan, menu akan ditampilkan tanpa gambar (hanya teks). Berguna untuk menu yang tidak memiliki foto.',
 
     'content_section' => 'Konten',
     'about_us_title' => 'Judul Tentang Kami',
@@ -37,7 +39,6 @@ return [
     'seo_section' => 'Konfigurasi SEO',
     'seo_section_desc' => 'Optimalkan untuk mesin pencari.',
     'seo_title' => 'Judul SEO',
-    'seo_description' => 'Meta Description',
     'seo_description' => 'Meta Description',
     'seo_keywords' => 'Meta Keywords',
     'seo_google_verification' => 'Kode Verifikasi Google Site',

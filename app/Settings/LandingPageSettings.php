@@ -35,6 +35,8 @@ class LandingPageSettings extends Settings
 
     public ?string $footer_description;
 
+    public bool $show_menu_images;
+
     public static function group(): string
     {
         return 'landing';
@@ -64,6 +66,7 @@ class LandingPageSettings extends Settings
             'seo_keywords' => 'restaurant, food, dining',
             'seo_google_verification' => null,
             'footer_description' => 'A short description about your restaurant for the footer.',
+            'show_menu_images' => true,
         ];
     }
 }

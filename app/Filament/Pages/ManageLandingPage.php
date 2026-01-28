@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Settings\LandingPageSettings;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\Textarea;
@@ -117,6 +118,11 @@ class ManageLandingPage extends SettingsPage
                         ColorPicker::make('secondary_color')
                             ->label(__('messages.secondary_color'))
                             ->required(),
+                        Toggle::make('show_menu_images')
+                            ->label(__('messages.show_menu_images'))
+                            ->helperText(__('messages.show_menu_images_help'))
+                            ->default(true)
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make(__('messages.content_section'))
