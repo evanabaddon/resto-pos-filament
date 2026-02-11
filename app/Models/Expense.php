@@ -16,6 +16,7 @@ class Expense extends Model
         'payment_method_id', // bisa null
         'recipient',
         'notes',
+        'receipt_path',
         'user_id',
         'status',
         'approved_at',

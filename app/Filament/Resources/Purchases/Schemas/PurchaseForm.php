@@ -9,6 +9,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Repeater\TableColumn;
 
@@ -48,6 +49,14 @@ class PurchaseForm
                     ->default(Purchase::FUND_SOURCE_CASHIER)
                     ->required()
                     ->native(false),
+
+                FileUpload::make('receipt_path')
+                    ->label('Nota/Invoice')
+                    ->directory('purchase-receipts')
+                    ->image()
+                    ->acceptedFileTypes(['application/pdf', 'image/*'])
+                    ->maxSize(5120) // 5MB
+                    ->helperText('Upload nota atau invoice pembelian (opsional). Format: JPG, PNG, atau PDF. Maksimal 5MB.'),
 
                 Repeater::make('items')
                     ->relationship()

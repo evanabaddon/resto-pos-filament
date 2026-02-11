@@ -7,6 +7,7 @@ use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\DatePicker;
 
@@ -110,6 +111,15 @@ class ExpenseForm
                             ->maxLength(1000)
                             ->placeholder(__('messages.notes_placeholder'))
                             ->columnSpanFull(),
+
+                        FileUpload::make('receipt_path')
+                            ->label('Nota/Receipt')
+                            ->directory('expense-receipts')
+                            ->image()
+                            ->acceptedFileTypes(['application/pdf', 'image/*'])
+                            ->maxSize(5120) // 5MB
+                            ->columnSpanFull()
+                            ->helperText('Upload nota atau bukti pembayaran (opsional). Format: JPG, PNG, atau PDF. Maksimal 5MB.'),
                     ])
                     ->columnSpanFull(),
             ]);

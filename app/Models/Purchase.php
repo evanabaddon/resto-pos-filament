@@ -15,6 +15,7 @@ class Purchase extends Model
         'status',
         'total',
         'fund_source',
+        'receipt_path',
         'cash_session_id'
     ];
 
