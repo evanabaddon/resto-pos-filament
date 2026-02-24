@@ -12,6 +12,10 @@ let mainWindow;
 let tray; // Keep reference to prevent GC
 let isPolling = false;
 let pollingInterval;
+let consecutiveErrors = 0;    // Exponential backoff counter
+let currentPollDelay = 10000; // Current dynamic delay (starts at 10s)
+const MIN_POLL_DELAY = 10000; // Minimum 10 seconds (safe for hosting)
+const MAX_POLL_DELAY = 120000; // Maximum 2 minutes backoff
 
 // Default config
 const DEFAULT_CONFIG = {
@@ -28,7 +32,8 @@ const DEFAULT_CONFIG = {
     tpl_receipt_footer: 'Thank You for Visiting!',
     tpl_order_bigText: true,
     tpl_order_showHeader: true,
-    printerWidth: 32 // Default 58mm
+    printerWidth: 32, // Default 58mm
+    pollingInterval: 10000 // Default 10 seconds (safe for hosting)
 };
 
 function createWindow() {
@@ -290,19 +295,28 @@ function startPolling() {
     if (!config || !config.webhookUrl) return;
 
     isPolling = true;
-    console.log('Started polling...');
+    consecutiveErrors = 0;
+    currentPollDelay = Math.max(MIN_POLL_DELAY, config.pollingInterval || MIN_POLL_DELAY);
+    console.log(`Started polling... interval: ${currentPollDelay}ms`);
     if (mainWindow) mainWindow.webContents.send('status-update', 'Running');
 
-    // 1.5 seconds for fast restaurant response
-    pollingInterval = setInterval(async () => {
+    schedulePoll();
+}
+
+function schedulePoll() {
+    if (!isPolling) return;
+    pollingInterval = setTimeout(async () => {
         await checkPrintJobs();
-    }, config.pollingInterval || 1500);
+        schedulePoll(); // Re-schedule after each poll (dynamic delay)
+    }, currentPollDelay);
 }
 
 function stopPolling() {
     if (!isPolling) return;
-    clearInterval(pollingInterval);
+    clearTimeout(pollingInterval);
     isPolling = false;
+    consecutiveErrors = 0;
+    currentPollDelay = MIN_POLL_DELAY;
     console.log('Stopped polling.');
     if (mainWindow) mainWindow.webContents.send('status-update', 'Stopped');
 }
@@ -327,8 +341,18 @@ async function checkPrintJobs() {
         let baseUrl = config.webhookUrl.replace(/\/$/, '').replace(/\/print-jobs$/, '');
 
         const response = await axios.get(`${baseUrl}/print-jobs`, {
-            headers: { 'X-Print-Secret': config.secretKey }
+            headers: { 'X-Print-Secret': config.secretKey },
+            timeout: 10000 // 10 second timeout to prevent hanging
         });
+
+        // SUCCESS: Reset backoff
+        if (consecutiveErrors > 0) {
+            consecutiveErrors = 0;
+            const configInterval = Math.max(MIN_POLL_DELAY, config.pollingInterval || MIN_POLL_DELAY);
+            currentPollDelay = configInterval;
+            logToFile(`Connection restored. Polling interval reset to ${currentPollDelay}ms`);
+            if (mainWindow) mainWindow.webContents.send('log-update', `✅ Koneksi pulih. Interval polling: ${currentPollDelay / 1000}s`);
+        }
 
         const jobs = response.data.jobs || [];
         if (jobs.length > 0) {
@@ -349,16 +373,45 @@ async function checkPrintJobs() {
                 }
 
                 // Delay between jobs to prevent buffer overflow / overlapping on Windows spooler
-                // Windows 'print' command returns immediately, but physical print takes time.
-                // We must wait for the physical device to finish.
                 const jobDelay = config.printerDelay || 4000;
                 console.log(`Waiting ${jobDelay}ms for printer to finish...`);
                 await new Promise(resolve => setTimeout(resolve, jobDelay));
             }
         }
     } catch (error) {
-        console.error('Polling error:', error.message);
-        if (mainWindow) mainWindow.webContents.send('log-update', `Error: ${error.statusCode || error.message}`);
+        consecutiveErrors++;
+
+        // Determine error type for human-readable message
+        let errMsg = error.message;
+        const status = error.response?.status;
+        if (status === 401) {
+            errMsg = '❌ Unauthorized (401) - Secret Key salah atau tidak cocok dengan server!';
+            // Don't apply backoff for auth errors, just log repeatedly
+        } else if (status === 403) {
+            errMsg = '❌ Forbidden (403) - Akses ditolak server!';
+        } else if (status === 429) {
+            errMsg = '⚠️ Rate Limited (429) - Server membatasi request. Interval polling akan diperlambat.';
+        } else if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+            errMsg = `❌ Tidak bisa terhubung ke server: ${error.code}. Cek URL webhook.`;
+        } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+            errMsg = `⚠️ Timeout koneksi ke server. Server mungkin lambat atau memblokir request.`;
+        }
+
+        // Exponential backoff: 10s → 20s → 40s → 80s → max 120s
+        // Only apply backoff for non-auth errors (auth errors should stay fast so user notices)
+        if (status !== 401 && status !== 403) {
+            const backoffDelay = Math.min(MAX_POLL_DELAY, MIN_POLL_DELAY * Math.pow(2, consecutiveErrors - 1));
+            if (backoffDelay > currentPollDelay) {
+                currentPollDelay = backoffDelay;
+                logToFile(`Backoff: ${consecutiveErrors} errors. Next poll in ${currentPollDelay / 1000}s`);
+                if (mainWindow) mainWindow.webContents.send('log-update',
+                    `⚠️ ${consecutiveErrors}x error berturut-turut. Interval diperlambat ke ${currentPollDelay / 1000}s`);
+            }
+        }
+
+        logToFile(`Polling error [${status || 'N/A'}]: ${errMsg}`);
+        console.error('Polling error:', errMsg);
+        if (mainWindow) mainWindow.webContents.send('log-update', errMsg);
     } finally {
         isProcessing = false;
     }

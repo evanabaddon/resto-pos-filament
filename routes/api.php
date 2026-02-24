@@ -154,7 +154,7 @@ Route::post(
                         'order_type' => $orderData['order_type'] ?? 'offline', // Penanda ini transaksi dari offline mode
                         'user_id' => 2, // Default user (Admin ID=2, ID=1 not exists)
                         'cash_session_id' => $activeSession ? $activeSession->id : null, // Link ke sesi aktif
-    
+
                         'subtotal' => $calculatedSubtotal,
                         'tax' => $tax,
                         'final_total' => $finalTotal,
@@ -691,8 +691,9 @@ Route::prefix('webhook')->group(function () {
     // Update job status jika gagal
     Route::post('/print-job/{jobId}/failed', function ($jobId, Request $request) {
         try {
-            // Validasi secret key
-            $expectedSecret = config('app.print_secret', 'default-print-secret-123');
+            // Validasi secret key (Prioritas Settings > Config) - konsisten dengan endpoint lain
+            $settings = app(\App\Settings\PrinterSettings::class);
+            $expectedSecret = $settings->print_secret ?? config('app.print_secret', 'default-print-secret-123');
             $receivedSecret = $request->header('X-Print-Secret');
 
             if ($receivedSecret !== $expectedSecret) {
