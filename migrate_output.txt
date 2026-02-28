@@ -1,0 +1,26 @@
+
+   INFO  Running migrations.  
+
+  2026_02_24_205802_create_pos_pin_setting  3.36ms FAIL
+
+   Spatie\LaravelSettings\Exceptions\SettingAlreadyExists 
+
+  Could not create setting app.pos_pin because it already exists
+
+  at vendor\spatie\laravel-settings\src\Exceptions\SettingAlreadyExists.php:11
+      7Γûò class SettingAlreadyExists extends Exception
+      8Γûò {
+      9Γûò     public static function whenAdding(string $property): self
+     10Γûò     {
+  Γ₧£  11Γûò         throw new self("Could not create setting {$property} because it already exists");
+     12Γûò     }
+     13Γûò 
+     14Γûò     public static function whenRenaming(string $from, string $to): self
+     15Γûò     {
+
+  1   vendor\spatie\laravel-settings\src\Migrations\SettingsMigrator.php:54
+      Spatie\LaravelSettings\Exceptions\SettingAlreadyExists::whenAdding("app.pos_pin")
+
+  2   database\settings\2026_02_24_205802_create_pos_pin_setting.php:9
+      Spatie\LaravelSettings\Migrations\SettingsMigrator::add("app.pos_pin", "123456")
+

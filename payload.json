@@ -1,0 +1,17 @@
+{
+    "order_type": "Dine In",
+    "table_number": "T1",
+    "customer_name": "Test",
+    "subtotal": 50000,
+    "tax": 5000,
+    "final_total": 55000,
+    "items": [
+        {
+            "product_id": 1,
+            "quantity": 2,
+            "unit_price": 25000,
+            "subtotal": 50000,
+            "notes": null
+        }
+    ]
+}

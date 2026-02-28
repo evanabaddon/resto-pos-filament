@@ -1,0 +1,520 @@
+{
+    "message": "Pusher error: cURL error 7: Failed to connect to 127.0.0.1 port 8080 after 2001 ms: Connection refused (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for http://127.0.0.1:8080/apps/571253/events?auth_key=reverbkey&auth_timestamp=1771942851&auth_version=1.0&body_md5=9a21dd5bed00b3655f12ab179d3df5c7&auth_signature=c3da3ed74eceda23357362ed9580374ac0f30efbd858e3a06ed44ef8a10b64c7.",
+    "exception": "Illuminate\\Broadcasting\\BroadcastException",
+    "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Broadcasting\\Broadcasters\\PusherBroadcaster.php",
+    "line": 163,
+    "trace": [
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Broadcasting\\BroadcastEvent.php",
+            "line": 100,
+            "function": "broadcast",
+            "class": "Illuminate\\Broadcasting\\Broadcasters\\PusherBroadcaster",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php",
+            "line": 36,
+            "function": "handle",
+            "class": "Illuminate\\Broadcasting\\BroadcastEvent",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\Util.php",
+            "line": 43,
+            "function": "Illuminate\\Container\\{closure}",
+            "class": "Illuminate\\Container\\BoundMethod",
+            "type": "::"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php",
+            "line": 96,
+            "function": "unwrapIfClosure",
+            "class": "Illuminate\\Container\\Util",
+            "type": "::"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php",
+            "line": 35,
+            "function": "callBoundMethod",
+            "class": "Illuminate\\Container\\BoundMethod",
+            "type": "::"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\Container.php",
+            "line": 799,
+            "function": "call",
+            "class": "Illuminate\\Container\\BoundMethod",
+            "type": "::"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Bus\\Dispatcher.php",
+            "line": 129,
+            "function": "call",
+            "class": "Illuminate\\Container\\Container",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 180,
+            "function": "Illuminate\\Bus\\{closure}",
+            "class": "Illuminate\\Bus\\Dispatcher",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 137,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Bus\\Dispatcher.php",
+            "line": 133,
+            "function": "then",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Broadcasting\\BroadcastManager.php",
+            "line": 185,
+            "function": "dispatchNow",
+            "class": "Illuminate\\Bus\\Dispatcher",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Broadcasting\\BroadcastManager.php",
+            "line": 189,
+            "function": "Illuminate\\Broadcasting\\{closure}",
+            "class": "Illuminate\\Broadcasting\\BroadcastManager",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Events\\Dispatcher.php",
+            "line": 387,
+            "function": "queue",
+            "class": "Illuminate\\Broadcasting\\BroadcastManager",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Events\\Dispatcher.php",
+            "line": 309,
+            "function": "broadcastEvent",
+            "class": "Illuminate\\Events\\Dispatcher",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Events\\Dispatcher.php",
+            "line": 295,
+            "function": "invokeListeners",
+            "class": "Illuminate\\Events\\Dispatcher",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\helpers.php",
+            "line": 505,
+            "function": "dispatch",
+            "class": "Illuminate\\Events\\Dispatcher",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Events\\Dispatchable.php",
+            "line": 14,
+            "function": "event"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\app\\Models\\Product.php",
+            "line": 107,
+            "function": "dispatch",
+            "class": "App\\Events\\ProductStockUpdated",
+            "type": "::"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Events\\Dispatcher.php",
+            "line": 488,
+            "function": "App\\Models\\{closure}",
+            "class": "App\\Models\\Product",
+            "type": "::"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Events\\Dispatcher.php",
+            "line": 315,
+            "function": "Illuminate\\Events\\{closure}",
+            "class": "Illuminate\\Events\\Dispatcher",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Events\\Dispatcher.php",
+            "line": 295,
+            "function": "invokeListeners",
+            "class": "Illuminate\\Events\\Dispatcher",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Concerns\\HasEvents.php",
+            "line": 224,
+            "function": "dispatch",
+            "class": "Illuminate\\Events\\Dispatcher",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php",
+            "line": 1071,
+            "function": "fireModelEvent",
+            "class": "Illuminate\\Database\\Eloquent\\Model",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\helpers.php",
+            "line": 390,
+            "function": "Illuminate\\Database\\Eloquent\\{closure}",
+            "class": "Illuminate\\Database\\Eloquent\\Model",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php",
+            "line": 1068,
+            "function": "tap"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php",
+            "line": 1036,
+            "function": "incrementOrDecrement",
+            "class": "Illuminate\\Database\\Eloquent\\Model",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php",
+            "line": 2528,
+            "function": "decrement",
+            "class": "Illuminate\\Database\\Eloquent\\Model",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\routes\\pos_v2.php",
+            "line": 253,
+            "function": "__call",
+            "class": "Illuminate\\Database\\Eloquent\\Model",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Concerns\\ManagesTransactions.php",
+            "line": 35,
+            "function": "{closure}",
+            "class": "Illuminate\\Routing\\RouteFileRegistrar",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\DatabaseManager.php",
+            "line": 491,
+            "function": "transaction",
+            "class": "Illuminate\\Database\\Connection",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Facades\\Facade.php",
+            "line": 363,
+            "function": "__call",
+            "class": "Illuminate\\Database\\DatabaseManager",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\routes\\pos_v2.php",
+            "line": 216,
+            "function": "__callStatic",
+            "class": "Illuminate\\Support\\Facades\\Facade",
+            "type": "::"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\CallableDispatcher.php",
+            "line": 39,
+            "function": "{closure}",
+            "class": "Illuminate\\Routing\\RouteFileRegistrar",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php",
+            "line": 243,
+            "function": "dispatch",
+            "class": "Illuminate\\Routing\\CallableDispatcher",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php",
+            "line": 214,
+            "function": "runCallable",
+            "class": "Illuminate\\Routing\\Route",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 822,
+            "function": "run",
+            "class": "Illuminate\\Routing\\Route",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 180,
+            "function": "Illuminate\\Routing\\{closure}",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\app\\Http\\Middleware\\PosAuthMiddleware.php",
+            "line": 24,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "App\\Http\\Middleware\\PosAuthMiddleware",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php",
+            "line": 50,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Routing\\Middleware\\SubstituteBindings",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 137,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 821,
+            "function": "then",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 800,
+            "function": "runRouteWithinStack",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 764,
+            "function": "runRoute",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 753,
+            "function": "dispatchToRoute",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php",
+            "line": 200,
+            "function": "dispatch",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 180,
+            "function": "Illuminate\\Foundation\\Http\\{closure}",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\livewire\\livewire\\src\\Features\\SupportDisablingBackButtonCache\\DisableBackButtonCacheMiddleware.php",
+            "line": 19,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Livewire\\Features\\SupportDisablingBackButtonCache\\DisableBackButtonCacheMiddleware",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php",
+            "line": 21,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php",
+            "line": 31,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php",
+            "line": 21,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php",
+            "line": 51,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TrimStrings",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\ValidatePostSize.php",
+            "line": 27,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\ValidatePostSize",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php",
+            "line": 109,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php",
+            "line": 61,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\HandleCors",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php",
+            "line": 58,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\TrustProxies",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks.php",
+            "line": 22,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\ValidatePathEncoding.php",
+            "line": 26,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\ValidatePathEncoding",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 137,
+            "function": "Illuminate\\Pipeline\\{closure}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php",
+            "line": 175,
+            "function": "then",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php",
+            "line": 144,
+            "function": "sendRequestThroughRouter",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php",
+            "line": 1220,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\public\\index.php",
+            "line": 20,
+            "function": "handleRequest",
+            "class": "Illuminate\\Foundation\\Application",
+            "type": "->"
+        },
+        {
+            "file": "D:\\CODING\\resto-pos-filament\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php",
+            "line": 23,
+            "function": "require_once"
+        }
+    ]
+}

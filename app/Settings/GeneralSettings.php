@@ -55,6 +55,9 @@ class GeneralSettings extends Settings
     public string $printer_width;
     public bool $enable_table_number;
 
+    // POS V2
+    public string $pos_pin;
+
     // Fiscal Settings
     public ?string $template_path;
     public int $start_row;
@@ -134,6 +137,7 @@ class GeneralSettings extends Settings
             'ai_model' => 'deepseek-chat',
             'ai_base_url' => 'https://api.deepseek.com',
             'ai_api_key' => null,
+            'pos_pin' => '123456',
             'printer_width' => '58mm',
             'enable_table_number' => false,
             'latitude' => null,
