@@ -271,6 +271,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             'customer_name' => 'nullable|string',
             'note' => 'nullable|string',
             'member_id' => 'nullable|integer|exists:members,id',
+            'user_id' => 'nullable|integer',
             'subtotal' => 'required|numeric',
             'tax' => 'required|numeric',
             'final_total' => 'required|numeric',
@@ -292,7 +293,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                 'order_type' => $data['order_type'],
                 'table_number' => $data['table_number'],
                 'table_name' => $data['table_number'], // Store table name
-                'user_id' => $request->input('user_id', 2),
+                'user_id' => $data['user_id'] ?? 2,
                 'member_id' => $data['member_id'] ?? null,
                 'cash_session_id' => $session ? $session->id : null,
                 'subtotal' => $data['subtotal'],
