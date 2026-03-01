@@ -270,7 +270,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             'order_type' => 'required|string',
             'customer_name' => 'nullable|string',
             'note' => 'nullable|string',
-            'member_id' => 'nullable|integer',
+            'member_id' => 'nullable|integer|exists:members,id',
             'subtotal' => 'required|numeric',
             'tax' => 'required|numeric',
             'final_total' => 'required|numeric',
@@ -292,8 +292,8 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                 'order_type' => $data['order_type'],
                 'table_number' => $data['table_number'],
                 'table_name' => $data['table_number'], // Store table name
-                'user_id' => 2,
-                'customer_id' => $data['member_id'] ?? null,
+                'user_id' => $request->input('user_id', 2),
+                'member_id' => $data['member_id'] ?? null,
                 'cash_session_id' => $session ? $session->id : null,
                 'subtotal' => $data['subtotal'],
                 'tax' => $data['tax'],
@@ -418,11 +418,13 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             $sale->update([
                 'status' => 'completed',
                 'payment_status' => 'paid',
+                'invoice_number' => 'INV-' . date('Ymd') . '-' . str_pad($sale->id, 4, '0', STR_PAD_LEFT),
                 'payment_method_id' => $paymentMethod ? $paymentMethod->id : null,
                 'payment_method' => $paymentMethod ? $paymentMethod->name : 'Unknown',
                 'amount_paid' => $request->amount_paid,
                 'change_amount' => max(0, $request->amount_paid - $sale->final_total),
                 'discount' => $request->discount_amount ?? 0,
+                'paid_at' => now(),
             ]);
 
             // If table used, set to available
@@ -434,8 +436,8 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             }
 
             // Loyalty Points Logic
-            if ($sale->customer_id) {
-                $member = \App\Models\Member::find($sale->customer_id);
+            if ($sale->member_id) {
+                $member = \App\Models\Member::find($sale->member_id);
                 if ($member) {
                     // Deduct points if redeemed
                     if ($request->points_redeemed) {
@@ -449,8 +451,12 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                         $pointsEarned = floor($sale->final_total / $exchangeRate);
                         if ($pointsEarned > 0) {
                             $member->increment('points_balance', $pointsEarned);
+                            $sale->update(['points_earned' => $pointsEarned]);
                         }
                     }
+
+                    // Record visit for this member
+                    $member->recordVisit($sale->final_total, $sale->paid_at ?? now());
                 }
             }
 
