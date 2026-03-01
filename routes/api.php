@@ -141,8 +141,9 @@ Route::post(
                     $tax = isset($orderData['tax']) ? (float) $orderData['tax'] : 0;
                     $finalTotal = $calculatedSubtotal + $tax;
 
-                    // Cari Cash Session yang sedang AKTIF (Open) untuk User Default (2)
-                    $activeSession = CashSession::where('user_id', 2)
+                    // Cari Cash Session yang sedang AKTIF (Open) untuk User yang bersangkutan
+                    $userId = isset($orderData['user_id']) ? (int) $orderData['user_id'] : 2;
+                    $activeSession = CashSession::where('user_id', $userId)
                         ->where('status', 'open')
                         ->latest()
                         ->first();
@@ -152,7 +153,7 @@ Route::post(
                         'invoice_number' => 'OFFLINE-' . time() . '-' . uniqid(),
                         'customer_name' => $orderData['customer_name'] ?? 'Offline Customer',
                         'order_type' => $orderData['order_type'] ?? 'offline', // Penanda ini transaksi dari offline mode
-                        'user_id' => 2, // Default user (Admin ID=2, ID=1 not exists)
+                        'user_id' => $userId, // Dinamis berdasarkan request
                         'cash_session_id' => $activeSession ? $activeSession->id : null, // Link ke sesi aktif
 
                         'subtotal' => $calculatedSubtotal,

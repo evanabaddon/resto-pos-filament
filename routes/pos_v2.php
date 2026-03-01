@@ -89,7 +89,45 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         ]);
     });
 
-    // 2. Cash Session (Shift)
+    // 2. Auth & Cash Session (Shift)
+    Route::post('/login', function (Request $request) {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        $user = \App\Models\User::where('email', $validated['email'])->first();
+
+        // Check if user exists and password is correct using Laravel's Hash
+        if (!$user || !\Illuminate\Support\Facades\Hash::check($validated['password'], $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email atau Password salah'
+            ], 401);
+        }
+
+        // Optional: Check if user has permission (valid role)
+        if ($user->role === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun Anda tidak memiliki peran (Role)'
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role->value ?? $user->role, // handle enum backing value
+                // Optional avatar field mapping if you have one
+                'avatar' => '👨‍💼',
+                'outlet' => 'RestoOS Pusat' // Static for now
+            ]
+        ]);
+    });
+
     Route::get('/session/current', function () {
         $openSession = CashSession::with('user:id,name')->where('status', 'open')->latest()->first();
         if (!$openSession) return response()->json(['session' => null]);
@@ -98,6 +136,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             'session' => [
                 'id' => $openSession->id,
                 'user_name' => $openSession->user->name ?? 'Unknown',
+                'user_id' => $openSession->user_id,
                 'cash_in_hand' => $openSession->cash_in_hand,
                 'opened_at' => $openSession->opened_at,
             ]
@@ -105,7 +144,10 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
     });
 
     Route::post('/session/open', function (Request $request) {
-        $request->validate(['cash_in_hand' => 'required|numeric|min:0']);
+        $request->validate([
+            'cash_in_hand' => 'required|numeric|min:0',
+            'user_id' => 'sometimes|nullable|integer'
+        ]);
 
         $activeSession = CashSession::where('status', 'open')->latest()->first();
         if ($activeSession) {
@@ -113,7 +155,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         }
 
         $session = CashSession::create([
-            'user_id' => 2, // Admin User
+            'user_id' => $request->user_id ?? 2, // Admin User as fallback
             'cash_in_hand' => $request->cash_in_hand,
             'status' => 'open',
             'opened_at' => now(),
