@@ -409,6 +409,8 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             'amount_paid' => 'required|numeric',
             'discount_amount' => 'nullable|numeric',
             'points_redeemed' => 'nullable|integer',
+            'customer_name' => 'nullable|string',
+            'member_id' => 'nullable|integer',
         ]);
 
         $sale = Sale::with('items.product')->where('status', 'draft')->findOrFail($id);
@@ -416,7 +418,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         DB::transaction(function () use ($sale, $request) {
             $paymentMethod = PaymentMethod::find($request->payment_method_id);
 
-            $sale->update([
+            $updateData = [
                 'status' => 'completed',
                 'payment_status' => 'paid',
                 'invoice_number' => 'INV-' . date('Ymd') . '-' . str_pad($sale->id, 4, '0', STR_PAD_LEFT),
@@ -426,7 +428,17 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                 'change_amount' => max(0, $request->amount_paid - $sale->final_total),
                 'discount' => $request->discount_amount ?? 0,
                 'paid_at' => now(),
-            ]);
+            ];
+
+            // Override customer name and member if provided at checkout time
+            if ($request->filled('customer_name')) {
+                $updateData['customer_name'] = $request->customer_name;
+            }
+            if ($request->filled('member_id')) {
+                $updateData['member_id'] = $request->member_id;
+            }
+
+            $sale->update($updateData);
 
             // If table used, set to available
             if ($sale->table_number) {
