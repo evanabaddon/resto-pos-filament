@@ -288,7 +288,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         // Transaction to ensure atomicity
         $sale = DB::transaction(function () use ($data, $session) {
             $sale = Sale::create([
-                'invoice_number' => 'DRF-' . time() . '-' . rand(100, 999),
+                'invoice_number' => 'APP-' . time() . '-' . rand(100, 999),
                 'customer_name' => $data['customer_name'] ?? 'Walk-in',
                 'order_type' => $data['order_type'],
                 'table_number' => $data['table_number'],
