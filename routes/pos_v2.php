@@ -278,29 +278,32 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         });
 
         // Trigger KITCHEN Print Job automatically for drafts?
-        // Create Kitchen Print Job
-        PrintJob::create([
-            'job_id' => 'KTC_' . uniqid(),
-            'content' => 'KITCHEN ORDER',
-            'payload' => [
-                'sale' => $sale->toArray(),
-                'items' => $sale->items->map(function ($i) {
-                    return [
-                        'product_name' => $i->product->name ?? 'Unknown',
-                        'quantity' => $i->quantity,
-                        'notes' => $i->notes
-                    ];
-                })->toArray(),
-                'table' => $sale->table_name ?? $sale->table_number,
-                'order_type' => $sale->order_type,
-                'customer_name' => $sale->customer_name
-            ],
-            'printer' => 'KASIR', // Fallback, would be mapped
-            'division' => 'Kitchen',
-            'sale_id' => $sale->id,
-            'type' => 'order',
-            'status' => 'pending'
-        ]);
+        // Only if not already printed locally by the desktop POS
+        if (!$request->input('printed_locally', false)) {
+            // Create Kitchen Print Job
+            PrintJob::create([
+                'job_id' => 'KTC_' . uniqid(),
+                'content' => 'KITCHEN ORDER',
+                'payload' => [
+                    'sale' => $sale->toArray(),
+                    'items' => $sale->items->map(function ($i) {
+                        return [
+                            'product_name' => $i->product->name ?? 'Unknown',
+                            'quantity' => $i->quantity,
+                            'notes' => $i->notes
+                        ];
+                    })->toArray(),
+                    'table' => $sale->table_name ?? $sale->table_number,
+                    'order_type' => $sale->order_type,
+                    'customer_name' => $sale->customer_name
+                ],
+                'printer' => 'KASIR', // Fallback, would be mapped
+                'division' => 'Kitchen',
+                'sale_id' => $sale->id,
+                'type' => 'order',
+                'status' => 'pending'
+            ]);
+        }
 
         return response()->json(['success' => true, 'order' => $sale]);
     });
@@ -354,8 +357,8 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             $sale->update([
                 'status' => 'completed',
                 'payment_status' => 'paid',
-                'payment_method_id' => $paymentMethod->id,
-                'payment_method' => $paymentMethod->name,
+                'payment_method_id' => $paymentMethod ? $paymentMethod->id : null,
+                'payment_method' => $paymentMethod ? $paymentMethod->name : 'Unknown',
                 'amount_paid' => $request->amount_paid,
                 'change_amount' => max(0, $request->amount_paid - $sale->final_total),
                 'discount' => $request->discount_amount ?? 0,
@@ -390,28 +393,30 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                 }
             }
 
-            // Create Receipt Print Job
-            PrintJob::create([
-                'job_id' => 'RCP_' . uniqid(),
-                'content' => 'RECEIPT',
-                'payload' => [
-                    'sale' => $sale->toArray(),
-                    'items' => $sale->items->map(function ($i) {
-                        return [
-                            'product_name' => $i->product->name ?? 'Unknown',
-                            'quantity' => $i->quantity,
-                            'unit_price' => $i->unit_price,
-                            'subtotal' => $i->subtotal,
-                            'notes' => $i->notes
-                        ];
-                    })->toArray(),
-                ],
-                'printer' => 'KASIR',
-                'division' => 'Receipt',
-                'sale_id' => $sale->id,
-                'type' => 'receipt',
-                'status' => 'pending'
-            ]);
+            // Create Receipt Print Job if not already printed locally
+            if (!$request->input('printed_locally', false)) {
+                PrintJob::create([
+                    'job_id' => 'RCP_' . uniqid(),
+                    'content' => 'RECEIPT',
+                    'payload' => [
+                        'sale' => $sale->toArray(),
+                        'items' => $sale->items->map(function ($i) {
+                            return [
+                                'product_name' => $i->product->name ?? 'Unknown',
+                                'quantity' => $i->quantity,
+                                'unit_price' => $i->unit_price,
+                                'subtotal' => $i->subtotal,
+                                'notes' => $i->notes
+                            ];
+                        })->toArray(),
+                    ],
+                    'printer' => 'KASIR',
+                    'division' => 'Receipt',
+                    'sale_id' => $sale->id,
+                    'type' => 'receipt',
+                    'status' => 'pending'
+                ]);
+            }
         });
 
         return response()->json(['success' => true, 'order' => $sale->refresh()]);
@@ -437,6 +442,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                     'final_total' => $sale->final_total,
                     'amount_paid' => $sale->amount_paid,
                     'change_amount' => $sale->change_amount,
+                    'payment_method_id' => $sale->payment_method_id,
                     'payment_method' => $sale->payment_method ?? ($sale->paymentMethod->name ?? 'Unknown'),
                     'created_at' => $sale->created_at,
                     'items' => $sale->items->map(function ($item) {
