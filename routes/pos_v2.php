@@ -157,6 +157,22 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         })->join('products', 'sale_items.product_id', '=', 'products.id')
             ->sum(DB::raw('sale_items.quantity * IFNULL(products.base_price, 0)'));
 
+        // Get payment details breakdown
+        $paymentDetailsRaw = DB::table('sales')
+            ->where('cash_session_id', $session->id)
+            ->where('status', 'completed')
+            ->select('payment_method_id', 'payment_method', DB::raw('SUM(final_total) as amount'))
+            ->groupBy('payment_method_id', 'payment_method')
+            ->get();
+
+        $paymentDetails = $paymentDetailsRaw->map(function ($pd) {
+            $pm = \App\Models\PaymentMethod::find($pd->payment_method_id);
+            return [
+                'method' => $pm ? $pm->name : ($pd->payment_method ?: 'Unknown'),
+                'amount' => (float) $pd->amount
+            ];
+        });
+
         return response()->json([
             'summary' => [
                 'cash_in_hand' => $session->cash_in_hand,
@@ -164,7 +180,10 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                 'cash_sales' => $totalCashSales,
                 'expected_cash' => $expectedCash,
                 'total_orders' => $totalSales->count(),
-                'hpp' => (float) $hpp
+                'hpp' => (float) $hpp,
+                'opened_at' => $session->opened_at,
+                'current_time' => now(),
+                'payment_details' => $paymentDetails
             ]
         ]);
     });
