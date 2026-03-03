@@ -632,6 +632,155 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         return response()->json(['table' => $table]);
     });
 
+    // 8.5 Reservations
+    Route::get('/reservations', function (Request $request) {
+        $date = $request->query('date', now()->toDateString());
+        $status = $request->query('status');
+
+        $query = \App\Models\Reservation::with('items.product')
+            ->whereDate('reservation_date', $date);
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $reservations = $query->orderBy('reservation_date', 'asc')->get();
+
+        return response()->json(['reservations' => $reservations]);
+    });
+
+    Route::post('/reservations', function (Request $request) {
+        $data = $request->validate([
+            'customer_name' => 'required|string|max:255',
+            'customer_phone' => 'nullable|string|max:20',
+            'party_size' => 'required|integer|min:1',
+            'reservation_date' => 'required|date',
+            'special_requests' => 'nullable|string',
+            'items' => 'nullable|array',
+            'items.*.product_id' => 'required|integer|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.1',
+            'items.*.notes' => 'nullable|string',
+        ]);
+
+        $reservation = DB::transaction(function () use ($data) {
+            $res = \App\Models\Reservation::create([
+                'customer_name' => $data['customer_name'],
+                'customer_phone' => $data['customer_phone'],
+                'party_size' => $data['party_size'],
+                'reservation_date' => $data['reservation_date'],
+                'special_requests' => $data['special_requests'],
+                'status' => 'pending',
+            ]);
+
+            if (isset($data['items']) && !empty($data['items'])) {
+                foreach ($data['items'] as $item) {
+                    $product = Product::find($item['product_id']);
+                    $res->items()->create([
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $product->sell_price ?? 0,
+                        'total_price' => ($product->sell_price ?? 0) * $item['quantity'],
+                        'note' => $item['notes'] ?? null,
+                    ]);
+                }
+            }
+
+            return $res->load('items.product');
+        });
+
+        return response()->json(['success' => true, 'reservation' => $reservation]);
+    });
+
+    Route::post('/reservations/{id}/check-in', function ($id) {
+        $reservation = \App\Models\Reservation::with('items.product')->findOrFail($id);
+
+        if ($reservation->status === 'seated' || $reservation->status === 'completed' || $reservation->status === 'cancelled') {
+            return response()->json(['success' => false, 'message' => 'Status reservasi tidak valid untuk Check-In'], 400);
+        }
+
+        $session = CashSession::where('status', 'open')->latest()->first();
+        if (!$session) {
+            return response()->json(['success' => false, 'message' => 'Sesi kasir belum dibuka'], 400);
+        }
+
+        $sale = DB::transaction(function () use ($reservation, $session) {
+            // 1. Create Sale Header (Draft)
+            $sale = Sale::create([
+                'invoice_number' => 'RSVP-' . time() . '-' . rand(100, 999),
+                'customer_name' => $reservation->customer_name,
+                'order_type' => 'Dine In',
+                'user_id' => auth()->id() ?? 2,
+                'cash_session_id' => $session->id,
+                'reservation_id' => $reservation->id,
+                'status' => 'draft',
+                'payment_status' => 'unpaid',
+                'subtotal' => 0,
+                'tax' => 0,
+                'final_total' => 0,
+                'total' => 0,
+            ]);
+
+            $subtotal = 0;
+
+            // 2. Copy Items
+            foreach ($reservation->items as $item) {
+                $itemSubtotal = $item->unit_price * $item->quantity;
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product->name ?? 'Unknown',
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'subtotal' => $itemSubtotal,
+                    'notes' => $item->note,
+                ]);
+                $subtotal += $itemSubtotal;
+
+                // Deduct stock
+                if ($item->product && !in_array($item->product->type, ['service'])) {
+                    if ($item->product->stock !== null) {
+                        $item->product->decrement('stock', $item->quantity);
+                    }
+                }
+            }
+
+            // 3. Handle Deposit (Negative Item)
+            if ($reservation->deposit_amount > 0) {
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => null, // Just a label for DP
+                    'product_name' => 'Down Payment (DP)',
+                    'quantity' => 1,
+                    'unit_price' => -$reservation->deposit_amount,
+                    'subtotal' => -$reservation->deposit_amount,
+                    'notes' => 'Potongan DP Reservasi',
+                ]);
+                $subtotal -= $reservation->deposit_amount;
+            }
+
+            // 4. Update Totals
+            $settings = app(GeneralSettings::class);
+            $enableTax = $settings->enable_tax ?? false;
+            $taxRate = $settings->tax_percentage ?? 0;
+            $taxAmount = $enableTax ? round($subtotal * ($taxRate / 100)) : 0;
+            $finalTotal = max(0, $subtotal + $taxAmount);
+
+            $sale->update([
+                'subtotal' => $subtotal,
+                'tax' => $taxAmount,
+                'total' => $finalTotal,
+                'final_total' => $finalTotal,
+            ]);
+
+            // 5. Update Reservation Status
+            $reservation->update(['status' => 'seated']);
+
+            return $sale->load('items.product');
+        });
+
+        return response()->json(['success' => true, 'order' => $sale]);
+    });
+
     // 9. Reports
     Route::get('/reports/dashboard', function (Request $request) {
         $now = \Carbon\Carbon::now();
