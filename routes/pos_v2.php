@@ -41,6 +41,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             'loyalty_point_exchange_rate' => $settings->loyalty_point_exchange_rate ?? 10000,
             'loyalty_point_value' => $settings->loyalty_point_value ?? 1,
             'loyalty_program_name' => $settings->loyalty_program_name ?? 'Loyalty',
+            'pos_pin' => '123456', // Hardcoded default to avoid MissingSettings exception
         ];
 
         // Products
@@ -86,8 +87,20 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             'categories' => Category::select('id', 'name')->get(),
             'product_types' => Product::select('type')->distinct()->whereNotNull('type')->get()->pluck('type'),
             'payment_methods' => PaymentMethod::where('is_active', true)->select('id', 'name', 'code')->get(),
-            'tables' => Table::select('id', 'name', 'slug', 'status', 'x', 'y', 'width', 'height', 'shape')->get(),
-            'loyalty_tiers' => \App\Models\LoyaltyTier::select('id', 'name', 'min_points as minimum_points', 'benefit_description')->orderBy('min_points', 'asc')->get() ?? [], // Assume exists
+            'tables' => Table::select('id', 'name', 'slug', 'status')->get()->map(function ($table) {
+                return [
+                    'id' => $table->id,
+                    'name' => $table->name,
+                    'slug' => $table->slug,
+                    'status' => $table->status,
+                    'x' => $table->x ?? 0,
+                    'y' => $table->y ?? 0,
+                    'width' => $table->width ?? 100,
+                    'height' => $table->height ?? 100,
+                    'shape' => $table->shape ?? 'square',
+                ];
+            }),
+            'loyalty_tiers' => \App\Models\LoyaltyTier::select('id', 'name', 'min_points as minimum_points', 'benefit_description')->orderBy('min_points', 'asc')->get() ?? [],
         ]);
     });
 
@@ -706,12 +719,39 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
 
     // 8. Tables
     Route::get('/tables', function () {
-        return response()->json(['tables' => Table::select('id', 'name', 'slug', 'status')->get()]);
+        $tables = Table::select('id', 'name', 'slug', 'status')->get()->map(function ($table) {
+            return [
+                'id' => $table->id,
+                'name' => $table->name,
+                'slug' => $table->slug,
+                'status' => $table->status,
+                'x' => $table->x ?? 0,
+                'y' => $table->y ?? 0,
+                'width' => $table->width ?? 100,
+                'height' => $table->height ?? 100,
+                'shape' => $table->shape ?? 'square',
+            ];
+        });
+        return response()->json(['tables' => $tables]);
     });
 
     Route::patch('/tables/{id}/status', function (Request $request, $id) {
         $table = Table::findOrFail($id);
-        $request->validate(['status' => 'required|in:available,occupied']);
+
+        // Map frontend statuses to database enum values
+        $statusMap = [
+            'empty' => 'available',
+            'dirty' => 'available', // For now, since DB doesn't have dirty
+        ];
+
+        $status = $request->status;
+        if (isset($statusMap[$status])) {
+            $status = $statusMap[$status];
+        }
+
+        $request->merge(['status' => $status]);
+        $request->validate(['status' => 'required|in:available,occupied,reserved']);
+
         $table->update(['status' => $request->status]);
         return response()->json(['table' => $table]);
     });
