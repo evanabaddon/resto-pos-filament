@@ -16,6 +16,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 
 /*
 |--------------------------------------------------------------------------
@@ -84,7 +86,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             'categories' => Category::select('id', 'name')->get(),
             'product_types' => Product::select('type')->distinct()->whereNotNull('type')->get()->pluck('type'),
             'payment_methods' => PaymentMethod::where('is_active', true)->select('id', 'name', 'code')->get(),
-            'tables' => Table::select('id', 'name', 'slug', 'status')->get(),
+            'tables' => Table::select('id', 'name', 'slug', 'status', 'x', 'y', 'width', 'height', 'shape')->get(),
             'loyalty_tiers' => \App\Models\LoyaltyTier::select('id', 'name', 'min_points as minimum_points', 'benefit_description')->orderBy('min_points', 'asc')->get() ?? [], // Assume exists
         ]);
     });
@@ -130,7 +132,8 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
 
     Route::get('/session/current', function () {
         $openSession = CashSession::with('user:id,name')->where('status', 'open')->latest()->first();
-        if (!$openSession) return response()->json(['session' => null]);
+        if (!$openSession)
+            return response()->json(['session' => null]);
 
         return response()->json([
             'session' => [
@@ -168,7 +171,8 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         $request->validate(['cash_out' => 'required|numeric|min:0']);
 
         $activeSession = CashSession::where('status', 'open')->latest()->first();
-        if (!$activeSession) return response()->json(['message' => 'No active shift.'], 404);
+        if (!$activeSession)
+            return response()->json(['message' => 'No active shift.'], 404);
 
         $activeSession->update([
             'status' => 'closed',
@@ -181,7 +185,8 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
 
     Route::get('/session/summary', function () {
         $session = CashSession::where('status', 'open')->latest()->first();
-        if (!$session) return response()->json(['summary' => null]);
+        if (!$session)
+            return response()->json(['summary' => null]);
 
         // Calculate sales for this session
         $sales = Sale::where('cash_session_id', $session->id)->where('status', 'completed');
@@ -544,7 +549,8 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
     // 5. Members
     Route::get('/members/search', function (Request $request) {
         $q = $request->query('q');
-        if (!$q) return response()->json(['members' => []]);
+        if (!$q)
+            return response()->json(['members' => []]);
 
         $members = \App\Models\Member::where('name', 'like', "%{$q}%")
             ->orWhere('phone', 'like', "%{$q}%")
@@ -558,6 +564,58 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         return response()->json(['member' => \App\Models\Member::findOrFail($id)]);
     });
 
+    Route::get('/members/{id}/history', function ($id) {
+        $member = \App\Models\Member::findOrFail($id);
+
+        // 1. Get Top 5 Frequently Ordered Products
+        $topProducts = SaleItem::whereHas('sale', function ($q) use ($id) {
+            $q->where('member_id', $id)->where('status', 'completed');
+        })
+            ->select('product_id', DB::raw('SUM(quantity) as total_qty'))
+            ->groupBy('product_id')
+            ->orderByDesc('total_qty')
+            ->limit(5)
+            ->with('product:id,name,sell_price,image,type')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->product_id,
+                    'name' => $item->product->name ?? 'Unknown',
+                    'price' => (float) ($item->product->sell_price ?? 0),
+                    'total_ordered' => (float) $item->total_qty,
+                    'emoji' => '🍽️', // Fallback or mapping
+                ];
+            });
+
+        // 2. Last 5 Transactions
+        $lastTransactions = Sale::where('member_id', $id)
+            ->where('status', 'completed')
+            ->latest()
+            ->limit(5)
+            ->with('items.product')
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'id' => $sale->id,
+                    'invoice_number' => $sale->invoice_number,
+                    'total' => (float) $sale->final_total,
+                    'date' => $sale->paid_at,
+                    'items' => $sale->items->map(function ($i) {
+                        return [
+                            'name' => $i->product->name ?? 'Unknown',
+                            'qty' => $i->quantity
+                        ];
+                    })
+                ];
+            });
+
+        return response()->json([
+            'member_id' => $id,
+            'top_products' => $topProducts,
+            'recent_transactions' => $lastTransactions
+        ]);
+    });
+
     Route::post('/members', function (Request $request) {
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -567,6 +625,32 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
 
         $member = \App\Models\Member::create($data);
         return response()->json(['member' => $member]);
+    });
+
+    // 5.5. Tables Layout
+    Route::patch('/tables/{id}/layout', function (Request $request, $id) {
+        $table = Table::findOrFail($id);
+        $data = $request->validate([
+            'x' => 'required|numeric',
+            'y' => 'required|numeric',
+            'width' => 'sometimes|numeric',
+            'height' => 'sometimes|numeric',
+            'shape' => 'sometimes|string|in:square,round',
+        ]);
+
+        // Schema auto-migration check
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('tables', 'x')) {
+            \Illuminate\Support\Facades\Schema::table('tables', function ($table) {
+                $table->float('x')->default(0)->nullable();
+                $table->float('y')->default(0)->nullable();
+                $table->float('width')->default(100)->nullable();
+                $table->float('height')->default(100)->nullable();
+                $table->string('shape')->default('square')->nullable();
+            });
+        }
+
+        $table->update($data);
+        return response()->json(['success' => true, 'table' => $table]);
     });
 
     // 6. Discounts Validate
@@ -656,6 +740,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             'party_size' => 'required|integer|min:1',
             'reservation_date' => 'required|date',
             'special_requests' => 'nullable|string',
+            'table_id' => 'nullable|integer|exists:tables,id',
             'items' => 'nullable|array',
             'items.*.product_id' => 'required|integer|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:0.1',
@@ -669,6 +754,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                 'party_size' => $data['party_size'],
                 'reservation_date' => $data['reservation_date'],
                 'special_requests' => $data['special_requests'],
+                'table_id' => $data['table_id'] ?? null,
                 'status' => 'pending',
             ]);
 
@@ -779,6 +865,25 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         });
 
         return response()->json(['success' => true, 'order' => $sale]);
+    });
+
+    Route::patch('/reservations/{id}', function (Request $request, $id) {
+        $reservation = \App\Models\Reservation::findOrFail($id);
+        $data = $request->validate([
+            'status' => 'nullable|in:pending,confirmed,seated,completed,cancelled',
+            'special_requests' => 'nullable|string',
+            'party_size' => 'nullable|integer|min:1',
+            'reservation_date' => 'nullable|date',
+        ]);
+
+        $reservation->update($data);
+        return response()->json(['success' => true, 'reservation' => $reservation]);
+    });
+
+    Route::delete('/reservations/{id}', function ($id) {
+        $reservation = \App\Models\Reservation::findOrFail($id);
+        $reservation->delete();
+        return response()->json(['success' => true]);
     });
 
     // 9. Reports

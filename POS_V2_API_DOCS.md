@@ -272,3 +272,44 @@ Fetches the latest `completed` transactions / sales history along with their ite
   ]
 }
 ```
+
+---
+
+## 9. Reservations
+
+### List Reservations
+- **Method**: `GET`
+- **Endpoint**: `/reservations?date=YYYY-MM-DD&status=pending`
+- **Query Params**:
+  - `date`: (Optional) Defaults to today.
+  - `status`: (Optional) filter by status.
+
+### Create Reservation
+- **Method**: `POST`
+- **Endpoint**: `/reservations`
+- **Body**:
+```json
+{
+  "customer_name": "John Doe",
+  "customer_phone": "0812...",
+  "party_size": 4,
+  "reservation_date": "2026-03-03 19:00:00",
+  "table_id": 1, // Optional
+  "special_requests": "Window seat",
+  "items": [...] // Optional pre-ordered items
+}
+```
+
+### Update Reservation
+- **Method**: `PATCH`
+- **Endpoint**: `/reservations/{id}`
+- **Body**: Any field from create (e.g. `{"status": "confirmed"}`)
+
+### Delete Reservation
+- **Method**: `DELETE`
+- **Endpoint**: `/reservations/{id}`
+
+### Check-In Reservation
+Converts reservation to a POS Draft and marks table as occupied.
+- **Method**: `POST`
+- **Endpoint**: `/reservations/{id}/check-in`
