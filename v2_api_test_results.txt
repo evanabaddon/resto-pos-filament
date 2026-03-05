@@ -1,0 +1,89 @@
+{
+  "session": {
+    "id": 38,
+    "user_name": "Test User",
+    "user_id": 2,
+    "cash_in_hand": "50000.00",
+    "opened_at": "2026-03-04T16:35:44Z"
+  }
+}
+{
+  "session": {
+    "id": 38,
+    "user_id": 2,
+    "cash_in_hand": "50000.00",
+    "cash_out": 10000,
+    "opened_at": "2026-03-04T16:35:44Z",
+    "closed_at": "2026-03-04T16:36:25Z",
+    "status": "closed",
+    "created_at": "2026-03-04T16:35:44Z",
+    "updated_at": "2026-03-04T16:36:25Z"
+  }
+}
+{
+  "session": {
+    "user_id": 2,
+    "cash_in_hand": 50000,
+    "status": "open",
+    "opened_at": "2026-03-04T16:36:26Z",
+    "updated_at": "2026-03-04T16:36:26Z",
+    "created_at": "2026-03-04T16:36:26Z",
+    "id": 39
+  }
+}
+{
+  "success": true,
+  "order": {
+    "invoice_number": "APP-1772642186-988",
+    "customer_name": "Test User",
+    "order_type": "Dine In",
+    "table_number": "T1",
+    "user_id": 2,
+    "member_id": null,
+    "cash_session_id": 39,
+    "subtotal": 50000,
+    "tax": 5000,
+    "total": 55000,
+    "final_total": 55000,
+    "status": "draft",
+    "updated_at": "2026-03-04T16:36:26Z",
+    "created_at": "2026-03-04T16:36:26Z",
+    "id": 320,
+    "items": [
+      {
+        "id": 573,
+        "sale_id": 320,
+        "product_id": 1,
+        "product_name": null,
+        "quantity": "2.00",
+        "unit_price": "25000.00",
+        "subtotal": "50000.00",
+        "status": "pending",
+        "notes": "Test Note",
+        "created_at": "2026-03-04T16:36:26Z",
+        "updated_at": "2026-03-04T16:36:26Z",
+        "product": {
+          "id": 1,
+          "name": "Gula",
+          "image": null,
+          "unit_id": 2,
+          "stock": "504.0000",
+          "prepared_stock": "0.00",
+          "minimum_prepared_stock": null,
+          "minimum_stock": null,
+          "enable_stock_alert": 0,
+          "base_price": "50000.00",
+          "additional_cost": "0.00",
+          "sell_price": "50000.00",
+          "created_at": "2025-10-17T11:08:07Z",
+          "updated_at": "2026-03-04T16:36:26Z",
+          "is_sellable": 0,
+          "is_favorite": 0,
+          "category_id": null,
+          "type": "raw",
+          "image_url": "https://placehold.co/200x150?text=No+Image"
+        }
+      }
+    ]
+  }
+}

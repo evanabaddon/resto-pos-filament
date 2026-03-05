@@ -57,3 +57,40 @@ try {
         $reader.ReadToEnd()
     }
 }
+
+Write-Host "`n--- TEST: Get Expense Categories ---"
+try {
+    $expenseCategories = Invoke-RestMethod -Uri http://127.0.0.1:8000/api/v2/pos/expense-categories -Method Get -Headers $headers
+    $expenseCategories | ConvertTo-Json -Depth 5
+    $firstCategoryId = $expenseCategories.categories[0].id
+} catch {
+    Write-Host "Error: $($_.Exception.Message)"
+}
+
+Write-Host "`n--- TEST: Create Expense ---"
+$expenseBody = @{
+    expense_category_id = $firstCategoryId
+    amount = 15000
+    description = "Beli sabun cuci piring"
+    recipient = "Warung Sebelah"
+    notes = "Untuk keperluan dapur"
+} | ConvertTo-Json -Depth 5
+
+try {
+    $expense = Invoke-RestMethod -Uri http://127.0.0.1:8000/api/v2/pos/expenses -Method Post -Headers $headers -Body $expenseBody
+    $expense | ConvertTo-Json -Depth 5
+} catch {
+    Write-Host "Error: $($_.Exception.Message)"
+    if ($_.Exception.Response) {
+        $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+        $reader.ReadToEnd()
+    }
+}
+
+Write-Host "`n--- TEST: Get Expenses List ---"
+try {
+    $expensesList = Invoke-RestMethod -Uri http://127.0.0.1:8000/api/v2/pos/expenses -Method Get -Headers $headers
+    $expensesList | ConvertTo-Json -Depth 5
+} catch {
+    Write-Host "Error: $($_.Exception.Message)"
+}

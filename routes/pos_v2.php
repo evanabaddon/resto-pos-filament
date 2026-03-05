@@ -10,6 +10,8 @@ use App\Models\PaymentMethod;
 use App\Models\Table;
 use App\Models\Member;
 use App\Models\LoyaltyTier;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Services\RecipeStockChecker;
 use App\Settings\GeneralSettings;
 use Illuminate\Http\Request;
@@ -758,11 +760,19 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
 
     // 8.5 Reservations
     Route::get('/reservations', function (Request $request) {
-        $date = $request->query('date', now()->toDateString());
+        $date = $request->query('date');
+        $month = $request->query('month');
         $status = $request->query('status');
 
-        $query = \App\Models\Reservation::with('items.product')
-            ->whereDate('reservation_date', $date);
+        $query = \App\Models\Reservation::with('items.product');
+
+        if ($date) {
+            $query->whereDate('reservation_date', $date);
+        } elseif ($month) {
+            $query->where(DB::raw("DATE_FORMAT(reservation_date, '%Y-%m')"), $month);
+        } else {
+            $query->whereDate('reservation_date', now()->toDateString());
+        }
 
         if ($status) {
             $query->where('status', $status);
@@ -1046,6 +1056,125 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             'months' => $monthsData,
             'days' => $daysData,
             'expenses_breakdown' => $breakdownData,
+        ]);
+    });
+
+    // 10. Expenses
+    Route::get('/expense-categories', function () {
+        $categories = ExpenseCategory::where('is_active', true)->select('id', 'name')->get();
+        return response()->json(['categories' => $categories]);
+    });
+
+    Route::get('/expenses', function (Request $request) {
+        $session = CashSession::where('status', 'open')->latest()->first();
+        if (!$session) {
+            return response()->json(['expenses' => []]);
+        }
+
+        $expenses = Expense::with('category:id,name')
+            ->where('cash_session_id', $session->id)
+            ->latest()
+            ->get()
+            ->map(function ($expense) {
+                return [
+                    'id' => $expense->id,
+                    'date' => $expense->date->format('Y-m-d'),
+                    'reference' => $expense->reference,
+                    'category' => $expense->category->name ?? 'Unknown',
+                    'description' => $expense->description,
+                    'amount' => (float) $expense->amount,
+                    'recipient' => $expense->recipient,
+                    'notes' => $expense->notes,
+                    'status' => $expense->status,
+                    'receipt_url' => $expense->receipt_path ? asset('storage/' . $expense->receipt_path) : null,
+                ];
+            });
+
+        return response()->json(['expenses' => $expenses]);
+    });
+
+    Route::post('/expenses', function (Request $request) {
+        $data = $request->validate([
+            'expense_category_id' => 'required|integer|exists:expense_categories,id',
+            'amount' => 'required|numeric|min:0.1',
+            'description' => 'required|string',
+            'recipient' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'user_id' => 'nullable|integer',
+        ]);
+
+        $session = CashSession::where('status', 'open')->latest()->first();
+        if (!$session) {
+            return response()->json(['message' => 'No active shift to record expense against.'], 400);
+        }
+
+        $expense = Expense::create([
+            'date' => now()->toDateString(),
+            'expense_category_id' => $data['expense_category_id'],
+            'amount' => $data['amount'],
+            'description' => $data['description'],
+            'recipient' => $data['recipient'] ?? null,
+            'notes' => $data['notes'] ?? null,
+            'user_id' => $data['user_id'] ?? 2, // Default admin fallback
+            'status' => 'approved', // Auto approve from POS for now
+            'approved_at' => now(),
+            'approved_by' => $data['user_id'] ?? 2,
+            'fund_source' => Expense::FUND_SOURCE_CASHIER,
+            'cash_session_id' => $session->id,
+        ]);
+
+        return response()->json(['success' => true, 'expense' => $expense->load('category:id,name')]);
+    });
+
+    Route::post('/expenses/{id}/receipt', function (Request $request, $id) {
+        $expense = Expense::findOrFail($id);
+
+        // Delete old receipt if exists
+        $deleteOld = function () use ($expense) {
+            if ($expense->receipt_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($expense->receipt_path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($expense->receipt_path);
+            }
+        };
+
+        $path = null;
+
+        // Mode 1: multipart file upload
+        if ($request->hasFile('receipt') && $request->file('receipt')->isValid()) {
+            $request->validate([
+                'receipt' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            ]);
+            $deleteOld();
+            $path = $request->file('receipt')->store('expenses/receipts', 'public');
+        }
+        // Mode 2: base64 string (fallback untuk React/mobile)
+        elseif ($request->filled('receipt_base64')) {
+            $base64 = $request->input('receipt_base64');
+            // Strip data URI prefix jika ada: data:image/jpeg;base64,...
+            if (str_contains($base64, ',')) {
+                $base64 = explode(',', $base64, 2)[1];
+            }
+            $decoded = base64_decode($base64, true);
+            if (!$decoded) {
+                return response()->json(['message' => 'Invalid base64 image data.'], 422);
+            }
+            $ext = $request->input('receipt_extension', 'jpg');
+            $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+            if (!in_array(strtolower($ext), $allowedExt)) {
+                return response()->json(['message' => 'Invalid file extension.'], 422);
+            }
+            $filename = 'expenses/receipts/' . uniqid('receipt_') . '.' . $ext;
+            $deleteOld();
+            \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $decoded);
+            $path = $filename;
+        } else {
+            return response()->json(['message' => 'No receipt file provided. Send multipart `receipt` file or base64 `receipt_base64`.'], 422);
+        }
+
+        $expense->update(['receipt_path' => $path]);
+
+        return response()->json([
+            'success' => true,
+            'receipt_url' => asset('storage/' . $path),
         ]);
     });
 });
