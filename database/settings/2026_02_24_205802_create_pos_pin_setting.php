@@ -6,6 +6,10 @@ return new class extends SettingsMigration
 {
     public function up(): void
     {
-        $this->migrator->add('app.pos_pin', '123456');
+        try {
+            $this->migrator->add('app.pos_pin', '123456');
+        } catch (\Exception $e) {
+            // Ignore if already exists
+        }
     }
 };

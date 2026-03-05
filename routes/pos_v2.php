@@ -219,21 +219,20 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         })->join('products', 'sale_items.product_id', '=', 'products.id')
             ->sum(DB::raw('sale_items.quantity * IFNULL(products.base_price, 0)'));
 
-        // Get payment details breakdown
-        $paymentDetailsRaw = DB::table('sales')
-            ->where('cash_session_id', $session->id)
-            ->where('status', 'completed')
-            ->select('payment_method_id', 'payment_method', DB::raw('SUM(final_total) as amount'))
-            ->groupBy('payment_method_id', 'payment_method')
-            ->get();
-
-        $paymentDetails = $paymentDetailsRaw->map(function ($pd) {
-            $pm = \App\Models\PaymentMethod::find($pd->payment_method_id);
-            return [
-                'method' => $pm ? $pm->name : ($pd->payment_method ?: 'Unknown'),
-                'amount' => (float) $pd->amount
-            ];
-        });
+        // Get payment details breakdown from sale_payments table
+        $paymentDetails = DB::table('sale_payments')
+            ->join('sales', 'sale_payments.sale_id', '=', 'sales.id')
+            ->where('sales.cash_session_id', $session->id)
+            ->where('sales.status', 'completed')
+            ->select('sale_payments.payment_method_id', 'sale_payments.payment_method_name as method', DB::raw('SUM(sale_payments.amount) as amount'))
+            ->groupBy('sale_payments.payment_method_id', 'sale_payments.payment_method_name')
+            ->get()
+            ->map(function ($pd) {
+                return [
+                    'method' => $pd->method,
+                    'amount' => (float) $pd->amount
+                ];
+            });
 
         return response()->json([
             'summary' => [
@@ -425,8 +424,12 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
     // 4. Checkout
     Route::post('/orders/{id}/checkout', function (Request $request, $id) {
         $request->validate([
-            'payment_method_id' => 'required|integer',
-            'amount_paid' => 'required|numeric',
+            'payment_method_id' => 'required_without:payments|integer',
+            'amount_paid' => 'required_without:payments|numeric',
+            'payments' => 'nullable|array',
+            'payments.*.payment_method_id' => 'required_with:payments|integer',
+            'payments.*.amount' => 'required_with:payments|numeric',
+            'payments.*.reference_number' => 'nullable|string',
             'discount_amount' => 'nullable|numeric',
             'points_redeemed' => 'nullable|integer',
             'customer_name' => 'nullable|string',
@@ -436,16 +439,38 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         $sale = Sale::with('items.product')->where('status', 'draft')->findOrFail($id);
 
         DB::transaction(function () use ($sale, $request) {
-            $paymentMethod = PaymentMethod::find($request->payment_method_id);
+            $paymentsData = $request->input('payments', []);
+
+            if (empty($paymentsData)) {
+                // Fallback to single payment mode
+                $paymentMethod = PaymentMethod::find($request->payment_method_id);
+                $amountPaid = $request->amount_paid;
+
+                $paymentsData = [[
+                    'payment_method_id' => $request->payment_method_id,
+                    'payment_method_name' => $paymentMethod ? $paymentMethod->name : 'Unknown',
+                    'amount' => $request->amount_paid,
+                    'reference_number' => null,
+                ]];
+            } else {
+                $amountPaid = collect($paymentsData)->sum('amount');
+                foreach ($paymentsData as &$p) {
+                    $pm = PaymentMethod::find($p['payment_method_id']);
+                    $p['payment_method_name'] = $pm ? $pm->name : 'Unknown';
+                }
+                unset($p);
+            }
+
+            $firstPayment = $paymentsData[0];
 
             $updateData = [
                 'status' => 'completed',
                 'payment_status' => 'paid',
                 'invoice_number' => 'INV-' . date('Ymd') . '-' . str_pad($sale->id, 4, '0', STR_PAD_LEFT),
-                'payment_method_id' => $paymentMethod ? $paymentMethod->id : null,
-                'payment_method' => $paymentMethod ? $paymentMethod->name : 'Unknown',
-                'amount_paid' => $request->amount_paid,
-                'change_amount' => max(0, $request->amount_paid - $sale->final_total),
+                'payment_method_id' => $firstPayment['payment_method_id'],
+                'payment_method' => $firstPayment['payment_method_name'],
+                'amount_paid' => $amountPaid,
+                'change_amount' => max(0, $amountPaid - $sale->final_total),
                 'discount' => $request->discount_amount ?? 0,
                 'paid_at' => now(),
             ];
@@ -459,6 +484,17 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             }
 
             $sale->update($updateData);
+
+            // Record all payments
+            foreach ($paymentsData as $p) {
+                \App\Models\SalePayment::create([
+                    'sale_id' => $sale->id,
+                    'payment_method_id' => $p['payment_method_id'],
+                    'payment_method_name' => $p['payment_method_name'],
+                    'amount' => $p['amount'],
+                    'reference_number' => $p['reference_number'] ?? null,
+                ]);
+            }
 
             // If table used, set to available
             if ($sale->table_number) {
@@ -500,6 +536,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                     'content' => 'RECEIPT',
                     'payload' => [
                         'sale' => $sale->toArray(),
+                        'payments' => $paymentsData,
                         'items' => $sale->items->map(function ($i) {
                             return [
                                 'product_name' => $i->product->name ?? 'Unknown',
@@ -519,17 +556,23 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             }
         });
 
-        return response()->json(['success' => true, 'order' => $sale->refresh()]);
+        return response()->json(['success' => true, 'order' => $sale->refresh()->load('payments')]);
     });
 
     // 4.5. Transactions History
     Route::get('/transactions', function (Request $request) {
         $limit = $request->query('limit', 50);
-        $transactions = Sale::with(['items.product', 'paymentMethod'])
+        $transactions = Sale::with(['items.product', 'paymentMethod', 'payments'])
             ->where('status', 'completed')
             ->latest()
             ->limit($limit)
             ->get()->map(function ($sale) {
+                // Determine payment method label
+                $paymentLabel = $sale->payment_method ?? ($sale->paymentMethod->name ?? 'Unknown');
+                if ($sale->payments->count() > 1) {
+                    $paymentLabel = 'Multi-Payment (' . $sale->payments->count() . ')';
+                }
+
                 return [
                     'id' => $sale->id,
                     'invoice_number' => $sale->invoice_number,
@@ -543,7 +586,14 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                     'amount_paid' => $sale->amount_paid,
                     'change_amount' => $sale->change_amount,
                     'payment_method_id' => $sale->payment_method_id,
-                    'payment_method' => $sale->payment_method ?? ($sale->paymentMethod->name ?? 'Unknown'),
+                    'payment_method' => $paymentLabel,
+                    'payments' => $sale->payments->map(function ($p) {
+                        return [
+                            'method' => $p->payment_method_name,
+                            'amount' => $p->amount,
+                            'reference' => $p->reference_number
+                        ];
+                    }),
                     'created_at' => $sale->created_at,
                     'items' => $sale->items->map(function ($item) {
                         return [
@@ -607,7 +657,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             ->where('status', 'completed')
             ->latest()
             ->limit(5)
-            ->with('items.product')
+            ->with(['items.product', 'payments'])
             ->get()
             ->map(function ($sale) {
                 return [
@@ -615,6 +665,12 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                     'invoice_number' => $sale->invoice_number,
                     'total' => (float) $sale->final_total,
                     'date' => $sale->paid_at,
+                    'payments' => $sale->payments->map(function ($p) {
+                        return [
+                            'method' => $p->payment_method_name,
+                            'amount' => $p->amount
+                        ];
+                    }),
                     'items' => $sale->items->map(function ($i) {
                         return [
                             'name' => $i->product->name ?? 'Unknown',

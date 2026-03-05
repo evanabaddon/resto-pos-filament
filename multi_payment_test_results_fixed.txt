@@ -1,0 +1,72 @@
+{
+  "success": true,
+  "order": {
+    "id": 325,
+    "user_id": 2,
+    "invoice_number": "INV-20260306-0325",
+    "customer_name": "MultiPay User Paid",
+    "member_id": null,
+    "table_number": "T2",
+    "order_type": "Dine In",
+    "subtotal": "100000.00",
+    "tax": "10000.00",
+    "discount": "0.00",
+    "final_total": "110000.00",
+    "points_earned": 0,
+    "amount_paid": "110000.00",
+    "status": "completed",
+    "source": null,
+    "origin_url": null,
+    "is_paid": 0,
+    "paid_at": "2026-03-06 02:21:08",
+    "note": null,
+    "total": "110000.00",
+    "is_tax_reported": 1,
+    "payment_method": "Tunai",
+    "payment_method_id": 6,
+    "created_at": "2026-03-05T19:21:07Z",
+    "updated_at": "2026-03-05T19:21:08Z",
+    "cash_session_id": 40,
+    "split_from": null,
+    "split_number": null,
+    "split_into": null,
+    "reservation_id": null,
+    "items": [
+      {
+        "id": 579,
+        "sale_id": 325,
+        "product_id": 1,
+        "product_name": null,
+        "quantity": "1.00",
+        "unit_price": "100000.00",
+        "subtotal": "100000.00",
+        "status": "pending",
+        "notes": null,
+        "created_at": "2026-03-05T19:21:07Z",
+        "updated_at": "2026-03-05T19:21:07Z"
+      }
+    ],
+    "payments": [
+      {
+        "id": 5,
+        "sale_id": 325,
+        "payment_method_id": 6,
+        "payment_method_name": "Tunai",
+        "amount": "50000.00",
+        "reference_number": null,
+        "created_at": "2026-03-05T19:21:08Z",
+        "updated_at": "2026-03-05T19:21:08Z"
+      },
+      {
+        "id": 6,
+        "sale_id": 325,
+        "payment_method_id": 2,
+        "payment_method_name": "QRIS",
+        "amount": "60000.00",
+        "reference_number": "QRIS-123456",
+        "created_at": "2026-03-05T19:21:08Z",
+        "updated_at": "2026-03-05T19:21:08Z"
+      }
+    ]
+  }
+}
