@@ -690,20 +690,26 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                     'payments' => $sale->payments->map(function ($p) {
                         return [
                             'method' => $p->payment_method_name,
-                            'amount' => $p->amount
+                            'amount' => (float) $p->amount,
+                            'reference' => $p->reference_number
                         ];
                     }),
                     'items' => $sale->items->map(function ($i) {
                         return [
-                            'name' => $i->product->name ?? 'Unknown',
-                            'qty' => $i->quantity
+                            'id' => $i->id,
+                            'product_id' => $i->product_id,
+                            'product_name' => $i->product->name ?? 'Unknown',
+                            'quantity' => (float) $i->quantity,
+                            'unit_price' => (float) $i->unit_price,
+                            'subtotal' => (float) $i->subtotal,
+                            'notes' => $i->notes
                         ];
                     })
                 ];
             });
 
         return response()->json([
-            'member_id' => $id,
+            'member_id' => (int) $id,
             'top_products' => $topProducts,
             'recent_transactions' => $lastTransactions
         ]);
