@@ -203,44 +203,64 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         if (!$session)
             return response()->json(['summary' => null]);
 
-        // Calculate sales for this session
-        $sales = Sale::where('cash_session_id', $session->id)->where('status', 'completed');
-        $totalSales = clone $sales;
+        // 1. Get all completed sales for this session with relationships
+        $allSales = Sale::where('cash_session_id', $session->id)
+            ->where('status', 'completed')
+            ->with(['payments', 'paymentMethod'])
+            ->get();
 
-        $cashSales = clone $sales;
-        $totalCashSales = $cashSales->whereHas('paymentMethod', function ($q) {
-            $q->where('code', 'cash')->orWhere('name', 'like', '%cash%');
-        })->sum('final_total');
+        $totalSalesAmount = 0;
+        $totalCashSales = 0;
+        $detailsMap = []; // method_name => amount
 
-        $expectedCash = $session->cash_in_hand + $totalCashSales; // Excluding payouts for now
+        foreach ($allSales as $sale) {
+            $totalSalesAmount += $sale->final_total;
 
+            if ($sale->payments->isNotEmpty()) {
+                // NEW: Use breakdown from sale_payments
+                foreach ($sale->payments as $p) {
+                    $mName = $p->payment_method_name ?: 'Metode';
+                    $detailsMap[$mName] = ($detailsMap[$mName] ?? 0) + $p->amount;
+
+                    // Detect if this specific payment is Cash
+                    if (stripos($mName, 'cash') !== false || stripos($mName, 'tunai') !== false) {
+                        $totalCashSales += $p->amount;
+                    }
+                }
+            } else {
+                // LEGACY: Use top-level sale fields
+                $mName = $sale->payment_method ?: ($sale->paymentMethod->name ?? 'Metode');
+                $detailsMap[$mName] = ($detailsMap[$mName] ?? 0) + $sale->final_total;
+
+                if (stripos($mName, 'cash') !== false || stripos($mName, 'tunai') !== false) {
+                    $totalCashSales += $sale->final_total;
+                }
+            }
+        }
+
+        $paymentDetails = [];
+        foreach ($detailsMap as $method => $amount) {
+            $paymentDetails[] = [
+                'method' => $method,
+                'amount' => (float) $amount
+            ];
+        }
+
+        $expectedCash = $session->cash_in_hand + $totalCashSales;
+
+        // HPP Approximation
         $hpp = \App\Models\SaleItem::whereHas('sale', function ($q) use ($session) {
             $q->where('cash_session_id', $session->id)->where('status', 'completed');
         })->join('products', 'sale_items.product_id', '=', 'products.id')
             ->sum(DB::raw('sale_items.quantity * IFNULL(products.base_price, 0)'));
 
-        // Get payment details breakdown from sale_payments table
-        $paymentDetails = DB::table('sale_payments')
-            ->join('sales', 'sale_payments.sale_id', '=', 'sales.id')
-            ->where('sales.cash_session_id', $session->id)
-            ->where('sales.status', 'completed')
-            ->select('sale_payments.payment_method_id', 'sale_payments.payment_method_name as method', DB::raw('SUM(sale_payments.amount) as amount'))
-            ->groupBy('sale_payments.payment_method_id', 'sale_payments.payment_method_name')
-            ->get()
-            ->map(function ($pd) {
-                return [
-                    'method' => $pd->method,
-                    'amount' => (float) $pd->amount
-                ];
-            });
-
         return response()->json([
             'summary' => [
                 'cash_in_hand' => $session->cash_in_hand,
-                'total_sales' => $totalSales->sum('final_total'),
-                'cash_sales' => $totalCashSales,
-                'expected_cash' => $expectedCash,
-                'total_orders' => $totalSales->count(),
+                'total_sales' => (float) $totalSalesAmount,
+                'cash_sales' => (float) $totalCashSales,
+                'expected_cash' => (float) $expectedCash,
+                'total_orders' => $allSales->count(),
                 'hpp' => (float) $hpp,
                 'opened_at' => $session->opened_at,
                 'current_time' => now(),
@@ -446,12 +466,14 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                 $paymentMethod = PaymentMethod::find($request->payment_method_id);
                 $amountPaid = $request->amount_paid;
 
-                $paymentsData = [[
-                    'payment_method_id' => $request->payment_method_id,
-                    'payment_method_name' => $paymentMethod ? $paymentMethod->name : 'Unknown',
-                    'amount' => $request->amount_paid,
-                    'reference_number' => null,
-                ]];
+                $paymentsData = [
+                    [
+                        'payment_method_id' => $request->payment_method_id,
+                        'payment_method_name' => $paymentMethod ? $paymentMethod->name : 'Unknown',
+                        'amount' => $request->amount_paid,
+                        'reference_number' => null,
+                    ]
+                ];
             } else {
                 $amountPaid = collect($paymentsData)->sum('amount');
                 foreach ($paymentsData as &$p) {
