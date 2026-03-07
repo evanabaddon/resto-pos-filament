@@ -621,7 +621,9 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                         return [
                             'id' => $item->id,
                             'product_id' => $item->product_id,
+                            'name' => $item->product->name ?? 'Unknown',
                             'product_name' => $item->product->name ?? 'Unknown',
+                            'qty' => $item->quantity,
                             'quantity' => $item->quantity,
                             'unit_price' => $item->unit_price,
                             'subtotal' => $item->subtotal,
@@ -699,7 +701,9 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
                         return [
                             'id' => $i->id,
                             'product_id' => $i->product_id,
+                            'name' => $i->product->name ?? 'Unknown',
                             'product_name' => $i->product->name ?? 'Unknown',
+                            'qty' => (float) $i->quantity,
                             'quantity' => (float) $i->quantity,
                             'unit_price' => (float) $i->unit_price,
                             'subtotal' => (float) $i->subtotal,
