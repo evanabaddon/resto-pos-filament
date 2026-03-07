@@ -639,7 +639,8 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
         if (!$q)
             return response()->json(['members' => []]);
 
-        $members = \App\Models\Member::where('name', 'like', "%{$q}%")
+        $members = \App\Models\Member::with('tier:id,name')
+            ->where('name', 'like', "%{$q}%")
             ->orWhere('phone', 'like', "%{$q}%")
             ->limit(10)
             ->get();
@@ -648,7 +649,7 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
     });
 
     Route::get('/members/{id}', function ($id) {
-        return response()->json(['member' => \App\Models\Member::findOrFail($id)]);
+        return response()->json(['member' => \App\Models\Member::with('tier:id,name')->findOrFail($id)]);
     });
 
     Route::get('/members/{id}/history', function ($id) {
