@@ -72,20 +72,63 @@ class CashSession extends Model
     // 🔹 TOTAL penjualan CASH yang COMPLETED
     public function getTotalCashSalesAttribute(): float
     {
-        $cashId = PaymentMethod::where('code', 'cash')->value('id');
-        return $this->sales()
-            ->where('status', 'completed')
-            ->where('payment_method_id', $cashId)
-            ->sum('final_total');
+        $total = 0;
+        $sales = $this->sales()->where('status', 'completed')->with('payments')->get();
+
+        foreach ($sales as $sale) {
+            if ($sale->payments->isNotEmpty()) {
+                foreach ($sale->payments as $p) {
+                    $lowerName = strtolower($p->payment_method_name);
+                    $isCash = ($lowerName === 'tunai' || $lowerName === 'cash' ||
+                        (str_contains($lowerName, 'tunai') && !str_contains($lowerName, 'non')) ||
+                        (str_contains($lowerName, 'cash') && !str_contains($lowerName, 'non')));
+                    if ($isCash) {
+                        $total += $p->amount;
+                    }
+                }
+            } else {
+                // Fallback legacy
+                $lowerName = strtolower($sale->payment_method);
+                $isCash = ($lowerName === 'tunai' || $lowerName === 'cash' ||
+                    (str_contains($lowerName, 'tunai') && !str_contains($lowerName, 'non')) ||
+                    (str_contains($lowerName, 'cash') && !str_contains($lowerName, 'non')));
+                if ($isCash) {
+                    $total += $sale->final_total;
+                }
+            }
+        }
+        return $total;
     }
 
     // 🔹 TOTAL penjualan NON-CASH yang COMPLETED  
     public function getTotalNonCashSalesAttribute(): float
     {
-        return $this->sales()
-            ->where('status', 'completed')
-            ->where('payment_method_id', '!=', 1)
-            ->sum('final_total');
+        $total = 0;
+        $sales = $this->sales()->where('status', 'completed')->with('payments')->get();
+
+        foreach ($sales as $sale) {
+            if ($sale->payments->isNotEmpty()) {
+                foreach ($sale->payments as $p) {
+                    $lowerName = strtolower($p->payment_method_name);
+                    $isCash = ($lowerName === 'tunai' || $lowerName === 'cash' ||
+                        (str_contains($lowerName, 'tunai') && !str_contains($lowerName, 'non')) ||
+                        (str_contains($lowerName, 'cash') && !str_contains($lowerName, 'non')));
+                    if (!$isCash) {
+                        $total += $p->amount;
+                    }
+                }
+            } else {
+                // Fallback legacy
+                $lowerName = strtolower($sale->payment_method);
+                $isCash = ($lowerName === 'tunai' || $lowerName === 'cash' ||
+                    (str_contains($lowerName, 'tunai') && !str_contains($lowerName, 'non')) ||
+                    (str_contains($lowerName, 'cash') && !str_contains($lowerName, 'non')));
+                if (!$isCash) {
+                    $total += $sale->final_total;
+                }
+            }
+        }
+        return $total;
     }
 
     // 🔹 TOTAL semua penjualan COMPLETED (apapun payment method)
