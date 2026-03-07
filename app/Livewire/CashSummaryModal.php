@@ -44,7 +44,7 @@ class CashSummaryModal extends Component
         // Load session dengan semua data terkait
         $this->session = CashSession::with([
             'sales' => function ($query) {
-                $query->where('status', 'completed');
+                $query->where('status', 'completed')->with(['payments.paymentMethod', 'paymentMethod']);
             },
             'cashExpenses' => function ($query) {
                 $query->where('status', 'approved');
@@ -82,17 +82,54 @@ class CashSummaryModal extends Component
         // Hitung penjualan berdasarkan payment method
         $paymentMethodSales = [];
         $totalSales = 0;
+        $totalCashSales = 0;
 
         foreach ($sales as $sale) {
-            $paymentMethodCode = $sale->paymentMethod->code ?? 'unknown';
-            $amount = $sale->final_total;
+            $totalSales += $sale->final_total;
 
-            if (!isset($paymentMethodSales[$paymentMethodCode])) {
-                $paymentMethodSales[$paymentMethodCode] = 0;
+            if ($sale->payments->isNotEmpty()) {
+                // NEW: Use breakdown from sale_payments
+                foreach ($sale->payments as $p) {
+                    $code = $p->paymentMethod->code ?? 'unknown';
+                    $amount = (float) $p->amount;
+
+                    if (!isset($paymentMethodSales[$code])) {
+                        $paymentMethodSales[$code] = 0;
+                    }
+                    $paymentMethodSales[$code] += $amount;
+
+                    // Detect if this specific payment is Cash (Strictly match "Tunai" or "Cash", ignore "Non-Tunai")
+                    $mName = $p->payment_method_name ?: ($p->paymentMethod->name ?? 'Metode');
+                    $lowerName = strtolower($mName);
+                    $isCash = ($lowerName === 'tunai' || $lowerName === 'cash' ||
+                        (str_contains($lowerName, 'tunai') && !str_contains($lowerName, 'non')) ||
+                        (str_contains($lowerName, 'cash') && !str_contains($lowerName, 'non')));
+
+                    if ($isCash) {
+                        $totalCashSales += $amount;
+                    }
+                }
+            } else {
+                // LEGACY: Use top-level sale fields
+                $paymentMethodCode = $sale->paymentMethod->code ?? 'unknown';
+                $amount = $sale->final_total;
+
+                if (!isset($paymentMethodSales[$paymentMethodCode])) {
+                    $paymentMethodSales[$paymentMethodCode] = 0;
+                }
+                $paymentMethodSales[$paymentMethodCode] += $amount;
+
+                // Detect if this sale is Cash
+                $mName = $sale->payment_method ?: ($sale->paymentMethod->name ?? 'Metode');
+                $lowerName = strtolower($mName);
+                $isCash = ($lowerName === 'tunai' || $lowerName === 'cash' ||
+                    (str_contains($lowerName, 'tunai') && !str_contains($lowerName, 'non')) ||
+                    (str_contains($lowerName, 'cash') && !str_contains($lowerName, 'non')));
+
+                if ($isCash) {
+                    $totalCashSales += $amount;
+                }
             }
-
-            $paymentMethodSales[$paymentMethodCode] += $amount;
-            $totalSales += $amount;
         }
 
         // Hitung total pengeluaran dari kasir
@@ -127,11 +164,8 @@ class CashSummaryModal extends Component
             })
             ->count();
 
-        // Cash sales khusus untuk perhitungan expected cash
-        $cashSales = $paymentMethodSales['cash'] ?? 0;
-
         // Expected cash = kas awal + penjualan cash - pengeluaran cash - pembelian cash
-        $expectedCash = $this->session->cash_in_hand + $cashSales - $totalCashExpenses - $totalCashPurchases;
+        $expectedCash = $this->session->cash_in_hand + $totalCashSales - $totalCashExpenses - $totalCashPurchases;
 
         // Jika sudah ada cash_out yang diisi, hitung selisih
         $cashDifference = null;
@@ -143,7 +177,7 @@ class CashSummaryModal extends Component
             'cash_in_hand' => $this->session->cash_in_hand,
             'payment_method_sales' => $paymentMethodSales,
             'total_sales' => $totalSales,
-            'cash_sales' => $cashSales,
+            'cash_sales' => $totalCashSales,
             'total_cash_expenses' => $totalCashExpenses,
             'total_cash_purchases' => $totalCashPurchases,
             'unpaid_sales' => $unpaidSales,
