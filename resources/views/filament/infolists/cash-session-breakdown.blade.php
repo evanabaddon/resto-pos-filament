@@ -1,11 +1,15 @@
 <div class="space-y-3">
     @php
-        $sales = $getRecord()->sales()->where('status', 'completed')->with(['payments', 'paymentMethod'])->get();
-        $detailsMap = [];
-        $total = 0;
+        $allSales = $getRecord()->sales;
+        $completedSales = $allSales->where('status', 'completed')->load(['payments', 'paymentMethod']);
+        $unpaidSales = $allSales->whereIn('status', ['draft', 'pending']);
 
-        foreach ($sales as $sale) {
-            $total += (float) $sale->final_total;
+        $detailsMap = [];
+        $totalCompleted = 0;
+        $totalUnpaid = $unpaidSales->sum('final_total');
+
+        foreach ($completedSales as $sale) {
+            $totalCompleted += (float) $sale->final_total;
 
             if ($sale->payments->isNotEmpty()) {
                 $nonCashAmount = 0;
@@ -41,6 +45,7 @@
     @endphp
 
     <div class="rounded-lg border border-gray-200 divide-y divide-gray-200">
+        {{-- Completed Payments --}}
         @foreach($detailsMap as $method => $amount)
             <div class="flex justify-between items-center px-4 py-2">
                 <span class="text-sm font-medium text-gray-700">{{ $method }}</span>
@@ -50,10 +55,20 @@
             </div>
         @endforeach
 
+        {{-- Unpaid Payments --}}
+        @if($totalUnpaid > 0)
+            <div class="flex justify-between items-center px-4 py-2 text-red-600 bg-red-50/30">
+                <span class="text-sm font-medium italic">Belum Terbayar</span>
+                <span class="text-sm font-semibold">
+                    Rp {{ number_format($totalUnpaid, 0, ',', '.') }}
+                </span>
+            </div>
+        @endif
+
         <div class="flex justify-between items-center px-4 py-2 bg-gray-50">
-            <span class="text-sm font-bold text-gray-700">{{ __('messages.total_sales') }}</span>
+            <span class="text-sm font-bold text-gray-700">Total Penjualan (Selesai)</span>
             <span class="text-sm font-bold text-gray-900">
-                Rp {{ number_format($total, 0, ',', '.') }}
+                Rp {{ number_format($totalCompleted, 0, ',', '.') }}
             </span>
         </div>
     </div>
