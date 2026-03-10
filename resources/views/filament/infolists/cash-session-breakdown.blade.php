@@ -1,19 +1,41 @@
 <div class="space-y-3">
     @php
-        $sales = $getRecord()->sales->load(['payments', 'paymentMethod']);
+        $sales = $getRecord()->sales()->where('status', 'completed')->with(['payments', 'paymentMethod'])->get();
         $detailsMap = [];
         $total = 0;
 
         foreach ($sales as $sale) {
-            $total += $sale->final_total;
+            $total += (float) $sale->final_total;
+
             if ($sale->payments->isNotEmpty()) {
+                $nonCashAmount = 0;
+                $cashMethodName = 'Tunai';
+
                 foreach ($sale->payments as $p) {
                     $mName = $p->payment_method_name ?: 'Metode';
-                    $detailsMap[$mName] = ($detailsMap[$mName] ?? 0) + $p->amount;
+                    $lowerName = strtolower($mName);
+
+                    // Stricter Cash Detection
+                    $isCash = (str_contains($lowerName, 'tunai') || str_contains($lowerName, 'cash'))
+                        && !str_contains($lowerName, 'non');
+
+                    if ($isCash) {
+                        $cashMethodName = $mName;
+                    } else {
+                        $amount = min((float) $p->amount, (float) $sale->final_total - $nonCashAmount);
+                        $nonCashAmount += $amount;
+                        $detailsMap[$mName] = ($detailsMap[$mName] ?? 0) + $amount;
+                    }
+                }
+
+                $effectiveCash = max(0, (float) $sale->final_total - $nonCashAmount);
+                if ($effectiveCash > 0) {
+                    $detailsMap[$cashMethodName] = ($detailsMap[$cashMethodName] ?? 0) + $effectiveCash;
                 }
             } else {
+                // FALLBACK LEGACY
                 $mName = $sale->payment_method ?: ($sale->paymentMethod->name ?? 'Metode');
-                $detailsMap[$mName] = ($detailsMap[$mName] ?? 0) + $sale->final_total;
+                $detailsMap[$mName] = ($detailsMap[$mName] ?? 0) + (float) $sale->final_total;
             }
         }
     @endphp
