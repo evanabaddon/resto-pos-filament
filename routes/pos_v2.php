@@ -217,15 +217,29 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             $totalSalesAmount += $sale->final_total;
 
             if ($sale->payments->isNotEmpty()) {
-                // NEW: Use breakdown from sale_payments
+                $nonCashAmount = 0;
+                $cashAmount = 0;
+                $cashMethodName = 'Cash';
+
                 foreach ($sale->payments as $p) {
                     $mName = $p->payment_method_name ?: 'Metode';
-                    $detailsMap[$mName] = ($detailsMap[$mName] ?? 0) + $p->amount;
+                    $lowerName = strtolower($mName);
+                    $isCash = (stripos($lowerName, 'cash') !== false || stripos($lowerName, 'tunai') !== false);
 
-                    // Detect if this specific payment is Cash
-                    if (stripos($mName, 'cash') !== false || stripos($mName, 'tunai') !== false) {
-                        $totalCashSales += $p->amount;
+                    if ($isCash) {
+                        $cashAmount += $p->amount;
+                        $cashMethodName = $mName;
+                    } else {
+                        $amount = min($p->amount, $sale->final_total - $nonCashAmount);
+                        $nonCashAmount += $amount;
+                        $detailsMap[$mName] = ($detailsMap[$mName] ?? 0) + $amount;
                     }
+                }
+
+                $effectiveCash = max(0, $sale->final_total - $nonCashAmount);
+                if ($effectiveCash > 0) {
+                    $detailsMap[$cashMethodName] = ($detailsMap[$cashMethodName] ?? 0) + $effectiveCash;
+                    $totalCashSales += $effectiveCash;
                 }
             } else {
                 // LEGACY: Use top-level sale fields

@@ -88,17 +88,12 @@ class CashSummaryModal extends Component
             $totalSales += $sale->final_total;
 
             if ($sale->payments->isNotEmpty()) {
-                // NEW: Use breakdown from sale_payments
+                $nonCashAmount = 0;
+                $cashPayment = null;
+                $cashCode = 'cash'; // Default fallback
+
+                // Pre-process to separate cash and non-cash
                 foreach ($sale->payments as $p) {
-                    $code = $p->paymentMethod->code ?? 'unknown';
-                    $amount = (float) $p->amount;
-
-                    if (!isset($paymentMethodSales[$code])) {
-                        $paymentMethodSales[$code] = 0;
-                    }
-                    $paymentMethodSales[$code] += $amount;
-
-                    // Detect if this specific payment is Cash (Strictly match "Tunai" or "Cash", ignore "Non-Tunai")
                     $mName = $p->payment_method_name ?: ($p->paymentMethod->name ?? 'Metode');
                     $lowerName = strtolower($mName);
                     $isCash = ($lowerName === 'tunai' || $lowerName === 'cash' ||
@@ -106,8 +101,28 @@ class CashSummaryModal extends Component
                         (str_contains($lowerName, 'cash') && !str_contains($lowerName, 'non')));
 
                     if ($isCash) {
-                        $totalCashSales += $amount;
+                        $cashPayment = $p;
+                        $cashCode = $p->paymentMethod->code ?? 'cash';
+                    } else {
+                        $code = $p->paymentMethod->code ?? 'unknown';
+                        $amount = min((float) $p->amount, $sale->final_total - $nonCashAmount);
+                        $nonCashAmount += $amount;
+
+                        if (!isset($paymentMethodSales[$code])) {
+                            $paymentMethodSales[$code] = 0;
+                        }
+                        $paymentMethodSales[$code] += $amount;
                     }
+                }
+
+                // Handle Effective Cash: Remainder of final_total after non-cash
+                $effectiveCash = max(0, (float) $sale->final_total - $nonCashAmount);
+                if ($effectiveCash > 0) {
+                    if (!isset($paymentMethodSales[$cashCode])) {
+                        $paymentMethodSales[$cashCode] = 0;
+                    }
+                    $paymentMethodSales[$cashCode] += $effectiveCash;
+                    $totalCashSales += $effectiveCash;
                 }
             } else {
                 // LEGACY: Use top-level sale fields

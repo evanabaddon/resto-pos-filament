@@ -77,15 +77,26 @@ class CashSession extends Model
 
         foreach ($sales as $sale) {
             if ($sale->payments->isNotEmpty()) {
+                $nonCashAmount = 0;
+                $cashAmount = 0;
+
                 foreach ($sale->payments as $p) {
                     $lowerName = strtolower($p->payment_method_name);
                     $isCash = ($lowerName === 'tunai' || $lowerName === 'cash' ||
                         (str_contains($lowerName, 'tunai') && !str_contains($lowerName, 'non')) ||
                         (str_contains($lowerName, 'cash') && !str_contains($lowerName, 'non')));
+
                     if ($isCash) {
-                        $total += $p->amount;
+                        $cashAmount += $p->amount;
+                    } else {
+                        $nonCashAmount += $p->amount;
                     }
                 }
+
+                // Logika "Effective Cash": Sisa dari final_total setelah dikurangi non-cash
+                // Ini menangani kasus bayar 100rb untuk tagihan 50rb (kembalian 50rb)
+                $effectiveCash = max(0, $sale->final_total - $nonCashAmount);
+                $total += min($cashAmount, $effectiveCash);
             } else {
                 // Fallback legacy
                 $lowerName = strtolower($sale->payment_method);
@@ -113,8 +124,10 @@ class CashSession extends Model
                     $isCash = ($lowerName === 'tunai' || $lowerName === 'cash' ||
                         (str_contains($lowerName, 'tunai') && !str_contains($lowerName, 'non')) ||
                         (str_contains($lowerName, 'cash') && !str_contains($lowerName, 'non')));
+
                     if (!$isCash) {
-                        $total += $p->amount;
+                        // Non-cash payment should not exceed the final_total (it could if mixed, but usually it's exact)
+                        $total += min($p->amount, $sale->final_total);
                     }
                 }
             } else {
@@ -123,7 +136,7 @@ class CashSession extends Model
                 $isCash = ($lowerName === 'tunai' || $lowerName === 'cash' ||
                     (str_contains($lowerName, 'tunai') && !str_contains($lowerName, 'non')) ||
                     (str_contains($lowerName, 'cash') && !str_contains($lowerName, 'non')));
-                if (!$isCash) {
+                if (!$isCash && !empty($sale->payment_method)) {
                     $total += $sale->final_total;
                 }
             }
