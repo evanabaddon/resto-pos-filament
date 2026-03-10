@@ -218,24 +218,27 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
 
             if ($sale->payments->isNotEmpty()) {
                 $nonCashAmount = 0;
-                $cashAmount = 0;
                 $cashMethodName = 'Cash';
 
                 foreach ($sale->payments as $p) {
                     $mName = $p->payment_method_name ?: 'Metode';
                     $lowerName = strtolower($mName);
-                    $isCash = (stripos($lowerName, 'cash') !== false || stripos($lowerName, 'tunai') !== false);
+
+                    // Stricter Cash Detection: must contain 'cash'/'tunai' AND NOT contain 'non'
+                    $isCash = (stripos($lowerName, 'cash') !== false || stripos($lowerName, 'tunai') !== false)
+                        && stripos($lowerName, 'non') === false;
 
                     if ($isCash) {
-                        $cashAmount += $p->amount;
                         $cashMethodName = $mName;
                     } else {
+                        // Non-cash should not exceed the final total of the sale
                         $amount = min($p->amount, $sale->final_total - $nonCashAmount);
                         $nonCashAmount += $amount;
                         $detailsMap[$mName] = ($detailsMap[$mName] ?? 0) + $amount;
                     }
                 }
 
+                // Effective Cash is the remainder of the invoice after non-cash payments
                 $effectiveCash = max(0, $sale->final_total - $nonCashAmount);
                 if ($effectiveCash > 0) {
                     $detailsMap[$cashMethodName] = ($detailsMap[$cashMethodName] ?? 0) + $effectiveCash;
@@ -244,9 +247,15 @@ Route::middleware(\App\Http\Middleware\PosAuthMiddleware::class)->group(function
             } else {
                 // LEGACY: Use top-level sale fields
                 $mName = $sale->payment_method ?: ($sale->paymentMethod->name ?? 'Metode');
+                $lowerName = strtolower($mName);
+
+                // Stricter Cash Detection for Legacy
+                $isCash = (stripos($lowerName, 'cash') !== false || stripos($lowerName, 'tunai') !== false)
+                    && stripos($lowerName, 'non') === false;
+
                 $detailsMap[$mName] = ($detailsMap[$mName] ?? 0) + $sale->final_total;
 
-                if (stripos($mName, 'cash') !== false || stripos($mName, 'tunai') !== false) {
+                if ($isCash) {
                     $totalCashSales += $sale->final_total;
                 }
             }

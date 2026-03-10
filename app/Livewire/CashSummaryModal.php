@@ -96,15 +96,16 @@ class CashSummaryModal extends Component
                 foreach ($sale->payments as $p) {
                     $mName = $p->payment_method_name ?: ($p->paymentMethod->name ?? 'Metode');
                     $lowerName = strtolower($mName);
-                    $isCash = ($lowerName === 'tunai' || $lowerName === 'cash' ||
-                        (str_contains($lowerName, 'tunai') && !str_contains($lowerName, 'non')) ||
-                        (str_contains($lowerName, 'cash') && !str_contains($lowerName, 'non')));
+
+                    // Stricter Cash Detection: must NOT contain 'non'
+                    $isCash = (str_contains($lowerName, 'tunai') || str_contains($lowerName, 'cash'))
+                        && !str_contains($lowerName, 'non');
 
                     if ($isCash) {
-                        $cashPayment = $p;
                         $cashCode = $p->paymentMethod->code ?? 'cash';
                     } else {
                         $code = $p->paymentMethod->code ?? 'unknown';
+                        // Cap non-cash amount to not exceed the invoice balance
                         $amount = min((float) $p->amount, $sale->final_total - $nonCashAmount);
                         $nonCashAmount += $amount;
 
