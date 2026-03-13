@@ -168,6 +168,8 @@ class ExpenseForm
                             ->image()
                             ->acceptedFileTypes(['application/pdf', 'image/*'])
                             ->maxSize(5120) // 5MB
+                            ->openable()
+                            ->downloadable()
                             ->columnSpanFull()
                             ->helperText('Upload nota atau bukti pembayaran (opsional). Format: JPG, PNG, atau PDF. Maksimal 5MB.'),
                     ])
