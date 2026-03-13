@@ -102,6 +102,24 @@ class ExpenseForm
                                             ->orderBy('description')
                                             ->pluck('description')
                                             ->toArray();
+                                    })
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function (callable $set, callable $get, $state) {
+                                        if (filled($state)) {
+                                            $lastExpenseItem = \App\Models\ExpenseItem::query()
+                                                ->where('description', $state)
+                                                ->latest('id')
+                                                ->first();
+                                                
+                                            if ($lastExpenseItem) {
+                                                $set('amount', $lastExpenseItem->amount);
+                                                
+                                                // Trigger grand total update
+                                                $items = $get('../../items') ?? [];
+                                                $total = collect($items)->sum('amount');
+                                                $set('../../amount', $total);
+                                            }
+                                        }
                                     }),
                                 TextInput::make('amount')
                                     ->label(__('messages.amount') ?? 'Jumlah')
