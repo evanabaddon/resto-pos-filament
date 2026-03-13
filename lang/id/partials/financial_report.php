@@ -56,8 +56,11 @@ return [
     'generated_by_system' => 'Dihasilkan oleh Sistem :app_name',
     'total' => 'Total',
     'total_purchases' => 'Total Belanja Stok',
-    'total_purchases_desc' => 'Uang tunai keluar untuk pembelian stok (Received)',
+    'total_purchases_desc' => 'Uang tunai keluar untuk pembelian stok (Received + Tagged)',
     'purchases_breakdown' => 'Rincian Belanja Stok',
     'accrual_note' => 'Catatan: Pembelian stok bukan beban (expense) sampai barang tersebut terjual (HPP).',
+    'is_stock_purchase' => 'Pembelian Stok (Bahan Baku)',
+    'is_stock_purchase_helper' => 'Centang jika pengeluaran ini untuk stok yang sudah dipantau lewat resep/HPP agar tidak dihitung dua kali.',
+    'accrual_info_alert' => 'Laporan ini menggunakan metode **Accrual**. Pengeluaran yang dicentang sebagai "Pembelian Stok" tidak akan mengurangi laba bersih secara langsung karena akan dihitung saat barang terjual (HPP).',
     'accrual_help_text' => 'Stok yang dibeli tidak langsung mengurangi laba sampai barang tersebut laku (Accrual).',
 ];

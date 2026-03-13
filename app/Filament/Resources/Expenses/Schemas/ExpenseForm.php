@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Expenses\Schemas;
 
 use App\Models\Expense;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -77,18 +78,49 @@ class ExpenseForm
                                     ->maxLength(500),
                             ]),
 
-                        Textarea::make('description')
-                            ->label(__('messages.expense_description'))
-                            ->required()
-                            ->rows(3)
-                            ->maxLength(500)
-                            ->columnSpanFull(),
+                        \Filament\Forms\Components\Repeater::make('items')
+                            ->label(__('messages.expense_items') ?? 'Daftar Item Pengeluaran')
+                            ->relationship()
+                            ->schema([
+                                TextInput::make('description')
+                                    ->label(__('messages.description') ?? 'Deskripsi')
+                                    ->required()
+                                    ->columnSpan(2),
+                                TextInput::make('amount')
+                                    ->label(__('messages.amount') ?? 'Jumlah')
+                                    ->numeric()
+                                    ->required()
+                                    ->prefix('Rp')
+                                    ->live()
+                                    ->debounce(500)
+                                    ->afterStateUpdated(function (callable $set, callable $get) {
+                                        $items = $get('../../items') ?? [];
+                                        $total = collect($items)->sum('amount');
+                                        $set('../../amount', $total);
+                                    }),
+                                Toggle::make('is_stock_purchase')
+                                    ->label(__('messages.is_stock') ?? 'Stok?')
+                                    ->helperText('Centang jika item ini adalah stok (HPP)')
+                                    ->default(false),
+                            ])
+                            ->columns(4)
+                            ->columnSpanFull()
+                            ->addActionLabel(__('messages.add_item') ?? 'Tambah Item')
+                            ->reorderableWithButtons()
+                            ->live()
+                            ->afterStateUpdated(function (callable $set, callable $get) {
+                                $items = $get('items') ?? [];
+                                $total = collect($items)->sum('amount');
+                                $set('amount', $total);
+                            }),
 
                         TextInput::make('amount')
-                            ->label(__('messages.amount'))
+                            ->label(__('messages.total_amount') ?? 'Total Pengeluaran')
                             ->required()
                             ->numeric()
-                            ->prefix('Rp'),
+                            ->prefix('Rp')
+                            ->readOnly()
+                            ->helperText('Otomatis dihitung dari jumlah item di atas.'),
                     ])->columnSpanFull(),
 
                 Section::make(__('messages.status_notes'))

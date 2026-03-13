@@ -34,4 +34,6 @@ return [
     'cashier' => 'Kasir',
     'petty_cash' => 'Kas Kecil',
     'transfer' => 'Transfer',
+    'expense_items' => 'Item Pengeluaran',
+    'is_stock' => 'Pembelian Stock',
 ];

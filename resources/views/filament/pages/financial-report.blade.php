@@ -146,7 +146,7 @@
             </div>
             <div class="ml-3">
                 <p class="text-sm text-amber-700">
-                    <strong>Penting:</strong> Laporan ini menggunakan metode <strong>Accrual</strong>. Jika Anda mencatat pembelian stok (belanja pasar) di menu <em>Expense</em>, laba bersih Anda akan terlihat minus karena biaya tersebut dikurangi dua kali (saat beli dan saat terjual melalui HPP). Disarankan untuk memisahkan biaya operasional murni (seperti parkir/listrik) agar laporan profit lebih akurat.
+                    <strong>Penting:</strong> {{ __('messages.accrual_info_alert') ?? 'Laporan ini menggunakan metode Accrual. Jika Anda mencatat belanja stok di menu Expense, pastikan untuk mencentang "Pembelian Stok" agar profit tidak terhitung minus dua kali.' }}
                 </p>
             </div>
         </div>

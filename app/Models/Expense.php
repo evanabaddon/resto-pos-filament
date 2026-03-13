@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Expense extends Model
 {
@@ -23,12 +24,14 @@ class Expense extends Model
         'approved_by',
         'fund_source',
         'cash_session_id',
+        'is_stock_purchase',
     ];
 
     protected $casts = [
         'date' => 'date',
         'amount' => 'decimal:2',
         'approved_at' => 'datetime',
+        'is_stock_purchase' => 'boolean',
     ];
 
     // Constants untuk fund source
@@ -58,9 +61,22 @@ class Expense extends Model
         return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
     }
 
+    public function items(): HasMany
+    {
+        return $this->hasMany(ExpenseItem::class);
+    }
+
     public function paymentMethod(): BelongsTo
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+    protected static function booted()
+    {
+        static::saving(function ($expense) {
+            // We'll handle amount recalculation if needed, 
+            // but in Filament, we'll usually use the Repeater's state.
+        });
     }
 
     public function user(): BelongsTo

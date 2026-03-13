@@ -54,7 +54,8 @@ class FinancialTrendChart extends ChartWidget
             });
 
         // 2. Expenses (Approved)
-        $expenses = Expense::where('status', 'approved')
+        $expenses = Expense::with('items')
+            ->where('status', 'approved')
             ->whereBetween('date', [$start, $end])
             ->get()
             ->groupBy(function ($date) {
@@ -79,10 +80,14 @@ class FinancialTrendChart extends ChartWidget
             $dayRevenue = $daySales->sum('subtotal') - $daySales->sum('discount');
             $revenueData[] = $dayRevenue;
 
-            // Expenses (Ops + Payroll)
+            // Expenses (Ops + Payroll) - Sum only non-stock items
             $dayExpenses = $expenses->get($dateLabel) ?? collect();
+            $dayOps = 0;
+            foreach ($dayExpenses as $exp) {
+                $dayOps += $exp->items->where('is_stock_purchase', false)->sum('amount');
+            }
             $dayPayroll = $payrolls->get($dateLabel) ?? collect();
-            $totalDayExpense = $dayExpenses->sum('amount') + $dayPayroll->sum('total_payout');
+            $totalDayExpense = $dayOps + $dayPayroll->sum('total_payout');
             $expenseData[] = $totalDayExpense;
 
             // Profit (Simplified: Revenue - Expenses, ignoring HPP for chart simplicity or we can calculate Gross Profit)

@@ -281,19 +281,33 @@ class FinancialReport extends Page implements HasForms
         $this->totalGrossProfit = $this->totalRevenue - $this->totalHpp;
         $this->grossMargin = $this->totalRevenue > 0 ? ($this->totalGrossProfit / $this->totalRevenue) * 100 : 0;
 
-        // 4. Operational Expenses
-        $expenses = Expense::with('category')
+        // 4. Operational Expenses (Exclude items tagged as 'Stock Purchase' to prevent double counting with HPP)
+        $allExpenses = Expense::with(['category', 'items'])
             ->where('status', 'approved')
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
-        // Prepare Breakdown Expenses
-        $this->breakdownExpenses = $expenses->map(fn($e) => [
-            'date' => $e->date,
-            'category' => $e->category ? $e->category->name : __('messages.general'),
-            'description' => $e->description,
-            'amount' => $e->amount
-        ])->sortBy('date')->values()->toArray();
+        $totalOperationalExpenses = 0;
+        $totalStockExpenses = 0;
+        $this->breakdownExpenses = [];
+
+        foreach ($allExpenses as $expense) {
+            foreach ($expense->items as $item) {
+                if ($item->is_stock_purchase) {
+                    $totalStockExpenses += (float) $item->amount;
+                } else {
+                    $totalOperationalExpenses += (float) $item->amount;
+                    $this->breakdownExpenses[] = [
+                        'date' => $expense->date,
+                        'category' => $expense->category ? $expense->category->name : __('messages.general'),
+                        'description' => $item->description,
+                        'amount' => $item->amount
+                    ];
+                }
+            }
+        }
+
+        $this->breakdownExpenses = collect($this->breakdownExpenses)->sortBy('date')->values()->toArray();
 
         // 5. Payroll Integration
         $payrolls = Payroll::whereBetween('created_at', [$startDate, $endDate])
@@ -306,7 +320,7 @@ class FinancialReport extends Page implements HasForms
             ->where('status', 'received')
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
-        $this->totalPurchases = (float) $purchases->sum('total');
+        $this->totalPurchases = (float) $purchases->sum('total') + $totalStockExpenses;
 
         $productPurchases = [];
         foreach ($purchases as $purchase) {
@@ -340,11 +354,16 @@ class FinancialReport extends Page implements HasForms
         });
 
         // Add Wastage to Expenses
-        $this->totalExpenses = (float) $expenses->sum('amount') + $this->totalPayroll + $this->totalWastage;
+        $this->totalExpenses = $totalOperationalExpenses + $this->totalPayroll + $this->totalWastage;
 
-        $this->expenseBreakdown = $expenses->groupBy('category.name')
-            ->map(fn($group) => $group->sum('amount'))
-            ->toArray();
+        $this->expenseBreakdown = [];
+        foreach ($allExpenses as $expense) {
+            $catName = $expense->category ? $expense->category->name : __('messages.general');
+            if (!isset($this->expenseBreakdown[$catName])) {
+                $this->expenseBreakdown[$catName] = 0;
+            }
+            $this->expenseBreakdown[$catName] += $expense->items->where('is_stock_purchase', false)->sum('amount');
+        }
 
         if ($this->totalPayroll > 0) {
             $this->expenseBreakdown[__('messages.salary_allowance')] = $this->totalPayroll;
@@ -417,9 +436,15 @@ class FinancialReport extends Page implements HasForms
         }
 
         // 3. Previous Expenses + Payroll + Wastage
-        $prevExpenses = Expense::where('status', 'approved')
+        $prevAllExpenses = Expense::with('items')
+            ->where('status', 'approved')
             ->whereBetween('date', [$prevStart, $prevEnd])
-            ->sum('amount');
+            ->get();
+        
+        $prevExpensesTotal = 0;
+        foreach ($prevAllExpenses as $expense) {
+            $prevExpensesTotal += $expense->items->where('is_stock_purchase', false)->sum('amount');
+        }
 
         $prevPayroll = Payroll::whereBetween('created_at', [$prevStart, $prevEnd])
             ->where('status', 'paid')
@@ -438,7 +463,7 @@ class FinancialReport extends Page implements HasForms
                 return $movement->quantity * ($movement->product->base_price ?? 0);
             });
 
-        $this->prevTotalExpenses = (float) $prevExpenses + (float) $prevPayroll + $prevWastage;
+        $this->prevTotalExpenses = (float) $prevExpensesTotal + (float) $prevPayroll + $prevWastage;
 
         // 4. Previous Net Profit
         $this->prevNetProfit = ($this->prevTotalRevenue - $this->prevTotalHpp) - $this->prevTotalExpenses;
