@@ -100,7 +100,6 @@ class ExpenseForm
                                             ->where('description', '!=', '')
                                             ->distinct()
                                             ->orderBy('description')
-                                            ->limit(50)
                                             ->pluck('description')
                                             ->toArray();
                                     }),
