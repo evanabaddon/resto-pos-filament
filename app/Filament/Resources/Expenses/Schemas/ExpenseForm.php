@@ -11,6 +11,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 
 class ExpenseForm
 {
@@ -91,7 +92,18 @@ class ExpenseForm
                                 TextInput::make('description')
                                     ->label(__('messages.description') ?? 'Deskripsi')
                                     ->required()
-                                    ->columnSpan(2),
+                                    ->columnSpan(2)
+                                    ->datalist(function () {
+                                        return \App\Models\ExpenseItem::query()
+                                            ->select('description')
+                                            ->whereNotNull('description')
+                                            ->where('description', '!=', '')
+                                            ->distinct()
+                                            ->orderBy('description')
+                                            ->limit(50)
+                                            ->pluck('description')
+                                            ->toArray();
+                                    }),
                                 TextInput::make('amount')
                                     ->label(__('messages.amount') ?? 'Jumlah')
                                     ->numeric()

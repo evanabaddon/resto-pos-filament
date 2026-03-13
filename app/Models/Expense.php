@@ -111,6 +111,9 @@ class Expense extends Model
             if (empty($expense->user_id)) {
                 $expense->user_id = auth()->id();
             }
+            if (empty($expense->description)) {
+                $expense->description = 'Pengeluaran Reference: ' . $expense->reference;
+            }
 
             // Jika sumber dana dari kasir, otomatis set payment method ke CASH
             if ($expense->fund_source === self::FUND_SOURCE_CASHIER && empty($expense->payment_method_id)) {
