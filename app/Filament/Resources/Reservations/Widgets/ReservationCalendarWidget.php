@@ -45,7 +45,15 @@ class ReservationCalendarWidget extends CalendarWidget
 
     public function getHeading(): string|HtmlString|null
     {
-        return __('messages.reservation_calendar');
+        return new \Illuminate\Support\HtmlString('
+            ' . __('messages.reservation_calendar') . '
+            <style>
+                .ec { height: 600px !important; }
+                .ec-day { height: 130px !important; max-height: 130px !important; overflow: hidden !important; }
+                .ec-event { font-size: 11px !important; padding: 1px 4px !important; margin-bottom: 1px !important; }
+                .ec-day-grid .ec-body { max-height: 500px !important; overflow-y: auto !important; }
+            </style>
+        ');
     }
 
     public function getOptions(): array
