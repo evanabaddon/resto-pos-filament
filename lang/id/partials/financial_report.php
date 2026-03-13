@@ -55,4 +55,8 @@ return [
     'base_price' => 'Harga Dasar',
     'generated_by_system' => 'Dihasilkan oleh Sistem :app_name',
     'total' => 'Total',
+    'total_purchases' => 'Total Belanja Stok',
+    'total_purchases_desc' => 'Uang tunai keluar untuk pembelian stok (Received)',
+    'purchases_breakdown' => 'Rincian Belanja Stok',
+    'accrual_note' => 'Catatan: Pembelian stok bukan beban (expense) sampai barang tersebut terjual (HPP).',
 ];

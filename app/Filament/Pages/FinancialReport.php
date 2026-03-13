@@ -380,8 +380,6 @@ class FinancialReport extends Page implements HasForms
 
         $this->netProfit = $this->totalGrossProfit - $this->totalExpenses;
 
-        $this->netProfit = $this->totalGrossProfit - $this->totalExpenses;
-
         $this->calculatePreviousStats($startDate, $endDate);
 
         $this->dispatch('updateChart', [
@@ -446,7 +444,7 @@ class FinancialReport extends Page implements HasForms
         $this->prevNetProfit = ($this->prevTotalRevenue - $this->prevTotalHpp) - $this->prevTotalExpenses;
 
         // Calculate Growth %
-        $this->calculateGrowth($this->totalRevenue, $this->prevTotalRevenue);
+        $this->growthRevenue = $this->calculateGrowth($this->totalRevenue, $this->prevTotalRevenue);
         $this->growthHpp = $this->calculateGrowth($this->totalHpp, $this->prevTotalHpp);
         $this->growthExpenses = $this->calculateGrowth($this->totalExpenses, $this->prevTotalExpenses);
         $this->growthNetProfit = $this->calculateGrowth($this->netProfit, $this->prevNetProfit);
@@ -475,6 +473,7 @@ class FinancialReport extends Page implements HasForms
                         'totalHpp' => $this->totalCogs,
                         'grossProfit' => $this->totalRevenue - $this->totalCogs,
                         'totalExpenses' => $this->totalExpenses, // Already includes Payroll & Wastage
+                        'totalPurchases' => $this->totalPurchases,
                         'netProfit' => ($this->totalRevenue - $this->totalCogs) - $this->totalExpenses,
                         'breakdownCogs' => $this->breakdownCogs,
                         'breakdownExpenses' => $this->breakdownExpenses,

@@ -30,7 +30,7 @@
         :data="$this->getWidgetData()" />
 
     {{-- Stats Grid --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {{-- Net Sales --}}
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
             <div class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-green-50 to-transparent"></div>
@@ -118,6 +118,22 @@
             </div>
             <div class="absolute bottom-4 right-4 text-blue-500 opacity-20 group-hover:opacity-100 transition-opacity">
                 <x-heroicon-o-currency-dollar class="w-12 h-12" />
+            </div>
+        </div>
+
+        {{-- Total Purchase (Cash Out) --}}
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
+            <div class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-purple-50 to-transparent"></div>
+            <div class="relative z-10">
+                <p class="text-sm font-medium text-gray-500 mb-1">{{ __('messages.total_purchases') }}</p>
+                <h3 class="text-2xl font-bold text-purple-600">
+                    Rp {{ number_format($totalPurchases, 0, ',', '.') }}
+                </h3>
+                <p class="text-[10px] text-purple-400 mt-1">{{ __('messages.total_purchases_desc') }}</p>
+                <p class="text-[9px] text-gray-400 mt-1 italic">{{ __('messages.accrual_note') }}</p>
+            </div>
+            <div class="absolute bottom-4 right-4 text-purple-500 opacity-20 group-hover:opacity-100 transition-opacity">
+                <x-heroicon-o-shopping-cart class="w-12 h-12" />
             </div>
         </div>
     </div>
@@ -362,6 +378,45 @@
                         <tr>
                             <td colspan="3" class="px-4 py-6 text-center text-gray-400 text-sm">
                                 {{ __('messages.no_expenses_data') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </x-filament::section>
+
+    {{-- Table Breakdown Purchases --}}
+    <x-filament::section collapsible collapsed>
+        <x-slot name="heading">
+            {{ __('messages.purchases_breakdown') }}
+        </x-slot>
+
+        <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
+            <table class="w-full text-sm text-left divide-y divide-gray-200 dark:divide-white/5">
+                <thead class="bg-gray-50 dark:bg-white/5 sticky top-0">
+                    <tr>
+                        <th
+                            class="px-4 py-3 text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                            {{ __('messages.product') }}
+                        </th>
+                        <th
+                            class="px-4 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">
+                            {{ __('messages.total_value') }}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                    @forelse ($purchaseBreakdown as $productName => $totalAmount)
+                        <tr class="hover:bg-gray-50 dark:hover:bg-white/5">
+                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $productName }}</td>
+                            <td class="px-4 py-3 text-right text-purple-600 dark:text-purple-400 font-bold">
+                                Rp {{ number_format($totalAmount, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="2" class="px-4 py-6 text-center text-gray-400 text-sm">
+                                {{ __('messages.no_purchases_data') ?? 'Belum ada data pembelian (Received).' }}</td>
                         </tr>
                     @endforelse
                 </tbody>
