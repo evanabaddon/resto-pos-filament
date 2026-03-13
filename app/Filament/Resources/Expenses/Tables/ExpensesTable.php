@@ -63,6 +63,12 @@ class ExpensesTable
                     ->sortable()
                     ->color('danger'),
 
+                \Filament\Tables\Columns\IconColumn::make('is_stock_purchase')
+                    ->label(__('messages.is_stock') ?? 'Stok?')
+                    ->boolean()
+                    ->sortable()
+                    ->toggleable(),
+
                 TextColumn::make('paymentMethod.name')
                     ->label(__('messages.payment_method'))
                     ->badge()
@@ -126,6 +132,13 @@ class ExpensesTable
                         'pending' => __('messages.status_pending'),
                         'approved' => __('messages.status_approved') ?? 'Approved',
                         'rejected' => __('messages.status_rejected') ?? 'Rejected',
+                    ]),
+
+                SelectFilter::make('is_stock_purchase')
+                    ->label(__('messages.is_stock') ?? 'Stok?')
+                    ->options([
+                        '1' => __('messages.yes') ?? 'Ya',
+                        '0' => __('messages.no') ?? 'Tidak',
                     ]),
 
                 DateRangeFilter::make('created_at')->label(__('messages.transaction_date')),

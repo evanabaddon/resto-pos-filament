@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class ItemsRelationManager extends RelationManager
 {
     protected static string $relationship = 'items';
-    
+
     protected static ?string $title = 'Pre-order Items';
 
     public function form(Schema $schema): Schema
@@ -33,7 +33,7 @@ class ItemsRelationManager extends RelationManager
             ->components([
                 Select::make('product_id')
                     ->label('Produk')
-                    ->relationship('product', 'name', fn (Builder $query) => $query->where('is_sellable', true))
+                    ->relationship('product', 'name', fn(Builder $query) => $query->where('is_sellable', true))
                     ->searchable()
                     ->required()
                     ->preload()
@@ -45,28 +45,30 @@ class ItemsRelationManager extends RelationManager
                             $set('total_price', $product->sell_price ?? 0);
                         }
                     }),
-                    
+
                 TextInput::make('quantity')
                     ->label('Jumlah')
                     ->numeric()
                     ->default(1)
                     ->required()
                     ->live()
-                    ->afterStateUpdated(fn ($state, Get $get, Set $set) => $set('total_price', (float)$state * (float)$get('unit_price'))),
-                    
+                    ->debounce(500)
+                    ->afterStateUpdated(fn($state, Get $get, Set $set) => $set('total_price', (float) $state * (float) $get('unit_price'))),
+
                 TextInput::make('unit_price')
                     ->label('Harga Satuan')
                     ->numeric()
                     ->required()
                     ->live()
-                    ->afterStateUpdated(fn ($state, Get $get, Set $set) => $set('total_price', (float)$state * (float)$get('quantity'))),
-                    
+                    ->debounce(500)
+                    ->afterStateUpdated(fn($state, Get $get, Set $set) => $set('total_price', (float) $state * (float) $get('quantity'))),
+
                 TextInput::make('total_price')
                     ->label('Total')
                     ->numeric()
                     ->required()
                     ->readOnly(),
-                    
+
                 TextInput::make('note')
                     ->label('Catatan'),
             ]);
@@ -101,7 +103,7 @@ class ItemsRelationManager extends RelationManager
                 DeleteAction::make(),
             ])
             ->bulkActions([
-                 BulkActionGroup::make([
+                BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
             ]);

@@ -84,7 +84,10 @@ class FinancialTrendChart extends ChartWidget
             $dayExpenses = $expenses->get($dateLabel) ?? collect();
             $dayOps = 0;
             foreach ($dayExpenses as $exp) {
-                $dayOps += $exp->items->where('is_stock_purchase', false)->sum('amount');
+                $isTopLevelStock = (bool) ($exp->is_stock_purchase ?? false);
+                $dayOps += $exp->items->filter(function ($item) use ($isTopLevelStock) {
+                    return !($isTopLevelStock || ($item->is_stock_purchase ?? false));
+                })->sum('amount');
             }
             $dayPayroll = $payrolls->get($dateLabel) ?? collect();
             $totalDayExpense = $dayOps + $dayPayroll->sum('total_payout');

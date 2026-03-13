@@ -440,7 +440,7 @@ class FinancialReport extends Page implements HasForms
             ->where('status', 'approved')
             ->whereBetween('date', [$prevStart, $prevEnd])
             ->get();
-        
+
         $prevExpensesTotal = 0;
         foreach ($prevAllExpenses as $expense) {
             $prevExpensesTotal += $expense->items->where('is_stock_purchase', false)->sum('amount');

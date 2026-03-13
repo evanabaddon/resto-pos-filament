@@ -78,6 +78,12 @@ class ExpenseForm
                                     ->maxLength(500),
                             ]),
 
+                        Toggle::make('is_stock_purchase')
+                            ->label(__('messages.is_stock') ?? 'Stok?')
+                            ->helperText(__('messages.is_stock_purchase_helper') ?? 'Centang jika seluruh pengeluaran ini adalah untuk stok (HPP)')
+                            ->default(false)
+                            ->live(),
+
                         \Filament\Forms\Components\Repeater::make('items')
                             ->label(__('messages.expense_items') ?? 'Daftar Item Pengeluaran')
                             ->relationship()

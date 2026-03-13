@@ -36,4 +36,6 @@ return [
     'transfer' => 'Transfer',
     'expense_items' => 'Item Pengeluaran',
     'is_stock' => 'Pembelian Stock',
+    'total_amount' => 'Total Pengeluaran',
+    'add_item' => 'Tambah Item',
 ];

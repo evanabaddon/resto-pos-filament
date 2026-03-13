@@ -26,6 +26,8 @@ return [
     'all' => 'Semua',
     'none' => 'Tidak ada',
     'unknown' => 'Tidak Diketahui',
+    'yes' => 'Ya',
+    'no' => 'Tidak',
     'yes_delete' => 'Ya, Hapus',
     'no_data_chart' => 'Tidak ada data',
     'date_label' => 'Tanggal',

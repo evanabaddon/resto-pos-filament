@@ -2,7 +2,8 @@
     <div class="flex items-center justify-between mb-2">
         <div>
             <h2 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-white">
-                {{ __('messages.financial_report') }}</h2>
+                {{ __('messages.financial_report') }}
+            </h2>
             <p class="text-sm text-gray-500">{{ __('messages.financial_analysis_desc') }}</p>
         </div>
         <div class="flex items-center gap-3">
@@ -97,6 +98,25 @@
             </div>
         </div>
 
+        {{-- Total Purchase (Cash Out) --}}
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
+            <div class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-purple-50 to-transparent"></div>
+            <div class="relative z-10">
+                <p class="text-sm font-medium text-gray-500 mb-1">{{ __('messages.total_purchases') }}</p>
+                <h3 class="text-2xl font-bold text-purple-600">
+                    Rp {{ number_format($totalPurchases, 0, ',', '.') }}
+                </h3>
+                <p class="text-[10px] text-purple-400 mt-1">{{ __('messages.total_purchases_desc') }}</p>
+                <p class="text-[9px] text-gray-400 mt-1 italic">
+                    {{ __('messages.accrual_help_text') ?? 'Pembelian stok tidak mengurangi laba sampai barang terjual (HPP).' }}
+                </p>
+            </div>
+            <div
+                class="absolute bottom-4 right-4 text-purple-500 opacity-20 group-hover:opacity-100 transition-opacity">
+                <x-heroicon-o-shopping-cart class="w-12 h-12" />
+            </div>
+        </div>
+
         {{-- Net Profit --}}
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
             <div class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-blue-50 to-transparent"></div>
@@ -121,21 +141,6 @@
             </div>
         </div>
 
-        {{-- Total Purchase (Cash Out) --}}
-        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
-            <div class="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-purple-50 to-transparent"></div>
-            <div class="relative z-10">
-                <p class="text-sm font-medium text-gray-500 mb-1">{{ __('messages.total_purchases') }}</p>
-                <h3 class="text-2xl font-bold text-purple-600">
-                    Rp {{ number_format($totalPurchases, 0, ',', '.') }}
-                </h3>
-                <p class="text-[10px] text-purple-400 mt-1">{{ __('messages.total_purchases_desc') }}</p>
-                <p class="text-[9px] text-gray-400 mt-1 italic">{{ __('messages.accrual_help_text') ?? 'Pembelian stok tidak mengurangi laba sampai barang terjual (HPP).' }}</p>
-            </div>
-            <div class="absolute bottom-4 right-4 text-purple-500 opacity-20 group-hover:opacity-100 transition-opacity">
-                <x-heroicon-o-shopping-cart class="w-12 h-12" />
-            </div>
-        </div>
     </div>
 
     {{-- Warning/Info Alert --}}
@@ -146,7 +151,8 @@
             </div>
             <div class="ml-3">
                 <p class="text-sm text-amber-700">
-                    <strong>Penting:</strong> {{ __('messages.accrual_info_alert') ?? 'Laporan ini menggunakan metode Accrual. Jika Anda mencatat belanja stok di menu Expense, pastikan untuk mencentang "Pembelian Stok" agar profit tidak terhitung minus dua kali.' }}
+                    <strong>Penting:</strong>
+                    {{ __('messages.accrual_info_alert') ?? 'Laporan ini menggunakan metode Accrual. Jika Anda mencatat belanja stok di menu Expense, pastikan untuk mencentang "Pembelian Stok" agar profit tidak terhitung minus dua kali.' }}
                 </p>
             </div>
         </div>
@@ -275,9 +281,11 @@
                                 <tr>
                                     <th class="px-4 py-3 font-medium text-gray-500">{{ __('messages.product') }}</th>
                                     <th class="px-4 py-3 font-medium text-gray-500 text-center">
-                                        {{ __('messages.stock') }}</th>
+                                        {{ __('messages.stock') }}
+                                    </th>
                                     <th class="px-4 py-3 font-medium text-gray-500 text-right">
-                                        {{ __('messages.total_value') }}</th>
+                                        {{ __('messages.total_value') }}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-white/5">
@@ -342,7 +350,8 @@
                     @empty
                         <tr>
                             <td colspan="3" class="px-4 py-6 text-center text-gray-400 text-sm">
-                                {{ __('messages.no_sales_data') }}</td>
+                                {{ __('messages.no_sales_data') }}
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -391,7 +400,8 @@
                     @empty
                         <tr>
                             <td colspan="3" class="px-4 py-6 text-center text-gray-400 text-sm">
-                                {{ __('messages.no_expenses_data') }}</td>
+                                {{ __('messages.no_expenses_data') }}
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -430,7 +440,8 @@
                     @empty
                         <tr>
                             <td colspan="2" class="px-4 py-6 text-center text-gray-400 text-sm">
-                                {{ __('messages.no_purchases_data') ?? 'Belum ada data pembelian (Received).' }}</td>
+                                {{ __('messages.no_purchases_data') ?? 'Belum ada data pembelian (Received).' }}
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -489,6 +500,3 @@
     </x-filament::section>
 
 </x-filament-panels::page>
-
-
-
