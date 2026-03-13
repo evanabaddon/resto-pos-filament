@@ -79,15 +79,8 @@ class FinancialTrendChart extends ChartWidget
             $dayRevenue = $daySales->sum('subtotal') - $daySales->sum('discount');
             $revenueData[] = $dayRevenue;
 
-            // Expenses (Ops + Payroll) - Exclude Stock/Inventory to keep trend steady
-            $inventoryKeywords = ['belanja', 'bahan baku', 'stok', 'inventory', 'purchase', 'stock', 'supply'];
-            $dayExpenses = ($expenses->get($dateLabel) ?? collect())->filter(function($e) use ($inventoryKeywords) {
-                $catName = strtolower($e->category?->name ?? '');
-                foreach ($inventoryKeywords as $keyword) {
-                    if (str_contains($catName, $keyword)) return false;
-                }
-                return true;
-            });
+            // Expenses (Ops + Payroll)
+            $dayExpenses = $expenses->get($dateLabel) ?? collect();
             $dayPayroll = $payrolls->get($dateLabel) ?? collect();
             $totalDayExpense = $dayExpenses->sum('amount') + $dayPayroll->sum('total_payout');
             $expenseData[] = $totalDayExpense;

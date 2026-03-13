@@ -138,15 +138,15 @@
         </div>
     </div>
 
-    {{-- Info Alert --}}
-    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded shadow-sm">
+    {{-- Warning/Info Alert --}}
+    <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded shadow-sm">
         <div class="flex">
             <div class="flex-shrink-0">
-                <x-heroicon-s-information-circle class="h-5 w-5 text-blue-400" />
+                <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-amber-400" />
             </div>
             <div class="ml-3">
-                <p class="text-sm text-blue-700">
-                    <strong>Informasi Perhitungan:</strong> Pengeluaran dari kategori <em>Bahan Baku/Stok</em> dipisahkan dari Biaya Operasional agar tidak dihitung dua kali (saat beli dan saat terjual/HPP). Laba bersih di atas menggunakan metode <strong>Accrual</strong> yang lebih akurat untuk performa bisnis.
+                <p class="text-sm text-amber-700">
+                    <strong>Penting:</strong> Laporan ini menggunakan metode <strong>Accrual</strong>. Jika Anda mencatat pembelian stok (belanja pasar) di menu <em>Expense</em>, laba bersih Anda akan terlihat minus karena biaya tersebut dikurangi dua kali (saat beli dan saat terjual melalui HPP). Disarankan untuk memisahkan biaya operasional murni (seperti parkir/listrik) agar laporan profit lebih akurat.
                 </p>
             </div>
         </div>
