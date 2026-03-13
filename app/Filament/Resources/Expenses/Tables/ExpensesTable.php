@@ -10,8 +10,10 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Filters\Filter;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Columns\Summarizers\Sum;
@@ -43,7 +45,7 @@ class ExpensesTable
 
                 TextColumn::make('description')
                     ->label(__('messages.description'))
-                    ->limit(50)
+                    ->limit(20)
                     ->searchable(),
 
                 TextColumn::make('fund_source')
@@ -63,7 +65,7 @@ class ExpensesTable
                     ->sortable()
                     ->color('danger'),
 
-                \Filament\Tables\Columns\IconColumn::make('is_stock_purchase')
+                IconColumn::make('is_stock_purchase')
                     ->label(__('messages.is_stock') ?? 'Stok?')
                     ->boolean()
                     ->sortable()
@@ -72,6 +74,7 @@ class ExpensesTable
                 TextColumn::make('paymentMethod.name')
                     ->label(__('messages.payment_method'))
                     ->badge()
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->color('gray'),
 
                 TextColumn::make('recipient')
@@ -144,6 +147,7 @@ class ExpensesTable
                 DateRangeFilter::make('created_at')->label(__('messages.transaction_date')),
             ])
             ->recordActions([
+                ViewAction::make(),
                 EditAction::make(),
             ])
             ->toolbarActions([
