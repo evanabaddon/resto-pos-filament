@@ -41,6 +41,8 @@ class ReservationCalendarWidget extends CalendarWidget
 
     protected string|HtmlString|bool|null $heading = null;
 
+    protected bool $dayMaxEvents = true;
+
     public function getHeading(): string|HtmlString|null
     {
         return __('messages.reservation_calendar');
@@ -49,8 +51,13 @@ class ReservationCalendarWidget extends CalendarWidget
     public function getOptions(): array
     {
         return [
-            'dayMaxEvents' => true, // Limits the number of events displayed on a day
-            'eventMaxStack' => 4, // Maximum 4 events stacked before showing "+x more"
+            'dayMaxEvents' => 3, // Force limit to 3 events per day
+            'height' => 600,    // Fixed height for the calendar
+            'headerToolbar' => [
+                'left' => 'prev,next today',
+                'center' => 'title',
+                'right' => 'dayGridMonth,timeGridWeek,timeGridDay'
+            ]
         ];
     }
 
