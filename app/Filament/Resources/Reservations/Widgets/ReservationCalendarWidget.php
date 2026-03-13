@@ -46,9 +46,23 @@ class ReservationCalendarWidget extends CalendarWidget
         return new \Illuminate\Support\HtmlString('
             ' . __('messages.reservation_calendar') . '
             <style>
-                .ec-day { height: 180px !important; }
+                /* Restore Day Height & Enable Per-Day Scroll */
+                .ec-day { transition: background-color 0.2s; }
+                .ec-day:hover { background-color: #f8fafc; }
                 .ec-events { max-height: 150px !important; overflow-y: auto !important; scrollbar-width: thin; }
-                .ec-event { font-size: 11px !important; padding: 1px 4px !important; margin-bottom: 2px !important; }
+                
+                /* Keep Weekend Colors */
+                .ec-day-head:nth-child(6), .ec-day-head:nth-child(7) {
+                    color: #dc2626 !important;
+                }
+                .ec-day:nth-child(6), .ec-day:nth-child(7) {
+                    background-color: #fffafb !important;
+                }
+                .ec-day:nth-child(6) .ec-day-number, .ec-day:nth-child(7) .ec-day-number {
+                    color: #dc2626 !important;
+                }
+
+                /* Standard Scrollbar */
                 .ec-events::-webkit-scrollbar { width: 4px; }
                 .ec-events::-webkit-scrollbar-track { background: transparent; }
                 .ec-events::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
