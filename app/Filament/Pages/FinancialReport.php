@@ -281,11 +281,29 @@ class FinancialReport extends Page implements HasForms
         $this->totalGrossProfit = $this->totalRevenue - $this->totalHpp;
         $this->grossMargin = $this->totalRevenue > 0 ? ($this->totalGrossProfit / $this->totalRevenue) * 100 : 0;
 
-        // 4. Operational Expenses
-        $expenses = Expense::with('category')
+        // 4. Operational Expenses (Exclude Inventory/Stock to prevent double counting with HPP)
+        $inventoryKeywords = ['belanja', 'bahan baku', 'stok', 'inventory', 'purchase', 'stock', 'supply'];
+        
+        $allExpenses = Expense::with('category')
             ->where('status', 'approved')
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
+
+        $expenses = $allExpenses->filter(function($e) use ($inventoryKeywords) {
+            $catName = strtolower($e->category?->name ?? '');
+            foreach ($inventoryKeywords as $keyword) {
+                if (str_contains($catName, $keyword)) return false;
+            }
+            return true;
+        });
+
+        $stockFromExpenses = $allExpenses->filter(function($e) use ($inventoryKeywords) {
+            $catName = strtolower($e->category?->name ?? '');
+            foreach ($inventoryKeywords as $keyword) {
+                if (str_contains($catName, $keyword)) return true;
+            }
+            return false;
+        });
 
         // Prepare Breakdown Expenses
         $this->breakdownExpenses = $expenses->map(fn($e) => [
@@ -306,7 +324,7 @@ class FinancialReport extends Page implements HasForms
             ->where('status', 'received')
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
-        $this->totalPurchases = (float) $purchases->sum('total');
+        $this->totalPurchases = (float) $purchases->sum('total') + (float) $stockFromExpenses->sum('amount');
 
         $productPurchases = [];
         foreach ($purchases as $purchase) {

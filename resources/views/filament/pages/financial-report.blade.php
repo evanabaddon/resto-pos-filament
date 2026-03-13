@@ -130,10 +130,24 @@
                     Rp {{ number_format($totalPurchases, 0, ',', '.') }}
                 </h3>
                 <p class="text-[10px] text-purple-400 mt-1">{{ __('messages.total_purchases_desc') }}</p>
-                <p class="text-[9px] text-gray-400 mt-1 italic">{{ __('messages.accrual_note') }}</p>
+                <p class="text-[9px] text-gray-400 mt-1 italic">{{ __('messages.accrual_help_text') ?? 'Pembelian stok tidak mengurangi laba sampai barang terjual (HPP).' }}</p>
             </div>
             <div class="absolute bottom-4 right-4 text-purple-500 opacity-20 group-hover:opacity-100 transition-opacity">
                 <x-heroicon-o-shopping-cart class="w-12 h-12" />
+            </div>
+        </div>
+    </div>
+
+    {{-- Info Alert --}}
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded shadow-sm">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <x-heroicon-s-information-circle class="h-5 w-5 text-blue-400" />
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-blue-700">
+                    <strong>Informasi Perhitungan:</strong> Pengeluaran dari kategori <em>Bahan Baku/Stok</em> dipisahkan dari Biaya Operasional agar tidak dihitung dua kali (saat beli dan saat terjual/HPP). Laba bersih di atas menggunakan metode <strong>Accrual</strong> yang lebih akurat untuk performa bisnis.
+                </p>
             </div>
         </div>
     </div>
