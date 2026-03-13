@@ -41,17 +41,21 @@ class ReservationCalendarWidget extends CalendarWidget
 
     protected string|HtmlString|bool|null $heading = null;
 
-    protected bool $dayMaxEvents = true;
+    protected bool $dayMaxEvents = false;
 
     public function getHeading(): string|HtmlString|null
     {
         return new \Illuminate\Support\HtmlString('
             ' . __('messages.reservation_calendar') . '
             <style>
-                .ec { height: 600px !important; }
-                .ec-day { height: 130px !important; max-height: 130px !important; overflow: hidden !important; }
-                .ec-event { font-size: 11px !important; padding: 1px 4px !important; margin-bottom: 1px !important; }
-                .ec-day-grid .ec-body { max-height: 500px !important; overflow-y: auto !important; }
+                .ec { height: 750px !important; }
+                .ec-day { height: 180px !important; max-height: 180px !important; }
+                .ec-events { height: 150px !important; overflow-y: auto !important; scrollbar-width: thin; }
+                .ec-event { font-size: 11px !important; padding: 1px 4px !important; margin-bottom: 2px !important; }
+                /* Custom scrollbar for better look */
+                .ec-events::-webkit-scrollbar { width: 4px; }
+                .ec-events::-webkit-scrollbar-track { background: transparent; }
+                .ec-events::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
             </style>
         ');
     }
@@ -59,8 +63,8 @@ class ReservationCalendarWidget extends CalendarWidget
     public function getOptions(): array
     {
         return [
-            'dayMaxEvents' => 3, // Force limit to 3 events per day
-            'height' => 600,    // Fixed height for the calendar
+            'dayMaxEvents' => false,
+            'height' => 750,
             'headerToolbar' => [
                 'left' => 'prev,next today',
                 'center' => 'title',
