@@ -86,6 +86,38 @@ class Sale extends Model
 
     protected static function booted()
     {
+        // When a sale is updated (e.g. from Filament backend)
+        static::updated(function (Sale $sale) {
+            // If payment_method_id was changed, sync related data
+            if ($sale->wasChanged('payment_method_id')) {
+                $newMethodId = $sale->payment_method_id;
+                $newMethod = \App\Models\PaymentMethod::find($newMethodId);
+                
+                if ($newMethod) {
+                    // 1. Sync the payment_method string name on the sale itself
+                    // We use DB::table to avoid triggering another 'updated' event loop
+                    \Illuminate\Support\Facades\DB::table('sales')
+                        ->where('id', $sale->id)
+                        ->update(['payment_method' => $newMethod->name]);
+
+                    // 2. Sync SalePayment records
+                    $payments = $sale->payments;
+                    
+                    if ($payments->count() <= 1) {
+                        // If 0 or 1 payment, we can safely sync it to the new method
+                        $sale->payments()->updateOrCreate(
+                            ['sale_id' => $sale->id], // match current sale
+                            [
+                                'payment_method_id' => $newMethodId,
+                                'payment_method_name' => $newMethod->name,
+                                'amount' => $sale->final_total,
+                            ]
+                        );
+                    }
+                }
+            }
+        });
+
         // When a sale is deleted (voided), restore the stock
         static::deleted(function (Sale $sale) {
             // Only process if sale was DRAFT (not paid yet)
