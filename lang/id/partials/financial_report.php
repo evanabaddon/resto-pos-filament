@@ -63,4 +63,8 @@ return [
     'is_stock_purchase_helper' => 'Centang jika pengeluaran ini untuk stok yang sudah dipantau lewat resep/HPP agar tidak dihitung dua kali.',
     'accrual_info_alert' => 'Laporan ini menggunakan metode **Accrual**. Pengeluaran yang dicentang sebagai "Pembelian Stok" tidak akan mengurangi laba bersih secara langsung karena akan dihitung saat barang terjual (HPP).',
     'accrual_help_text' => 'Stok yang dibeli tidak langsung mengurangi laba sampai barang tersebut laku (Accrual).',
+    'payment_method_balances' => 'Ringkasan Saldo per Metode Pembayaran',
+    'income' => 'Pemasukan',
+    'payout' => 'Pengeluaran (Beban + Stok)',
+    'balance_summary' => 'Saldo Akhir Periode',
 ];

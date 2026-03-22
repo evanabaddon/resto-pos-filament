@@ -142,6 +142,53 @@
         </div>
 
     </div>
+    
+    {{-- Payment Method Balances (Cash Position) --}}
+    <div class="mt-6">
+        <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <x-heroicon-o-credit-card class="w-5 h-5 text-indigo-500" />
+            {{ __('messages.payment_method_balances') }}
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            @foreach($paymentMethodBalances as $balance)
+                <div class="bg-white dark:bg-white/5 p-5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
+                            @if($balance['code'] === 'cash')
+                                <x-heroicon-o-banknotes class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            @elseif($balance['code'] === 'transfer')
+                                <x-heroicon-o-building-library class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            @elseif($balance['code'] === 'qris')
+                                <x-heroicon-o-qr-code class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            @else
+                                <x-heroicon-o-credit-card class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            @endif
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 uppercase tracking-tighter">
+                            {{ $balance['code'] }}
+                        </span>
+                    </div>
+                    
+                    <h4 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">{{ $balance['name'] }}</h4>
+                    <div class="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                        Rp {{ number_format($balance['balance'], 0, ',', '.') }}
+                    </div>
+                    
+                    <div class="space-y-1 pt-3 border-t border-gray-50 dark:border-white/5">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-gray-400">{{ __('messages.income') }}</span>
+                            <span class="text-green-600 dark:text-green-400 font-medium">+{{ number_format($balance['income'], 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-gray-400">{{ __('messages.payout') }}</span>
+                            <span class="text-red-500 dark:text-red-400 font-medium">-{{ number_format($balance['expense'], 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
 
     {{-- Warning/Info Alert --}}
     <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded shadow-sm">

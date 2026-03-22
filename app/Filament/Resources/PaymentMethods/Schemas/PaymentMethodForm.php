@@ -29,6 +29,11 @@ class PaymentMethodForm
                             ->readOnly(fn($record) => $record?->code === 'cash')
                             ->helperText(__('messages.payment_code_helper')),
 
+                        TextInput::make('account_category')
+                            ->label(__('messages.account_category') ?? 'Kategori Akun/Rekening')
+                            ->helperText('Contoh: Rekening A, Rekening B, Kas & Petty Cash. Biarkan kosong jika tidak ingin dikelompokkan.')
+                            ->maxLength(100),
+
                         Toggle::make('is_active')
                             ->label(__('messages.is_active'))
                             ->default(true)

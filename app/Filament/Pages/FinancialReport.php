@@ -110,6 +110,7 @@ class FinancialReport extends Page implements HasForms
     public array $purchaseBreakdown = [];
     public array $hppContributors = [];
     public array $profitContributors = [];
+    public array $paymentMethodBalances = [];
     public float $totalWastage = 0;
     public array $topStockAssets = [];
 
@@ -398,6 +399,60 @@ class FinancialReport extends Page implements HasForms
             ->toArray();
 
         $this->netProfit = $this->totalGrossProfit - $this->totalExpenses;
+
+        // 9. Payment Method Balances (Grouped by Account Category)
+        $paymentMethods = \App\Models\PaymentMethod::active()->get();
+        $groupedMethods = $paymentMethods->groupBy(fn($pm) => $pm->account_category ?: $pm->name);
+        $this->paymentMethodBalances = [];
+
+        foreach ($groupedMethods as $accountName => $methods) {
+            $methodIds = $methods->pluck('id')->toArray();
+            $methodCodes = $methods->pluck('code')->toArray();
+
+            $income = Sale::whereIn('payment_method_id', $methodIds)
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('final_total');
+
+            $expense = Expense::whereIn('payment_method_id', $methodIds)
+                ->where('status', 'approved')
+                ->whereBetween('date', [$startDate, $endDate])
+                ->get()
+                ->sum('amount');
+
+            // Handle Expenses without payment_method_id but mapped by fund_source (e.g. petty_cash)
+            if (in_array('cash', $methodCodes)) {
+                $extraExpenses = Expense::whereNull('payment_method_id')
+                    ->where('fund_source', Expense::FUND_SOURCE_PETTY_CASH)
+                    ->where('status', 'approved')
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->get()
+                    ->sum('amount');
+                $expense += $extraExpenses;
+            }
+
+            $payoutPurchases = 0;
+            if (in_array('cash', $methodCodes)) {
+                $payoutPurchases += Purchase::whereIn('fund_source', [Purchase::FUND_SOURCE_CASHIER, Purchase::FUND_SOURCE_PETTY_CASH])
+                    ->where('status', 'received')
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->sum('total');
+            }
+            if (in_array('transfer', $methodCodes)) {
+                $payoutPurchases += Purchase::where('fund_source', Purchase::FUND_SOURCE_TRANSFER)
+                    ->where('status', 'received')
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->sum('total');
+            }
+
+            $this->paymentMethodBalances[] = [
+                'name' => $accountName,
+                'code' => implode(', ', $methodCodes),
+                'income' => (float)$income,
+                'expense' => (float)$expense + (float)$payoutPurchases,
+                'balance' => (float)$income - ((float)$expense + (float)$payoutPurchases),
+            ];
+        }
 
         $this->calculatePreviousStats($startDate, $endDate);
 

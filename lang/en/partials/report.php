@@ -33,6 +33,7 @@ return [
     'top_products' => 'Top Products',
     'payment_methods' => 'Payment Methods',
     'cash_flow' => 'Cash Flow',
+    'financial_trend' => 'Financial Trend (Revenue vs Expenses vs Purchases)',
 
     // Fiscal Report
     // Keys moved to fiscal_report.php

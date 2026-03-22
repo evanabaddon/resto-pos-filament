@@ -50,7 +50,7 @@ return [
     'top_products' => 'Produk Terlaris',
     'payment_methods' => 'Metode Pembayaran',
     'cash_flow' => 'Arus Kas',
-    'financial_trend' => 'Trend Keuangan (Revenue vs Expenses)',
+    'financial_trend' => 'Trend Keuangan (Revenue vs Expenses vs Purchases)',
 
     // Fiscal Report
     // Keys moved to fiscal_report.php

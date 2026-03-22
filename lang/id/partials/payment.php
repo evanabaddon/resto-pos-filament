@@ -7,6 +7,7 @@ return [
     'payment_code_helper' => 'Kode unik untuk identifikasi internal (contoh: cash, transfer)',
     'is_active' => 'Status Aktif',
     'status' => 'Status',
+    'account_category' => 'Kelompok Akun / Rekening',
     'expenses_count' => 'Pengeluaran',
     'sales_count' => 'Penjualan',
     'created_at' => 'Dibuat',
