@@ -5,6 +5,7 @@ namespace App\Filament\Pages\FinancialReport\Widgets;
 use App\Models\Sale;
 use App\Models\Expense;
 use App\Models\Payroll;
+use App\Models\Purchase;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Carbon;
 
@@ -70,9 +71,17 @@ class FinancialTrendChart extends ChartWidget
                 return Carbon::parse($date->created_at)->format('d M');
             });
 
+        // 4. Purchases (Received)
+        $purchases = Purchase::where('status', 'received')
+            ->whereBetween('date', [$start, $end])
+            ->get()
+            ->groupBy(function ($date) {
+                return Carbon::parse($date->date)->format('d M');
+            });
+
         $revenueData = [];
         $expenseData = [];
-        $profitData = [];
+        $purchaseData = [];
 
         foreach ($labels as $dateLabel) {
             // Revenue
@@ -83,21 +92,25 @@ class FinancialTrendChart extends ChartWidget
             // Expenses (Ops + Payroll) - Sum only non-stock items
             $dayExpenses = $expenses->get($dateLabel) ?? collect();
             $dayOps = 0;
+            $dayStockFromExpense = 0;
             foreach ($dayExpenses as $exp) {
                 $isTopLevelStock = (bool) ($exp->is_stock_purchase ?? false);
-                $dayOps += $exp->items->filter(function ($item) use ($isTopLevelStock) {
-                    return !($isTopLevelStock || ($item->is_stock_purchase ?? false));
-                })->sum('amount');
+                foreach ($exp->items as $item) {
+                    if ($isTopLevelStock || ($item->is_stock_purchase ?? false)) {
+                        $dayStockFromExpense += (float) $item->amount;
+                    } else {
+                        $dayOps += (float) $item->amount;
+                    }
+                }
             }
             $dayPayroll = $payrolls->get($dateLabel) ?? collect();
             $totalDayExpense = $dayOps + $dayPayroll->sum('total_payout');
             $expenseData[] = $totalDayExpense;
 
-            // Profit (Simplified: Revenue - Expenses, ignoring HPP for chart simplicity or we can calculate Gross Profit)
-            // Ideally Profit = Revenue - HPP - Expenses. Calculating HPP per day query is heavy.
-            // Let's stick to Revenue vs Expenses for now, or approximate HPP if needed.
-            // Let's use Cash Flow Profit (Revenue - Expense) for this trend chart.
-            $profitData[] = $dayRevenue - $totalDayExpense;
+            // Purchases (Direct Purchases + Stock marked Expenses)
+            $dayDirectPurchases = $purchases->get($dateLabel) ?? collect();
+            $totalDayPurchase = $dayDirectPurchases->sum('total') + $dayStockFromExpense;
+            $purchaseData[] = $totalDayPurchase;
         }
 
         return [
@@ -110,10 +123,17 @@ class FinancialTrendChart extends ChartWidget
                     'fill' => true,
                 ],
                 [
-                    'label' => 'Total Expenses',
+                    'label' => 'Total Expenses (Ops)',
                     'data' => $expenseData,
                     'borderColor' => '#dc2626', // Red
                     'backgroundColor' => 'rgba(220, 38, 38, 0.1)',
+                    'fill' => true,
+                ],
+                [
+                    'label' => 'Purchases (Stok)',
+                    'data' => $purchaseData,
+                    'borderColor' => '#f59e0b', // Amber/Yellow
+                    'backgroundColor' => 'rgba(245, 158, 11, 0.1)',
                     'fill' => true,
                 ],
             ],
